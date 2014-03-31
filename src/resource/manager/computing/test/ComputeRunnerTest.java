@@ -1,15 +1,16 @@
 package computing.test;
 
+import javax.naming.CannotProceedException;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
-import org.junit.runner.notification.Failure;
 
 public class ComputeRunnerTest {
-   public static void main(String[] args) {
+   private ComputeRunnerTest() {
+   }
+   public static void main() {
       Result result = JUnitCore.runClasses(ComputeSuiteTest.class);
-      for (Failure failure : result.getFailures()) {
-         System.out.println(failure.toString());
+      if (Array.getLength(result.getFailures()) > 0) {
+        throw new CannotProceedException("ComputeRunnerTest failed: " + result.getFailures().toString());
       }
-      System.out.println(result.wasSuccessful());
    }
 }

@@ -1,15 +1,15 @@
 package computing.test;
 
 import org.junit.Test;
-import org.junit.Ignore;
 import static org.junit.Assert.assertEquals;
 
 public class ComputeDeletionTest {
 
-   String message = "Compute deleted successfully";	
+   static String DELETED_SUCCESSFULLY = "Compute deleted successfully";
+   String message = DELETED_SUCCESSFULLY;    
    
    @Test
-   public void testDeletionProcedure() {	
-      assertEquals(message, "Compute deleted successfully");     
+   public void testDeletionProcedure() {    
+      assertEquals(message, DELETED_SUCCESSFULLY);
    }
 }
