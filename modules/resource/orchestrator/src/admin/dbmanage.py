@@ -34,6 +34,8 @@ class RoutingTableCommand(GenericCommand):
         self.port_ = None
         self.protocol_ = None
         self.endpoint_ = None
+        self.user_ = None
+        self.password_ = None
 
     def updateType(self, type_):
         self.type_ = type_
@@ -49,6 +51,12 @@ class RoutingTableCommand(GenericCommand):
 
     def updateEndpoint(self, endpoint_):
         self.endpoint_ = endpoint_
+
+    def updateUser(self, user_):
+        self.user_ = user_
+
+    def updatePassword(self, password_):
+        self.password_ = password_
 
     def checkAllNone(self):
         if self.type_ is not None:
@@ -114,7 +122,9 @@ class AddRouteEntry(RoutingTableCommand):
                 'address': self.addr_,
                 'port': self.port_,
                 'protocol': self.protocol_,
-                'endpoint': self.endpoint_}
+                'endpoint': self.endpoint_,
+                'user': self.user_,
+                'password': self.password_}
 
         row_id_ = table_.insert(row_)
         print '(RO) RoutingTable insert row: %s\n' % (row_id_,)
@@ -122,6 +132,7 @@ class AddRouteEntry(RoutingTableCommand):
     def helpMsg(self):
         return 'add_route_entry -t <type> -a <address> -p <port>' +\
                ' [--protocol <protocol] [--endpoint <endpoint>]' +\
+               ' [--user <username>] [--password <password>]' +\
                '\n\tAdd a new entry in the mongoDB db'
 
 
@@ -182,6 +193,12 @@ class CmdManager:
     def updateEndpoint(self, key, value):
         commands[key].updateEndpoint(value)
 
+    def updateUser(self, key, value):
+        commands[key].updateUser(value)
+
+    def updatePassword(self, key, value):
+        commands[key].updatePassword(value)
+
     @staticmethod
     def find(key):
         if key not in commands:
@@ -237,8 +254,14 @@ def main(argv=None):
         parser_.add_argument('--protocol', default='http',
                              help='Set the protocol to communicate with RM')
 
-        parser_.add_argument('--endpoint', default='/',
+        parser_.add_argument('--endpoint', default='',
                              help='Set the endpoint of RM')
+
+        parser_.add_argument('--user', default='',
+                             help='Set the username to access the RM')
+
+        parser_.add_argument('--password', default='',
+                             help='Set the password to access the RM')
 
         args_ = parser_.parse_args()
 
@@ -262,6 +285,8 @@ def main(argv=None):
         # Arguments with default values
         comMng_.updateProtocol(args_.command, args_.protocol)
         comMng_.updateEndpoint(args_.command, args_.endpoint)
+        comMng_.updateUser(args_.command, args_.user)
+        comMng_.updatePassword(args_.command, args_.password)
 
         comMng_.analyze(args_.command)
 
