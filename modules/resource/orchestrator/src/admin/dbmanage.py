@@ -32,6 +32,8 @@ class RoutingTableCommand(GenericCommand):
         self.type_ = None
         self.addr_ = None
         self.port_ = None
+        self.protocol_ = None
+        self.endpoint_ = None
 
     def updateType(self, type_):
         self.type_ = type_
@@ -41,6 +43,12 @@ class RoutingTableCommand(GenericCommand):
 
     def updatePort(self, port_):
         self.port_ = port_
+
+    def updateProtocol(self, protocol_):
+        self.protocol_ = protocol_
+
+    def updateEndpoint(self, endpoint_):
+        self.endpoint_ = endpoint_
 
     def checkAllNone(self):
         if self.type_ is not None:
@@ -104,13 +112,16 @@ class AddRouteEntry(RoutingTableCommand):
 
         row_ = {'type': self.type_,
                 'address': self.addr_,
-                'port': self.port_}
+                'port': self.port_,
+                'protocol': self.protocol_,
+                'endpoint': self.endpoint_}
 
         row_id_ = table_.insert(row_)
         print '(RO) RoutingTable insert row: %s\n' % (row_id_,)
 
     def helpMsg(self):
         return 'add_route_entry -t <type> -a <address> -p <port>' +\
+               ' [--protocol <protocol] [--endpoint <endpoint>]' +\
                '\n\tAdd a new entry in the mongoDB db'
 
 
@@ -142,6 +153,7 @@ class DelRouteEntry(RoutingTableCommand):
         return 'delete_route_entry [-t <type>] [-a <address>] [-p <port>]' +\
                '\n\tDelete an entry(/ies)in the mongoDB db'
 
+
 commands = {'dump': Dump(),
             'delete_all': DeleteAll(),
             'add_route_entry': AddRouteEntry(),
@@ -163,6 +175,12 @@ class CmdManager:
 
     def updatePort(self, key, value):
         commands[key].updatePort(value)
+
+    def updateProtocol(self, key, value):
+        commands[key].updateProtocol(value)
+
+    def updateEndpoint(self, key, value):
+        commands[key].updateEndpoint(value)
 
     @staticmethod
     def find(key):
@@ -216,12 +234,19 @@ def main(argv=None):
 
         parser_.add_argument('-p', help='Set the port of RM')
 
+        parser_.add_argument('--protocol', default='http',
+                             help='Set the protocol to communicate with RM')
+
+        parser_.add_argument('--endpoint', default='/',
+                             help='Set the endpoint of RM')
+
         args_ = parser_.parse_args()
 
     except Exception as ex:
         print 'Got an exception parsing flags/options:', ex
         return False
 
+    # print "Args=%s" % (args_,)
     comMng_ = CmdManager()
 
     try:
@@ -233,6 +258,10 @@ def main(argv=None):
 
         if args_.p is not None:
             comMng_.updatePort(args_.command, args_.p)
+
+        # Arguments with default values
+        comMng_.updateProtocol(args_.command, args_.protocol)
+        comMng_.updateEndpoint(args_.command, args_.endpoint)
 
         comMng_.analyze(args_.command)
 
