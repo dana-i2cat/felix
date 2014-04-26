@@ -28,7 +28,7 @@ class TestComputingRM(unittest.TestCase):
 
         Check result for various valid/required fields.
         """
-        code, value, output = handler_call('GetVersion')
+        code, value, output = handler_call("GetVersion")
         #print "... code: %s" % str(code)
         #print "... value: %s" % str(value)
         self.assertEqual(code.get("geni_code", None), 0) # no error
