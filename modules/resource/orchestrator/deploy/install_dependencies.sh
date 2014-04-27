@@ -6,6 +6,6 @@ SUDO=`which sudo`
 $SUDO apt-get install -y python-pip mongodb-server
 
 PIP=`which pip`
-$SUDO $PIP install argparse pymongo Flask-PyMongo
+$SUDO $PIP install -r pip_dependencies
 
-echo "Done"
+echo "Installing RO manageDB dependencies... Done"
