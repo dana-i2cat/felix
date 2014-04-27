@@ -5,8 +5,11 @@ import unittest2 as unittest
 from geni.v3.computing_rm import TestComputingRM
 
 def testing_suite():
+    """
+    Explicitely add unit tests to the suite.
+    """
     suite = unittest.TestSuite()
-    suite.addTest (TestComputingRM())
+    suite.addTest(TestComputingRM())
     return suite
 
 if __name__ == '__main__':
