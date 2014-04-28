@@ -1,4 +1,5 @@
 from core.config import ConfParser
+from handler.geni.v3.extensions.geni.util import cred_util
 from handler.geni.v3 import exceptions
 from handler.geni.v3 import extensions
 from lxml import etree
@@ -285,7 +286,7 @@ class GENIv3DelegateBase(object):
             raise exceptions.GENIv3ForbiddenError("Could not determine the client SSL certificate")
         # test the credential
         try:
-            cred_verifier = extensions.geni.CredentialVerifier(cert_root)
+            cred_verifier = extensions.geni.util.cred_util.CredentialVerifier(cert_root)
             cred_verifier.verify_from_strings(client_cert, geni_credentials, slice_urn, privileges)
         except Exception as e:
             raise exceptions.GENIv3ForbiddenError(str(e))
