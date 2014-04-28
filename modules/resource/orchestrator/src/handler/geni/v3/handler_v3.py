@@ -16,7 +16,7 @@ from handler.geni.v3 import exceptions as geni_ex
 # import handler.geni.v3.extensions.sfa.trust.gid as gid
 
 from core import log
-logger = log.getLogger("rohandlergeniv3")
+logger = log.getLogger("handlergeniv3")
 
 # import ast
 
