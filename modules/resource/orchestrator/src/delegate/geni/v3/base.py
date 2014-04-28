@@ -1,5 +1,11 @@
 from core.config import ConfParser
-from handler.geni.v3 import exceptions as geni_ex
+from handler.geni.v3 import exceptions
+from handler.geni.v3 import extensions
+from lxml import etree
+from lxml.builder import ElementMaker
+
+from core import log
+logger=log.getLogger('geniv3delegatebase')
 
 import ast
 import os
@@ -92,7 +98,7 @@ class GENIv3DelegateBase(object):
         """Overwrite by AM developer. Shall return an RSpec version 3 (advertisement) or raise an GENIv3...Error.
         If {geni_available} is set, only return availabe resources.
         For full description see http://groups.geni.net/geni/wiki/GAPI_AM_API_V3#ListResources"""
-        raise geni_ex.GENIv3GeneralError("Method not implemented yet")
+        raise exceptions.GENIv3GeneralError("Method not implemented yet")
 
     def describe(self, urns, client_cert, credentials):
         """Overwrite by AM developer. Shall return an RSpec version 3 (manifest) or raise an GENIv3...Error.
@@ -101,7 +107,7 @@ class GENIv3DelegateBase(object):
         For more information on possible {urns} see http://groups.geni.net/geni/wiki/GAPI_AM_API_V3/CommonConcepts#urns
 
         For full description see http://groups.geni.net/geni/wiki/GAPI_AM_API_V3#Describe"""
-        raise geni_ex.GENIv3GeneralError("Method not implemented yet")
+        raise exceptions.GENIv3GeneralError("Method not implemented yet")
 
     def allocate(self, slice_urn, client_cert, credentials, rspec, end_time=None):
         """Overwrite by AM developer. 
@@ -109,7 +115,7 @@ class GENIv3DelegateBase(object):
         - a RSpec version 3 (manifest) of newly allocated slivers 
         - a list of slivers of the format:
             [{'geni_sliver_urn' : String,
-              'geni_expires'    : Python-Date,
+              'exceptionspires'    : Python-Date,
               'geni_allocation_status' : one of the ALLOCATION_STATE_xxx}, 
              ...]
         Please return like so: "return respecs, slivers"
@@ -118,7 +124,7 @@ class GENIv3DelegateBase(object):
         >>> This is the first part of what CreateSliver used to do in previous versions of the AM API. The second part is now done by Provision, and the final part is done by PerformOperationalAction.
         
         For full description see http://groups.geni.net/geni/wiki/GAPI_AM_API_V3#Allocate"""
-        raise geni_ex.GENIv3GeneralError("Method not implemented yet")
+        raise exceptions.GENIv3GeneralError("Method not implemented yet")
 
     def renew(self, urns, client_cert, credentials, expiration_time, best_effort):
         """Overwrite by AM developer. 
@@ -126,7 +132,7 @@ class GENIv3DelegateBase(object):
             [{'geni_sliver_urn'         : String,
               'geni_allocation_status'  : one of the ALLOCATION_STATE_xxx,
               'geni_operational_status' : one of the OPERATIONAL_STATE_xxx,
-              'geni_expires'            : Python-Date,
+              'exceptionspires'            : Python-Date,
               'geni_error'              : optional String}, 
              ...]
         
@@ -138,7 +144,7 @@ class GENIv3DelegateBase(object):
         For more information on possible {urns} see http://groups.geni.net/geni/wiki/GAPI_AM_API_V3/CommonConcepts#urns
 
         For full description see http://groups.geni.net/geni/wiki/GAPI_AM_API_V3#Renew"""
-        raise geni_ex.GENIv3GeneralError("Method not implemented yet")
+        raise exceptions.GENIv3GeneralError("Method not implemented yet")
 
     def provision(self, urns, client_cert, credentials, best_effort, end_time, geni_users):
         """Overwrite by AM developer. 
@@ -148,7 +154,7 @@ class GENIv3DelegateBase(object):
             [{'geni_sliver_urn'         : String,
               'geni_allocation_status'  : one of the ALLOCATION_STATE_xxx,
               'geni_operational_status' : one of the OPERATIONAL_STATE_xxx,
-              'geni_expires'            : Python-Date,
+              'exceptionspires'            : Python-Date,
               'geni_error'              : optional String}, 
              ...]
         Please return like so: "return respecs, slivers"
@@ -162,7 +168,7 @@ class GENIv3DelegateBase(object):
         For more information on possible {urns} see http://groups.geni.net/geni/wiki/GAPI_AM_API_V3/CommonConcepts#urns
 
         For full description see http://groups.geni.net/geni/wiki/GAPI_AM_API_V3#Provision"""
-        raise geni_ex.GENIv3GeneralError("Method not implemented yet")
+        raise exceptions.GENIv3GeneralError("Method not implemented yet")
 
     def status(self, urns, client_cert, credentials):
         """Overwrite by AM developer. 
@@ -172,7 +178,7 @@ class GENIv3DelegateBase(object):
             [{'geni_sliver_urn'         : String,
               'geni_allocation_status'  : one of the ALLOCATION_STATE_xxx,
               'geni_operational_status' : one of the OPERATIONAL_STATE_xxx,
-              'geni_expires'            : Python-Date,
+              'exceptionspires'            : Python-Date,
               'geni_error'              : optional String}, 
              ...]
         Please return like so: "return slice_urn, slivers"
@@ -181,7 +187,7 @@ class GENIv3DelegateBase(object):
         For more information on possible {urns} see http://groups.geni.net/geni/wiki/GAPI_AM_API_V3/CommonConcepts#urns
         
         For full description see http://groups.geni.net/geni/wiki/GAPI_AM_API_V3#Status"""
-        raise geni_ex.GENIv3GeneralError("Method not implemented yet")
+        raise exceptions.GENIv3GeneralError("Method not implemented yet")
 
     def perform_operational_action(self, urns, client_cert, credentials, action, best_effort):
         """Overwrite by AM developer. 
@@ -189,7 +195,7 @@ class GENIv3DelegateBase(object):
             [{'geni_sliver_urn'         : String,
               'geni_allocation_status'  : one of the ALLOCATION_STATE_xxx,
               'geni_operational_status' : one of the OPERATIONAL_STATE_xxx,
-              'geni_expires'            : Python-Date,
+              'exceptionspires'            : Python-Date,
               'geni_error'              : optional String}, 
              ...]
 
@@ -201,14 +207,14 @@ class GENIv3DelegateBase(object):
         For more information on possible {urns} see http://groups.geni.net/geni/wiki/GAPI_AM_API_V3/CommonConcepts#urns
         
         For full description see http://groups.geni.net/geni/wiki/GAPI_AM_API_V3#PerformOperationalAction"""
-        raise geni_ex.GENIv3GeneralError("Method not implemented yet")
+        raise exceptions.GENIv3GeneralError("Method not implemented yet")
 
     def delete(self, urns, client_cert, credentials, best_effort):
         """Overwrite by AM developer. 
         Shall return a list of slivers of the following format or raise an GENIv3...Error:
             [{'geni_sliver_urn'         : String,
               'geni_allocation_status'  : one of the ALLOCATION_STATE_xxx,
-              'geni_expires'            : Python-Date,
+              'exceptionspires'            : Python-Date,
               'geni_error'              : optional String}, 
              ...]
 
@@ -219,14 +225,14 @@ class GENIv3DelegateBase(object):
         For more information on possible {urns} see http://groups.geni.net/geni/wiki/GAPI_AM_API_V3/CommonConcepts#urns
 
         For full description see http://groups.geni.net/geni/wiki/GAPI_AM_API_V3#Delete"""
-        raise geni_ex.GENIv3GeneralError("Method not implemented yet")
+        raise exceptions.GENIv3GeneralError("Method not implemented yet")
 
     def shutdown(self, slice_urn, client_cert, credentials):
         """Overwrite by AM developer. 
         Shall return True or False or raise an GENIv3...Error.
 
         For full description see http://groups.geni.net/geni/wiki/GAPI_AM_API_V3#Shutdown"""
-        raise geni_ex.GENIv3GeneralError("Method not implemented yet")
+        raise exceptions.GENIv3GeneralError("Method not implemented yet")
     
     def auth(self, client_cert, credentials, slice_urn=None, privileges=()):
         """
@@ -272,17 +278,19 @@ class GENIv3DelegateBase(object):
         # Get the cert_root from the configuration settings
         root_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../../../"))
         cert_root = os.path.join(root_path, self.certificates_section.get("cert_root"))
+        logger.debug("client_certificate trusted, present at: %s" % str(cert_root))
+        logger.debug("client_certificate:\n%s" % str(client_cert))
 
         if client_cert == None:
-            raise geni_ex.GENIv3ForbiddenError("Could not determine the client SSL certificate")
+            raise exceptions.GENIv3ForbiddenError("Could not determine the client SSL certificate")
         # test the credential
         try:
-            cred_verifier = ext.geni.CredentialVerifier(cert_root)
+            cred_verifier = extensions.geni.CredentialVerifier(cert_root)
             cred_verifier.verify_from_strings(client_cert, geni_credentials, slice_urn, privileges)
         except Exception as e:
-            raise geni_ex.GENIv3ForbiddenError(str(e))
+            raise exceptions.GENIv3ForbiddenError(str(e))
         
-        user_gid = gid.GID(string=client_cert)
+        user_gid = extensions.sfa.trust.gid.GID(string=client_cert)
         user_urn = user_gid.get_urn()
         user_uuid = user_gid.get_uuid()
         user_email = user_gid.get_email()
