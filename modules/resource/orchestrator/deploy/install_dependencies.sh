@@ -3,8 +3,8 @@
 echo "Installing RO manageDB dependencies..."
 
 SUDO=`which sudo`
-PCKs='python-pip mongodb-server python-lxml python-m2crypto'
-$SUDO apt-get install -y ${PCKs}
+APT="python-pip mongodb-server python-lxml python-m2crypto python-dateutil"
+$SUDO apt-get install -y ${APT}
 
 PIP=`which pip`
 $SUDO $PIP install -r pip_dependencies
