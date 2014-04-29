@@ -12,6 +12,13 @@ class DelegateBaseError(CoreException):
         return "[%s] %s (%s)" % (self.name, self.description, self.comment)
 
 
+class GeneralError(DelegateBaseError):
+    def __init__(self, comment):
+        super(self.__class__, self).__init__(0, 'GeneralError',
+                                             "General or Unknown Error",
+                                             comment)
+
+
 class DHCPLeaseNotFound(DelegateBaseError):
     def __init__(self, comment):
         super(self.__class__, self).__init__(1, 'DHCPLeaseNotFound',
