@@ -15,7 +15,7 @@ sys.path.insert(1, "../..")
 import tools
 
 arg = None
-# Get the cert_root from the configuration settings
+# TODO: Get the cert_root from the configuration settings
 cert_root = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../../../cert"))
 
 def handler_call(method_name, params=[], user_name="alice"):
@@ -67,7 +67,7 @@ class TestGENIv3API(unittest.TestCase):
 
     def test_list_resources(self):
         #user_certfile = os.path.join(cert_root, "alice-cert.pem")
-        # FIXME: Certificate is not a GID. This will not work
+        # FIXME: Certificate is not GID-like. Importing it as such will not work
         #caller_gid = gid.GID(filename=user_certfile)
         #object_gid = caller_gid
         #caller_hrn = "geni.gpo.gcf.alice"
@@ -87,7 +87,7 @@ class TestGENIv3API(unittest.TestCase):
         # Any AM is required to honor the following options
         geni_v3_options = {
             "geni_available": True,
-            # XXX: should be 'compressed' (as in GENIv3), not 'compress' (as in AMsoil)
+            # XXX: it should say 'compressed' (as for GENIv3), not 'compress' (as in AMsoil)
             # http://groups.geni.net/geni/wiki/GAPI_AM_API_V3#ListResources
             #"geni_compressed": True,
             "geni_compress": True,
@@ -104,6 +104,7 @@ class TestGENIv3API(unittest.TestCase):
         #print "... code: %s" % str(code)
         #print "... value: %s" % str(value)
         self.assertEqual(code.get("geni_code", None), 0) # no error
+        self.assertIsInstance(code, dict)
         self.assertIsInstance(value, str)
 
     def runTest(self):
@@ -111,10 +112,11 @@ class TestGENIv3API(unittest.TestCase):
         Explicitly call tests in order to be invoked through test suite.
         """
         self.test_get_version()
+        self.test_list_resources()
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:
         arg = sys.argv[1]
     del sys.argv[1:]
     unittest.main(verbosity=0, exit=True)
-    print_warnings()
+    tools.print_warnings()
