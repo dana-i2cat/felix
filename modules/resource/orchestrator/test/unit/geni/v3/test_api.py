@@ -118,5 +118,6 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         arg = sys.argv[1]
     del sys.argv[1:]
-    unittest.main(verbosity=0, exit=True)
+    unittest.main(verbosity=2, exit=True)
+    # TODO: sys.exit with code to notify Jenkins about validity (or not) of tests
     tools.print_warnings()
