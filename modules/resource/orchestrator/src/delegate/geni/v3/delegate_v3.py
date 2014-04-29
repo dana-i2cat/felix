@@ -1,6 +1,8 @@
 from delegate.geni.v3.base import GENIv3DelegateBase
+from delegate.geni.v3.db_manager import DBManager
+from delegate.geni.v3.rm_adaptor import AdaptorFactory
 import core
-logger = core.log.getLogger("rodelegategeniv3")
+logger = core.log.getLogger("geniv3delegate")
 
 from handler.geni.v3 import exceptions as geni_ex
 from delegate.geni.v3 import rm_adaptor
@@ -42,11 +44,34 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def list_resources(self, client_cert, credentials, geni_available):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
+        logger.debug('It is needed to authenticate the user...')
+        client_urn, client_uuid, client_email =\
+            self.auth(client_cert, credentials, None, ('listslices',))
 
-        client_urn, client_uuid, client_email = self.auth(client_cert,
-                                                          credentials,
-                                                          None,
-                                                          ('listslices',))
+        logger.info("Client urn=%s, uuid=%s, email=%s" %
+            (client_urn, client_uuid, client_email,))
+
+        # retrieve the list of configured RMs or peer-RO from the mongoDB
+        peers = DBManager().get_all()
+        logger.debug("Configured peers=%s" % (peers,))
+
+        # for every peer, try to get the list of available resources
+        try:
+            for peer in peers:
+                adaptor = AdaptorFactory.create(type_=peer.get('type'),
+                                                proto=peer.get('protocol'),
+                                                user=peer.get('user'),
+                                                pswd=peer.get('password'),
+                                                addr=peer.get('address'),
+                                                port=peer.get('port'),
+                                                ep=peer.get('endpoint'))
+
+                logger.debug("RM-Adapter=%s" % (adaptor,))
+
+        # we need to be more specific here!
+        except Exception as e:
+            raise geni_ex.GENIv3GeneralError(str(e))
+
         root_node = self.lxml_ad_root()
         E = self.lxml_ad_element_maker('dhcp')
         for lease in self._resource_manager.get_all_leases():
