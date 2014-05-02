@@ -66,23 +66,10 @@ class TestGENIv3API(unittest.TestCase):
         self.assertEquals(value["geni_api"], "3")
 
     def test_list_resources(self):
-        #user_certfile = os.path.join(cert_root, "alice-cert.pem")
-        # FIXME: Certificate is not GID-like. Importing it as such will not work
-        #caller_gid = gid.GID(filename=user_certfile)
-        #object_gid = caller_gid
-        #caller_hrn = "geni.gpo.gcf.alice"
-        #expiration = datetime.datetime.utcnow() + datetime.timedelta(days=100)
-        #typename = "user"
-        #issuer_keyfile = os.path.join(cert_root, "server.key")
-        #issuer_certfile = os.path.join(cert_root, "server.crt")
-        #trusted_roots = os.path.join(cert_root, "trusted", "server.pem")
-        #user_credential = cred_util.create_credential(caller_gid, object_gid, expiration, typename, issuer_keyfile, issuer_certfile, trusted_roots, delegatable=False)
-        user_credential = open(os.path.join(cert_root, "credentials", "alice-cred.xml"), "r").readlines()
-        user_credential = "".join(user_credential)
-
-        # FIXME: Shall directly contact gcf-ch for credential or implement credential retrieving method
-        # Equivalent to 'python src/omni.py getusercred'
-        #user_credential = tools.getusercred(geni_api = 3)
+        # Old: manually obtain credential
+        #user_credential = open(os.path.join(cert_root, "credentials", "alice-cred.xml"), "r").read()
+        # New: contacting GCH for it by passing the certificate. Equivalent to 'omni.py getusercred'
+        (text, user_credential) = tools.getusercred(geni_api = 3)
 
         geni_v3_credentials = [{
             "geni_type": "geni_sfa",

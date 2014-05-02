@@ -1,9 +1,9 @@
-import sys
 import os.path
 import pprint
+import re
+import sys
 import xmlrpclib
 
-#from dossl import *
 import credparsing as credutils
 
 def api_call(method_name, endpoint, params=[], user_name='alice', verbose=False):
@@ -15,11 +15,8 @@ def api_call(method_name, endpoint, params=[], user_name='alice', verbose=False)
 
 def ch_call(method_name, endpoint="", params=[], user_name='alice', verbose=False):
     key_path, cert_path = "%s-key.pem" % (user_name,), "%s-cert.pem" % (user_name,)
-    res = ssl_call(method_name, {}, "/", key_path=key_path, cert_path=cert_path, host='127.0.0.1', port=8000)
-    print "\n\n\n\nRES........... :%s\n\n\n" % str(res)
-    if verbose:
-        print_call(method_name, params, res)
-    return res.get('code', None), res.get('value', None), res.get('output', None)
+    res = ssl_call(method_name, params, endpoint, key_path=key_path, cert_path=cert_path, host='127.0.0.1', port=8000)
+    return res
 
 class SafeTransportWithCert(xmlrpclib.SafeTransport):
     """Helper class to force the right certificate for the transport class."""
@@ -45,37 +42,24 @@ def ssl_call(method_name, params, endpoint, key_path='alice-key.pem', cert_path=
         raise RuntimeError("Key or cert file not found (%s, %s)" % (key_path, cert_path))
     transport = SafeTransportWithCert(key_path, cert_path)
     proxy = xmlrpclib.ServerProxy("https://%s:%s/%s" % (host, str(port), endpoint), transport=transport)
-    print "........... before error"
     # return proxy.get_version()
     method = getattr(proxy, method_name)
-    #print ".......... method: %s" % str(method)
     return method(*params)
 
-#def load_framework(config, opts):
-#    """Select the Control Framework to use from the config, and instantiate the proper class."""
-#
-#    cf_type = config['selected_framework']['type']
-#    config['logger'].debug('Using framework type %s', cf_type)
-#
-#    framework_mod = __import__('omnilib.frameworks.framework_%s' % cf_type, fromlist=['omnilib.frameworks'])
-#    config['selected_framework']['logger'] = config['logger']
-#    framework = framework_mod.Framework(config['selected_framework'], opts)
-#    return framework
-
-#def wrap_cred(self, cred):
-#    """
-#    Wrap the given cred in the appropriate struct for this framework.
-#    """
-#    if isinstance(cred, dict):
-#        print "Called wrap on a cred that's already a dict? %s", cred
-#        return cred
-#    elif not isinstance(cred, str):
-#        print "Called wrap on non string cred? Stringify. %s", cred
-#        cred = str(cred)
-#    ret = dict(geni_type="geni_sfa", geni_version="2", geni_value=cred)
-#    if credutils.is_valid_v3(self.logger, cred):
-#        ret["geni_version"] = "3"
-#    return ret
+def wrap_cred(cred):
+    """
+    Wrap the given cred in the appropriate struct for this framework.
+    """
+    if isinstance(cred, dict):
+        print "Called wrap on a cred that's already a dict? %s", cred
+        return cred
+    elif not isinstance(cred, str):
+        print "Called wrap on non string cred? Stringify. %s", cred
+        cred = str(cred)
+    ret = dict(geni_type="geni_sfa", geni_version="2", geni_value=cred)
+    if credutils.is_valid_v3(None, cred):
+        ret["geni_version"] = "3"
+    return ret
 
 def getusercred(user_cert_filename = "alice-cert.pem", geni_api = 3):
     """Retrieve your user credential. Useful for debugging.
@@ -102,66 +86,19 @@ def getusercred(user_cert_filename = "alice-cert.pem", geni_api = 3):
     creds_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '../..', 'cert'))
     cert_path = os.path.join(creds_path, user_cert_filename)
     user_cert = open(cert_path, "r").read()
-
-#    ch = make_client(config['ch'], self.key, self.cert,
-#                           verbose=config['verbose'])
-#            return omnilib.xmlrpc.client.make_client(url, keyfile, certfile,
-#                                                 verbose=verbose,
-#                                                 timeout=timeout,
-#                                                 allow_none=allow_none)
-
-# res = ssl_call(method_name, params, endpoint, key_path=key_path, cert_path=cert_path)
-
+    # Contacting GCH for it by passing the certificate
+    cred = ch_call("CreateUserCredential", params = [user_cert])
+    #(cred, message) = ch_call(method_name = "CreateUserCredential", endpoint = "", params = {"params": user_cert})
     if geni_api >= 3:
-        #(cred, message) = self.framework.get_user_cred_struct()
-#        (cred, message) = ssl_call(method_name, params, endpoint, key_path=key_path, cert_path=cert_path)
-#        (cred, message) = _do_ssl(self, None, ("Create user credential on GCF CH %s" % self.config['ch']), self.ch.CreateUserCredential, user_cert)
-        (cred, message) = ch_call("CreateUserCredential")
         if cred:
             cred = wrap_cred(cred)
-    else:
-        #(cred, message) = self.framework.get_user_cred()
-#        (cred, message) = _do_ssl(self, None, ("Create user credential on GCF CH %s" % self.config['ch']), self.ch.CreateUserCredential, user_cert)
-        (cred, message) = ch_call("CreateUserCredential")
     credxml = credutils.get_cred_xml(cred)
-    if cred is None or credxml is None or credxml == "":
-        msg = "Got no valid user credential from framework: %s" % message
-#        if self.opts.devmode:
-#            self.logger.warn(msg + " ... but continuing")
-#            credxml = cred
-#        else:
-#            self._raise_omni_error(msg)
-#    target = credutils.get_cred_target_urn(None, cred)
     # pull the username out of the cred
     # <owner_urn>urn:publicid:IDN+geni:gpo:gcf+user+alice</owner_urn>
     user = ""
     usermatch = re.search(r"\<owner_urn>urn:publicid:IDN\+.+\+user\+(\w+)\<\/owner_urn\>", credxml)
     if usermatch:
         user = usermatch.group(1)
-#    if self.opts.output:
-#        if self.opts.usercredfile and self.opts.usercredfile.strip() != "":
-#            fname = self.opts.usercredfile
-#        else:
-#            fname = self.opts.framework + "-usercred"
-#            if user != "":
-#                fname = user + "-" + fname
-#            if self.opts.prefix and self.opts.prefix.strip() != "":
-#                fname = self.opts.prefix.strip() + "-" + fname
-#        filename = self._save_cred(fname, cred)
-#        self.logger.info("Wrote %s user credential to %s" % (user, filename))
-#        self.logger.debug("User credential:\n%r", cred)
-#        return "Saved user %s credential to %s" % (user, filename), cred
-#    elif self.opts.tostdout:
-    if user != "":
-        print "Writing user %s usercred to STDOUT per options", user
-    else:
-        print "Writing usercred to STDOUT per options"
-    # pprint does bad on XML, but OK on JSON
-    print cred
-    if user:
-        return "Printed user %s credential to stdout" % user, cred
-    else:
-        return "Printed user credential to stdout", cred
     return "Retrieved %s user credential" % user, cred
 
 def get_creds_file_contents(filename):
