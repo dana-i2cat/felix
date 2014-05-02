@@ -60,14 +60,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
         try:
             for peer in peers:
                 logger.debug("peer: %s" % str(peer))
-                adaptor = AdaptorFactory.create(type = peer.get('type'),
-                                                protocol = peer.get('protocol'),
-                                                user = peer.get('user'),
-                                                password = peer.get('password'),
-                                                address = peer.get('address'),
-                                                port = peer.get('port'),
-                                                endpoint = peer.get('endpoint'))
-
+                adaptor = AdaptorFactory.create(type=peer.get('type'),
+                                                protocol=peer.get('protocol'),
+                                                user=peer.get('user'),
+                                                password=peer.get('password'),
+                                                address=peer.get('address'),
+                                                port=peer.get('port'),
+                                                endpoint=peer.get('endpoint'))
                 logger.debug("RM-Adapter=%s" % (adaptor,))
 
                 resources = adaptor.list_resources(credentials, geni_available)
