@@ -54,12 +54,12 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         # Retrieve the list of configured RMs or peer-RO from the mongoDB
         peers = DBManager().get_all()
-        logger.debug("Configured peers=%s" % (peers,))
+        logger.debug("Configured peers=%d" % (len(peers),))
 
         # For every peer, try to get the list of available resources
         try:
             for peer in peers:
-                logger.debug("peer: %s" % str(peer))
+                logger.debug("peer=%s" % str(peer))
                 adaptor = AdaptorFactory.create(type=peer.get('type'),
                                                 protocol=peer.get('protocol'),
                                                 user=peer.get('user'),
