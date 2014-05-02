@@ -2,13 +2,13 @@ import xmlrpclib
 from delegate.geni.v3 import exceptions
 
 
-def format_uri(proto, user, pswd, addr, port, ep):
-    uri_ = proto + '://'
-    if user and pswd:
-        uri_ += user + ':' + pswd + '@'
+def format_uri(protocol, user, password, address, port, endpoint):
+    uri = "%s://" % str(protocol)
+    if user and password:
+        uri += "%s:%s@" % (str(user), str(password),)
 
-    uri_ += addr + ':' + port + '/' + ep
-    return uri_
+    uri += "%s:%s/%s" % (str(address), str(port), str(endpoint))
+    return uri
 
 
 class AdaptorFactory(xmlrpclib.ServerProxy):
@@ -16,13 +16,12 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
         xmlrpclib.ServerProxy.__init__(self, uri)
 
     @staticmethod
-    def create(type_, proto, user, pswd, addr, port, ep):
-        uri = format_uri(proto, user, pswd, addr, port, ep)
-
-        if type_ == 'virtualisation':
+    def create(type, protocol, user, password, address, port, endpoint):
+        uri = format_uri(protocol, user, password, address, port, endpoint)
+        if type == 'virtualisation':
             return CRMAdaptor(uri)
 
-        elif type_ == 'sdn_networking':
+        elif type == 'sdn_networking':
             return SDNRMAdaptor(uri)
 
         raise exceptions.GeneralError("Type not implemented yet!")
