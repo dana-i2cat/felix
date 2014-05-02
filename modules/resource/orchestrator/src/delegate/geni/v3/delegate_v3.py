@@ -48,8 +48,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
         client_urn, client_uuid, client_email =\
             self.auth(client_cert, credentials, None, ('listslices',))
 
-        logger.info("Client urn=%s, uuid=%s, email=%s" %
-            (client_urn, client_uuid, client_email,))
+        logger.info("Client urn=%s, uuid=%s, email=%s" % (client_urn,
+                                                          client_uuid,
+                                                          client_email,))
 
         # retrieve the list of configured RMs or peer-RO from the mongoDB
         peers = DBManager().get_all()
@@ -65,10 +66,14 @@ class GENIv3Delegate(GENIv3DelegateBase):
                                                 addr=peer.get('address'),
                                                 port=peer.get('port'),
                                                 ep=peer.get('endpoint'))
-
                 logger.debug("RM-Adapter=%s" % (adaptor,))
 
-        # we need to be more specific here!
+                resources = adaptor.list_resources(credentials, geni_available)
+                logger.debug("Resources=%s" % (resources,))
+
+        except rms_ex.RPCError as e:
+            raise geni_ex.GENIv3RPCError(str(e))
+
         except Exception as e:
             raise geni_ex.GENIv3GeneralError(str(e))
 

@@ -19,20 +19,8 @@ class GeneralError(DelegateBaseError):
                                              comment)
 
 
-class DHCPLeaseNotFound(DelegateBaseError):
+class RPCError(DelegateBaseError):
     def __init__(self, comment):
-        super(self.__class__, self).__init__(1, 'DHCPLeaseNotFound',
-                                             "Lease Not Found", comment)
-
-
-class DHCPMaxLeaseDurationExceeded(DelegateBaseError):
-    def __init__(self, comment):
-        super(self.__class__, self).__init__(2, 'DHCPMaxLeaseDurationExceeded',
-                                             "Max Lease Duration Exceeded",
+        super(self.__class__, self).__init__(1, 'RPCError',
+                                             "Remote Procedure Call Error",
                                              comment)
-
-
-class DHCPLeaseAlreadyTaken(DelegateBaseError):
-    def __init__(self, comment):
-        super(self.__class__, self).__init__(3, 'DHCPLeaseAlreadyTaken',
-                                             "Lease Already Taken". comment)
