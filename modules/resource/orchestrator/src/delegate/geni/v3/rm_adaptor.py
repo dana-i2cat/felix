@@ -20,10 +20,10 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
     @staticmethod
     def create(type, protocol, user, password, address, port, endpoint):
         uri = format_uri(protocol, user, password, address, port, endpoint)
-        if type == 'virtualisation':
-            return CRMAdaptor(uri)
+        if type in ["virtualisation", "sdn"]:
+            return RMAdaptor(uri)
         raise exceptions.GeneralError("Type not implemented yet!")
 
-class CRMAdaptor(AdaptorFactory):
+class RMAdaptor(AdaptorFactory):
     def __init__(self, uri):
         AdaptorFactory.__init__(self, uri)

@@ -49,6 +49,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         GENI v3 API, only. For the RSpec extensions, we ask the delegate."""
         # no authentication necessary
 
+        # TODO: Move to delegate and dispatch requests there
         try:
             request_extensions = self._delegate.get_request_extensions_list()
             ad_extensions = self._delegate.get_ad_extensions_list()
