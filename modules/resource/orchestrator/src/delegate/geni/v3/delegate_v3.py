@@ -377,23 +377,23 @@ class GENIv3Delegate(GENIv3DelegateBase):
             r = E.resource()
             r.append(E.ip(lease["ip_str"]))
             # TODO add more info here
-            manifest.append(r)
+from delegate.geni.v3.base import GENIv3DelegateBase
+from delegate.geni.v3.db_manager import DBManager
+from delegate.geni.v3.rm_adaptor import AdaptorFactory
+from handler.geni.v3 import exceptions as geni_ex
+from delegate.geni.v3 import rm_adaptor
+from delegate.geni.v3 import exceptions as rms_ex
 
-        return manifest
+from lxml.builder import ElementMaker
+from lxml import etree
 
-    # ---------------------------------
-    # Conversion to XML
-    # ---------------------------------
-    def lxml_ad_root(self):
-        """Returns a xml root node with the namespace extensions specified by self.get_ad_extensions_mapping."""
-        return etree.Element("rspec", self.get_ad_extensions_mapping(), type="advertisement")
+import core
+logger = core.log.getLogger("geniv3delegate")
 
-    def lxml_ad_element_maker(self, prefix):
-        """Returns a lxml.builder.ElementMaker configured for avertisements and the namespace given by {prefix}."""
-        ext = self.get_ad_extensions_mapping()
-        return ElementMaker(namespace=ext[prefix], nsmap=ext)
-
-    def lxml_to_string(self, rspec):
-        """Converts a lxml root node to string (for returning to the client)."""
-        return etree.tostring(rspec, pretty_print=True)
-
+class GENIv3Delegate(GENIv3DelegateBase):
+    """
+    """
+    # TODO should also include a changing component, identified by a config key
+    URN_PREFIX = 'urn:RO'
+from delegate.geni.v3.base import GENIv3DelegateBase
+from delegate.geni.v3.db_manager import DBManager
