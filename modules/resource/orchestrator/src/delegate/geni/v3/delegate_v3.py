@@ -51,40 +51,43 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.info("Client urn=%s, uuid=%s, email=%s" %
             (client_urn, client_uuid, client_email,))
 
-        # retrieve the list of configured RMs or peer-RO from the mongoDB
+        # Retrieve the list of configured RMs or peer-RO from the mongoDB
         peers = DBManager().get_all()
         logger.debug("Configured peers=%s" % (peers,))
 
-        # for every peer, try to get the list of available resources
+        # For every peer, try to get the list of available resources
         try:
             for peer in peers:
-                adaptor = AdaptorFactory.create(type_=peer.get('type'),
-                                                proto=peer.get('protocol'),
-                                                user=peer.get('user'),
-                                                pswd=peer.get('password'),
-                                                addr=peer.get('address'),
-                                                port=peer.get('port'),
-                                                ep=peer.get('endpoint'))
+                logger.debug("peer: %s" % str(peer))
+                adaptor = AdaptorFactory.create(type = peer.get('type'),
+                                                protocol = peer.get('protocol'),
+                                                user = peer.get('user'),
+                                                password = peer.get('password'),
+                                                address = peer.get('address'),
+                                                port = peer.get('port'),
+                                                endpoint = peer.get('endpoint'))
 
                 logger.debug("RM-Adapter=%s" % (adaptor,))
 
-        # we need to be more specific here!
+        # TODO: We need to be more specific here!
         except Exception as e:
             raise geni_ex.GENIv3GeneralError(str(e))
 
-        root_node = self.lxml_ad_root()
-        E = self.lxml_ad_element_maker('dhcp')
-        for lease in self._resource_manager.get_all_leases():
-            if (not lease["available"]) and geni_available:
-                continue  # taking care of geni_available
+        return "TODO: Craft final XML with information from every RM"
 
-            r = E.resource()
-            r.append(E.available("True" if lease["available"] else "False"))
-            # possible to list other properties
-            r.append(E.ip(lease["ip_str"]))
-            root_node.append(r)
-
-        return self.lxml_to_string(root_node)
+#        root_node = self.lxml_ad_root()
+#        E = self.lxml_ad_element_maker('dhcp')
+#        for lease in self._resource_manager.get_all_leases():
+#            if (not lease["available"]) and geni_available:
+#                continue  # taking care of geni_available
+#
+#            r = E.resource()
+#            r.append(E.available("True" if lease["available"] else "False"))
+#            # possible to list other properties
+#            r.append(E.ip(lease["ip_str"]))
+#            root_node.append(r)
+#
+#        return self.lxml_to_string(root_node)
 
     def describe(self, urns, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
