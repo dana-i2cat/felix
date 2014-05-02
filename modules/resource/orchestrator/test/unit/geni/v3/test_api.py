@@ -73,7 +73,7 @@ class TestGENIv3API(unittest.TestCase):
 
         geni_v3_credentials = [{
             "geni_type": "geni_sfa",
-            "geni_value": user_credential,
+            "geni_value": user_credential["geni_value"],
         }]
         # Any AM is required to honor the following options
         geni_v3_options = {
@@ -105,10 +105,13 @@ class TestGENIv3API(unittest.TestCase):
         self.test_get_version()
         self.test_list_resources()
 
+def main():
+    unittest.main(verbosity=2, exit=True)
+    tools.print_warnings()
+
 if __name__ == '__main__':
     if len(sys.argv) == 2:
         arg = sys.argv[1]
     del sys.argv[1:]
-    unittest.main(verbosity=2, exit=True)
     # TODO: sys.exit with code to notify Jenkins about validity (or not) of tests
-    tools.print_warnings()
+    sys.exit(main())

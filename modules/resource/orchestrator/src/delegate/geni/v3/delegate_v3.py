@@ -1,13 +1,15 @@
 from delegate.geni.v3.base import GENIv3DelegateBase
 from delegate.geni.v3.db_manager import DBManager
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
-import core
-logger = core.log.getLogger("geniv3delegate")
-
 from handler.geni.v3 import exceptions as geni_ex
 from delegate.geni.v3 import rm_adaptor
 from delegate.geni.v3 import exceptions as rms_ex
 
+from lxml.builder import ElementMaker
+from lxml import etree
+
+import core
+logger = core.log.getLogger("geniv3delegate")
 
 class GENIv3Delegate(GENIv3DelegateBase):
     """
@@ -21,15 +23,15 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def get_request_extensions_mapping(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        return {'dhcp': 'http://example.com/dhcp'}  # /request.xsd
+        return {'resource-orchestrator': 'http://example.com/resource-orchestrator'}  # /request.xsd
 
     def get_manifest_extensions_mapping(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        return {'dhcp': 'http://example.com/dhcp'}  # /manifest.xsd
+        return {'resource-orchestrator': 'http://example.com/resource-orchestrator'}  # /manifest.xsd
 
     def get_ad_extensions_mapping(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        return {'dhcp': 'http://example.com/dhcp'}  # /ad.xsd
+        return {'resource-orchestrator': 'http://example.com/resource-orchestrator'}  # /ad.xsd
 
     def is_single_allocation(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase.
@@ -55,6 +57,10 @@ class GENIv3Delegate(GENIv3DelegateBase):
         peers = DBManager().get_all()
         logger.debug("Configured peers=%s" % (peers,))
 
+        # Prepare root for XML tree
+        root_node = self.lxml_ad_root()
+        E = self.lxml_ad_element_maker("resource-orchestrator")
+
         # For every peer, try to get the list of available resources
         try:
             for peer in peers:
@@ -66,28 +72,44 @@ class GENIv3Delegate(GENIv3DelegateBase):
                                                 address = peer.get('address'),
                                                 port = peer.get('port'),
                                                 endpoint = peer.get('endpoint'))
-
                 logger.debug("RM-Adapter=%s" % (adaptor,))
+
+#                geni_v3_credentials = [{
+#                    "geni_value": credentials,
+#                    "geni_version": 3,
+#                    "geni_type": "geni_sfa",
+#                }]
+                # Retrieve credentials alone
+                geni_v3_credentials = credentials[0]["geni_value"]
+
+                # Any AM is required to honor the following options
+                geni_v3_options = {
+                    "geni_available": True,
+                    # XXX: it should say 'compressed' (as for GENIv3), not 'compress' (as in AMsoil)
+                    # http://groups.geni.net/geni/wiki/GAPI_AM_API_V3#ListResources
+                    #"geni_compressed": True,
+                    "geni_compress": True,
+                    "geni_rspec_version": {
+                        "type": "geni",
+                        "version": "3",
+                    }
+                }
+                params = [
+                    geni_v3_credentials,
+                    geni_v3_options,
+                ]
+
+                result = adaptor.ListResources(*params)
+                r = E.resource()
+                # Add retrieved resources to node within XML tree
+                r.append(etree.fromstring(result["value"]))
+                root_node.append(r)
 
         # TODO: We need to be more specific here!
         except Exception as e:
             raise geni_ex.GENIv3GeneralError(str(e))
 
-        return "TODO: Craft final XML with information from every RM"
-
-#        root_node = self.lxml_ad_root()
-#        E = self.lxml_ad_element_maker('dhcp')
-#        for lease in self._resource_manager.get_all_leases():
-#            if (not lease["available"]) and geni_available:
-#                continue  # taking care of geni_available
-#
-#            r = E.resource()
-#            r.append(E.available("True" if lease["available"] else "False"))
-#            # possible to list other properties
-#            r.append(E.ip(lease["ip_str"]))
-#            root_node.append(r)
-#
-#        return self.lxml_to_string(root_node)
+        return self.lxml_to_string(root_node)
 
     def describe(self, urns, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
@@ -106,16 +128,16 @@ class GENIv3Delegate(GENIv3DelegateBase):
         # parse RSpec -> requested_ips
         rspec_root = self.lxml_parse_rspec(rspec)
         for elm in rspec_root.getchildren():
-            if not self.lxml_elm_has_request_prefix(elm, 'dhcp'):
+            if not self.lxml_elm_has_request_prefix(elm, 'resource-orchestrator'):
                 raise geni_ex.GENIv3BadArgsError("RSpec contains " +
                                                  "elements/namespaces I " +
                                                  "dont understand (%s)." %
                                                  (elm,))
 
-            if (self.lxml_elm_equals_request_tag(elm, 'dhcp', 'ip')):
+            if (self.lxml_elm_equals_request_tag(elm, 'resource-orchestrator', 'ip')):
                 requested_ips.append(elm.text.strip())
 
-            elif (self.lxml_elm_equals_request_tag(elm, 'dhcp', 'iprange')):
+            elif (self.lxml_elm_equals_request_tag(elm, 'resource-orchestrator', 'iprange')):
                 pass
                 # raise geni_ex.GENIv3GeneralError('IP ranges in RSpecs are
                 #                                  not supported yet.') # TODO
@@ -348,7 +370,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         return result
 
     def _get_manifest_rspec(self, leases):
-        E = self.lxml_manifest_element_maker('dhcp')
+        E = self.lxml_manifest_element_maker('resource-orchestrator')
         manifest = self.lxml_manifest_root()
         for lease in leases:
             # assemble manifest
@@ -358,3 +380,20 @@ class GENIv3Delegate(GENIv3DelegateBase):
             manifest.append(r)
 
         return manifest
+
+    # ---------------------------------
+    # Conversion to XML
+    # ---------------------------------
+    def lxml_ad_root(self):
+        """Returns a xml root node with the namespace extensions specified by self.get_ad_extensions_mapping."""
+        return etree.Element("rspec", self.get_ad_extensions_mapping(), type="advertisement")
+
+    def lxml_ad_element_maker(self, prefix):
+        """Returns a lxml.builder.ElementMaker configured for avertisements and the namespace given by {prefix}."""
+        ext = self.get_ad_extensions_mapping()
+        return ElementMaker(namespace=ext[prefix], nsmap=ext)
+
+    def lxml_to_string(self, rspec):
+        """Converts a lxml root node to string (for returning to the client)."""
+        return etree.tostring(rspec, pretty_print=True)
+
