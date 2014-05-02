@@ -377,23 +377,3 @@ class GENIv3Delegate(GENIv3DelegateBase):
             r = E.resource()
             r.append(E.ip(lease["ip_str"]))
             # TODO add more info here
-from delegate.geni.v3.base import GENIv3DelegateBase
-from delegate.geni.v3.db_manager import DBManager
-from delegate.geni.v3.rm_adaptor import AdaptorFactory
-from handler.geni.v3 import exceptions as geni_ex
-from delegate.geni.v3 import rm_adaptor
-from delegate.geni.v3 import exceptions as rms_ex
-
-from lxml.builder import ElementMaker
-from lxml import etree
-
-import core
-logger = core.log.getLogger("geniv3delegate")
-
-class GENIv3Delegate(GENIv3DelegateBase):
-    """
-    """
-    # TODO should also include a changing component, identified by a config key
-    URN_PREFIX = 'urn:RO'
-from delegate.geni.v3.base import GENIv3DelegateBase
-from delegate.geni.v3.db_manager import DBManager
