@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set your GCF path here
-gcf_path="/opt/geni/gcf-2.4"
+gcf_path="/opt/geni/gcf-2.5"
 
 ## Two first commands should be run manually
 
