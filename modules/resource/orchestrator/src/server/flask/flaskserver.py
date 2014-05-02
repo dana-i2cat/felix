@@ -124,6 +124,7 @@ class FlaskServer(object):
                     server = serving.make_server(host, app_port, self._app, False, 1, ClientCertHTTPRequestHandler, False, 'adhoc')
                     # The following line is the reason why I copied all that code!
                     if must_have_client_cert:
+                        # FIXME: what works with web app does not work with cli. Check this out
                         server.ssl_context.set_verify(SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT, lambda a,b,c,d,e: True)
                     # That's it
                     server.serve_forever()
