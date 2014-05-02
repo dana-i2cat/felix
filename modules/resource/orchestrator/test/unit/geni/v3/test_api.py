@@ -79,7 +79,11 @@ class TestGENIv3API(unittest.TestCase):
         #user_credential = cred_util.create_credential(caller_gid, object_gid, expiration, typename, issuer_keyfile, issuer_certfile, trusted_roots, delegatable=False)
         user_credential = open(os.path.join(cert_root, "credentials", "alice-cred.xml"), "r").readlines()
         user_credential = "".join(user_credential)
-        
+
+        # FIXME: Shall directly contact gcf-ch for credential or implement credential retrieving method
+        # Equivalent to 'python src/omni.py getusercred'
+        #user_credential = tools.getusercred(geni_api = 3)
+
         geni_v3_credentials = [{
             "geni_type": "geni_sfa",
             "geni_value": user_credential,
