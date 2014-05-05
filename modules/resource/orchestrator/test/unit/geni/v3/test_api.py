@@ -106,12 +106,24 @@ class TestGENIv3API(unittest.TestCase):
         self.test_list_resources()
 
 def main():
-    unittest.main(verbosity=2, exit=True)
+    test = unittest.main(verbosity=2, exit=False)
+    # Retrieve errors
+    #test_passed = test.result.wasSuccessful()
+    #test_total = test.result.testsRun
+    test_errors = len(test.result.errors)
+    test_failures = len(test.result.failures)
+    # Return code for exiting program with it
+    test_result = True if test_errors + test_failures == 0 else False
     tools.print_warnings()
+    return test_result
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:
         arg = sys.argv[1]
     del sys.argv[1:]
-    # TODO: sys.exit with code to notify Jenkins about validity (or not) of tests
-    sys.exit(main())
+    # sys.exit with code to notify Jenkins about validity (or not) of tests
+    test_result = main()
+    # Inverse logic for tests => 0: OK, 1: ERROR
+    test_result = int(not(test_result))
+    print test_result
+    sys.exit(test_result)
