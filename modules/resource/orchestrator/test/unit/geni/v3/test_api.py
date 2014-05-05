@@ -29,7 +29,34 @@ class TestGENIv3API(unittest.TestCase):
 
     @classmethod
     def setUp(self):
-        pass
+        """
+        Sets up environment, e.g. asking for credentials.
+        """
+        # Old: manually obtain credential
+        #user_credential = open(os.path.join(cert_root, "credentials", "alice-cred.xml"), "r").read()
+        # New: contacting GCH for it by passing the certificate. Equivalent to 'omni.py getusercred'
+        (text, self.user_credential) = tools.getusercred(geni_api = 3)
+
+        self.geni_v3_credentials = [{
+            "geni_type": "geni_sfa",
+            "geni_value": self.user_credential["geni_value"],
+        }]
+        # Any AM is required to honor the following options
+        self.geni_v3_options = {
+            "geni_available": True,
+            # XXX: it should say 'compressed' (as for GENIv3), not 'compress' (as in AMsoil)
+            # http://groups.geni.net/geni/wiki/GAPI_AM_API_V3#ListResources
+            #"geni_compressed": True,
+            "geni_compress": False, # True => seems to return a base64 compressed and encoded value
+            "geni_rspec_version": {
+                "type": "geni",
+                "version": "3",
+            }
+        }
+        self.geni_params = [
+            self.geni_v3_credentials,
+            self.geni_v3_options,
+        ]
 
     def test_get_version(self):
         """
@@ -66,35 +93,12 @@ class TestGENIv3API(unittest.TestCase):
         self.assertEquals(value["geni_api"], "3")
 
     def test_list_resources(self):
-        # Old: manually obtain credential
-        #user_credential = open(os.path.join(cert_root, "credentials", "alice-cred.xml"), "r").read()
-        # New: contacting GCH for it by passing the certificate. Equivalent to 'omni.py getusercred'
-        (text, user_credential) = tools.getusercred(geni_api = 3)
-
-        geni_v3_credentials = [{
-            "geni_type": "geni_sfa",
-            "geni_value": user_credential["geni_value"],
-        }]
-        # Any AM is required to honor the following options
-        geni_v3_options = {
-            "geni_available": True,
-            # XXX: it should say 'compressed' (as for GENIv3), not 'compress' (as in AMsoil)
-            # http://groups.geni.net/geni/wiki/GAPI_AM_API_V3#ListResources
-            #"geni_compressed": True,
-            "geni_compress": True,
-            "geni_rspec_version": {
-                "type": "geni",
-                "version": "3",
-            }
-        }
-        params = [
-            geni_v3_credentials,
-            geni_v3_options,
-        ]
-        code, value, output = handler_call("ListResources", params=params)
+        code, value, output = handler_call("ListResources", params=self.geni_params)
         #print "... code: %s" % str(code)
         #print "... value: %s" % str(value)
+        #print "... output: %s" % str(output)
         self.assertEqual(code.get("geni_code", None), 0) # no error
+        # TODO: Perform more tests over 'value' field (RSpec)
         self.assertIsInstance(code, dict)
         self.assertIsInstance(value, str)
 
