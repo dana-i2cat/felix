@@ -31,5 +31,5 @@ if __name__ == '__main__':
     test_result = main()
     # Inverse logic for tests => 0: OK, 1: ERROR
     test_result = int(not(test_result))
-    #print test_result
+    print test_result
     sys.exit(test_result)
