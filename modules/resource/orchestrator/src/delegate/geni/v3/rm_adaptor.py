@@ -18,12 +18,12 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
     @staticmethod
     def create(type, protocol, user, password, address, port, endpoint):
         uri = format_uri(protocol, user, password, address, port, endpoint)
-#        if type in ["virtualisation", "sdn"]:
-#            return RMAdaptor(uri)
         if type == 'virtualisation':
             return CRMAdaptor(uri)
+
         elif type == 'sdn_networking':
             return SDNRMAdaptor(uri)
+
         raise exceptions.GeneralError("Type not implemented yet!")
 
     def list_resources(self, credentials, available):
@@ -49,9 +49,12 @@ class SFAv2Client(AdaptorFactory):
 
     def format_options(self, available):
         return {'geni_available': available,
-                'geni_compressed': False,
+                # Carolina comment: it should say 'compressed' (as for GENIv3),
+                # not 'compress' (as in AMsoil)
+                'geni_compress': False,
                 'geni_rspec_version': {'type': self.type_,
                                        'version': self.req_version_}}
+
 
 class CRMAdaptor(SFAv2Client):
     def __init__(self, uri):
@@ -60,9 +63,13 @@ class CRMAdaptor(SFAv2Client):
     def list_resources(self, credentials, available):
         options = self.format_options(available)
         try:
-            return self.ListResources(credentials, options)
+            # Carolina fix on the RPC method call
+            params = [credentials,
+                      options,]
+            return self.ListResources(*params)
         except Exception as e:
             raise exceptions.RPCError("CRM listResources failure " + str(e))
+
 
 class SDNRMAdaptor(SFAv2Client):
     def __init__(self, uri):
@@ -71,6 +78,9 @@ class SDNRMAdaptor(SFAv2Client):
     def list_resources(self, credentials, available):
         options = self.format_options(available)
         try:
-            return self.ListResources(credentials, options)
+            # Carolina fix on the RPC method call
+            params = [credentials,
+                      options,]
+            return self.ListResources(*params)
         except Exception as e:
             raise exceptions.RPCError("SDNRM listResources failure " + str(e))
