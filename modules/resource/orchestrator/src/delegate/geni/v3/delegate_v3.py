@@ -90,7 +90,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
                 # Maybe here we can add some tag:
                 # <resource-orchestrator:resource type='' address='' port=''>
-                r = E.resource()
+                r = E.resource(uuid=str(peer.get('_id')))
                 # Add retrieved resources to node within XML tree
                 r.append(etree.fromstring(result["value"]))
                 root_node.append(r)
