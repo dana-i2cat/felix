@@ -50,12 +50,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
         client_urn, client_uuid, client_email =\
             self.auth(client_cert, credentials, None, ('listslices',))
 
-        logger.info("Client urn=%s, uuid=%s, email=%s" %
-            (client_urn, client_uuid, client_email,))
+        logger.info("Client urn=%s, uuid=%s, email=%s" % (client_urn,
+                                                          client_uuid,
+                                                          client_email,))
 
         # Retrieve the list of configured RMs or peer-RO from the mongoDB
         peers = DBManager().get_all()
-        logger.debug("Configured peers=%s" % (peers,))
+        logger.debug("Configured peers=%d" % (len(peers),))
 
         # Prepare root for XML tree
         root_node = self.lxml_ad_root()
@@ -65,47 +66,38 @@ class GENIv3Delegate(GENIv3DelegateBase):
         try:
             for peer in peers:
                 logger.debug("peer: %s" % str(peer))
-                adaptor = AdaptorFactory.create(type = peer.get('type'),
-                                                protocol = peer.get('protocol'),
-                                                user = peer.get('user'),
-                                                password = peer.get('password'),
-                                                address = peer.get('address'),
-                                                port = peer.get('port'),
-                                                endpoint = peer.get('endpoint'))
+                # Create the adaptor, calling the getVersion on the
+                # remote endpoint (RM) to get (for now) this options:
+                #  type = rspec_ver:code:am_type
+                #  req_version = rspec_ver:value:geni_request_rspec_versions
+                adaptor = AdaptorFactory.create(type=peer.get('type'),
+                                                protocol=peer.get('protocol'),
+                                                user=peer.get('user'),
+                                                password=peer.get('password'),
+                                                address=peer.get('address'),
+                                                port=peer.get('port'),
+                                                endpoint=peer.get('endpoint'))
                 logger.debug("RM-Adapter=%s" % (adaptor,))
 
-#                geni_v3_credentials = [{
-#                    "geni_value": credentials,
-#                    "geni_version": 3,
-#                    "geni_type": "geni_sfa",
-#                }]
                 # Retrieve credentials alone
                 geni_v3_credentials = credentials[0]["geni_value"]
 
-                # Any AM is required to honor the following options
-                geni_v3_options = {
-                    "geni_available": True,
-                    # XXX: it should say 'compressed' (as for GENIv3), not 'compress' (as in AMsoil)
-                    # http://groups.geni.net/geni/wiki/GAPI_AM_API_V3#ListResources
-                    #"geni_compressed": True,
-                    "geni_compress": True,
-                    "geni_rspec_version": {
-                        "type": "geni",
-                        "version": "3",
-                    }
-                }
-                params = [
-                    geni_v3_credentials,
-                    geni_v3_options,
-                ]
+                # Call the list_resources method of the adaptor to contact the
+                # remote endpoint (RM). The options (and the sequence of remote
+                # methods) are filled in the adaptor properly
+                result = adaptor.list_resources(geni_v3_credentials,
+                                                geni_available)
 
-                result = adaptor.ListResources(*params)
+                # Maybe here we can add some tag:
+                # <resource-orchestrator:resource type='' address='' port=''>
                 r = E.resource()
                 # Add retrieved resources to node within XML tree
                 r.append(etree.fromstring(result["value"]))
                 root_node.append(r)
 
-        # TODO: We need to be more specific here!
+        except rms_ex.RPCError as e:
+            raise geni_ex.GENIv3RPCError(str(e))
+
         except Exception as e:
             raise geni_ex.GENIv3GeneralError(str(e))
 
