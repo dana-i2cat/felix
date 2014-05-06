@@ -65,7 +65,6 @@ class CRMAdaptor(SFAv2Client):
 
     def list_resources(self, credentials, available):
         options = self.format_options(available)
-        print "options: %s" % str(options)
         try:
             # Carolina fix on the RPC method call
             params = [credentials,
