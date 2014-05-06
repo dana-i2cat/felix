@@ -46,7 +46,7 @@ class TestGENIv3API(unittest.TestCase):
             "geni_available": True,
             # XXX: it should say 'compressed' (as for GENIv3), not 'compress' (as in AMsoil)
             # http://groups.geni.net/geni/wiki/GAPI_AM_API_V3#ListResources
-            #"geni_compressed": True,
+            #"geni_compressed": False,
             "geni_compress": False, # True => seems to return a base64 compressed and encoded value
             "geni_rspec_version": {
                 "type": "geni",

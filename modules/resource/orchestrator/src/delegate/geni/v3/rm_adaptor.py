@@ -20,10 +20,8 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
         uri = format_uri(protocol, user, password, address, port, endpoint)
         if type == 'virtualisation':
             return CRMAdaptor(uri)
-
         elif type == 'sdn_networking':
             return SDNRMAdaptor(uri)
-
         raise exceptions.GeneralError("Type not implemented yet!")
 
     def list_resources(self, credentials, available):
@@ -33,28 +31,33 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
 class SFAv2Client(AdaptorFactory):
     def __init__(self, uri):
         AdaptorFactory.__init__(self, uri)
-        self.uri_ = uri
+        self.uri = uri
         try:
             # Get the required information of the peer
             rspec_version = self.GetVersion()
             values = rspec_version.get('value')
             # We need at least the type and the (supported) request version
-            self.type_ = rspec_version.get('code').get('am_type')
-            self.req_version_ = values.get('geni_request_rspec_versions')
+            self.geni_type = rspec_version.get('code').get('am_type')
+            self.request_rspec_version = values.get('geni_request_rspec_versions')[0].get('version')
         except Exception as e:
-            raise exceptions.RPCError("SFAv2 GetVersion failure " + str(e))
+            raise exceptions.RPCError("SFAv2 GetVersion failure: %s" % str(e))
 
     def __str__(self):
-        return self.uri_
+        return self.uri
 
     def format_options(self, available):
-        return {'geni_available': available,
-                # Carolina comment: it should say 'compressed' (as for GENIv3),
-                # not 'compress' (as in AMsoil)
-                'geni_compress': False,
-                'geni_rspec_version': {'type': self.type_,
-                                       'version': self.req_version_}}
-
+        return {
+                    "geni_available": available,
+                    # Carolina comment: it should say 'compressed' (as for GENIv3),
+                    # not 'compress' (as in AMsoil)
+                    "geni_compress": False,
+                    "geni_rspec_version": {
+#                        "type": "geni",
+                        "type": self.geni_type,
+#                        "version": "3",
+                        "version": self.request_rspec_version,
+                    }
+                }
 
 class CRMAdaptor(SFAv2Client):
     def __init__(self, uri):
@@ -62,13 +65,14 @@ class CRMAdaptor(SFAv2Client):
 
     def list_resources(self, credentials, available):
         options = self.format_options(available)
+        print "options: %s" % str(options)
         try:
             # Carolina fix on the RPC method call
             params = [credentials,
                       options,]
             return self.ListResources(*params)
         except Exception as e:
-            raise exceptions.RPCError("CRM listResources failure " + str(e))
+            raise exceptions.RPCError("CRM ListResources failure: %s" % str(e))
 
 
 class SDNRMAdaptor(SFAv2Client):
@@ -83,4 +87,4 @@ class SDNRMAdaptor(SFAv2Client):
                       options,]
             return self.ListResources(*params)
         except Exception as e:
-            raise exceptions.RPCError("SDNRM listResources failure " + str(e))
+            raise exceptions.RPCError("SDNRM ListResources failure: %s" % str(e))
