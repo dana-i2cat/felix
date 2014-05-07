@@ -11,6 +11,7 @@ from lxml import etree
 import core
 logger = core.log.getLogger("geniv3delegate")
 
+
 class GENIv3Delegate(GENIv3DelegateBase):
     """
     """
@@ -88,8 +89,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 result = adaptor.list_resources(geni_v3_credentials,
                                                 geni_available)
 
-                # Maybe here we can add some tag:
-                # <resource-orchestrator:resource type='' address='' port=''>
+                # Add a tag to identify the manager:
+                # <resource-orchestrator:resource uuid=''>
                 r = E.resource(uuid=str(peer.get('_id')))
                 # Add retrieved resources to node within XML tree
                 r.append(etree.fromstring(result["value"]))
@@ -111,11 +112,15 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def allocate(self, slice_urn, client_cert, credentials,
                  rspec, end_time=None):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-
+        # Authenticate the user to perform the reservation
         client_urn, client_uuid, client_email = self.auth(client_cert,
                                                           credentials,
                                                           slice_urn,
                                                           ('createsliver',))
+
+        logger.info("Client urn=%s, uuid=%s, email=%s" % (client_urn,
+                                                          client_uuid,
+                                                          client_email,))
         requested_ips = []
         # parse RSpec -> requested_ips
         rspec_root = self.lxml_parse_rspec(rspec)
