@@ -56,7 +56,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                                                           client_email,))
 
         # Retrieve the list of configured RMs or peer-RO from the mongoDB
-        peers = DBManager().get_all()
+        peers = DBManager().get_configured_peers()
         logger.debug("Configured peers=%d" % (len(peers),))
 
         # Prepare root for XML tree

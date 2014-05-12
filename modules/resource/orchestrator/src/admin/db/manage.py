@@ -36,6 +36,8 @@ class RoutingTableCommand(GenericCommand):
         self.endpoint_ = None
         self.user_ = None
         self.password_ = None
+        self.am_type_ = None
+        self.am_version_ = None
 
     def updateType(self, type_):
         self.type_ = type_
@@ -57,6 +59,12 @@ class RoutingTableCommand(GenericCommand):
 
     def updatePassword(self, password_):
         self.password_ = password_
+
+    def updateAMType(self, am_type_):
+        self.am_type_ = am_type_
+
+    def updateAMVersion(self, am_version_):
+        self.am_version_ = am_version_
 
     def checkAllNone(self):
         if self.type_ is not None:
@@ -124,7 +132,9 @@ class AddRouteEntry(RoutingTableCommand):
                 'protocol': self.protocol_,
                 'endpoint': self.endpoint_,
                 'user': self.user_,
-                'password': self.password_}
+                'password': self.password_,
+                'am_type': self.am_type_,
+                'am_version': self.am_version_}
 
         row_id_ = table_.insert(row_)
         print '(RO) RoutingTable insert row: %s\n' % (row_id_,)
@@ -133,6 +143,7 @@ class AddRouteEntry(RoutingTableCommand):
         return 'add_route_entry -t <type> -a <address> -p <port>' +\
                ' [--protocol <protocol] [--endpoint <endpoint>]' +\
                ' [--user <username>] [--password <password>]' +\
+               ' [--am_type <type>] [--am_version <version>]' +\
                '\n\tAdd a new entry in the mongoDB db'
 
 
@@ -199,6 +210,12 @@ class CmdManager:
     def updatePassword(self, key, value):
         commands[key].updatePassword(value)
 
+    def updateAMType(self, key, value):
+        commands[key].updateAMType(value)
+
+    def updateAMVersion(self, key, value):
+        commands[key].updateAMVersion(value)
+
     @staticmethod
     def find(key):
         if key not in commands:
@@ -263,6 +280,12 @@ def main(argv=None):
         parser_.add_argument('--password', default='',
                              help='Set the password to access the RM')
 
+        parser_.add_argument('--am_type', default=None,
+                             help='Set the AM type')
+
+        parser_.add_argument('--am_version', default=None,
+                             help='Set the AM type')
+
         args_ = parser_.parse_args()
 
     except Exception as ex:
@@ -287,6 +310,8 @@ def main(argv=None):
         comMng_.updateEndpoint(args_.command, args_.endpoint)
         comMng_.updateUser(args_.command, args_.user)
         comMng_.updatePassword(args_.command, args_.password)
+        comMng_.updateAMType(args_.command, args_.am_type)
+        comMng_.updateAMVersion(args_.command, args_.am_version)
 
         comMng_.analyze(args_.command)
 
