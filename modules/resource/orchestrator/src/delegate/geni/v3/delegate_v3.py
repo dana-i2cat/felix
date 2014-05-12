@@ -78,7 +78,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                                                 address=peer.get('address'),
                                                 port=peer.get('port'),
                                                 endpoint=peer.get('endpoint'))
-                logger.debug("RM-Adapter=%s" % (adaptor,))
+                logger.info("RM-Adapter=%s" % (adaptor,))
 
                 # Retrieve credentials alone
                 geni_v3_credentials = credentials[0]["geni_value"]
@@ -102,6 +102,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         except Exception as e:
             raise geni_ex.GENIv3GeneralError(str(e))
 
+        logger.info("List_resources successfully completed!")
         return self.lxml_to_string(root_node)
 
     def describe(self, urns, client_cert, credentials):
