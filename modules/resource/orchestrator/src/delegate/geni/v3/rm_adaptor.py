@@ -1,6 +1,8 @@
 import xmlrpclib
+from lxml import etree
 from delegate.geni.v3 import exceptions
 from delegate.geni.v3.db_manager import DBManager
+from models.c_resource_table import CResourceTable
 
 import core
 logger = core.log.getLogger("rmadaptor")
@@ -95,8 +97,54 @@ class CRMGeniv2Adaptor(SFAv2Client):
     def __init__(self, uri):
         SFAv2Client.__init__(self, uri)
 
-    def __decode_list_resources_rspec(self, rspec):
-        logger.error("XXX_TODO_XXX: loop and clear if needed!")
+    def __filter_list_resources_rspec(self, rspec):
+        root = etree.fromstring(rspec.get('value'))
+        # logger.debug("ROOT: %s" % (etree.tostring(root, pretty_print=True),))
+        for network in root.iter('network'):
+            for node in network.iter('node'):
+                # Follow the schema proposed into the models
+                entry = CResourceTable()
+                entry.network_name(network.get('name'))
+                entry.node(node.get('component_id'),
+                           node.get('component_manager_id'),
+                           node.get('component_name'),
+                           node.get('exclusive'))
+                entry.hostname(node.findtext('hostname'))
+                entry.name(node.findtext('name'))
+                logger.debug("Entry: %s" % (entry,))
+
+                for service in node.iter('service'):
+                    entry.clear_services()
+                    # Filter on the service type
+                    service_type = service.get('type')
+                    if service_type == "Range":
+                        entry.add_range_service(
+                            service_type,
+                            service.findtext('type'),
+                            service.findtext('name'),
+                            service.findtext('start_value'),
+                            service.findtext('end_value'))
+                        # Log the Range Entry
+                        logger.debug("Range Entry: %s" % (entry,))
+
+                    elif service_type == "NetworkInterface":
+                        entry.add_netif_service(
+                            service.findtext('from_server_interface_name'),
+                            service.findtext('to_network_interface_id'),
+                            service.findtext('to_network_interface_port'))
+                        # Log the NetworkInterface info
+                        logger.debug("NetworkInterface Entry: %s" % (entry,))
+
+                    if entry.is_reserved():
+                        logger.info("Modify the rspec: delete this service!")
+                        node.remove(service)
+
+                if node.find('service') is None:
+                    logger.info("No more services are available on this node!")
+                    network.remove(node)
+
+        rspec['value'] = etree.tostring(root)
+        # logger.debug("RSPEC: %s" % (rspec,))
         return rspec
 
     def list_resources(self, credentials, available):
@@ -109,7 +157,7 @@ class CRMGeniv2Adaptor(SFAv2Client):
             # if available==True, we should remove the computing
             # "local reserved" resources (stored in a mongoDB table)
             if available is True:
-                rspec = self.__decode_list_resources_rspec(rspec)
+                rspec = self.__filter_list_resources_rspec(rspec)
 
             return rspec
 
