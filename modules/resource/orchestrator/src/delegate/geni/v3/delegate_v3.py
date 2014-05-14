@@ -72,12 +72,15 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 #  type = rspec_ver:code:am_type
                 #  req_version = rspec_ver:value:geni_request_rspec_versions
                 adaptor = AdaptorFactory.create(type=peer.get('type'),
-                                                protocol=peer.get('protocol'),
-                                                user=peer.get('user'),
-                                                password=peer.get('password'),
-                                                address=peer.get('address'),
-                                                port=peer.get('port'),
-                                                endpoint=peer.get('endpoint'))
+                                            protocol=peer.get('protocol'),
+                                            user=peer.get('user'),
+                                            password=peer.get('password'),
+                                            address=peer.get('address'),
+                                            port=peer.get('port'),
+                                            endpoint=peer.get('endpoint'),
+                                            id=peer.get('_id'),
+                                            am_type=peer.get('am_type'),
+                                            am_version=peer.get('am_version'))
                 logger.info("RM-Adapter=%s" % (adaptor,))
 
                 # Retrieve credentials alone

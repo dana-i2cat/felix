@@ -1,5 +1,6 @@
 import xmlrpclib
 from delegate.geni.v3 import exceptions
+from delegate.geni.v3.db_manager import DBManager
 
 import core
 logger = core.log.getLogger("rmadaptor")
@@ -19,13 +20,21 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
         xmlrpclib.ServerProxy.__init__(self, uri)
 
     @staticmethod
-    def create(type, protocol, user, password, address, port, endpoint):
-        uri = format_uri(protocol, user, password, address, port, endpoint)
+    def get_am_info(uri, id):
         client = SFAClient(uri)
-        client.get_version()
-        logger.debug("Client: %s" % (client,))
+        (type, version) = client.get_version()
+        DBManager().update_am_info(id, type, version)
+        return (type, version)
 
-        if client.sfa_type() == 'sfa' and client.api_version() == 2:
+    @staticmethod
+    def create(type, protocol, user, password, address, port, endpoint,
+               id, am_type, am_version):
+        uri = format_uri(protocol, user, password, address, port, endpoint)
+        if am_type is None or am_version is None:
+            logger.debug("We need to update the AM info for this RM...")
+            (am_type, am_version) = AdaptorFactory.get_am_info(uri, id)
+
+        if am_type in ['geni', 'geni_sfa', 'sfa'] and am_version <= 2:
             if type == 'virtualisation':
                 return CRMGeniv2Adaptor(uri)
             elif type == 'sdn_networking':
@@ -50,6 +59,9 @@ class SFAClient(AdaptorFactory):
             # We need at least the type and the (supported) request version
             self.geni_type = rspec_version.get('code').get('am_type')
             self.geni_api_version = values.get('geni_api')
+
+            return (self.geni_type, self.geni_api_version)
+
         except Exception as e:
             raise exceptions.RPCError("SFA GetVersion failure: %s" % str(e))
 
