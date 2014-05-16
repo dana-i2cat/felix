@@ -1,4 +1,6 @@
 import pymongo
+import core
+logger = core.log.getLogger("c-model")
 
 
 class Services(object):
@@ -55,21 +57,58 @@ class CResourceTable(object):
     def clear_services(self):
         del self.info['services'][:]
 
-    def add_range_service(self, stype, type_, name, start, end):
-        self.info['services'].append({'service_type': stype,
+    def add_range_service(self, type_, name, start, end):
+        self.info['services'].append({'service_type': "Range",
                                       'type': type_,
                                       'name': name,
                                       'start_value': start,
                                       'end_value': end})
 
     def add_netif_service(self, from_name, to_id, to_port):
-        self.info['services'].append({'from_server_interface_name': from_name,
+        self.info['services'].append({'service_type': "NetworkInterface",
+                                      'from_server_interface_name': from_name,
                                       'to_network_interface_id': to_id,
                                       'to_network_interface_port': to_port})
 
+    def is_range_service_reserved(self, other):
+        for own in self.info.get('services'):
+            if (own.get('type') == other.get('type') and
+                    own.get('name') == other.get('name') and
+                    own.get('start_value') == other.get('start_value') and
+                    own.get('end_value') == other.get('end_value')):
+                return True
+
+        return False
+
+    def is_netif_service_reserved(self, other):
+        for own in self.info.get('services'):
+            if ((own.get('from_server_interface_name') ==
+                    other.get('from_server_interface_name')) and
+                (own.get('to_network_interface_id') ==
+                    other.get('to_network_interface_id')) and
+                (own.get('to_network_interface_port') ==
+                    other.get('to_network_interface_port'))):
+                return True
+
+        return False
+
     def is_reserved(self):
-        # XXX_TODO_XXX: we have to check is the entry is reversed in mongoDB
-        return True
+        for cres in self.table.find({'network_name': self.info['network_name'],
+                                     'hostname': self.info['hostname'],
+                                     'name': self.info['name'],
+                                     'node': self.info['node'], }):
+            logger.debug("We have a match, ID: %s" % (cres.get('_id'),))
+            for service in cres.get('services'):
+                service_type = service.get('service_type')
+                if (service_type == "Range" and
+                        self.is_range_service_reserved(service)):
+                    return True
+                elif (service_type == "NetworkInterface" and
+                        self.is_netif_service_reserved(service)):
+                    return True
+
+        logger.debug("The resource is not reserved yet.")
+        return False
 
     def insert(self, rm_uuid, network_name, hostname, name,
                component_id, component_manager_id, component_name, exclusive,

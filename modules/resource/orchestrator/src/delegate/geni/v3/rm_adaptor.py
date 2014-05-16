@@ -119,7 +119,6 @@ class CRMGeniv2Adaptor(SFAv2Client):
                     service_type = service.get('type')
                     if service_type == "Range":
                         entry.add_range_service(
-                            service_type,
                             service.findtext('type'),
                             service.findtext('name'),
                             service.findtext('start_value'),
