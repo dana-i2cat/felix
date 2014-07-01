@@ -24,3 +24,10 @@ class RPCError(DelegateBaseError):
         super(self.__class__, self).__init__(1, 'RPCError',
                                              "Remote Procedure Call Error",
                                              comment)
+
+
+class TopologyError(DelegateBaseError):
+    def __init__(self, comment):
+        super(self.__class__, self).__init__(2, 'TopologyError',
+                                             "Topology Error",
+                                             comment)
