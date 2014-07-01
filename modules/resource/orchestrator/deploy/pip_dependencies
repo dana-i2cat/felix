@@ -7,3 +7,4 @@ blinker
 flup
 Flask-XML-RPC
 unittest2
+networkx

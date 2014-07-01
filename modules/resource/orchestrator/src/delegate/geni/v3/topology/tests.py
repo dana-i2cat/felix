@@ -55,7 +55,7 @@ def main():
         print "--->Path(%s->%s): %s" % (island1_cr_1, island3_cr_3, path,)
 
     except Exception as e:
-        print "--->(failure) Exception: %s", (str(e),)
+        print "--->(failure) Exception: %s" % (str(e),)
 
     # Path Computation (it must raise an exception!)
     try:
@@ -63,7 +63,7 @@ def main():
         print "--->Path(%s->%s): %s" % (island3_cr_2, island1_cr_3, path,)
 
     except Exception as e:
-        print "--->(success) Exception: %s", (str(e),)
+        print "--->(success) Exception: %s" % (str(e),)
 
     print 'Algorithm test successfully ended...'
     return True
