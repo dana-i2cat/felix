@@ -18,7 +18,7 @@ class ClientCertHTTPRequestHandler(serving.WSGIRequestHandler):
         if self._client_cert:
             env['CLIENT_RAW_CERT'] = self._client_cert
         return env
-        
+
     def setup(self):
         super(ClientCertHTTPRequestHandler, self).setup()
         self.connection.do_handshake()
@@ -28,18 +28,18 @@ class ClientCertHTTPRequestHandler(serving.WSGIRequestHandler):
             self._client_cert = pem
         else:
             self._client_cert = None
-        
+
 class FlaskServer(object):
     """
     Encapsules a flask server instance.
     It also exports/defines the rpcservice interface.
-    
+
     When a request comes in the following chain is walked through:
         --http--> nginx webserver --fcgi--> WSGIServer --WSGI--> FlaskApp
     When using the development server:
         werkzeug server --WSGI--> FlaskApp
     """
-    
+
     def __init__(self):
         """Constructor for the server wrapper."""
         #self._app = Flask(__name__) # imports the named package, in this case this file
@@ -91,7 +91,7 @@ class FlaskServer(object):
 #            self._app.add_url_rule(custom_method_url, custom_method, view_func=view_method(self._mongo))
         self._app.register_blueprint(ro_flask_views)
 
-    def runServer(self):
+    def runServer(self, services=[]):
         """Starts up the server. It (will) support different config options via the config plugin."""
         self.add_routes()
         debug = self.general_section.get("debug")
@@ -110,7 +110,7 @@ class FlaskServer(object):
             # this workaround makes sure that the client cert can be acquired later (even when running the development server)
             # copied all this stuff from the actual flask implementation, so we can intervene and adjust the ssl context
             # self._app.run(host=host, port=app_port, ssl_context='adhoc', debug=debug, request_handler=ClientCertHTTPRequestHandler)
-            
+
             # the code from flask's `run...`
             # see https://github.com/mitsuhiko/flask/blob/master/flask/app.py
             options = {}
@@ -126,6 +126,9 @@ class FlaskServer(object):
                     if must_have_client_cert:
                         # FIXME: what works with web app does not work with cli. Check this out
                         server.ssl_context.set_verify(SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT, lambda a,b,c,d,e: True)
+                    # before enter in the loop, start the supplementary services
+                    for s in services:
+                        s.start()
                     # That's it
                     server.serve_forever()
                 address_family = serving.select_ip_version(host, app_port)
