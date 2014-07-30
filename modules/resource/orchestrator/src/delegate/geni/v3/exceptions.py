@@ -31,3 +31,10 @@ class TopologyError(DelegateBaseError):
         super(self.__class__, self).__init__(2, 'TopologyError',
                                              "Topology Error",
                                              comment)
+
+
+class RSpecError(DelegateBaseError):
+    def __init__(self, comment):
+        super(self.__class__, self).__init__(3, 'RSpecError',
+                                             "Resource Specification Error",
+                                             comment)
