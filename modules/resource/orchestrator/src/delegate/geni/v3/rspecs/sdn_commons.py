@@ -13,6 +13,11 @@ class Datapath(object):
     def add_port(self, num, name=None):
         self.ports.append({'num': str(num), 'name': name})
 
+    def __repr__(self):
+        return "id: %s, manager_id: %s, dpid: %s, ports: %s" %\
+               (self.component_id, self.component_manager_id,
+                self.dpid, self.ports)
+
 
 class Match(object):
     def __init__(self):
@@ -38,3 +43,7 @@ class Match(object):
                        'nw_proto': nw_proto,
                        'tp_src': tp_src,
                        'tp_dst': tp_dst}
+
+    def __repr__(self):
+        return "use_groups: %s, datapaths: %s, packet: %s" %\
+               (self.use_groups, self.datapaths, self.packet)

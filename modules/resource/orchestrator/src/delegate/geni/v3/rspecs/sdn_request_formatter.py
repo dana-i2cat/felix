@@ -60,8 +60,9 @@ class OFv3RequestFormatter(object):
             use_group_.attrib["name"] = use_group.get("name")
 
         for dp in mtc.datapaths:
-            self.__datapath(match_, dp.component_id, dp.component_manager_id,
-                            dp.dpid, dp.ports)
+            dp_ = dp.get("datapath")
+            self.__datapath(match_, dp_.component_id, dp_.component_manager_id,
+                            dp_.dpid, dp_.ports)
 
         if mtc.packet is not None:
             packet_ = etree.SubElement(match_,

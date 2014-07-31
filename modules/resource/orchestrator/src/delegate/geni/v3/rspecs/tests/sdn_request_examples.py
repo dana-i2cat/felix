@@ -7,10 +7,11 @@ if __name__ == '__main__':
     bp_ = os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0])))
     if bp_ not in [os.path.abspath(x) for x in sys.path]:
         sys.path.insert(0, bp_)
-        sys.path.insert(0, "../../../..")
+        sys.path.insert(0, "../../../../..")
 
 from sdn_commons import Datapath, Match, CONTROLLER_TYPE_PRIMARY
 from sdn_request_formatter import OFv3RequestFormatter
+from sdn_request_parser import OFv3RequestParser
 
 
 def main(argv=None):
@@ -57,11 +58,31 @@ def main(argv=None):
     # second match
     m = Match()
     m.add_use_group("mygrp")
+    m.add_datapath(dp)
+    m.add_datapath(dp)
     m.set_packet(dl_type="0x800", nw_dst="10.1.1.0/24",
                  nw_proto="617", tp_dst="8080")
     rspec.match(m)
 
     print rspec
+    print '=== OFv3RequestParser ==='
+
+    rspec = OFv3RequestParser("sdn_request_rspec_example.xml")
+    sliver = rspec.sliver()
+    print "Sliver=%s" % sliver
+
+    controllers = rspec.controllers()
+    print "Controllers=%s" % controllers
+
+    groups = rspec.groups()
+    print "Groups=%s" % groups
+
+    datapaths = rspec.datapaths(groups[0]["name"])
+    print "Group=%s, Datapath=%s" % (groups[0]["name"], datapaths)
+
+    matches = rspec.matches()
+    print "Matches=%s" % matches
+
     print 'Bye Bye...'
     return True
 
