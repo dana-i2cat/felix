@@ -1,21 +1,17 @@
 from lxml import etree
 from delegate.geni.v3 import exceptions
+from sdn_commons import DEFAULT_XMLNS, DEFAULT_XS, DEFAULT_OPENFLOW,\
+    DEFAULT_SCHEMA_LOCATION, DSL_PREFIX
 
-DEFAULT_XMLNS = "http://www.geni.net/resources/rspec/3"
-DEFAULT_XS = "http://www.w3.org/2001/XMLSchema-instance"
-DEFAULT_OPENFLOW = "http://www.geni.net/resources/rspec/ext/openflow/3"
-
-DSL_PREFIX = "http://www.geni.net/resources/rspec/"
-DEFAULT_SCHEMA_LOCATION = DSL_PREFIX + "3 "
-DEFAULT_SCHEMA_LOCATION += DSL_PREFIX + "3/request.xsd "
-DEFAULT_SCHEMA_LOCATION += DSL_PREFIX + "ext/openflow/3 "
-DEFAULT_SCHEMA_LOCATION += DSL_PREFIX + "ext/openflow/3/of-resv.xsd"
+DEFAULT_REQ_SCHEMA_LOCATION = DEFAULT_SCHEMA_LOCATION
+DEFAULT_REQ_SCHEMA_LOCATION += DSL_PREFIX + "3/request.xsd "
+DEFAULT_REQ_SCHEMA_LOCATION += DSL_PREFIX + "ext/openflow/3/of-resv.xsd"
 
 
 class OFv3RequestFormatter(object):
     def __init__(self, xmlns=DEFAULT_XMLNS, xs=DEFAULT_XS,
                  openflow=DEFAULT_OPENFLOW,
-                 schema_location=DEFAULT_SCHEMA_LOCATION):
+                 schema_location=DEFAULT_REQ_SCHEMA_LOCATION):
         NSMAP = {None: "%s" % (xmlns),
                  "xs": "%s" % (xs),
                  "openflow": "%s" % (openflow)}
