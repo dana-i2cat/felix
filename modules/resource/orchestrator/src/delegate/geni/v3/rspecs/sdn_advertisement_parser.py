@@ -43,6 +43,9 @@ class OFv3AdvertisementParser(object):
             ofnodes_.append({'ofnode': of_})
         return ofnodes_
 
+    def get_rspec(self):
+        return self.__rspec.getroot()
+
     def __node_attrib(self, element, tag, name):
         value = element.find(".//{%s}%s" % (self.__none, tag))
         if value is None:

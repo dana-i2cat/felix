@@ -9,7 +9,7 @@ if __name__ == '__main__':
         sys.path.insert(0, bp_)
         sys.path.insert(0, "../../../../..")
 
-from sdn_commons import OpenFlowNode
+from sdn_commons import OpenFlowNode, validate
 from sdn_advertisement_formatter import OFv3AdvertisementFormatter
 from sdn_advertisement_parser import OFv3AdvertisementParser
 
@@ -46,10 +46,20 @@ def main(argv=None):
     rspec.datapath(of_node)
 
     print rspec
-    print '=== OFv3RequestParser ==='
+    (result, error) = validate(rspec.get_rspec())
+    if result != True:
+        print "Validation failure: %s" % error
+    else:
+        print "Validation success!"
 
+    print '=== OFv3RequestParser ==='
     rspec = OFv3AdvertisementParser("sdn_adv_rspec_example.xml")
-    print rspec
+
+    (result, error) = validate(rspec.get_rspec())
+    if result != True:
+        print "Validation failure: %s" % error
+    else:
+        print "Validation success!"
 
     nodes = rspec.nodes()
     print "Nodes(%d)=%s" % (len(nodes), nodes)

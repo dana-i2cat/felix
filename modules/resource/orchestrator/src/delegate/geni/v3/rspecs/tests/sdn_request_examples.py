@@ -9,7 +9,7 @@ if __name__ == '__main__':
         sys.path.insert(0, bp_)
         sys.path.insert(0, "../../../../..")
 
-from sdn_commons import Datapath, Match, CONTROLLER_TYPE_PRIMARY
+from sdn_commons import Datapath, Match, CONTROLLER_TYPE_PRIMARY, validate
 from sdn_request_formatter import OFv3RequestFormatter
 from sdn_request_parser import OFv3RequestParser
 
@@ -65,9 +65,21 @@ def main(argv=None):
     rspec.match(m)
 
     print rspec
-    print '=== OFv3RequestParser ==='
+    (result, error) = validate(rspec.get_rspec())
+    if result != True:
+        print "Validation failure: %s" % error
+    else:
+        print "Validation success!"
 
+    print '=== OFv3RequestParser ==='
     rspec = OFv3RequestParser("sdn_request_rspec_example.xml")
+
+    (result, error) = validate(rspec.get_rspec())
+    if result != True:
+        print "Validation failure: %s" % error
+    else:
+        print "Validation success!"
+
     sliver = rspec.sliver()
     print "Sliver=%s" % sliver
 

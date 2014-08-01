@@ -73,6 +73,9 @@ class OFv3RequestFormatter(object):
             self.__packet_sub_elem(packet_, mtc.packet, 'tp_src')
             self.__packet_sub_elem(packet_, mtc.packet, 'tp_dst')
 
+    def get_rspec(self):
+        return self.__rspec
+
     def __find_sliver(self):
         sliver = self.__rspec.find("{%s}sliver" % (self.__openflow))
         if sliver is None:

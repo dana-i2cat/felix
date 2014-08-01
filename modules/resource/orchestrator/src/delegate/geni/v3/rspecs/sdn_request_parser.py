@@ -61,6 +61,9 @@ class OFv3RequestParser(object):
             matches_.append({"match": m_})
         return matches_
 
+    def get_rspec(self):
+        return self.__rspec.getroot()
+
     def __find_sliver(self):
         sliver = self.__rspec.find("{%s}sliver" % (self.__openflow))
         if sliver is None:

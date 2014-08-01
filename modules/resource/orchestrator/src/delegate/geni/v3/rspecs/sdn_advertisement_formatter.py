@@ -35,6 +35,9 @@ class OFv3AdvertisementFormatter(object):
         self.__datapath(self.__rspec, dpath.component_id,
                         dpath.component_manager_id, dpath.dpid, dpath.ports)
 
+    def get_rspec(self):
+        return self.__rspec
+
     def __datapath(self, element, component_id, component_manager_id,
                    dpid, ports):
         datapath_ = etree.SubElement(element,
