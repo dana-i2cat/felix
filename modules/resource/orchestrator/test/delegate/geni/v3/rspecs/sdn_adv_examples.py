@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# TODO Convert to unittest, update paths added to syspath, etc
+
 import sys
 import os
 

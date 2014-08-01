@@ -1,10 +1,9 @@
+from output_format import print_call
+import credparsing as credutils
 import os.path
-import pprint
 import re
-import sys
 import xmlrpclib
 
-import credparsing as credutils
 
 def api_call(method_name, endpoint, params=[], user_name='alice', verbose=False):
     key_path, cert_path = "%s-key.pem" % (user_name,), "%s-cert.pem" % (user_name,)
@@ -110,34 +109,3 @@ def get_creds_file_contents(filename):
     with open(filename, 'r') as f:
         contents = f.read()
     return contents
-
-COLORS={"reset":"\x1b[00m",
-    "blue":   "\x1b[01;34m",
-    "cyan":   "\x1b[01;36m",
-    "green":  "\x1b[01;32m",
-    "yellow": "\x1b[01;33m",
-    "red":    "\x1b[01;05;37;41m"}
-
-def print_call(method_name, params, res):
-    # output stuff
-    print COLORS["blue"],
-    print "--> %s(%s)" % (method_name, params)
-    print COLORS["cyan"],
-    pprint.pprint(res, indent=4, width=20)
-    print COLORS["reset"]
-
-WARNINGS = []
-
-def warn(msg):
-    global WARNINGS
-    WARNINGS.append(msg)
-
-def print_warnings():
-    global WARNINGS
-    if len(WARNINGS) > 0:
-        print COLORS["yellow"],
-        print
-        print "WARNINGS:"
-        for msg in WARNINGS:
-            print msg
-        print COLORS["reset"]

@@ -6,10 +6,10 @@ logger = core.log.getLogger("c-model")
 class Services(object):
     def __init__(self):
         self.__services = []
-
+    
     def get(self):
         return self.__services
-
+    
     def add(self, service_type, type_, name, start_value, end_value):
         service = {'service_type': service_type,
                    'type': type_,
@@ -17,7 +17,6 @@ class Services(object):
                    'start_value': start_value,
                    'end_value': end_value}
         self.__services.append(service)
-
 
 class CResourceTable(object):
     def __init__(self):
@@ -35,41 +34,41 @@ class CResourceTable(object):
                      'agent_url': None,
                      'location': {},
                      'services': []}
-
+    
     def __str__(self):
         return str(self.info)
-
+    
     def network_name(self, name):
         self.info['network_name'] = name
-
+    
     def node(self, c_id, cm_id, c_name, exclusive):
         self.info['node']['component_id'] = c_id
         self.info['node']['component_manager_id'] = cm_id
         self.info['node']['component_name'] = c_name
         self.info['node']['exclusive'] = exclusive
-
+    
     def hostname(self, hname):
         self.info['hostname'] = hname
-
+    
     def name(self, name):
         self.info['name'] = name
-
+    
     def clear_services(self):
         del self.info['services'][:]
-
+    
     def add_range_service(self, type_, name, start, end):
         self.info['services'].append({'service_type': "Range",
                                       'type': type_,
                                       'name': name,
                                       'start_value': start,
                                       'end_value': end})
-
+    
     def add_netif_service(self, from_name, to_id, to_port):
         self.info['services'].append({'service_type': "NetworkInterface",
                                       'from_server_interface_name': from_name,
                                       'to_network_interface_id': to_id,
                                       'to_network_interface_port': to_port})
-
+    
     def is_range_service_reserved(self, other):
         for own in self.info.get('services'):
             if (own.get('type') == other.get('type') and
@@ -79,7 +78,7 @@ class CResourceTable(object):
                 return True
 
         return False
-
+    
     def is_netif_service_reserved(self, other):
         for own in self.info.get('services'):
             if ((own.get('from_server_interface_name') ==
@@ -91,7 +90,7 @@ class CResourceTable(object):
                 return True
 
         return False
-
+    
     def is_reserved(self):
         for cres in self.table.find({'network_name': self.info['network_name'],
                                      'hostname': self.info['hostname'],
@@ -109,7 +108,7 @@ class CResourceTable(object):
 
         logger.debug("The resource is not reserved yet.")
         return False
-
+    
     def insert(self, rm_uuid, network_name, hostname, name,
                component_id, component_manager_id, component_name, exclusive,
                system_type='', system_distribution='', system_version='',
@@ -144,7 +143,7 @@ class CResourceTable(object):
                'services': services}
         # Return the ID of the new entry
         return self.table.insert(row)
-
+    
     def delete(self, rm_uuid, network_name, hostname, name,
                component_id, component_manager_id, component_name, exclusive):
         node = {'component_id': component_id,
