@@ -70,11 +70,15 @@ class Node(object):
         self.available_now = available
 
     def node_to_string(self):
-        return "id: %s, manager_id: %s, name: %s, exclusive: %s, " +\
-               "hardware_type: %s, available" %\
-               (self.component_id, self.component_manager_id,
-                self.component_name, self.exclusive, self.hardware_type_name,
-                self.available_now)
+        return "id: " + self.component_id +\
+               ", manager_id: " + self.component_manager_id +\
+               ", name: " + self.component_name +\
+               ", exclusive: " + self.exclusive +\
+               ", hardware_type: " + self.hardware_type_name +\
+               ", available: " + self.available_now
+
+    def __repr__(self):
+        return self.node_to_string()
 
 
 class OpenFlowNode(Node):

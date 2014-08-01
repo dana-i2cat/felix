@@ -11,6 +11,7 @@ if __name__ == '__main__':
 
 from sdn_commons import OpenFlowNode
 from sdn_advertisement_formatter import OFv3AdvertisementFormatter
+from sdn_advertisement_parser import OFv3AdvertisementParser
 
 
 def main(argv=None):
@@ -45,6 +46,21 @@ def main(argv=None):
     rspec.datapath(of_node)
 
     print rspec
+    print '=== OFv3RequestParser ==='
+
+    rspec = OFv3AdvertisementParser("sdn_adv_rspec_example.xml")
+    print rspec
+
+    nodes = rspec.nodes()
+    print "Nodes(%d)=%s" % (len(nodes), nodes)
+
+    ofnodes = rspec.ofnodes()
+    print "OFNodes(%d)=%s" % (len(ofnodes), ofnodes)
+
+    for ofn in ofnodes:
+        ofnode = ofn.get("ofnode")
+        print "DPID=%s" % ofnode.dpid
+        print "PORTS=%s" % ofnode.ports
 
     print 'Bye Bye...'
     return True
