@@ -1,7 +1,6 @@
-from lxml import etree
+from commons import Datapath, Match
 from delegate.geni.v3 import exceptions
-from sdn_commons import Datapath, Match
-
+from lxml import etree
 
 class OFv3RequestParser(object):
     def __init__(self, ingress):

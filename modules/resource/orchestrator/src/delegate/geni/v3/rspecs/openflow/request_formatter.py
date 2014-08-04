@@ -1,7 +1,7 @@
-from lxml import etree
-from delegate.geni.v3 import exceptions
-from sdn_commons import DEFAULT_XMLNS, DEFAULT_XS, DEFAULT_OPENFLOW,\
+from commons import DEFAULT_XMLNS, DEFAULT_XS, DEFAULT_OPENFLOW,\
     DEFAULT_SCHEMA_LOCATION, DSL_PREFIX
+from delegate.geni.v3 import exceptions
+from lxml import etree
 
 DEFAULT_REQ_SCHEMA_LOCATION = DEFAULT_SCHEMA_LOCATION
 DEFAULT_REQ_SCHEMA_LOCATION += DSL_PREFIX + "3/request.xsd "

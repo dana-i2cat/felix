@@ -11,9 +11,9 @@ if __name__ == '__main__':
         sys.path.insert(0, bp_)
         sys.path.insert(0, "../../../../..")
 
-from sdn_commons import Datapath, Match, CONTROLLER_TYPE_PRIMARY, validate
-from sdn_request_formatter import OFv3RequestFormatter
-from sdn_request_parser import OFv3RequestParser
+from commons import Datapath, Match, CONTROLLER_TYPE_PRIMARY, validate
+from request_formatter import OFv3RequestFormatter
+from request_parser import OFv3RequestParser
 
 
 def main(argv=None):
@@ -74,7 +74,7 @@ def main(argv=None):
         print "Validation success!"
 
     print '=== OFv3RequestParser ==='
-    rspec = OFv3RequestParser("sdn_request_rspec_example.xml")
+    rspec = OFv3RequestParser("request_rspec_example.xml")
 
     (result, error) = validate(rspec.get_rspec())
     if result != True:

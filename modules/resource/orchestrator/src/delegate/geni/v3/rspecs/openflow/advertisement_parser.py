@@ -1,6 +1,6 @@
-from lxml import etree
+from commons import Node, OpenFlowNode
 from delegate.geni.v3 import exceptions
-from sdn_commons import Node, OpenFlowNode
+from lxml import etree
 
 
 class OFv3AdvertisementParser(object):

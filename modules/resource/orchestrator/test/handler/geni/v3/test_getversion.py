@@ -1,21 +1,15 @@
 from utils import geniv3_handler_tools
-
-import datetime
-import os
 import sys
-#import unittest
-import unittest2 as unittest
-
-# Adding paths to locate modules from other packages
+# Adding paths to locate modules within the "src" package
 sys.path.insert(0, "../../../../src")
 from handler.geni.v3.extensions.geni.util import cred_util
 from handler.geni.v3.extensions.sfa.trust import gid
+# Adding path to locate "utils" module within the "test" package
+sys.path.insert(0, "../../..")
+import testcase
 
-# TODO: Get the cert_root from the configuration settings
-cert_root = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../../../cert"))
 
-
-class TestGetVersion(unittest.TestCase):
+class TestGetVersion(testcase.FelixTestCase):
     """ Testing very basic behaviour to see 
         whether the handler is able to respond
         with error_results or success_results  
@@ -89,35 +83,11 @@ class TestGetVersion(unittest.TestCase):
             expected_key_value = self.geni_options_expected_key_info.get(expected_key).get("value")
             if expected_key_value:
                 self.assertEquals(expected_key_value, value.get(expected_key))
-    
-    def runTest(self):
-        """
-        Explicitly call tests in order to be invoked through test suite.
-        """
-        # Dynamic retrieval of tests in module (methods starting with "test_")
-        existing_tests = filter(lambda x: x.startswith("test_"), dir(self))
-        for existing_test in existing_tests:
-            # Invoke each test method
-            getattr(self, existing_test)()
 
 def main():
-    test = unittest.main(verbosity=2, exit=False)
-    # Retrieve errors
-    #test_passed = test.result.wasSuccessful()
-    #test_total = test.result.testsRun
-    test_errors = len(test.result.errors)
-    test_failures = len(test.result.failures)
-    # Return code for exiting program with it
-    test_result = True if test_errors + test_failures == 0 else False
-    return test_result
+    # Allows to run in stand-alone mode
+    return testcase.main()
 
 if __name__ == '__main__':
-    if len(sys.argv) == 2:
-        arg = sys.argv[1]
-    del sys.argv[1:]
-    # sys.exit with code to notify Jenkins about validity (or not) of tests
-    test_result = main()
-    # Inverse logic for tests => 0: OK, 1: ERROR
-    test_result = int(not(test_result))
-    print test_result
-    sys.exit(test_result)
+    # Allows to run in stand-alone mode
+    testcase.invoke_main()
