@@ -84,10 +84,6 @@ class TestGetVersion(testcase.FelixTestCase):
             if expected_key_value:
                 self.assertEquals(expected_key_value, value.get(expected_key))
 
-def main():
-    # Allows to run in stand-alone mode
-    return testcase.main()
-
 if __name__ == '__main__':
     # Allows to run in stand-alone mode
-    testcase.invoke_main()
+    testcase.main()

@@ -66,10 +66,6 @@ class TestRequest(testcase.FelixTestCase):
         (result, error) = rspec_validation.validate(self.rspec.get_rspec())
         self.assertEquals(True, result)
 
-def main():
-    # Allows to run in stand-alone mode
-    return testcase.main()
-
 if __name__ == '__main__':
     # Allows to run in stand-alone mode
-    testcase.invoke_main()
+    testcase.main()

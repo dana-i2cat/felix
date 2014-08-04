@@ -17,7 +17,7 @@ class FelixTestCase(unittest.TestCase):
 # Helper methods
 #
 
-def main():
+def test_main():
     """
     Counts errors and successes from tests.
     """ 
@@ -31,7 +31,7 @@ def main():
     test_result = True if test_errors + test_failures == 0 else False
     return test_result
 
-def invoke_main():
+def main():
     """
     Return errors and successes when directly invoked.
     """
@@ -39,7 +39,7 @@ def invoke_main():
         arg = sys.argv[1]
     del sys.argv[1:]
     # sys.exit with code to notify Jenkins about validity (or not) of tests
-    test_result = main()
+    test_result = test_main()
     # Inverse logic for tests => 0: OK, 1: ERROR
     test_result = int(not(test_result))
     print test_result

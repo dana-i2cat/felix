@@ -22,10 +22,6 @@ class TestAdvertisement(testcase.FelixTestCase):
     def tearDown(self):
         pass
 
-def main():
-    # Allows to run in stand-alone mode
-    return testcase.main()
-
 if __name__ == '__main__':
     # Allows to run in stand-alone mode
-    testcase.invoke_main()
+    testcase.main()
