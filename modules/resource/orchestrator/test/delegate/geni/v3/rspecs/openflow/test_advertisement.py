@@ -1,5 +1,4 @@
 import sys
-import sys
 # Adding paths to locate modules within the "src" package
 sys.path.insert(0, "../../../../../../src")
 from delegate.geni.v3.rspecs.openflow.commons import Datapath, Match, CONTROLLER_TYPE_PRIMARY

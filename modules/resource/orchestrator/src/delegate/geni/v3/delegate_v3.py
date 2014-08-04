@@ -5,7 +5,7 @@ from handler.geni.v3 import exceptions as geni_ex
 from delegate.geni.v3 import rm_adaptor
 from delegate.geni.v3 import exceptions as rms_ex
 
-from lxml.builder import ElementMaker
+#from lxml.builder import ElementMaker
 from lxml import etree
 
 import core
@@ -112,7 +112,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         rspec, sliver_list = self.status(urns, client_cert, credentials)
         return rspec
-
+    
+    # FIXME: Parse RSpec for RO, which should be a GENIv3 RSpec
+    # consisting on several nodes of different types
     def allocate(self, slice_urn, client_cert, credentials,
                  rspec, end_time=None):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""

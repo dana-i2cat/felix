@@ -10,6 +10,8 @@ logger=log.getLogger('geniv3delegatebase')
 
 import ast
 import os
+import urllib2
+
 
 class GENIv3DelegateBase(object):
     """
@@ -273,8 +275,8 @@ class GENIv3DelegateBase(object):
         # collect credentials (only GENI certs, version ignored)
         geni_credentials = []
         for c in credentials:
-             if c['geni_type'] == 'geni_sfa':
-                 geni_credentials.append(c['geni_value'])
+            if c['geni_type'] == 'geni_sfa':
+                geni_credentials.append(c['geni_value'])
 
         # Get the cert_root from the configuration settings
         root_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../../../"))
@@ -323,16 +325,15 @@ class GENIv3DelegateBase(object):
         """Returns a lxml.builder.ElementMaker configured for manifests and the namespace given by {prefix}."""
         ext = self.get_manifest_extensions_mapping()
         return ElementMaker(namespace=ext[prefix], nsmap=ext)
-
+    
     def lxml_parse_rspec(self, rspec_string):
         """Returns a the root element of the given {rspec_string} as lxml.Element.
         If the config key is set, the rspec is validated with the schemas found at the URLs specified in schemaLocation of the the given RSpec."""
         # parse
         rspec_root = etree.fromstring(rspec_string)
         # validate RSpec against specified schemaLocations
-        config = pm.getService("config")
-        should_validate = ast.literal_eval(self.certificates_section.get("rspec_validation"))
-
+        should_validate = ast.literal_eval(self.general_section.get("rspec_validation"))
+        
         if should_validate:
             schema_locations = rspec_root.get("{http://www.w3.org/2001/XMLSchema-instance}schemaLocation")
             if schema_locations:
