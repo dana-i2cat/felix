@@ -10,7 +10,7 @@ from test.delegate.geni.v3.rspecs.utils import rspec_validation
 from test.utils import testcase
 
 
-class TestAdvertisement(testcase.FelixTestCase):
+class TestAdvertisement(testcase.TestCase):
     @classmethod
     def setUp(self):
         """

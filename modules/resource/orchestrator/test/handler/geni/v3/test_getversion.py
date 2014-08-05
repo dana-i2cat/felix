@@ -9,7 +9,7 @@ sys.path.insert(0, "../../..")
 import testcase
 
 
-class TestGetVersion(testcase.FelixTestCase):
+class TestGetVersion(testcase.TestCase):
     """ Testing very basic behaviour to see 
         whether the handler is able to respond
         with error_results or success_results  

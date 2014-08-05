@@ -10,7 +10,7 @@ from test.delegate.geni.v3.rspecs.utils import rspec_validation
 from test.utils import testcase
 
 
-class TestRequest(testcase.FelixTestCase):
+class TestRequest(testcase.TestCase):
     @classmethod
     def setUp(self):
         """

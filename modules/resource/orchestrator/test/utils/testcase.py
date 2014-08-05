@@ -2,7 +2,7 @@ import sys
 #import unittest
 import unittest2 as unittest
 
-class FelixTestCase(unittest.TestCase):
+class TestCase(unittest.TestCase):
     def runTest(self):
         """
         Explicitly call tests in order to be invoked through test suite.
