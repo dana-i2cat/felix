@@ -5,10 +5,14 @@ Parses the settings configuration file and returns a dictionary with all the dat
 @author: CarolinaFernandez (i2CAT)
 """
 
-from core.log import logger
+from StringIO import StringIO
 import ConfigParser
+import log
 import os
 import sys
+
+logger = log.getLogger("config-parser")
+
 
 class ConfParser:
     
@@ -21,10 +25,12 @@ class ConfParser:
         """
         self.settings = {}
         try:
-            confparser = ConfigParser.RawConfigParser()
+            confparser = ConfigParser.SafeConfigParser()
             # Deployment location
             path = os.path.join(os.path.split(os.path.abspath(__file__))[0], "../../conf", path)
-            confparser.readfp(open(path))
+            # Parse data previously to ignore tabs, spaces or others
+            conf_data = StringIO('\n'.join(line.strip() for line in open(path)))
+            confparser.readfp(conf_data)
             
             for section in confparser.sections():
                 self.settings[section] = {}
