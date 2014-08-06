@@ -4,6 +4,10 @@ from core.config import ConfParser
 from core.service import Service
 import ast
 
+# TODO: can we move these utilities into a proper dir?
+import sys
+sys.path.insert(0, "../")
+from test.utils import calls
 
 class ResourceDetector(Service):
     """
@@ -30,20 +34,32 @@ class ResourceDetector(Service):
             else:
                 self.error("Unknown peer type=%s" % (peer.get('type'),))
 
+    def __adaptor_create(self, peer):
+        return AdaptorFactory.create(
+            type=peer.get('type'),
+            protocol=peer.get('protocol'),
+            user=peer.get('user'),
+            password=peer.get('password'),
+            address=peer.get('address'),
+            port=peer.get('port'),
+            endpoint=peer.get('endpoint'),
+            id=peer.get('_id'),
+            am_type=peer.get('am_type'),
+            am_version=peer.get('am_version'))
+
+    def __credentials(self):
+        (text, ucredential) = calls.getusercred(
+            user_cert_filename="alice-cert.pem", geni_api=3)
+        return ucredential["geni_value"]
+
     def __do_sdn_action(self, peer):
         try:
-            adaptor = AdaptorFactory.create(
-                type=peer.get('type'),
-                protocol=peer.get('protocol'),
-                user=peer.get('user'),
-                password=peer.get('password'),
-                address=peer.get('address'),
-                port=peer.get('port'),
-                endpoint=peer.get('endpoint'),
-                id=peer.get('_id'),
-                am_type=peer.get('am_type'),
-                am_version=peer.get('am_version'))
+            adaptor = self.__adaptor_create(peer)
             self.info("RM-Adaptor=%s" % (adaptor,))
+
+            geni_v3_credentials = self.__credentials()
+            result = adaptor.list_resources(geni_v3_credentials, False)
+            self.debug("Result=%s" % (result,))
 
         except Exception as e:
             self.error("do_sdn_action exception: %s" % (str(e),))
