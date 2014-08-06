@@ -5,7 +5,7 @@ from handler.geni.v3 import exceptions as geni_ex
 from delegate.geni.v3 import rm_adaptor
 from delegate.geni.v3 import exceptions as rms_ex
 
-#from lxml.builder import ElementMaker
+# from lxml.builder import ElementMaker
 from lxml import etree
 
 import core
@@ -24,15 +24,18 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def get_request_extensions_mapping(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        return {'resource-orchestrator': 'http://example.com/resource-orchestrator'}  # /request.xsd
+        return {'resource-orchestrator':
+                'http://example.com/resource-orchestrator'}  # /request.xsd
 
     def get_manifest_extensions_mapping(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        return {'resource-orchestrator': 'http://example.com/resource-orchestrator'}  # /manifest.xsd
+        return {'resource-orchestrator':
+                'http://example.com/resource-orchestrator'}  # /manifest.xsd
 
     def get_ad_extensions_mapping(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        return {'resource-orchestrator': 'http://example.com/resource-orchestrator'}  # /ad.xsd
+        return {'resource-orchestrator':
+                'http://example.com/resource-orchestrator'}  # /ad.xsd
 
     def is_single_allocation(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase.
@@ -47,13 +50,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def list_resources(self, client_cert, credentials, geni_available):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        logger.debug('It is needed to authenticate the user...')
+        logger.debug('list_resources: authenticate the user...')
         client_urn, client_uuid, client_email =\
             self.auth(client_cert, credentials, None, ('listslices',))
 
-        logger.info("Client urn=%s, uuid=%s, email=%s" % (client_urn,
-                                                          client_uuid,
-                                                          client_email,))
+        logger.info("Client urn=%s, uuid=%s, email=%s" % (
+            client_urn, client_uuid, client_email,))
+        logger.info("geni_available=%s", geni_available)
 
         # Retrieve the list of configured RMs or peer-RO from the mongoDB
         peers = DBManager().get_configured_peers()
@@ -71,16 +74,17 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 # remote endpoint (RM) to get (for now) this options:
                 #  type = rspec_ver:code:am_type
                 #  req_version = rspec_ver:value:geni_request_rspec_versions
-                adaptor = AdaptorFactory.create(type=peer.get('type'),
-                                            protocol=peer.get('protocol'),
-                                            user=peer.get('user'),
-                                            password=peer.get('password'),
-                                            address=peer.get('address'),
-                                            port=peer.get('port'),
-                                            endpoint=peer.get('endpoint'),
-                                            id=peer.get('_id'),
-                                            am_type=peer.get('am_type'),
-                                            am_version=peer.get('am_version'))
+                adaptor = AdaptorFactory.create(
+                    type=peer.get('type'),
+                    protocol=peer.get('protocol'),
+                    user=peer.get('user'),
+                    password=peer.get('password'),
+                    address=peer.get('address'),
+                    port=peer.get('port'),
+                    endpoint=peer.get('endpoint'),
+                    id=peer.get('_id'),
+                    am_type=peer.get('am_type'),
+                    am_version=peer.get('am_version'))
                 logger.info("RM-Adapter=%s" % (adaptor,))
 
                 # Retrieve credentials alone
@@ -110,247 +114,110 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def describe(self, urns, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        rspec, sliver_list = self.status(urns, client_cert, credentials)
-        return rspec
-    
+        logger.debug('describe: authenticate the user...')
+        client_urn, client_uuid, client_email =\
+            self.auth(client_cert, credentials, urns, ('sliverstatus',))
+
+        logger.info("Client urn=%s, uuid=%s, email=%s" % (
+            client_urn, client_uuid, client_email,))
+        logger.info("urns=%s", urns)
+        raise geni_ex.GENIv3GeneralError("Not implemented yet!")
+
     # FIXME: Parse RSpec for RO, which should be a GENIv3 RSpec
     # consisting on several nodes of different types
     def allocate(self, slice_urn, client_cert, credentials,
                  rspec, end_time=None):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        # Authenticate the user to perform the reservation
-        client_urn, client_uuid, client_email = self.auth(client_cert,
-                                                          credentials,
-                                                          slice_urn,
-                                                          ('createsliver',))
+        logger.debug('allocate: authenticate the user...')
+        client_urn, client_uuid, client_email =\
+            self.auth(client_cert, credentials, slice_urn, ('createsliver',))
 
-        logger.info("Client urn=%s, uuid=%s, email=%s" % (client_urn,
-                                                          client_uuid,
-                                                          client_email,))
-        requested_ips = []
-        # parse RSpec -> requested_ips
-        rspec_root = self.lxml_parse_rspec(rspec)
-        for elm in rspec_root.getchildren():
-            if not self.lxml_elm_has_request_prefix(elm, 'resource-orchestrator'):
-                raise geni_ex.GENIv3BadArgsError("RSpec contains " +
-                                                 "elements/namespaces I " +
-                                                 "dont understand (%s)." %
-                                                 (elm,))
-
-            if (self.lxml_elm_equals_request_tag(elm, 'resource-orchestrator', 'ip')):
-                requested_ips.append(elm.text.strip())
-
-            elif (self.lxml_elm_equals_request_tag(elm, 'resource-orchestrator', 'iprange')):
-                pass
-                # raise geni_ex.GENIv3GeneralError('IP ranges in RSpecs are
-                #                                  not supported yet.') # TODO
-            else:
-                raise geni_ex.GENIv3BadArgsError("RSpec contains an element " +
-                                                 "I dont understand (%s)." %
-                                                 (elm,))
-
-        reserved_leases = []
-        for rip in requested_ips:
-            try:
-                reserved_leases.append(
-                    self._resource_manager.reserve_lease(rip,
-                                                         slice_urn,
-                                                         client_uuid,
-                                                         client_email,
-                                                         end_time))
-            # translate the resource manager exceptions to GENI exceptions
-            except rms_ex.DHCPLeaseNotFound:
-                raise geni_ex.GENIv3SearchFailedError("The desired IP(s) " +
-                                                      "could no be found " +
-                                                      "(%s)." % (rip,))
-
-            except rms_ex.DHCPLeaseAlreadyTaken:
-                raise geni_ex.GENIv3AlreadyExistsError("The desired IP(s) is" +
-                                                       " already taken (%s)." %
-                                                       (rip,))
-
-        # assemble sliver list
-        sliver_list = [
-            self._get_sliver_status_hash(lease, True, True, "")
-            for lease in reserved_leases]
-
-        return (self.lxml_to_string(self._get_manifest_rspec(reserved_leases)),
-                sliver_list)
+        logger.info("Client urn=%s, uuid=%s, email=%s" % (
+            client_urn, client_uuid, client_email,))
+        logger.info("slice_urn=%s, end_time=%s, rspec=%s" % (
+            slice_urn, end_time, rspec,))
+        raise geni_ex.GENIv3GeneralError("Not implemented yet!")
 
     def renew(self, urns, client_cert, credentials, expiration_time,
               best_effort):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        # this code is similar to the provision call
-        # TODO honor best effort
-        leases = []
-        for urn in urns:
-            if (self.urn_type(urn) == 'slice'):
-                client_urn, client_uuid, client_email = self.auth(
-                    client_cert, credentials, urn,
-                    ('renewsliver',))  # authenticate for each given slice
-                slice_leases = self._resource_manager.leases_in_slice(urn)
-                # extend the lease, so we have a longer timeout.
-                for lease in slice_leases:
-                    try:
-                        self._resource_manager.extend_lease(lease["ip_str"],
-                                                            expiration_time)
+        logger.debug('renew: authenticate the user...')
+        client_urn, client_uuid, client_email =\
+            self.auth(client_cert, credentials, urns, ('renewsliver',))
 
-                    except rms_ex.DHCPMaxLeaseDurationExceeded as e:
-                        raise geni_ex.GENIv3BadArgsError("Lease can not be " +
-                                                         "extended that long" +
-                                                         "(%s)" % (str(e),))
-
-                leases.extend(slice_leases)
-
-            else:
-                msg = 'Only slice URNs can be renewed in this aggregate'
-                raise geni_ex.GENIv3OperationUnsupportedError(msg)
-                # we could use _urn_to_ip helper method for mapping
-                # sliver URNs to IPs
-
-        if len(leases) == 0:
-            raise geni_ex.GENIv3SearchFailedError("There are no resources " +
-                                                  "in the given slice(s)")
-
-        return [
-            self._get_sliver_status_hash(lease, True, True, "")
-            for lease in leases]
+        logger.info("Client urn=%s, uuid=%s, email=%s" % (
+            client_urn, client_uuid, client_email,))
+        logger.info("urns=%s, expiration_time=%s, best_effort=%s" % (
+            urns, expiration_time, best_effort,))
+        raise geni_ex.GENIv3GeneralError("Not implemented yet!")
 
     def provision(self, urns, client_cert, credentials, best_effort, end_time,
                   geni_users):
         """Documentation see [geniv3rpc] GENIv3DelegateBase.
         {geni_users} is not relevant here."""
-        # TODO honor best_effort option
-        prov_leases = []
-        for urn in urns:
-            if (self.urn_type(urn) == 'slice'):
-                # authenticate for each given slice
-                client_urn, client_uuid, client_email = self.auth(
-                    client_cert, credentials, urn, ('createsliver',))
+        logger.debug('provision: authenticate the user...')
+        client_urn, client_uuid, client_email =\
+            self.auth(client_cert, credentials, urns, ('renewsliver',))
 
-                leases = self._resource_manager.leases_in_slice(urn)
-                # extend the lease, so we have a longer timeout.
-                for lease in leases:
-                    try:
-                        self._resource_manager.extend_lease(lease["ip_str"],
-                                                            end_time)
-
-                    except rms_ex.DHCPMaxLeaseDurationExceeded as e:
-                        msg = "Lease can not be extended that long (%s)" %\
-                              (str(e),)
-                        raise geni_ex.GENIv3BadArgsError(msg)
-                # usually you would really instanciate resources here
-                # (not necessary for IP-resources)
-                prov_leases.extend(leases)
-
-            else:
-                msg = 'Only slice URNs can be provisioned by this aggregate'
-                raise geni_ex.GENIv3OperationUnsupportedError(msg)
-                # we could use _urn_to_ip helper method for mapping
-                # sliver URNs to IPs
-
-        if len(prov_leases) == 0:
-            msg = "There are no resources in the given slice(s); " +\
-                  "perform allocate first"
-            raise geni_ex.GENIv3SearchFailedError()
-        # assemble return values
-        sliver_list = [
-            self._get_sliver_status_hash(lease, True, True, "")
-            for lease in prov_leases]
-
-        return (self.lxml_to_string(self._get_manifest_rspec(prov_leases)),
-                sliver_list)
+        logger.info("Client urn=%s, uuid=%s, email=%s" % (
+            client_urn, client_uuid, client_email,))
+        logger.info("urns=%s, best_effort=%s, end_time=%s, geni_users=%s" % (
+            urns, best_effort, end_time, geni_users,))
+        raise geni_ex.GENIv3GeneralError("Not implemented yet!")
 
     def status(self, urns, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        # This code is similar to the provision call.
-        leases = []
-        for urn in urns:
-            if (self.urn_type(urn) == 'slice'):
-                # authenticate for each given slice
-                client_urn, client_uuid, client_email = self.auth(
-                    client_cert, credentials, urn, ('sliverstatus',))
+        logger.debug('status: authenticate the user...')
+        client_urn, client_uuid, client_email =\
+            self.auth(client_cert, credentials, urns, ('sliverstatus',))
 
-                slice_leases = self._resource_manager.leases_in_slice(urn)
-                leases.extend(slice_leases)
-
-            else:
-                msg = "Only slice URNs can be given to status " +\
-                      "in this aggregate"
-                raise geni_ex.GENIv3OperationUnsupportedError(msg)
-                # we could use _urn_to_ip helper method for mapping sliver
-                # URNs to IPs
-
-        if len(leases) == 0:
-            msg = "There are no resources in the given slice(s)"
-            raise geni_ex.GENIv3SearchFailedError(msg)
-        # assemble return values
-        # logger.info(str(leases))
-        sliver_list = [
-            self._get_sliver_status_hash(lease, True, True, "")
-            for lease in leases]
-
-        return (self.lxml_to_string(self._get_manifest_rspec(leases)),
-                sliver_list)
+        logger.info("Client urn=%s, uuid=%s, email=%s" % (
+            client_urn, client_uuid, client_email,))
+        logger.info("urns=%s" % (urns,))
+        raise geni_ex.GENIv3GeneralError("Not implemented yet!")
 
     def perform_operational_action(self, urns, client_cert, credentials,
                                    action, best_effort):
         # could have similar structure like the provision call
         # You should check for the GENI-default actions like
         # GENIv3DelegateBase.OPERATIONAL_ACTION_xxx
-        msg = "DHCP leases do not have operational state."
-        raise geni_ex.GENIv3OperationUnsupportedError(msg)
+        logger.debug('perform_op_action: authentication for %s' % (action,))
+        if action == "geni_stop":
+            client_urn, client_uuid, client_email =\
+                self.auth(client_cert, credentials, urns, ('stopslice',))
+        else:
+            client_urn, client_uuid, client_email =\
+                self.auth(client_cert, credentials, urns, ('startslice',))
+
+        logger.info("Client urn=%s, uuid=%s, email=%s" % (
+            client_urn, client_uuid, client_email,))
+        logger.info("urns=%s, action=%s, best_effort=%s" % (
+            urns, action, best_effort,))
+        raise geni_ex.GENIv3GeneralError("Not implemented yet!")
 
     def delete(self, urns, client_cert, credentials, best_effort):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        # This code is similar to the provision call.
-        leases = []
-        for urn in urns:
-            if (self.urn_type(urn) == 'slice'):
-                # authenticate for each given slice
-                client_urn, client_uuid, client_email = self.auth(
-                    client_cert, credentials, urn, ('deletesliver',))
+        logger.debug('delete: authenticate the user...')
+        client_urn, client_uuid, client_email =\
+            self.auth(client_cert, credentials, urns, ('deletesliver',))
 
-                slice_leases = self._resource_manager.leases_in_slice(urn)
-                for lease in slice_leases:
-                    self._resource_manager.free_lease(lease["ip_str"])
-
-                leases.extend(slice_leases)
-            else:
-                msg = 'Only slice URNs can be deleted in this aggregate'
-                raise geni_ex.GENIv3OperationUnsupportedError(msg)
-                # we could use _urn_to_ip helper method for mapping
-                # sliver URNs to IPs
-
-        if len(leases) == 0:
-            msg = "There are no resources in the given slice(s)"
-            raise geni_ex.GENIv3SearchFailedError(msg)
-
-        # assemble return values
-        return [
-            self._get_sliver_status_hash(lease, True, True, "")
-            for lease in leases]
+        logger.info("Client urn=%s, uuid=%s, email=%s" % (
+            client_urn, client_uuid, client_email,))
+        logger.info("urns=%s, best_effort=%s" % (urns, best_effort,))
+        raise geni_ex.GENIv3GeneralError("Not implemented yet!")
 
     def shutdown(self, slice_urn, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        # client_urn, client_uuid, client_email =
-        #   self.auth(client_cert, credentials, slice_urn, ('shutdown',))
-        raise geni_ex.GENIv3GeneralError("Method not implemented")
-        return True
+        logger.debug('shutdown: authenticate the user...')
+        client_urn, client_uuid, client_email =\
+            self.auth(client_cert, credentials, slice_urn, ('shutdown',))
+
+        logger.info("Client urn=%s, uuid=%s, email=%s" % (
+            client_urn, client_uuid, client_email,))
+        logger.info("slice_urn=%s" % (slice_urn,))
+        raise geni_ex.GENIv3GeneralError("Not implemented yet!")
 
     # Helper methods
-    def _ip_to_urn(self, ip_str):
-        """Helper method to map IPs to URNs."""
-        return ("%s:%s" % (self.URN_PREFIX, ip_str.replace('.', '-')))
-
-    def _urn_to_ip_str(self, urn):
-        """Helper method to map URNs to IPs."""
-        if (urn.startswith(self.URN_PREFIX)):
-            return urn[len(self.URN_PREFIX)+1:].replace('-', '.')
-        else:
-            msg = "The given URN is not valid for this AM (%s)" % (urn,)
-            raise geni_ex.GENIv3BadArgsError(msg)
-
     def _get_sliver_status_hash(self, lease, include_allocation_status=False,
                                 include_operational_status=False,
                                 error_message=None):
@@ -380,3 +247,4 @@ class GENIv3Delegate(GENIv3DelegateBase):
             r = E.resource()
             r.append(E.ip(lease["ip_str"]))
             # TODO add more info here
+        logger.debug("manifest=%s", (manifest,))
