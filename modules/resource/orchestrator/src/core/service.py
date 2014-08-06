@@ -55,3 +55,12 @@ class Service(threading.Thread):
                 time.sleep(self.__interval)
         except Exception as e:
             logger.error("RunTime error: %s" % (str(e),))
+
+    def debug(self, msg):
+        logger.debug("[%s] %s" % (self.name, msg,))
+
+    def info(self, msg):
+        logger.info("[%s] %s" % (self.name, msg,))
+
+    def error(self, msg):
+        logger.error("[%s] %s" % (self.name, msg,))
