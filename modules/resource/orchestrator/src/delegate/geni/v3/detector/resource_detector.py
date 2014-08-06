@@ -27,10 +27,14 @@ class ResourceDetector(Service):
         self.debug("Configured peers=%d" % (len(peers),))
         for peer in peers:
             self.debug("Peer=%s" % (peer,))
+            result = self.__get_resources(peer)
+            if result is None:
+                continue
+            # decode the Adv RSpec now!
             if peer.get('type') == "sdn_networking":
-                self.__do_sdn_action(peer)
+                self.__decode_sdn_rspec(result)
             elif peer.get('type') == "virtualisation":
-                self.__do_computing_action(peer)
+                self.__decode_computing_rspec(result)
             else:
                 self.error("Unknown peer type=%s" % (peer.get('type'),))
 
@@ -52,17 +56,33 @@ class ResourceDetector(Service):
             user_cert_filename="alice-cert.pem", geni_api=3)
         return ucredential["geni_value"]
 
-    def __do_sdn_action(self, peer):
+    def __get_resources(self, peer):
         try:
             adaptor = self.__adaptor_create(peer)
             self.info("RM-Adaptor=%s" % (adaptor,))
 
             geni_v3_credentials = self.__credentials()
-            result = adaptor.list_resources(geni_v3_credentials, False)
-            self.debug("Result=%s" % (result,))
+            return adaptor.list_resources(geni_v3_credentials, False)
 
         except Exception as e:
-            self.error("do_sdn_action exception: %s" % (str(e),))
+            self.error("get_resources (%s) exception: %s" % (
+                peer.get('type'), str(e),))
+            return None
 
-    def __do_computing_action(self, peer):
-        self.error("Not implemented yet!")
+    def __decode_sdn_rspec(self, result):
+        rspec = result.get('value', None)
+        if rspec is None:
+            self.error("Unable to get RSpec value from %s" % (result,))
+            return None
+
+        self.debug("Rspec=%s" % (rspec,))
+        return None
+
+    def __decode_computing_rspec(self, result):
+        rspec = result.get('value', None)
+        if rspec is None:
+            self.error("Unable to get RSpec value from %s" % (result,))
+            return None
+
+        self.debug("Rspec=%s" % (rspec,))
+        return None
