@@ -9,7 +9,9 @@ if __name__ == '__main__':
     bp_ = os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0])))
     if bp_ not in [os.path.abspath(x) for x in sys.path]:
         sys.path.insert(0, bp_)
-        sys.path.insert(0, "../../../../..")
+        pref = "../../../../../../src"
+        sys.path.insert(0, pref)
+        sys.path.insert(0, pref + "/delegate/geni/v3/rspecs/openflow")
 
 from commons import OpenFlowNode, validate
 from advertisement_formatter import OFv3AdvertisementFormatter
@@ -49,7 +51,7 @@ def main(argv=None):
 
     print rspec
     (result, error) = validate(rspec.get_rspec())
-    if result != True:
+    if result is not True:
         print "Validation failure: %s" % error
     else:
         print "Validation success!"
@@ -58,7 +60,7 @@ def main(argv=None):
     rspec = OFv3AdvertisementParser("adv_rspec_example.xml")
 
     (result, error) = validate(rspec.get_rspec())
-    if result != True:
+    if result is not True:
         print "Validation failure: %s" % error
     else:
         print "Validation success!"

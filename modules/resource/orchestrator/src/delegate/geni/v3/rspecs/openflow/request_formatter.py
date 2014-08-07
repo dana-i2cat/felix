@@ -16,7 +16,7 @@ class OFv3RequestFormatter(object):
                  "xs": "%s" % (xs),
                  "openflow": "%s" % (openflow)}
         self.__openflow = openflow
-        self.__rspec = etree.Element("rspec", nsmap=NSMAP)
+        self.__rspec = etree.Element("{%s}rspec" % (xmlns), nsmap=NSMAP)
         self.__rspec.attrib["{%s}schemaLocation" % (xs)] = schema_location
         self.__rspec.attrib["type"] = "request"
 

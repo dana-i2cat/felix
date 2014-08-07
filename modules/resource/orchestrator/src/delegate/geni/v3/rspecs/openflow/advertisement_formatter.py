@@ -15,21 +15,23 @@ class OFv3AdvertisementFormatter(object):
                  "xs": "%s" % (xs),
                  "openflow": "%s" % (openflow)}
         self.__openflow = openflow
-        self.__rspec = etree.Element("rspec", nsmap=NSMAP)
+        self.__xmlns = xmlns
+        self.__rspec = etree.Element("{%s}rspec" % (xmlns), nsmap=NSMAP)
         self.__rspec.attrib["{%s}schemaLocation" % (xs)] = schema_location
         self.__rspec.attrib["type"] = "advertisement"
 
     def datapath(self, dpath):
-        node_ = etree.SubElement(self.__rspec, "node")
+        node_ = etree.SubElement(self.__rspec, "{%s}node" % (self.__xmlns))
         node_.attrib["component_id"] = dpath.component_id
         node_.attrib["component_manager_id"] = dpath.component_manager_id
         node_.attrib["component_name"] = dpath.component_name
         node_.attrib["exclusive"] = dpath.exclusive
 
-        sub_node_ = etree.SubElement(node_, "hardware_type")
+        sub_node_ = etree.SubElement(node_,
+                                     "{%s}hardware_type" % (self.__xmlns))
         sub_node_.attrib["name"] = dpath.hardware_type_name
 
-        sub_node_ = etree.SubElement(node_, "available")
+        sub_node_ = etree.SubElement(node_, "{%s}available" % (self.__xmlns))
         sub_node_.attrib["now"] = dpath.available_now
 
         self.__datapath(self.__rspec, dpath.component_id,
