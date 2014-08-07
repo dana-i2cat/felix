@@ -69,8 +69,8 @@ def main(argv=None):
     rspec.match(m)
 
     print rspec
-    (result, error) = validate(rspec.get_rspec())
-    if result is not True:
+    (result_ok, error) = validate(rspec.get_rspec())
+    if not result_ok:
         print "Validation failure: %s" % error
     else:
         print "Validation success!"
@@ -78,8 +78,8 @@ def main(argv=None):
     print '=== OFv3RequestParser ==='
     rspec = OFv3RequestParser("request_rspec_example.xml")
 
-    (result, error) = validate(rspec.get_rspec())
-    if result is not True:
+    (result_ok, error) = validate(rspec.get_rspec())
+    if not result_ok:
         print "Validation failure: %s" % error
     else:
         print "Validation success!"

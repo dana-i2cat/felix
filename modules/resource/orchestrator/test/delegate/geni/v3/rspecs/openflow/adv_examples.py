@@ -51,7 +51,7 @@ def main(argv=None):
 
     print rspec
     (result, error) = validate(rspec.get_rspec())
-    if result is not True:
+    if not result:
         print "Validation failure: %s" % error
     else:
         print "Validation success!"
@@ -60,7 +60,7 @@ def main(argv=None):
     rspec = OFv3AdvertisementParser("adv_rspec_example.xml")
 
     (result, error) = validate(rspec.get_rspec())
-    if result is not True:
+    if not result:
         print "Validation failure: %s" % error
     else:
         print "Validation success!"
