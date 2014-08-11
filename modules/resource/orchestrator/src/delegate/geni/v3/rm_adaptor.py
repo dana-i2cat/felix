@@ -36,11 +36,17 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
             logger.debug("We need to update the AM info for this RM...")
             (am_type, am_version) = AdaptorFactory.get_am_info(uri, id)
 
+        logger.debug("AM type: %s, version: %s" % (am_type, am_version,))
+
         if am_type in ['geni', 'geni_sfa', 'sfa'] and am_version <= 2:
             if type == 'virtualisation':
                 return CRMGeniv2Adaptor(uri)
             elif type == 'sdn_networking':
                 return SDNRMGeniv2Adaptor(uri)
+
+        elif am_type in ['geni', ] and int(am_version) == 3:
+            if type == 'sdn_networking':
+                return SDNRMGeniv3Adaptor(uri)
 
         raise exceptions.GeneralError("Type not implemented yet!")
 
@@ -61,6 +67,9 @@ class SFAClient(AdaptorFactory):
             # We need at least the type and the (supported) request version
             self.geni_type = rspec_version.get('code').get('am_type')
             self.geni_api_version = values.get('geni_api')
+
+            if not self.geni_type:  # we assume GENI as default
+                self.geni_type = 'geni'
 
             return (self.geni_type, self.geni_api_version)
 
@@ -91,6 +100,17 @@ class SFAv2Client(SFAClient):
                 "geni_rspec_version": {
                     "type": self.geni_type,
                     "version": self.geni_api_version, }}
+
+
+class GENIv3Client(SFAClient):
+    def __init__(self, uri):
+        SFAClient.__init__(self, uri, type='geni', version=3)
+
+    def format_options(self, available):
+        return {"geni_available": available,
+                "geni_compress": False,
+                "geni_rspec_version": {"type": "geni",
+                                       "version": 3, }}
 
 
 class CRMGeniv2Adaptor(SFAv2Client):
@@ -190,3 +210,19 @@ class SDNRMGeniv2Adaptor(SFAv2Client):
         except Exception as e:
             raise exceptions.RPCError("SDNRMGeniv2 ListResources failure: %s" %
                                       str(e))
+
+
+class SDNRMGeniv3Adaptor(GENIv3Client):
+    def __init__(self, uri):
+        GENIv3Client.__init__(self, uri)
+
+    def list_resources(self, credentials, available):
+        options = self.format_options(available)
+        logger.debug("Options: %s" % (options,))
+        try:
+            params = [credentials, options, ]
+            return self.ListResources(*params)
+
+        except Exception as e:
+            err_ = "SDNRMGeniv3 ListResources failure: %s" % str(e)
+            raise exceptions.RPCError(err_)

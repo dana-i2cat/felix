@@ -123,3 +123,25 @@ class OpenFlowNode(Node):
     def __repr__(self):
         return "node: %s, dpid: %s, ports: %s" %\
                (self.node_to_string(), self.dpid, self.ports)
+
+
+class OpenFlowLink_dpid2dpid(object):
+    def __init__(self, srcDPID, srcPort, dstDPID, dstPort):
+        self.link = {'srcDPID': srcDPID,
+                     'srcPort': str(srcPort),
+                     'dstDPID': dstDPID,
+                     'dstPort': str(dstPort)}
+
+    def __repr__(self):
+        return "link: %s" % (self.link)
+
+
+class OpenFlowLink_dpid2device(object):
+    def __init__(self, srcDPID, srcPort, dstDevice, dstPort):
+        self.link = {'srcDPID': srcDPID,
+                     'srcPort': str(srcPort),
+                     'dstDevice': dstDevice,
+                     'dstPort': str(dstPort)}
+
+    def __repr__(self):
+        return "link: %s" % (self.link)
