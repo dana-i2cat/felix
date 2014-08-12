@@ -25,7 +25,7 @@ class OFv3AdvertisementParser(object):
                       node.attrib.get("component_name"),
                       node.attrib.get("exclusive"),
                       hname, anow)
-            nodes_.append({'node': n_})
+            nodes_.append(n_.serialize())
         return nodes_
 
     def ofnodes(self):
@@ -45,7 +45,7 @@ class OFv3AdvertisementParser(object):
             [of_.add_port(p.attrib.get("num"), p.attrib.get("name"))
              for p in ofn.findall(".//{%s}port" % (self.__openflow))]
 
-            ofnodes_.append({'ofnode': of_})
+            ofnodes_.append(of_.serialize())
         return ofnodes_
 
     def oflinks(self):
@@ -61,7 +61,7 @@ class OFv3AdvertisementParser(object):
                                                ofl.attrib.get("srcPort"),
                                                ofl.attrib.get("dstDevice"),
                                                ofl.attrib.get("dstPort"))
-            oflinks_.append({'oflink': of_})
+            oflinks_.append(of_.serialize())
         return oflinks_
 
     def get_rspec(self):

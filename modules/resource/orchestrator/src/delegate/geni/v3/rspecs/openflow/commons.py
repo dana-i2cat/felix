@@ -89,20 +89,18 @@ class Match(object):
 class Node(object):
     def __init__(self, id, manager_id, name, exclusive,
                  hardware_type, available):
-        self.component_id = id
-        self.component_manager_id = manager_id
-        self.component_name = name
-        self.exclusive = exclusive
-        self.hardware_type_name = hardware_type
-        self.available_now = available
+        self.node = {'component_id': id,
+                     'component_manager_id': manager_id,
+                     'component_name': name,
+                     'exclusive': exclusive,
+                     'hardware_type_name': hardware_type,
+                     'available_now': available}
 
     def node_to_string(self):
-        return "id: " + self.component_id +\
-               ", manager_id: " + self.component_manager_id +\
-               ", name: " + self.component_name +\
-               ", exclusive: " + self.exclusive +\
-               ", hardware_type: " + self.hardware_type_name +\
-               ", available: " + self.available_now
+        return "%s" % (self.node)
+
+    def serialize(self):
+        return self.node
 
     def __repr__(self):
         return self.node_to_string()
@@ -120,8 +118,14 @@ class OpenFlowNode(Node):
     def add_port(self, num, name=None):
         self.ports.append({'num': str(num), 'name': name})
 
+    def serialize(self):
+        node_ = super(OpenFlowNode, self).serialize()
+        node_['dpid'] = self.dpid
+        node_['ports'] = self.ports
+        return node_
+
     def __repr__(self):
-        return "node: %s, dpid: %s, ports: %s" %\
+        return "%s, dpid: %s, ports: %s" %\
                (self.node_to_string(), self.dpid, self.ports)
 
 
@@ -132,8 +136,11 @@ class OpenFlowLink_dpid2dpid(object):
                      'dstDPID': dstDPID,
                      'dstPort': str(dstPort)}
 
+    def serialize(self):
+        return self.link
+
     def __repr__(self):
-        return "link: %s" % (self.link)
+        return "%s" % (self.link)
 
 
 class OpenFlowLink_dpid2device(object):
@@ -143,5 +150,8 @@ class OpenFlowLink_dpid2device(object):
                      'dstDevice': dstDevice,
                      'dstPort': str(dstPort)}
 
+    def serialize(self):
+        return self.link
+
     def __repr__(self):
-        return "link: %s" % (self.link)
+        return "%s" % (self.link)

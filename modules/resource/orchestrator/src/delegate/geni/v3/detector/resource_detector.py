@@ -67,12 +67,23 @@ class ResourceDetector(Service):
             self.info("RM-Adaptor=%s" % (adaptor,))
 
             geni_v3_credentials = self.__credentials()
+            self.info("Credentials successfully retrieved!")
             return adaptor.list_resources(geni_v3_credentials, False)
 
         except Exception as e:
             self.error("get_resources (%s) exception: %s" % (
                 peer.get('type'), str(e),))
             return None
+
+    def __db(self, action, data):
+        try:
+            if action == "store_sdn_nodes":
+                return DBManager().store_sdn_nodes(data)
+            elif action == "store_sdn_links":
+                return DBManager().store_sdn_links(data)
+
+        except Exception as e:
+            self.error("Exception on %s: %s" % (action, str(e)))
 
     def __decode_sdn_rspec(self, result):
         (ofnodes, oflinks) = (None, None)
@@ -105,7 +116,17 @@ class ResourceDetector(Service):
         return (ofnodes, oflinks)
 
     def __store_sdn_resources(self, nodes, links):
-        self.error("Nodes=%s, Links=%s" % (nodes, links,))
+        if nodes is None or len(nodes) == 0:
+            self.error("Nodes list does not exist or is empty!")
+        else:
+            ids = self.__db("store_sdn_nodes", nodes)
+            self.debug("IDs nodes=%s" % (ids,))
+
+        if links is None or len(links) == 0:
+            self.error("Links list does not exist or is empty!")
+        else:
+            ids = self.__db("store_sdn_links", links)
+            self.debug("IDs links=%s" % (ids,))
 
     def __decode_computing_rspec(self, result):
         rspec = result.get('value', None)
