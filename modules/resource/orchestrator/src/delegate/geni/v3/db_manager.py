@@ -11,6 +11,7 @@ class DBManager(object):
     def __init__(self):
         self.__mutex = threading.Lock()
 
+    # (felix_ro) RoutingTable
     def get_configured_peers(self):
         table = pymongo.MongoClient().felix_ro.RoutingTable
         try:
@@ -29,63 +30,56 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
-    def store_sdn_nodes(self, values):
-        table = pymongo.MongoClient().felix_ro.OFNodeTable
+    # (felix_ro) OFDatapathTable
+    def store_sdn_datapaths(self, routingKey, values):
+        table = pymongo.MongoClient().felix_ro.OFDatapathTable
         try:
             ids = []
             self.__mutex.acquire()
             for v in values:
                 row = table.find_one({
+                    'routing_key': routingKey,
                     'component_id': v.get('component_id'),
                     'component_manager_id': v.get('component_manager_id'),
                     'dpid': v.get('dpid')})
                 if row is None:
+                    v['routing_key'] = routingKey
                     ids.append(table.insert(v))
                     continue
                 # update the object (if needed)
-                logger.debug("%s already stored!" % (row.get('_id')))
-                m = {}
-                if row.get('exclusive') != v.get('exclusive'):
-                    m['exclusive'] = v.get('exclusive')
-                if row.get('available_now') != v.get('available_now'):
-                    m['available_now'] = v.get('available_now')
-                if row.get('hardware_type_name')!= v.get('hardware_type_name'):
-                    m['hardware_type_name'] = v.get('hardware_type_name')
-                if row.get('component_name') != v.get('component_name'):
-                    m['component_name'] = v.get('component_name')
+                logger.debug(
+                    "(datapth-table) %s already stored!" % (row.get('_id')))
+                modif = {'ports': []}
+                for p in v.get('ports'):
+                    if p not in row.get('ports'):
+                        modif.get('ports').append(p)
 
-                # TODO: missing ports verification!
-                if len(m) > 0:
+                if len(modif.get('ports')) > 0:
+                    modif.extend(row.get('ports'))
+                    logger.debug(
+                        "(datapth-table) extend port info %s" % (modif))
                     table.update({'_id': row.get('_id')},
-                                 {"$set": m})
-                else:
-                    logger.info("(sdn-node) %s already stored!" %\
-                                (row.get('_id')))
+                                 {"$set": modif})
             return ids
         finally:
             self.__mutex.release()
 
-    def store_sdn_links(self, values):
+    # (felix_ro) OFLinkTable
+    def store_sdn_links(self, routingKey, values):
         table = pymongo.MongoClient().felix_ro.OFLinkTable
         try:
             ids = []
             self.__mutex.acquire()
             for v in values:
-                row = None
-                if v.get('dstDPID'):
-                    row = table.find_one({'srcDPID': v.get('srcDPID'),
-                                          'srcPort': v.get('srcPort'),
-                                          'dstDPID': v.get('dstDPID'),
-                                          'dstPort': v.get('dstPort')})
-                elif v.get('dstDevice'):
-                    row = table.find_one({'srcDPID': v.get('srcDPID'),
-                                          'srcPort': v.get('srcPort'),
-                                          'dstDevice': v.get('dstDevice'),
-                                          'dstPort': v.get('dstPort')})
+                row = table.find_one({
+                    'routing_key': routingKey,
+                    'component_id': v.get('component_id')})
                 if row is None:
+                    v['routing_key'] = routingKey
                     ids.append(table.insert(v))
                 else:
-                    logger.info("(sdn-link) %s already stored!" % (row))
+                    logger.debug(
+                        "(link-table) %s already stored!" % (row.get('_id')))
             return ids
         finally:
             self.__mutex.release()

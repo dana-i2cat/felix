@@ -6,6 +6,8 @@ import pymongo
 
 
 class CommandMgr(object):
+    TABLES = ["RoutingTable", "OFDatapathTable", "OFLinkTable"]
+
     def __select(self, table, name):
         print "\n\n" + "(RO) %s has %d rows\n" % (name, table.count())
         for row in table.find():
@@ -16,16 +18,15 @@ class CommandMgr(object):
         print "\n\n" + "Deleted all rows of (RO) %s" % (name)
 
     def list_tables(self):
-        print "\n\n" + "Managed Tables: [RoutingTable, OFNodeTable, " +\
-              "OFLinkTable]\n\n"
+        print "\n\nManaged Tables: %s\n\n" % CommandMgr.TABLES
 
     def select_routing_table(self):
         self.__select(pymongo.MongoClient().felix_ro.RoutingTable,
                       "RoutingTable")
 
-    def select_ofnode_table(self):
-        self.__select(pymongo.MongoClient().felix_ro.OFNodeTable,
-                      "OFNodeTable")
+    def select_ofdatapath_table(self):
+        self.__select(pymongo.MongoClient().felix_ro.OFDatapathTable,
+                      "OFDatapathTable")
 
     def select_oflink_table(self):
         self.__select(pymongo.MongoClient().felix_ro.OFLinkTable,
@@ -35,8 +36,8 @@ class CommandMgr(object):
         self.__delete(pymongo.MongoClient().felix_ro.RoutingTable,
                       "RoutingTable")
 
-    def delete_ofnode_table(self):
-        self.__delete(pymongo.MongoClient().felix_ro.OFNodeTable,
+    def delete_ofdatapath_table(self):
+        self.__delete(pymongo.MongoClient().felix_ro.OFDatapathTable,
                       "OFNodeTable")
 
     def delete_oflink_table(self):
@@ -58,10 +59,10 @@ def main(argv=None):
         parser_.add_argument('--action',
                              choices=['list_tables',
                                       'select_routing_table',
-                                      'select_ofnode_table',
+                                      'select_ofdatapath_table',
                                       'select_oflink_table',
                                       'delete_routing_table',
-                                      'delete_ofnode_table',
+                                      'delete_ofdatapath_table',
                                       'delete_oflink_table'],
                              required=True,
                              help='Make an action on (RO) MongoDB')
@@ -78,14 +79,14 @@ def main(argv=None):
             CommandMgr().list_tables()
         elif args_.action == 'select_routing_table':
             CommandMgr().select_routing_table()
-        elif args_.action == 'select_ofnode_table':
-            CommandMgr().select_ofnode_table()
+        elif args_.action == 'select_ofdatapath_table':
+            CommandMgr().select_ofdatapath_table()
         elif args_.action == 'select_oflink_table':
             CommandMgr().select_oflink_table()
         elif args_.action == 'delete_routing_table':
             CommandMgr().delete_routing_table()
-        elif args_.action == 'delete_ofnode_table':
-            CommandMgr().delete_ofnode_table()
+        elif args_.action == 'delete_ofdatapath_table':
+            CommandMgr().delete_ofdatapath_table()
         elif args_.action == 'delete_oflink_table':
             CommandMgr().delete_oflink_table()
 

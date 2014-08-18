@@ -1,5 +1,4 @@
-from commons import Node, OpenFlowNode
-from commons import OpenFlowLink_dpid2dpid, OpenFlowLink_dpid2device
+from commons import Datapath, OFLink, FEDLink
 from delegate.geni.v3 import exceptions
 from lxml import etree
 
@@ -11,76 +10,55 @@ class OFv3AdvertisementParser(object):
         elif from_string is not None:
             self.__rspec = etree.fromstring(from_string)
 
-        self.__openflow = self.__rspec.nsmap.get('openflow')
+        self.__of = self.__rspec.nsmap.get('openflow')
         self.__none = self.__rspec.nsmap.get(None)
 
-    def nodes(self):
-        nodes_ = []
-        for node in self.__rspec.findall(".//{%s}node" % (self.__none)):
-            hname = self.__node_attrib(node, "hardware_type", "name")
-            anow = self.__node_attrib(node, "available", "now")
-
-            n_ = Node(node.attrib.get("component_id"),
-                      node.attrib.get("component_manager_id"),
-                      node.attrib.get("component_name"),
-                      node.attrib.get("exclusive"),
-                      hname, anow)
-            nodes_.append(n_.serialize())
-        return nodes_
-
-    def ofnodes(self):
-        ofnodes_ = []
-        for ofn in self.__rspec.findall(".//{%s}datapath" % (self.__openflow)):
-            node_ = self.__find_node(ofn.attrib.get("component_id"),
-                                     ofn.attrib.get("component_manager_id"),
-                                     ofn.attrib.get("dpid"))
-            excl = node_.attrib.get("exclusive")
-            anow = self.__node_attrib(node_, "available", "now")
-
-            of_ = OpenFlowNode(ofn.attrib.get("component_id"),
-                               ofn.attrib.get("component_manager_id"),
-                               ofn.attrib.get("dpid"),
-                               excl, anow)
+    def ofdatapaths(self):
+        ofdps_ = []
+        for ofd in self.__rspec.iterchildren("{%s}datapath" % (self.__of)):
+            of_ = Datapath(ofd.attrib.get("component_id"),
+                           ofd.attrib.get("component_manager_id"),
+                           ofd.attrib.get("dpid"))
 
             [of_.add_port(p.attrib.get("num"), p.attrib.get("name"))
-             for p in ofn.findall(".//{%s}port" % (self.__openflow))]
+             for p in ofd.findall(".//{%s}port" % (self.__of))]
 
-            ofnodes_.append(of_.serialize())
-        return ofnodes_
+            ofdps_.append(of_.serialize())
+        return ofdps_
 
-    def oflinks(self):
-        oflinks_ = []
-        for ofl in self.__rspec.findall(".//{%s}link" % (self.__openflow)):
-            if ofl.attrib.get("dstDPID"):
-                of_ = OpenFlowLink_dpid2dpid(ofl.attrib.get("srcDPID"),
-                                             ofl.attrib.get("srcPort"),
-                                             ofl.attrib.get("dstDPID"),
-                                             ofl.attrib.get("dstPort"))
-            elif ofl.attrib.get("dstDevice"):
-                of_ = OpenFlowLink_dpid2device(ofl.attrib.get("srcDPID"),
-                                               ofl.attrib.get("srcPort"),
-                                               ofl.attrib.get("dstDevice"),
-                                               ofl.attrib.get("dstPort"))
-            oflinks_.append(of_.serialize())
-        return oflinks_
+    def links(self):
+        links_ = []
+        for l in self.__rspec.findall(".//{%s}link" % (self.__none)):
+            if l.find(".//{%s}datapath" % (self.__of)) is not None:
+                of_ = OFLink(l.attrib.get("component_id"))
+                for dpid in l.iterchildren("{%s}datapath" % (self.__of)):
+                    d = Datapath(dpid.attrib.get("component_id"),
+                                 dpid.attrib.get("component_manager_id"),
+                                 dpid.attrib.get("dpid"))
+                    of_.add_datapath(d)
+
+                for port in l.iterchildren("{%s}port" % (self.__of)):
+                    of_.add_port(port.attrib.get("port_num"))
+
+            elif l.find(".//{%s}interface_ref" % (self.__none)) is not None:
+                of_ = FEDLink(l.attrib.get("component_id"))
+                link_type = l.find(".//{%s}link_type" % (self.__none))
+                if link_type is not None:
+                    of_.set_link_type(link_type.attrib.get("name"))
+                cmgr = l.find(".//{%s}component_manager" % (self.__none))
+                if cmgr is not None:
+                    of_.set_component_manager(cmgr.attrib.get("name"))
+
+                for ref in l.iterchildren("{%s}interface_ref" % (self.__none)):
+                    of_.add_interface_id(ref.attrib.get("component_id"))
+            else:
+                raise exceptions.RSpecError("Unknown link type!")
+
+            links_.append(of_.serialize())
+        return links_
 
     def get_rspec(self):
         return self.__rspec
-
-    def __node_attrib(self, element, tag, name):
-        value = element.find(".//{%s}%s" % (self.__none, tag))
-        if value is None:
-            raise exceptions.RSpecError("%s is not found!", tag)
-        return value.attrib.get(name)
-
-    def __find_node(self, cid, cmid, dpid):
-        for node in self.__rspec.findall(".//{%s}node" % (self.__none)):
-            if node.attrib.get("component_id") == cid and\
-               node.attrib.get("component_manager_id") == cmid and\
-               node.attrib.get("component_name") == dpid:
-                return node
-        raise exceptions.RSpecError("Node with %s,%s,%s is not found!",
-                                    (cid, cmid, dpid))
 
     def __repr__(self):
         return etree.tostring(self.__rspec, pretty_print=True)

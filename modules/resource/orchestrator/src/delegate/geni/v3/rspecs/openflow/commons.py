@@ -42,18 +42,16 @@ def validate(ingress_root):
 
 class Datapath(object):
     def __init__(self, component_id, component_manager_id, dpid):
-        self.component_id = component_id
-        self.component_manager_id = component_manager_id
-        self.dpid = dpid
-        self.ports = []
+        self.datapath = {'component_id': component_id,
+                         'component_manager_id': component_manager_id,
+                         'dpid': dpid,
+                         'ports': []}
 
     def add_port(self, num, name=None):
-        self.ports.append({'num': str(num), 'name': name})
+        self.datapath['ports'].append({'num': str(num), 'name': name})
 
-    def __repr__(self):
-        return "id: %s, manager_id: %s, dpid: %s, ports: %s" %\
-               (self.component_id, self.component_manager_id,
-                self.dpid, self.ports)
+    def serialize(self):
+        return self.datapath
 
 
 class Match(object):
@@ -86,72 +84,37 @@ class Match(object):
                (self.use_groups, self.datapaths, self.packet)
 
 
-class Node(object):
-    def __init__(self, id, manager_id, name, exclusive,
-                 hardware_type, available):
-        self.node = {'component_id': id,
-                     'component_manager_id': manager_id,
-                     'component_name': name,
-                     'exclusive': exclusive,
-                     'hardware_type_name': hardware_type,
-                     'available_now': available}
+class OFLink(object):
+    def __init__(self, component_id):
+        self.link = {'component_id': component_id,
+                     'dpids': [],
+                     'ports': []}
 
-    def node_to_string(self):
-        return "%s" % (self.node)
+    def add_datapath(self, dpath):
+        self.link['dpids'].append(dpath.serialize())
 
-    def serialize(self):
-        return self.node
-
-    def __repr__(self):
-        return self.node_to_string()
-
-
-class OpenFlowNode(Node):
-    def __init__(self, component_id, component_manager_id, dpid,
-                 exclusive, available):
-        super(OpenFlowNode, self).__init__(component_id, component_manager_id,
-                                           dpid, exclusive, NODE_OPENFLOW,
-                                           available)
-        self.dpid = dpid
-        self.ports = []
-
-    def add_port(self, num, name=None):
-        self.ports.append({'num': str(num), 'name': name})
-
-    def serialize(self):
-        node_ = super(OpenFlowNode, self).serialize()
-        node_['dpid'] = self.dpid
-        node_['ports'] = self.ports
-        return node_
-
-    def __repr__(self):
-        return "%s, dpid: %s, ports: %s" %\
-               (self.node_to_string(), self.dpid, self.ports)
-
-
-class OpenFlowLink_dpid2dpid(object):
-    def __init__(self, srcDPID, srcPort, dstDPID, dstPort):
-        self.link = {'srcDPID': srcDPID,
-                     'srcPort': str(srcPort),
-                     'dstDPID': dstDPID,
-                     'dstPort': str(dstPort)}
+    def add_port(self, pnum):
+        self.link['ports'].append({'port_num': str(pnum)})
 
     def serialize(self):
         return self.link
 
-    def __repr__(self):
-        return "%s" % (self.link)
 
+class FEDLink(object):
+    def __init__(self, component_id):
+        self.link = {'component_id': component_id,
+                     'link_type_name': None,
+                     'component_manager_name': None,
+                     'interface_ref_id': []}
 
-class OpenFlowLink_dpid2device(object):
-    def __init__(self, srcDPID, srcPort, dstDevice, dstPort):
-        self.link = {'srcDPID': srcDPID,
-                     'srcPort': str(srcPort),
-                     'dstDevice': dstDevice,
-                     'dstPort': str(dstPort)}
+    def set_link_type(self, name):
+        self.link['link_type_name'] = name
+
+    def set_component_manager(self, name):
+        self.link['component_manager_name'] = name
+
+    def add_interface_id(self, ifid):
+        self.link['interface_ref_id'].append(ifid)
 
     def serialize(self):
         return self.link
-
-    def __repr__(self):
-        return "%s" % (self.link)
