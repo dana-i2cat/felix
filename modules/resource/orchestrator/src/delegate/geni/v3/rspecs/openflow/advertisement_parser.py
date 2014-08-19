@@ -1,4 +1,4 @@
-from commons import Datapath, OFLink, FEDLink
+from delegate.geni.v3.rspecs.commons import Datapath, OFLink, FEDLink
 from delegate.geni.v3 import exceptions
 from lxml import etree
 

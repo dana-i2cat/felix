@@ -64,6 +64,14 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
+    def get_sdn_datapaths(self):
+        table = pymongo.MongoClient().felix_ro.OFDatapathTable
+        try:
+            self.__mutex.acquire()
+            return [row for row in table.find()]
+        finally:
+            self.__mutex.release()
+
     # (felix_ro) OFLinkTable
     def store_sdn_links(self, routingKey, values):
         table = pymongo.MongoClient().felix_ro.OFLinkTable
@@ -81,5 +89,19 @@ class DBManager(object):
                     logger.debug(
                         "(link-table) %s already stored!" % (row.get('_id')))
             return ids
+        finally:
+            self.__mutex.release()
+
+    def get_sdn_links(self):
+        table = pymongo.MongoClient().felix_ro.OFLinkTable
+        (of, fed) = ([], [])
+        try:
+            self.__mutex.acquire()
+            for row in table.find():
+                if row.get("dpids") is not None:
+                    of.append(row)
+                elif row.get("interface_ref_id") is not None:
+                    fed.append(row)
+            return (of, fed)
         finally:
             self.__mutex.release()

@@ -2,7 +2,7 @@ from delegate.geni.v3.db_manager import DBManager
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
 from core.config import ConfParser
 from core.service import Service
-import delegate.geni.v3.rspecs.openflow.commons as OFCommons
+import delegate.geni.v3.rspecs.commons as Commons
 from delegate.geni.v3.rspecs.openflow.advertisement_parser\
     import OFv3AdvertisementParser
 import ast
@@ -99,7 +99,7 @@ class ResourceDetector(Service):
             of_rspec = OFv3AdvertisementParser(from_string=rspec)
             self.debug("OFRSpec=%s" % (of_rspec,))
             # validate
-            (result, error) = OFCommons.validate(of_rspec.get_rspec())
+            (result, error) = Commons.validate(of_rspec.get_rspec())
             if not result:
                 self.error("Validation failure: %s" % error)
                 return (ofdpids, links)

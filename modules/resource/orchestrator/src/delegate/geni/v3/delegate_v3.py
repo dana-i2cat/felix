@@ -1,12 +1,16 @@
 from delegate.geni.v3.base import GENIv3DelegateBase
 from delegate.geni.v3.db_manager import DBManager
-from delegate.geni.v3.rm_adaptor import AdaptorFactory
+# from delegate.geni.v3.rm_adaptor import AdaptorFactory
 from handler.geni.v3 import exceptions as geni_ex
 from delegate.geni.v3 import rm_adaptor
-from delegate.geni.v3 import exceptions as rms_ex
+# from delegate.geni.v3 import exceptions as rms_ex
+
+from delegate.geni.v3.rspecs.commons import validate
+from delegate.geni.v3.rspecs.ro.advertisement_formatter import\
+    ROAdvertisementFormatter
 
 # from lxml.builder import ElementMaker
-from lxml import etree
+# from lxml import etree
 
 import core
 logger = core.log.getLogger("geniv3delegate")
@@ -58,59 +62,31 @@ class GENIv3Delegate(GENIv3DelegateBase):
             client_urn, client_uuid, client_email,))
         logger.info("geni_available=%s", geni_available)
 
-        # Retrieve the list of configured RMs or peer-RO from the mongoDB
-        peers = DBManager().get_configured_peers()
-        logger.debug("Configured peers=%d" % (len(peers),))
-
-        # Prepare root for XML tree
-        root_node = self.lxml_ad_root()
-        E = self.lxml_ad_element_maker("resource-orchestrator")
-
-        # For every peer, try to get the list of available resources
+        sl = "http://www.geni.net/resources/rspec/3/ad.xsd"
+        rspec = ROAdvertisementFormatter(schema_location=sl)
         try:
-            for peer in peers:
-                logger.debug("peer: %s" % str(peer))
-                # Create the adaptor, calling the getVersion on the
-                # remote endpoint (RM) to get (for now) this options:
-                #  type = rspec_ver:code:am_type
-                #  req_version = rspec_ver:value:geni_request_rspec_versions
-                adaptor = AdaptorFactory.create(
-                    type=peer.get('type'),
-                    protocol=peer.get('protocol'),
-                    user=peer.get('user'),
-                    password=peer.get('password'),
-                    address=peer.get('address'),
-                    port=peer.get('port'),
-                    endpoint=peer.get('endpoint'),
-                    id=peer.get('_id'),
-                    am_type=peer.get('am_type'),
-                    am_version=peer.get('am_version'))
-                logger.info("RM-Adapter=%s" % (adaptor,))
+            logger.debug("OF resources: datapaths")
+            for d in DBManager().get_sdn_datapaths():
+                rspec.datapath(d)
 
-                # Retrieve credentials alone
-                geni_v3_credentials = credentials[0]["geni_value"]
+            logger.debug("OF resources: of-links & fed-links")
+            (of_links, fed_links) = DBManager().get_sdn_links()
+            for l in of_links:
+                rspec.of_link(l)
 
-                # Call the list_resources method of the adaptor to contact the
-                # remote endpoint (RM). The options (and the sequence of remote
-                # methods) are filled in the adaptor properly
-                result = adaptor.list_resources(geni_v3_credentials,
-                                                geni_available)
-
-                # Add a tag to identify the manager:
-                # <resource-orchestrator:resource uuid=''>
-                r = E.resource(uuid=str(peer.get('_id')))
-                # Add retrieved resources to node within XML tree
-                r.append(etree.fromstring(result["value"]))
-                root_node.append(r)
-
-        except rms_ex.RPCError as e:
-            raise geni_ex.GENIv3RPCError(str(e))
+            for l in fed_links:
+                rspec.fed_link(l)
 
         except Exception as e:
             raise geni_ex.GENIv3GeneralError(str(e))
 
+        logger.debug("RSpec=%s" % (rspec,))
+        (result, error) = validate(rspec.get_rspec())
+        if result is not True:
+            raise geni_ex.GENIv3GeneralError("RSpec validation failure: %s" % (
+                                             error,))
         logger.info("List_resources successfully completed!")
-        return self.lxml_to_string(root_node)
+        return "%s" % rspec
 
     def describe(self, urns, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
