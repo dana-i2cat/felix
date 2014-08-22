@@ -105,7 +105,7 @@ class ResourceDetector(Service):
                 return (ofdpids, links)
 
             self.info("Validation success!")
-            ofdpids = of_rspec.ofdatapaths()
+            ofdpids = of_rspec.datapaths()
             self.debug("OFDataPaths(%d)=%s" % (len(ofdpids), ofdpids,))
 
             links = of_rspec.links()

@@ -1,16 +1,11 @@
+import core
+logger = core.log.getLogger("rspecs")
+
 DEFAULT_XMLNS = "http://www.geni.net/resources/rspec/3"
 DEFAULT_XS = "http://www.w3.org/2001/XMLSchema-instance"
-DEFAULT_OPENFLOW = "http://www.geni.net/resources/rspec/ext/openflow/3"
 
 DSL_PREFIX = "http://www.geni.net/resources/rspec/"
 DEFAULT_SCHEMA_LOCATION = DSL_PREFIX + "3 "
-DEFAULT_SCHEMA_LOCATION += DSL_PREFIX + "ext/openflow/3 "
-
-CONTROLLER_TYPE_PRIMARY = "primary"
-CONTROLLER_TYPE_MONITOR = "monitor"
-CONTROLLER_TYPE_BACKUP = "backup"
-
-NODE_OPENFLOW = "openflow-switch"
 
 
 def validate(ingress_root):
@@ -19,7 +14,7 @@ def validate(ingress_root):
 
     xs = ingress_root.nsmap.get("xs")
     schemas = ingress_root.attrib.get("{%s}schemaLocation" % (xs))
-    if len(schemas) == 0:
+    if (schemas is None) or (len(schemas) == 0):
         return (False, "Unable to find schemas locations!")
 
     errors = []
@@ -40,65 +35,7 @@ def validate(ingress_root):
     return (False, errors)
 
 
-class Datapath(object):
-    def __init__(self, component_id, component_manager_id, dpid):
-        self.datapath = {'component_id': component_id,
-                         'component_manager_id': component_manager_id,
-                         'dpid': dpid,
-                         'ports': []}
-
-    def add_port(self, num, name=None):
-        self.datapath['ports'].append({'num': str(num), 'name': name})
-
-    def serialize(self):
-        return self.datapath
-
-
-class Match(object):
-    def __init__(self):
-        self.match = {'use_groups': [],
-                      'dpids': [],
-                      'packet': None}
-
-    def add_use_group(self, name):
-        self.match['use_groups'].append({'name': name})
-
-    def add_datapath(self, dpath):
-        self.match['dpids'].append(dpath)
-
-    def set_packet(self, dl_src=None, dl_dst=None, dl_type=None, dl_vlan=None,
-                   nw_src=None, nw_dst=None, nw_proto=None,
-                   tp_src=None, tp_dst=None):
-        self.match['packet'] = {'dl_src': dl_src,
-                                'dl_dst': dl_dst,
-                                'dl_type': dl_type,
-                                'dl_vlan': dl_vlan,
-                                'nw_src': nw_src,
-                                'nw_dst': nw_dst,
-                                'nw_proto': nw_proto,
-                                'tp_src': tp_src,
-                                'tp_dst': tp_dst}
-
-    def serialize(self):
-        return self.match
-
-
-class OFLink(object):
-    def __init__(self, component_id):
-        self.link = {'component_id': component_id,
-                     'dpids': [],
-                     'ports': []}
-
-    def add_datapath(self, dpath):
-        self.link['dpids'].append(dpath.serialize())
-
-    def add_port(self, pnum):
-        self.link['ports'].append({'port_num': str(pnum)})
-
-    def serialize(self):
-        return self.link
-
-
+# Data Models
 class FEDLink(object):
     def __init__(self, component_id):
         self.link = {'component_id': component_id,
@@ -117,15 +54,3 @@ class FEDLink(object):
 
     def serialize(self):
         return self.link
-
-
-class OFGroup(object):
-    def __init__(self, name):
-        self.group = {'name': name,
-                      'dpids': []}
-
-    def add_datapath(self, dpath):
-        self.group['dpids'].append(dpath)
-
-    def serialize(self):
-        return self.group

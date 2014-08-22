@@ -1,5 +1,7 @@
 from delegate.geni.v3.rspecs.commons import DEFAULT_XMLNS, DEFAULT_XS,\
-    DEFAULT_OPENFLOW, DEFAULT_SCHEMA_LOCATION, DSL_PREFIX
+    DEFAULT_SCHEMA_LOCATION, DSL_PREFIX
+from delegate.geni.v3.rspecs.commons_of import DEFAULT_OPENFLOW
+from delegate.geni.v3.rspecs.formatter_base import FormatterBase
 from lxml import etree
 
 DEFAULT_REQ_SCHEMA_LOCATION = DEFAULT_SCHEMA_LOCATION
@@ -7,20 +9,17 @@ DEFAULT_REQ_SCHEMA_LOCATION += DSL_PREFIX + "3/request.xsd "
 DEFAULT_REQ_SCHEMA_LOCATION += DSL_PREFIX + "ext/openflow/3/of-resv.xsd"
 
 
-class OFv3RequestFormatter(object):
+class OFv3RequestFormatter(FormatterBase):
     def __init__(self, xmlns=DEFAULT_XMLNS, xs=DEFAULT_XS,
                  openflow=DEFAULT_OPENFLOW,
                  schema_location=DEFAULT_REQ_SCHEMA_LOCATION):
-        NSMAP = {None: "%s" % (xmlns),
-                 "xs": "%s" % (xs),
-                 "openflow": "%s" % (openflow)}
+        super(OFv3RequestFormatter, self).__init__(
+            "request", schema_location, {"openflow": "%s" % (openflow)},
+            xmlns, xs)
         self.__of = openflow
-        self.__rspec = etree.Element("{%s}rspec" % (xmlns), nsmap=NSMAP)
-        self.__rspec.attrib["{%s}schemaLocation" % (xs)] = schema_location
-        self.__rspec.attrib["type"] = "request"
 
     def sliver(self, description=None, ref=None, email=None):
-        s = etree.SubElement(self.__rspec, "{%s}sliver" % (self.__of))
+        s = etree.SubElement(self.rspec, "{%s}sliver" % (self.__of))
         if description is not None:
             s.attrib["description"] = description
         if ref is not None:
@@ -74,20 +73,17 @@ class OFv3RequestFormatter(object):
             self.__packet_sub_elem(packet, mtc.get('packet'), 'tp_src')
             self.__packet_sub_elem(packet, mtc.get('packet'), 'tp_dst')
 
-    def get_rspec(self):
-        return self.__rspec
-
     def __find_sliver(self):
-        s = self.__rspec.find("{%s}sliver" % (self.__of))
+        s = self.rspec.find("{%s}sliver" % (self.__of))
         if s is None:
-            raise Exception("Sliver tag not found!")
+            self.raise_exception("Sliver tag not found!")
         return s
 
     def __find_group(self, name):
-        for g in self.__rspec.findall(".//{%s}group" % (self.__of)):
+        for g in self.rspec.findall(".//{%s}group" % (self.__of)):
             if g.get("name") == name:
                 return g
-        raise Exception("Group %s not found!" % (name))
+        self.raise_exception("Group %s not found!" % (name))
 
     def __datapath(self, element, component_id, component_manager_id,
                    dpid, ports):
@@ -106,6 +102,3 @@ class OFv3RequestFormatter(object):
         if data.get(tag) is not None:
             v = etree.SubElement(element, "{%s}%s" % (self.__of, tag))
             v.attrib["value"] = data.get(tag)
-
-    def __repr__(self):
-        return etree.tostring(self.__rspec, pretty_print=True)

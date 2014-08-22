@@ -1,24 +1,20 @@
-from commons import Datapath, Match
-from delegate.geni.v3 import exceptions
-from lxml import etree
+from delegate.geni.v3.rspecs.commons_of import Datapath, Match,\
+    DEFAULT_OPENFLOW
+from delegate.geni.v3.rspecs.parser_base import ParserBase
 
-class OFv3RequestParser(object):
-    def __init__(self, ingress):
-        self.__rspec = etree.parse(ingress)
-        self.__openflow = self.__rspec.getroot().nsmap.get('openflow')
+
+class OFv3RequestParser(ParserBase):
+    def __init__(self, from_file=None, from_string=None):
+        super(OFv3RequestParser, self).__init__(from_file, from_string)
+        self.__of = self.rspec.nsmap.get('openflow')
+        if self.__of is None:
+            self.__of = DEFAULT_OPENFLOW
 
     def sliver(self):
-        sliver_ = {"description": None,
-                   "ref": None,
-                   "email": None}
         s = self.__find_sliver()
-        if s.attrib.get("description") is not None:
-            sliver_["description"] = s.attrib.get("description")
-        if s.attrib.get("ref") is not None:
-            sliver_["ref"] = s.attrib.get("ref")
-        if s.attrib.get("email") is not None:
-            sliver_["email"] = s.attrib.get("email")
-        return sliver_
+        return {"description": s.attrib.get("description"),
+                "ref": s.attrib.get("ref"),
+                "email": s.attrib.get("email")}
 
     def controllers(self):
         return [{"url": c.attrib.get("url"), "type": c.attrib.get("type")}
@@ -31,19 +27,19 @@ class OFv3RequestParser(object):
     def datapaths(self, group_name):
         g = self.__find_group(group_name)
         return [{"datapath": self.__datapath(dp)}
-                for dp in g.iterfind("{%s}datapath" % (self.__openflow))]
+                for dp in g.iterfind("{%s}datapath" % (self.__of))]
 
     def matches(self):
         matches_ = []
         for m in self.__find_matches():
             m_ = Match()
             [m_.add_use_group(ug.attrib.get("name"))
-             for ug in m.iterfind("{%s}use-group" % (self.__openflow))]
+             for ug in m.iterfind("{%s}use-group" % (self.__of))]
 
-            for dp in m.iterfind("{%s}datapath" % (self.__openflow)):
+            for dp in m.iterfind("{%s}datapath" % (self.__of)):
                 m_.add_datapath(self.__datapath(dp))
 
-            packet_ = m.find("{%s}packet" % (self.__openflow))
+            packet_ = m.find("{%s}packet" % (self.__of))
             if packet_ is not None:
                 dl_src = self.__packet(packet_, "dl_src")
                 dl_dst = self.__packet(packet_, "dl_dst")
@@ -60,45 +56,38 @@ class OFv3RequestParser(object):
             matches_.append({"match": m_})
         return matches_
 
-    def get_rspec(self):
-        return self.__rspec.getroot()
-
     def __find_sliver(self):
-        sliver = self.__rspec.find("{%s}sliver" % (self.__openflow))
+        sliver = self.rspec.find("{%s}sliver" % (self.__of))
         if sliver is None:
-            raise exceptions.RSpecError("Sliver tag not found!")
+            self.raise_exception("Sliver tag not found!")
         return sliver
 
     def __find_controllers(self):
-        # using xpath recursive
-        return self.__rspec.findall(".//{%s}controller" % (self.__openflow))
+        return self.rspec.findall(".//{%s}controller" % (self.__of))
 
     def __find_group(self, name):
-        groups = self.__rspec.findall(".//{%s}group" % (self.__openflow))
+        groups = self.rspec.findall(".//{%s}group" % (self.__of))
         for group in groups:
             if group.get("name") == name:
                 return group
-        raise exceptions.RSpecError("Group %s not found!" % (name))
+        self.raise_exception("Group %s not found!" % (name))
 
     def __find_groups(self):
-        return self.__rspec.findall(".//{%s}group" % (self.__openflow))
+        return self.rspec.findall(".//{%s}group" % (self.__of))
 
     def __find_matches(self):
-        return self.__rspec.findall(".//{%s}match" % (self.__openflow))
+        return self.rspec.findall(".//{%s}match" % (self.__of))
 
     def __datapath(self, element):
         d = Datapath(element.attrib.get("component_id"),
                      element.attrib.get("component_manager_id"),
                      element.attrib.get("dpid"))
-        for p in element.iterfind("{%s}port" % (self.__openflow)):
+        for p in element.iterfind("{%s}port" % (self.__of)):
             d.add_port(p.attrib.get("num"), p.attrib.get("name"))
         return d
 
     def __packet(self, element, tag):
-        value = element.find("{%s}%s" % (self.__openflow, tag))
+        value = element.find("{%s}%s" % (self.__of, tag))
         if value is not None:
             return value.attrib.get("value")
         return None
-
-    def __repr__(self):
-        return etree.tostring(self.__rspec, pretty_print=True)

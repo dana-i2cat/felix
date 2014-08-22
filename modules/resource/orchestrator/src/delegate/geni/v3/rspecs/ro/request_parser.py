@@ -1,19 +1,17 @@
-from delegate.geni.v3.rspecs.commons import Match, Datapath, OFGroup
-from lxml import etree
+from delegate.geni.v3.rspecs.commons_of import Datapath, Match, Group,\
+    DEFAULT_OPENFLOW
+from delegate.geni.v3.rspecs.parser_base import ParserBase
 
 
-class RORequestParser(object):
+class RORequestParser(ParserBase):
     def __init__(self, from_file=None, from_string=None):
-        if from_file is not None:
-            self.__rspec = etree.parse(from_file).getroot()
-        elif from_string is not None:
-            self.__rspec = etree.fromstring(from_string)
-
-        self.__of = self.__rspec.nsmap.get('openflow')
-        self.__none = self.__rspec.nsmap.get(None)
+        super(RORequestParser, self).__init__(from_file, from_string)
+        self.__of = self.rspec.nsmap.get('openflow')
+        if self.__of is None:
+            self.__of = DEFAULT_OPENFLOW
 
     def of_sliver(self):
-        s = self.__rspec.find("{%s}sliver" % (self.__of))
+        s = self.rspec.find("{%s}sliver" % (self.__of))
         if s is None:
             return None
         return {"description": s.attrib.get("description"),
@@ -23,12 +21,12 @@ class RORequestParser(object):
     def of_controllers(self):
         return [
             {"url": c.attrib.get("url"), "type": c.attrib.get("type")}
-            for c in self.__rspec.findall(".//{%s}controller" % (self.__of))]
+            for c in self.rspec.findall(".//{%s}controller" % (self.__of))]
 
     def of_groups(self):
         groups = []
-        for group in self.__rspec.findall(".//{%s}group" % (self.__of)):
-            g = OFGroup(group.get('name'))
+        for group in self.rspec.findall(".//{%s}group" % (self.__of)):
+            g = Group(group.get('name'))
             for dp in group.iterfind("{%s}datapath" % (self.__of)):
                 g.add_datapath(self.__datapath(dp))
 
@@ -37,7 +35,7 @@ class RORequestParser(object):
 
     def of_matches(self):
         matches = []
-        for match in self.__rspec.findall(".//{%s}match" % (self.__of)):
+        for match in self.rspec.findall(".//{%s}match" % (self.__of)):
             m = Match()
             for ug in match.iterfind("{%s}use-group" % (self.__of)):
                 m.add_use_group(ug.attrib.get("name"))
@@ -62,12 +60,6 @@ class RORequestParser(object):
 
             matches.append(m.serialize())
         return matches
-
-    def get_rspec(self):
-        return self.__rspec
-
-    def __repr__(self):
-        return etree.tostring(self.__rspec, pretty_print=True)
 
     def __datapath(self, element):
         d = Datapath(element.attrib.get("component_id"),

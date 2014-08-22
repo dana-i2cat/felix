@@ -4,7 +4,8 @@ from delegate.geni.v3.rm_adaptor import AdaptorFactory
 from handler.geni.v3 import exceptions as geni_ex
 from delegate.geni.v3 import rm_adaptor
 
-from delegate.geni.v3.rspecs.commons import validate, Match
+from delegate.geni.v3.rspecs.commons import validate
+from delegate.geni.v3.rspecs.commons_of import Match
 from delegate.geni.v3.rspecs.ro.advertisement_formatter import\
     ROAdvertisementFormatter
 from delegate.geni.v3.rspecs.ro.request_parser import RORequestParser
