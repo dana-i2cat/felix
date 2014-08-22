@@ -1,16 +1,19 @@
 from delegate.geni.v3.base import GENIv3DelegateBase
 from delegate.geni.v3.db_manager import DBManager
-# from delegate.geni.v3.rm_adaptor import AdaptorFactory
+from delegate.geni.v3.rm_adaptor import AdaptorFactory
 from handler.geni.v3 import exceptions as geni_ex
 from delegate.geni.v3 import rm_adaptor
-# from delegate.geni.v3 import exceptions as rms_ex
 
-from delegate.geni.v3.rspecs.commons import validate
+from delegate.geni.v3.rspecs.commons import validate, Match
 from delegate.geni.v3.rspecs.ro.advertisement_formatter import\
     ROAdvertisementFormatter
+from delegate.geni.v3.rspecs.ro.request_parser import RORequestParser
+from delegate.geni.v3.rspecs.ro.manifest_formatter import ROManifestFormatter
+from delegate.geni.v3.rspecs.openflow.request_formatter import\
+    OFv3RequestFormatter
+from delegate.geni.v3.rspecs.openflow.manifest_parser import OFv3ManifestParser
 
-# from lxml.builder import ElementMaker
-# from lxml import etree
+from dateutil import parser as dateparser
 
 import core
 logger = core.log.getLogger("geniv3delegate")
@@ -80,12 +83,10 @@ class GENIv3Delegate(GENIv3DelegateBase):
         except Exception as e:
             raise geni_ex.GENIv3GeneralError(str(e))
 
-        logger.debug("RSpec=%s" % (rspec,))
-        (result, error) = validate(rspec.get_rspec())
-        if result is not True:
-            raise geni_ex.GENIv3GeneralError("RSpec validation failure: %s" % (
-                                             error,))
-        logger.info("List_resources successfully completed!")
+        logger.debug("ROAdvertisementFormatter=%s" % (rspec,))
+        self.__validate_rspec(rspec.get_rspec())
+
+        logger.info("list_resources successfully completed!")
         return "%s" % rspec
 
     def describe(self, urns, client_cert, credentials):
@@ -99,8 +100,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.info("urns=%s", urns)
         raise geni_ex.GENIv3GeneralError("Not implemented yet!")
 
-    # FIXME: Parse RSpec for RO, which should be a GENIv3 RSpec
-    # consisting on several nodes of different types
     def allocate(self, slice_urn, client_cert, credentials,
                  rspec, end_time=None):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
@@ -112,7 +111,38 @@ class GENIv3Delegate(GENIv3DelegateBase):
             client_urn, client_uuid, client_email,))
         logger.info("slice_urn=%s, end_time=%s, rspec=%s" % (
             slice_urn, end_time, rspec,))
-        raise geni_ex.GENIv3GeneralError("Not implemented yet!")
+
+        req_rspec = RORequestParser(from_string=rspec)
+        self.__validate_rspec(req_rspec.get_rspec())
+
+        ro_manifest, ro_slivers, ro_db_slivers = ROManifestFormatter(), [], []
+
+        sliver = req_rspec.of_sliver()
+        if sliver is not None:
+            logger.debug("Found an OF-sliver segment: %s", sliver)
+            (of_m_info, of_slivers, db_slivers) = self.__manage_sdn_allocate(
+                slice_urn, credentials, end_time, sliver, req_rspec)
+
+            logger.debug("of_m=%s, of_s=%s, db_s=%s" %
+                         (of_m_info, of_slivers, db_slivers))
+            for m in of_m_info:
+                ro_manifest.sliver(m.get('description'),
+                                   m.get('ref'),
+                                   m.get('email'))
+            ro_slivers.extend(of_slivers)
+            ro_db_slivers.extend(db_slivers)
+
+        logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
+
+        for s in ro_slivers:
+            s['geni_expires'] = self.__str2datetime(s['geni_expires'])
+        logger.debug("RO-Slivers=%s" % (ro_slivers,))
+
+        logger.debug("RO-DB-Slivers=%s" % (ro_db_slivers,))
+        id_ = DBManager().store_slice_info(slice_urn, ro_db_slivers)
+
+        logger.info("allocate successfully completed: %s", id_)
+        return ("%s" % ro_manifest, ro_slivers)
 
     def renew(self, urns, client_cert, credentials, expiration_time,
               best_effort):
@@ -192,6 +222,120 @@ class GENIv3Delegate(GENIv3DelegateBase):
             client_urn, client_uuid, client_email,))
         logger.info("slice_urn=%s" % (slice_urn,))
         raise geni_ex.GENIv3GeneralError("Not implemented yet!")
+
+    def __update_sdn_route(self, route, values):
+        for v in values:
+            for dpid in v.get('dpids'):
+                k = DBManager().get_sdn_datapath_routing_key(dpid)
+                dpid['routing_key'] = k
+                if k not in route:
+                    sl = "http://www.geni.net/resources/rspec/3/request.xsd"
+                    route[k] = OFv3RequestFormatter(schema_location=sl)
+
+    def __update_sdn_route_rspec(self, route, sliver, controllers,
+                                 groups, matches):
+        for key, rspec in route.iteritems():
+            rspec.sliver(sliver.get('description'),
+                         sliver.get('ref'),
+                         sliver.get('email'))
+            for c in controllers:
+                rspec.controller(c.get('url'), c.get('type'))
+            for g in groups:
+                rspec.group(g.get('name'))
+                for dpid in g.get('dpids'):
+                    if dpid.get('routing_key') == key:
+                        rspec.group_datapath(g.get('name'), dpid)
+            for m in matches:
+                match = Match()
+                for uf in m.get('use_groups'):
+                    match.add_use_group(uf.get('name'))
+                for dpid in m.get('dpids'):
+                    if dpid.get('routing_key') == key:
+                        match.add_datapath(dpid)
+                match.set_packet(m.get('packet').get('dl_src'),
+                                 m.get('packet').get('dl_dst'),
+                                 m.get('packet').get('dl_type'),
+                                 m.get('packet').get('dl_vlan'),
+                                 m.get('packet').get('nw_src'),
+                                 m.get('packet').get('nw_dst'),
+                                 m.get('packet').get('nw_proto'),
+                                 m.get('packet').get('tp_src'),
+                                 m.get('packet').get('tp_dst'))
+                rspec.match(match.serialize())
+
+    def __adaptor_create(self, peerDB):
+        return AdaptorFactory.create(peerDB.get('type'),
+                                     peerDB.get('protocol'),
+                                     peerDB.get('user'),
+                                     peerDB.get('password'),
+                                     peerDB.get('address'),
+                                     peerDB.get('port'),
+                                     peerDB.get('endpoint'),
+                                     peerDB.get('_id'),
+                                     peerDB.get('am_type'),
+                                     peerDB.get('am_version'))
+
+    def __send_sdn_request_rspec(self, routing_key, of_req_rspec, slice_urn,
+                                 credentials, end_time):
+        peer = DBManager().get_configured_peer(routing_key)
+        logger.debug("Peer=%s" % (peer,))
+        adaptor = self.__adaptor_create(peer)
+        return adaptor.allocate(slice_urn, credentials[0]["geni_value"],
+                                "%s" % of_req_rspec, end_time)
+
+    def __manage_sdn_allocate(self, surn, creds, end, sliver, parser):
+        route = {}
+        controllers = parser.of_controllers()
+        logger.debug("Controllers=%s" % (controllers,))
+
+        groups = parser.of_groups()
+        self.__update_sdn_route(route, groups)
+        logger.debug("Groups=%s" % (groups,))
+
+        matches = parser.of_matches()
+        self.__update_sdn_route(route, matches)
+        logger.debug("Matches=%s" % (matches,))
+
+        self.__update_sdn_route_rspec(route, sliver, controllers, groups,
+                                      matches)
+        logger.info("Route=%s" % (route,))
+        manifests, slivers, db_slivers = [], [], []
+
+        for k, v in route.iteritems():
+            (m, ss) = self.__send_sdn_request_rspec(k, v, surn, creds, end)
+            manifest = OFv3ManifestParser(from_string=m)
+            logger.debug("OFv3ManifestParser=%s" % (manifest,))
+
+            sliver = manifest.sliver()
+            logger.info("Sliver=%s" % (sliver,))
+            manifests.append(sliver)
+
+            logger.info("Slivers=%s" % (ss,))
+            slivers.extend(ss)
+
+            for dbs in ss:
+                db_slivers.append({
+                    'geni_sliver_urn': dbs.get('geni_sliver_urn'),
+                    'routing_key': k})
+
+        return (manifests, slivers, db_slivers)
+
+    def __validate_rspec(self, generic_rspec):
+        (result, error) = validate(generic_rspec)
+        if result is not True:
+            raise geni_ex.GENIv3GeneralError("RSpec validation failure: %s" % (
+                                             error,))
+        logger.info("Validation success!")
+
+    def __datetime2str(self, dt):
+        return dt.strftime('%Y-%m-%d %H:%M:%S.%fZ')
+
+    def __str2datetime(self, strval):
+        result = dateparser.parse(strval)
+        if result:
+            result = result - result.utcoffset()
+            result = result.replace(tzinfo=None)
+        return result
 
     # Helper methods
     def _get_sliver_status_hash(self, lease, include_allocation_status=False,

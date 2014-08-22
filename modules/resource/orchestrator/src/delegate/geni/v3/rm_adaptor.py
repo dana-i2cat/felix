@@ -106,11 +106,16 @@ class GENIv3Client(SFAClient):
     def __init__(self, uri):
         SFAClient.__init__(self, uri, type='geni', version=3)
 
-    def format_options(self, available):
-        return {"geni_available": available,
-                "geni_compress": False,
-                "geni_rspec_version": {"type": "geni",
-                                       "version": 3, }}
+    def format_options(self, available=None, compress=None, end_time=None):
+        options = {'geni_rspec_version': {'type': 'geni',
+                                          'version': 3, }}
+        if available is not None:
+            options['geni_available'] = available
+        if compress is not None:
+            options['geni_compress'] = compress
+        if end_time is not None:
+            options['end_time'] = end_time
+        return options
 
 
 class CRMGeniv2Adaptor(SFAv2Client):
@@ -217,12 +222,27 @@ class SDNRMGeniv3Adaptor(GENIv3Client):
         GENIv3Client.__init__(self, uri)
 
     def list_resources(self, credentials, available):
-        options = self.format_options(available)
+        options = self.format_options(available=available,
+                                      compress=False)
         logger.debug("Options: %s" % (options,))
         try:
             params = [credentials, options, ]
             return self.ListResources(*params)
 
         except Exception as e:
-            err_ = "SDNRMGeniv3 ListResources failure: %s" % str(e)
-            raise exceptions.RPCError(err_)
+            err = "SDNRMGeniv3 ListResources failure: %s" % str(e)
+            raise exceptions.RPCError(err)
+
+    def allocate(self, slice_urn, credentials, rspec, end_time):
+        options = self.format_options(end_time=end_time)
+        logger.debug("Options: %s" % (options,))
+        try:
+            params = [slice_urn, credentials, rspec, options, ]
+            result = self.Allocate(*params)
+            logger.info("Allocate result=%s" % (result,))
+            return (result.get('value').get('geni_rspec'),
+                    result.get('value').get('geni_slivers'))
+
+        except Exception as e:
+            err = "SDNRMGeniv3 Allocate failure: %s" % str(e)
+            raise exceptions.RPCError(err)

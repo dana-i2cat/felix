@@ -20,6 +20,17 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
+    def get_configured_peer(self, key):
+        table = pymongo.MongoClient().felix_ro.RoutingTable
+        try:
+            self.__mutex.acquire()
+            row = table.find_one({'_id': key})
+            if row is None:
+                raise Exception("RoutingEntry %s not found into RO-DB!" % key)
+            return row
+        finally:
+            self.__mutex.release()
+
     def update_am_info(self, object_id, am_type, am_version):
         table = pymongo.MongoClient().felix_ro.RoutingTable
         try:
@@ -27,6 +38,21 @@ class DBManager(object):
             table.update({'_id': object_id},
                          {"$set": {'am_type': am_type,
                                    'am_version': am_version}})
+        finally:
+            self.__mutex.release()
+
+    # (felix_ro) SliceTable
+    def store_slice_info(self, urn, slivers):
+        table = pymongo.MongoClient().felix_ro.SliceTable
+        try:
+            self.__mutex.acquire()
+            row = table.find_one({'slice_urn': urn})
+            if row is None:
+                entry = {'slice_urn': urn,
+                         'slivers': slivers}
+                return table.insert(entry)
+            # update the slivers list (if needed)
+            self.__update_list('slice-table', table, row, 'slivers', slivers)
         finally:
             self.__mutex.release()
 
@@ -47,19 +73,8 @@ class DBManager(object):
                     ids.append(table.insert(v))
                     continue
                 # update the object (if needed)
-                logger.debug(
-                    "(datapth-table) %s already stored!" % (row.get('_id')))
-                modif = {'ports': []}
-                for p in v.get('ports'):
-                    if p not in row.get('ports'):
-                        modif.get('ports').append(p)
-
-                if len(modif.get('ports')) > 0:
-                    modif.extend(row.get('ports'))
-                    logger.debug(
-                        "(datapth-table) extend port info %s" % (modif))
-                    table.update({'_id': row.get('_id')},
-                                 {"$set": modif})
+                self.__update_list('datapth-table', table, row, 'ports',
+                                   v.get('ports'))
             return ids
         finally:
             self.__mutex.release()
@@ -69,6 +84,20 @@ class DBManager(object):
         try:
             self.__mutex.acquire()
             return [row for row in table.find()]
+        finally:
+            self.__mutex.release()
+
+    def get_sdn_datapath_routing_key(self, dpid):
+        table = pymongo.MongoClient().felix_ro.OFDatapathTable
+        try:
+            self.__mutex.acquire()
+            row = table.find_one({
+                'component_id': dpid.get('component_id'),
+                'component_manager_id': dpid.get('component_manager_id'),
+                'dpid': dpid.get('dpid')})
+            if row is None:
+                raise Exception("Datapath %s not found into RO-DB!" % dpid)
+            return row.get('routing_key')
         finally:
             self.__mutex.release()
 
@@ -105,3 +134,18 @@ class DBManager(object):
             return (of, fed)
         finally:
             self.__mutex.release()
+
+    def __update_list(self, tname, table, entry, key, values):
+        logger.debug("(%s) %s already stored!" % (tname, entry.get('_id'),))
+        modif = {key: []}
+        for v in values:
+            if v not in entry.get(key):
+                modif.get(key).append(v)
+
+        if len(modif.get(key)) > 0:
+            modif.extend(entry.get(key))
+            logger.debug("(%s) extend slivers info %s" % (tname, modif,))
+            table.update({'_id': entry.get('_id')},
+                         {"$set": modif})
+        else:
+            logger.debug("(%s) not needed to update %s" % (tname, key,))

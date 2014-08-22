@@ -36,7 +36,7 @@ class Service(threading.Thread):
         super(Service, self).start()
 
     def stop(self):
-        timeout = self.__interval + 1
+        timeout = 5  # do not block for a long time!
         logger.debug("Stop the %s service" % (self.name,))
         self.__close()
         try:
