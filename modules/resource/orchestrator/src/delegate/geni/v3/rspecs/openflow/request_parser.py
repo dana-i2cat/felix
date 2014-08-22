@@ -26,7 +26,7 @@ class OFv3RequestParser(ParserBase):
 
     def datapaths(self, group_name):
         g = self.__find_group(group_name)
-        return [{"datapath": self.__datapath(dp)}
+        return [self.__datapath(dp)
                 for dp in g.iterfind("{%s}datapath" % (self.__of))]
 
     def matches(self):
@@ -53,7 +53,7 @@ class OFv3RequestParser(ParserBase):
 
                 m_.set_packet(dl_src, dl_dst, dl_type, dl_vlan,
                               nw_src, nw_dst, nw_proto, tp_src, tp_dst)
-            matches_.append({"match": m_})
+            matches_.append(m_.serialize())
         return matches_
 
     def __find_sliver(self):
@@ -84,7 +84,7 @@ class OFv3RequestParser(ParserBase):
                      element.attrib.get("dpid"))
         for p in element.iterfind("{%s}port" % (self.__of)):
             d.add_port(p.attrib.get("num"), p.attrib.get("name"))
-        return d
+        return d.serialize()
 
     def __packet(self, element, tag):
         value = element.find("{%s}%s" % (self.__of, tag))

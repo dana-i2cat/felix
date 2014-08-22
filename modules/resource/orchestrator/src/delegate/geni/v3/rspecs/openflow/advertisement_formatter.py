@@ -19,33 +19,41 @@ class OFv3AdvertisementFormatter(FormatterBase):
         self.__of = openflow
 
     def datapath(self, dpath):
-        node = etree.SubElement(self.rspec, "{%s}node" % (self.xmlns))
-        node.attrib["component_id"] = dpath.get('component_id')
-        node.attrib["component_manager_id"] = dpath.get('component_manager_id')
-        node.attrib["component_name"] = dpath.get('component_name')
-        node.attrib["exclusive"] = dpath.get('exclusive')
+        d = etree.SubElement(self.rspec, "{%s}datapath" % (self.__of))
+        d.attrib["component_id"] = dpath.get("component_id")
+        d.attrib["component_manager_id"] = dpath.get("component_manager_id")
+        d.attrib["dpid"] = dpath.get("dpid")
 
-        sub_node = etree.SubElement(node, "{%s}hardware_type" % (self.xmlns))
-        sub_node.attrib["name"] = dpath.get('hardware_type_name')
-
-        sub_node = etree.SubElement(node, "{%s}available" % (self.xmlns))
-        sub_node.attrib["now"] = dpath.get('available_now')
-
-        self.__datapath(self.rspec,
-                        dpath.get('component_id'),
-                        dpath.get('component_manager_id'),
-                        dpath.get('dpid'),
-                        dpath.get('ports'))
-
-    def __datapath(self, element, component_id, component_manager_id,
-                   dpid, ports):
-        datapath = etree.SubElement(element, "{%s}datapath" % (self.__of))
-        datapath.attrib["component_id"] = component_id
-        datapath.attrib["component_manager_id"] = component_manager_id
-        datapath.attrib["dpid"] = dpid
-
-        for p in ports:
-            port = etree.SubElement(datapath, "{%s}port" % (self.__of))
+        for p in dpath.get('ports'):
+            port = etree.SubElement(d, "{%s}port" % (self.__of))
             port.attrib["num"] = p.get("num")
             if p.get("name") is not None:
                 port.attrib["name"] = p.get("name")
+
+    def of_link(self, link):
+        l = etree.SubElement(self.rspec, "{%s}link" % (self.xmlns))
+        l.attrib["component_id"] = link.get("component_id")
+
+        for d in link.get("dpids"):
+            dp = etree.SubElement(l, "{%s}datapath" % (self.__of))
+            dp.attrib["component_id"] = d.get("component_id")
+            dp.attrib["component_manager_id"] = d.get("component_manager_id")
+            dp.attrib["dpid"] = d.get("dpid")
+
+        for p in link.get("ports"):
+            port = etree.SubElement(l, "{%s}port" % (self.__of))
+            port.attrib["port_num"] = p.get("port_num")
+
+    def fed_link(self, link):
+        l = etree.SubElement(self.rspec, "{%s}link" % (self.xmlns))
+        l.attrib["component_id"] = link.get("component_id")
+
+        ltype = etree.SubElement(l, "{%s}link_type" % (self.xmlns))
+        ltype.attrib["name"] = link.get("link_type_name")
+
+        cm = etree.SubElement(l, "{%s}component_manager" % (self.xmlns))
+        cm.attrib["name"] = link.get("component_manager_name")
+
+        for ifref in link.get("interface_ref_id"):
+            ref = etree.SubElement(l, "{%s}interface_ref" % (self.xmlns))
+            ref.attrib["component_id"] = ifref
