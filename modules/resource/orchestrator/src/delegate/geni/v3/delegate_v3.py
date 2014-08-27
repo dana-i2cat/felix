@@ -286,14 +286,39 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def delete(self, urns, client_cert, credentials, best_effort):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        logger.debug('delete: authenticate the user...')
-        client_urn, client_uuid, client_email =\
-            self.auth(client_cert, credentials, urns, ('deletesliver',))
+        ro_slivers = []
 
-        logger.info("Client urn=%s, uuid=%s, email=%s" % (
-            client_urn, client_uuid, client_email,))
-        logger.info("urns=%s, best_effort=%s" % (urns, best_effort,))
-        raise geni_ex.GENIv3GeneralError("Not implemented yet!")
+        for urn in urns:
+            logger.debug('delete: authenticate the user for %s' % (urn))
+            client_urn, client_uuid, client_email =\
+                self.auth(client_cert, credentials, urn, ('deletesliver',))
+
+            logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                client_urn, client_uuid, client_email,))
+
+        logger.info("best_effort=%s" % (best_effort,))
+
+        route = DBManager().get_slice_routing_keys(urns)
+        logger.debug("Route=%s" % (route,))
+
+        for r, v in route.iteritems():
+            peer = DBManager().get_configured_peer(r)
+            logger.debug("peer=%s" % (peer,))
+            if peer.get('type') == 'sdn_networking':
+                of_slivers = self.__manage_sdn_delete(
+                    peer, v, credentials, best_effort)
+
+                logger.debug("of_s=%s" % (of_slivers,))
+                ro_slivers.extend(of_slivers)
+
+        db_urns = []
+        for s in ro_slivers:
+            s['geni_expires'] = self.__str2datetime(s['geni_expires'])
+            db_urns.append(s.get('geni_sliver_urn'))
+        logger.debug("RO-Slivers=%s, DB-URNs=%s" % (ro_slivers, db_urns))
+
+        DBManager().delete_slice_urns(db_urns)
+        return ro_slivers
 
     def shutdown(self, slice_urn, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
@@ -416,22 +441,21 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def __manage_sdn_status(self, peer, urns, creds):
         adaptor = self.__adaptor_create(peer)
-        urn, ss = adaptor.status(urns, creds[0]["geni_value"])
-
-        return (urn, ss)
+        return adaptor.status(urns, creds[0]["geni_value"])
 
     def __manage_sdn_renew(self, peer, urns, creds, etime, beffort):
         adaptor = self.__adaptor_create(peer)
-        ss = adaptor.renew(urns, creds[0]["geni_value"], etime, beffort)
-
-        return ss
+        return adaptor.renew(urns, creds[0]["geni_value"], etime, beffort)
 
     def __manage_sdn_operational_action(self, peer, urns, creds,
                                         action, beffort):
         adaptor = self.__adaptor_create(peer)
-        ss = adaptor.perform_operational_action(
+        return adaptor.perform_operational_action(
             urns, creds[0]["geni_value"], action, beffort)
-        return ss
+
+    def __manage_sdn_delete(self, peer, urns, creds, beffort):
+        adaptor = self.__adaptor_create(peer)
+        return adaptor.delete(urns, creds[0]["geni_value"], beffort)
 
     def __validate_rspec(self, generic_rspec):
         (result, error) = validate(generic_rspec)

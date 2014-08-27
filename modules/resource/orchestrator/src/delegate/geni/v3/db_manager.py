@@ -76,6 +76,26 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
+    def delete_slice_urns(self, urns):
+        table = pymongo.MongoClient().felix_ro.SliceTable
+        try:
+            self.__mutex.acquire()
+            rows = table.find()
+            for u in urns:
+                for r in rows:
+                    if r.get('slice_urn') == u:
+                        table.remove({'slice_urn': u})
+                    else:
+                        for s in r.get('slivers'):
+                            if s.get('geni_sliver_urn') == u:
+                                # remove the element from the list
+                                self.__delete_sliver_urn(
+                                    table, r.get('slice_urn'),
+                                    r.get('slivers'), s)
+                                break
+        finally:
+            self.__mutex.release()
+
     # (felix_ro) OFDatapathTable
     def store_sdn_datapaths(self, routingKey, values):
         table = pymongo.MongoClient().felix_ro.OFDatapathTable
@@ -169,3 +189,11 @@ class DBManager(object):
                          {"$set": modif})
         else:
             logger.debug("(%s) not needed to update %s" % (tname, key,))
+
+    def __delete_sliver_urn(self, table, slice_urn, slivers, elem):
+        logger.debug("(slice-table) %s remove %s from %s" %
+                     (slice_urn, elem, slivers))
+        slivers.remove(elem)
+        modif = {'slivers': slivers}
+        table.update({'slice_urn': slice_urn},
+                     {"$set": modif})
