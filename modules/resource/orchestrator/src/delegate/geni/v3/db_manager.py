@@ -56,6 +56,26 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
+    def get_slice_routing_keys(self, urns):
+        table = pymongo.MongoClient().felix_ro.SliceTable
+        try:
+            self.__mutex.acquire()
+            rows = table.find()
+            ret = {}
+            for u in urns:
+                for r in rows:
+                    for s in r.get('slivers'):
+                        if (r.get('slice_urn') == u) or\
+                           (s.get('geni_sliver_urn') == u):
+                            if (s.get('routing_key') in ret) and\
+                               (u not in ret[s.get('routing_key')]):
+                                ret[s.get('routing_key')].append(u)
+                            else:
+                                ret[s.get('routing_key')] = [u]
+            return ret
+        finally:
+            self.__mutex.release()
+
     # (felix_ro) OFDatapathTable
     def store_sdn_datapaths(self, routingKey, values):
         table = pymongo.MongoClient().felix_ro.OFDatapathTable

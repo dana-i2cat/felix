@@ -92,14 +92,40 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def describe(self, urns, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        logger.debug('describe: authenticate the user...')
-        client_urn, client_uuid, client_email =\
-            self.auth(client_cert, credentials, urns, ('sliverstatus',))
+        ro_manifest, ro_slivers, last_slice = ROManifestFormatter(), [], ""
 
-        logger.info("Client urn=%s, uuid=%s, email=%s" % (
-            client_urn, client_uuid, client_email,))
-        logger.info("urns=%s", urns)
-        raise geni_ex.GENIv3GeneralError("Not implemented yet!")
+        for urn in urns:
+            logger.debug('describe: authenticate the user for %s' % (urn))
+            client_urn, client_uuid, client_email =\
+                self.auth(client_cert, credentials, urn, ('sliverstatus',))
+
+            logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                client_urn, client_uuid, client_email,))
+
+        route = DBManager().get_slice_routing_keys(urns)
+        logger.debug("Route=%s" % (route,))
+
+        for r, v in route.iteritems():
+            peer = DBManager().get_configured_peer(r)
+            logger.debug("peer=%s" % (peer,))
+            if peer.get('type') == 'sdn_networking':
+                of_m_info, last_slice, of_slivers =\
+                    self.__manage_sdn_describe(peer, v, credentials)
+
+                logger.debug("of_m=%s, of_s=%s, urn=%s" %
+                             (of_m_info, of_slivers, last_slice))
+
+                ro_manifest.sliver(of_m_info.get('description'),
+                                   of_m_info.get('ref'),
+                                   of_m_info.get('email'))
+                ro_slivers.extend(of_slivers)
+
+        logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
+        logger.debug("RO-Slivers=%s" % (ro_slivers,))
+
+        return {'geni_rspec': "%s" % ro_manifest,
+                'geni_urn': last_slice,
+                'geni_slivers': ro_slivers}
 
     def allocate(self, slice_urn, client_cert, credentials,
                  rspec, end_time=None):
@@ -320,6 +346,17 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     'routing_key': k})
 
         return (manifests, slivers, db_slivers)
+
+    def __manage_sdn_describe(self, peer, urns, creds):
+        adaptor = self.__adaptor_create(peer)
+        m, urn, ss = adaptor.describe(urns, creds[0]["geni_value"])
+        manifest = OFv3ManifestParser(from_string=m)
+        logger.debug("OFv3ManifestParser=%s" % (manifest,))
+
+        sliver = manifest.sliver()
+        logger.info("Sliver=%s" % (sliver,))
+
+        return (sliver, urn, ss)
 
     def __validate_rspec(self, generic_rspec):
         (result, error) = validate(generic_rspec)

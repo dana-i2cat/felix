@@ -246,3 +246,18 @@ class SDNRMGeniv3Adaptor(GENIv3Client):
         except Exception as e:
             err = "SDNRMGeniv3 Allocate failure: %s" % str(e)
             raise exceptions.RPCError(err)
+
+    def describe(self, urns, credentials):
+        options = self.format_options()
+        logger.debug("Options: %s" % (options,))
+        try:
+            params = [urns, credentials, options, ]
+            result = self.Describe(*params)
+            logger.info("Describe result=%s" % (result,))
+            return (result.get('value').get('geni_rspec'),
+                    result.get('value').get('geni_urn'),
+                    result.get('value').get('geni_slivers'))
+
+        except Exception as e:
+            err = "SDNRMGeniv3 Describe failure: %s" % str(e)
+            raise exceptions.RPCError(err)
