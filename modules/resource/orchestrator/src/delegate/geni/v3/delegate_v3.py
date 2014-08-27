@@ -200,14 +200,33 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def status(self, urns, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        logger.debug('status: authenticate the user...')
-        client_urn, client_uuid, client_email =\
-            self.auth(client_cert, credentials, urns, ('sliverstatus',))
+        ro_slivers, last_slice = [], ""
 
-        logger.info("Client urn=%s, uuid=%s, email=%s" % (
-            client_urn, client_uuid, client_email,))
-        logger.info("urns=%s" % (urns,))
-        raise geni_ex.GENIv3GeneralError("Not implemented yet!")
+        for urn in urns:
+            logger.debug('status: authenticate the user for %s' % (urn))
+            client_urn, client_uuid, client_email =\
+                self.auth(client_cert, credentials, urn, ('sliverstatus',))
+
+            logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                client_urn, client_uuid, client_email,))
+
+        route = DBManager().get_slice_routing_keys(urns)
+        logger.debug("Route=%s" % (route,))
+
+        for r, v in route.iteritems():
+            peer = DBManager().get_configured_peer(r)
+            logger.debug("peer=%s" % (peer,))
+            if peer.get('type') == 'sdn_networking':
+                last_slice, of_slivers =\
+                    self.__manage_sdn_status(peer, v, credentials)
+
+                logger.debug("of_s=%s, urn=%s" % (of_slivers, last_slice))
+                ro_slivers.extend(of_slivers)
+
+        for s in ro_slivers:
+            s['geni_expires'] = self.__str2datetime(s['geni_expires'])
+        logger.debug("RO-Slivers=%s" % (ro_slivers,))
+        return last_slice, ro_slivers
 
     def perform_operational_action(self, urns, client_cert, credentials,
                                    action, best_effort):
@@ -357,6 +376,12 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.info("Sliver=%s" % (sliver,))
 
         return (sliver, urn, ss)
+
+    def __manage_sdn_status(self, peer, urns, creds):
+        adaptor = self.__adaptor_create(peer)
+        urn, ss = adaptor.status(urns, creds[0]["geni_value"])
+
+        return (urn, ss)
 
     def __validate_rspec(self, generic_rspec):
         (result, error) = validate(generic_rspec)

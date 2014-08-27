@@ -261,3 +261,17 @@ class SDNRMGeniv3Adaptor(GENIv3Client):
         except Exception as e:
             err = "SDNRMGeniv3 Describe failure: %s" % str(e)
             raise exceptions.RPCError(err)
+
+    def status(self, urns, credentials):
+        options = self.format_options()
+        logger.debug("Options: %s" % (options,))
+        try:
+            params = [urns, credentials, options, ]
+            result = self.Status(*params)
+            logger.info("Status result=%s" % (result,))
+            return (result.get('value').get('geni_urn'),
+                    result.get('value').get('geni_slivers'))
+
+        except Exception as e:
+            err = "SDNRMGeniv3 Status failure: %s" % str(e)
+            raise exceptions.RPCError(err)
