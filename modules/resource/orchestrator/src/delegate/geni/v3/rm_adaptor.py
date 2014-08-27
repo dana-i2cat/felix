@@ -291,3 +291,17 @@ class SDNRMGeniv3Adaptor(GENIv3Client):
         except Exception as e:
             err = "SDNRMGeniv3 Renew failure: %s" % str(e)
             raise exceptions.RPCError(err)
+
+    def perform_operational_action(self, urns, credentials, action,
+                                   best_effort):
+        options = self.format_options(best_effort=best_effort)
+        logger.debug("Options: %s" % (options,))
+        try:
+            params = [urns, credentials, action, options, ]
+            result = self.PerformOperationalAction(*params)
+            logger.info("PerformOperationalAction result=%s" % (result,))
+            return result.get('value')
+
+        except Exception as e:
+            err = "SDNRMGeniv3 PerformOperationalAction failure: %s" % str(e)
+            raise exceptions.RPCError(err)

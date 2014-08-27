@@ -252,22 +252,37 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def perform_operational_action(self, urns, client_cert, credentials,
                                    action, best_effort):
-        # could have similar structure like the provision call
-        # You should check for the GENI-default actions like
-        # GENIv3DelegateBase.OPERATIONAL_ACTION_xxx
-        logger.debug('perform_op_action: authentication for %s' % (action,))
-        if action == "geni_stop":
-            client_urn, client_uuid, client_email =\
-                self.auth(client_cert, credentials, urns, ('stopslice',))
-        else:
-            client_urn, client_uuid, client_email =\
-                self.auth(client_cert, credentials, urns, ('startslice',))
+        ro_slivers = []
 
-        logger.info("Client urn=%s, uuid=%s, email=%s" % (
-            client_urn, client_uuid, client_email,))
-        logger.info("urns=%s, action=%s, best_effort=%s" % (
-            urns, action, best_effort,))
-        raise geni_ex.GENIv3GeneralError("Not implemented yet!")
+        internal_action = self.__translate_action(action)
+        logger.info("action=%s, best_effort=%s, internal_action=%s" %
+                    (action, best_effort, internal_action,))
+
+        for urn in urns:
+            logger.debug('poa: authenticate the user for %s' % (urn))
+            client_urn, client_uuid, client_email =\
+                self.auth(client_cert, credentials, urn, (internal_action,))
+
+            logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                client_urn, client_uuid, client_email,))
+
+        route = DBManager().get_slice_routing_keys(urns)
+        logger.debug("Route=%s" % (route,))
+
+        for r, v in route.iteritems():
+            peer = DBManager().get_configured_peer(r)
+            logger.debug("peer=%s" % (peer,))
+            if peer.get('type') == 'sdn_networking':
+                of_slivers = self.__manage_sdn_operational_action(
+                    peer, v, credentials, action, best_effort)
+
+                logger.debug("of_s=%s" % (of_slivers,))
+                ro_slivers.extend(of_slivers)
+
+        for s in ro_slivers:
+            s['geni_expires'] = self.__str2datetime(s['geni_expires'])
+        logger.debug("RO-Slivers=%s" % (ro_slivers,))
+        return ro_slivers
 
     def delete(self, urns, client_cert, credentials, best_effort):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
@@ -411,6 +426,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         return ss
 
+    def __manage_sdn_operational_action(self, peer, urns, creds,
+                                        action, beffort):
+        adaptor = self.__adaptor_create(peer)
+        ss = adaptor.perform_operational_action(
+            urns, creds[0]["geni_value"], action, beffort)
+        return ss
+
     def __validate_rspec(self, generic_rspec):
         (result, error) = validate(generic_rspec)
         if result is not True:
@@ -427,6 +449,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
             result = result - result.utcoffset()
             result = result.replace(tzinfo=None)
         return result
+
+    def __translate_action(self, geni_action):
+        if geni_action == self.OPERATIONAL_ACTION_STOP:
+            return "stopslice"
+        elif geni_action == self.OPERATIONAL_ACTION_START:
+            return "startslice"
+        return "unknown"
 
     # Helper methods
     def _get_sliver_status_hash(self, lease, include_allocation_status=False,
