@@ -174,15 +174,37 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def renew(self, urns, client_cert, credentials, expiration_time,
               best_effort):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        logger.debug('renew: authenticate the user...')
-        client_urn, client_uuid, client_email =\
-            self.auth(client_cert, credentials, urns, ('renewsliver',))
+        ro_slivers = []
 
-        logger.info("Client urn=%s, uuid=%s, email=%s" % (
-            client_urn, client_uuid, client_email,))
-        logger.info("urns=%s, expiration_time=%s, best_effort=%s" % (
-            urns, expiration_time, best_effort,))
-        raise geni_ex.GENIv3GeneralError("Not implemented yet!")
+        for urn in urns:
+            logger.debug('renew: authenticate the user for %s' % (urn))
+            client_urn, client_uuid, client_email =\
+                self.auth(client_cert, credentials, urn, ('renewsliver',))
+
+            logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                client_urn, client_uuid, client_email,))
+
+        logger.info("expiration_time=%s, best_effort=%s" % (
+            expiration_time, best_effort,))
+
+        route = DBManager().get_slice_routing_keys(urns)
+        logger.debug("Route=%s" % (route,))
+
+        for r, v in route.iteritems():
+            peer = DBManager().get_configured_peer(r)
+            logger.debug("peer=%s" % (peer,))
+            if peer.get('type') == 'sdn_networking':
+                etime_str = self.__datetime2str(expiration_time)
+                of_slivers = self.__manage_sdn_renew(
+                    peer, v, credentials, etime_str, best_effort)
+
+                logger.debug("of_s=%s" % (of_slivers,))
+                ro_slivers.extend(of_slivers)
+
+        for s in ro_slivers:
+            s['geni_expires'] = self.__str2datetime(s['geni_expires'])
+        logger.debug("RO-Slivers=%s" % (ro_slivers,))
+        return ro_slivers
 
     def provision(self, urns, client_cert, credentials, best_effort, end_time,
                   geni_users):
@@ -382,6 +404,12 @@ class GENIv3Delegate(GENIv3DelegateBase):
         urn, ss = adaptor.status(urns, creds[0]["geni_value"])
 
         return (urn, ss)
+
+    def __manage_sdn_renew(self, peer, urns, creds, etime, beffort):
+        adaptor = self.__adaptor_create(peer)
+        ss = adaptor.renew(urns, creds[0]["geni_value"], etime, beffort)
+
+        return ss
 
     def __validate_rspec(self, generic_rspec):
         (result, error) = validate(generic_rspec)

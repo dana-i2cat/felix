@@ -106,7 +106,8 @@ class GENIv3Client(SFAClient):
     def __init__(self, uri):
         SFAClient.__init__(self, uri, type='geni', version=3)
 
-    def format_options(self, available=None, compress=None, end_time=None):
+    def format_options(self, available=None, compress=None, end_time=None,
+                       best_effort=None):
         options = {'geni_rspec_version': {'type': 'geni',
                                           'version': 3, }}
         if available is not None:
@@ -115,6 +116,8 @@ class GENIv3Client(SFAClient):
             options['geni_compress'] = compress
         if end_time is not None:
             options['end_time'] = end_time
+        if best_effort is not None:
+            options['geni_best_effort'] = best_effort
         return options
 
 
@@ -274,4 +277,17 @@ class SDNRMGeniv3Adaptor(GENIv3Client):
 
         except Exception as e:
             err = "SDNRMGeniv3 Status failure: %s" % str(e)
+            raise exceptions.RPCError(err)
+
+    def renew(self, urns, credentials, expiration_time, best_effort):
+        options = self.format_options(best_effort=best_effort)
+        logger.debug("Options: %s" % (options,))
+        try:
+            params = [urns, credentials, expiration_time, options, ]
+            result = self.Renew(*params)
+            logger.info("Renew result=%s" % (result,))
+            return result.get('value')
+
+        except Exception as e:
+            err = "SDNRMGeniv3 Renew failure: %s" % str(e)
             raise exceptions.RPCError(err)
