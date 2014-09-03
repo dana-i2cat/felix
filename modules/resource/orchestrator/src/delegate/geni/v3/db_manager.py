@@ -60,10 +60,9 @@ class DBManager(object):
         table = pymongo.MongoClient().felix_ro.SliceTable
         try:
             self.__mutex.acquire()
-            rows = table.find()
             ret = {}
             for u in urns:
-                for r in rows:
+                for r in table.find():
                     for s in r.get('slivers'):
                         if (r.get('slice_urn') == u) or\
                            (s.get('geni_sliver_urn') == u):
@@ -197,3 +196,6 @@ class DBManager(object):
         modif = {'slivers': slivers}
         table.update({'slice_urn': slice_urn},
                      {"$set": modif})
+
+# This is the db manager object to be used into other modules
+db_sync_manager = DBManager()

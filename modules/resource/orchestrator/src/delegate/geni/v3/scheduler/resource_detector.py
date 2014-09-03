@@ -1,15 +1,10 @@
-from delegate.geni.v3.db_manager import DBManager
+from delegate.geni.v3.db_manager import db_sync_manager
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
 import delegate.geni.v3.rspecs.commons as Commons
 from delegate.geni.v3.rspecs.openflow.advertisement_parser\
     import OFv3AdvertisementParser
 import core
 logger = core.log.getLogger("resource-detector")
-
-# TODO: can we move these utilities into a proper dir?
-import sys
-sys.path.insert(0, "../")
-from test.utils import calls
 
 
 class ResourceDetector():
@@ -18,7 +13,7 @@ class ResourceDetector():
     with the available resources exposed by RMs.
     """
     def __init__(self, typee):
-        self.peers = [p for p in DBManager().get_configured_peers()
+        self.peers = [p for p in db_sync_manager.get_configured_peers()
                       if p.get('type') == typee]
 
     def do_action(self):
@@ -38,30 +33,12 @@ class ResourceDetector():
             else:
                 logger.error("Unknown peer type=%s" % (peer.get('type'),))
 
-    def __adaptor_create(self, peer):
-        return AdaptorFactory.create(
-            type=peer.get('type'),
-            protocol=peer.get('protocol'),
-            user=peer.get('user'),
-            password=peer.get('password'),
-            address=peer.get('address'),
-            port=peer.get('port'),
-            endpoint=peer.get('endpoint'),
-            id=peer.get('_id'),
-            am_type=peer.get('am_type'),
-            am_version=peer.get('am_version'))
-
-    def __credentials(self):
-        (text, ucredential) = calls.getusercred(
-            user_cert_filename="alice-cert.pem", geni_api=3)
-        return ucredential["geni_value"]
-
     def __get_resources(self, peer):
         try:
-            adaptor = self.__adaptor_create(peer)
+            adaptor = AdaptorFactory.create_from_db(peer)
             logger.info("RM-Adaptor=%s" % (adaptor,))
 
-            geni_v3_credentials = self.__credentials()
+            geni_v3_credentials = AdaptorFactory.geni_v3_credentials()
             logger.info("Credentials successfully retrieved!")
             return adaptor.list_resources(geni_v3_credentials, False)
 
@@ -73,9 +50,9 @@ class ResourceDetector():
     def __db(self, action, routingKey, data):
         try:
             if action == "store_sdn_datapaths":
-                return DBManager().store_sdn_datapaths(routingKey, data)
+                return db_sync_manager.store_sdn_datapaths(routingKey, data)
             elif action == "store_sdn_links":
-                return DBManager().store_sdn_links(routingKey, data)
+                return db_sync_manager.store_sdn_links(routingKey, data)
             else:
                 logger.error("Unmanaged action type (%s)!" % (action,))
 

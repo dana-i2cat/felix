@@ -1,8 +1,10 @@
 from delegate.geni.v3.base import GENIv3DelegateBase
-from delegate.geni.v3.db_manager import DBManager
+from delegate.geni.v3.db_manager import db_sync_manager
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
 from handler.geni.v3 import exceptions as geni_ex
 from delegate.geni.v3 import rm_adaptor
+from delegate.geni.v3.scheduler.ro_scheduler import ROSchedulerService
+from delegate.geni.v3.scheduler.jobs import slice_expiration
 
 from delegate.geni.v3.rspecs.commons import validate
 from delegate.geni.v3.rspecs.commons_of import Match
@@ -70,11 +72,11 @@ class GENIv3Delegate(GENIv3DelegateBase):
         rspec = ROAdvertisementFormatter(schema_location=sl)
         try:
             logger.debug("OF resources: datapaths")
-            for d in DBManager().get_sdn_datapaths():
+            for d in db_sync_manager.get_sdn_datapaths():
                 rspec.datapath(d)
 
             logger.debug("OF resources: of-links & fed-links")
-            (of_links, fed_links) = DBManager().get_sdn_links()
+            (of_links, fed_links) = db_sync_manager.get_sdn_links()
             for l in of_links:
                 rspec.of_link(l)
 
@@ -102,11 +104,11 @@ class GENIv3Delegate(GENIv3DelegateBase):
             logger.info("Client urn=%s, uuid=%s, email=%s" % (
                 client_urn, client_uuid, client_email,))
 
-        route = DBManager().get_slice_routing_keys(urns)
+        route = db_sync_manager.get_slice_routing_keys(urns)
         logger.debug("Route=%s" % (route,))
 
         for r, v in route.iteritems():
-            peer = DBManager().get_configured_peer(r)
+            peer = db_sync_manager.get_configured_peer(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get('type') == 'sdn_networking':
                 of_m_info, last_slice, of_slivers =\
@@ -166,9 +168,10 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.debug("RO-Slivers=%s" % (ro_slivers,))
 
         logger.debug("RO-DB-Slivers=%s" % (ro_db_slivers,))
-        id_ = DBManager().store_slice_info(slice_urn, ro_db_slivers)
+        id_ = db_sync_manager.store_slice_info(slice_urn, ro_db_slivers)
 
         logger.info("allocate successfully completed: %s", id_)
+        self.__schedule_slice_release(end_time, ro_db_slivers)
         return ("%s" % ro_manifest, ro_slivers)
 
     def renew(self, urns, client_cert, credentials, expiration_time,
@@ -187,11 +190,11 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.info("expiration_time=%s, best_effort=%s" % (
             expiration_time, best_effort,))
 
-        route = DBManager().get_slice_routing_keys(urns)
+        route = db_sync_manager.get_slice_routing_keys(urns)
         logger.debug("Route=%s" % (route,))
 
         for r, v in route.iteritems():
-            peer = DBManager().get_configured_peer(r)
+            peer = db_sync_manager.get_configured_peer(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get('type') == 'sdn_networking':
                 etime_str = self.__datetime2str(expiration_time)
@@ -232,11 +235,11 @@ class GENIv3Delegate(GENIv3DelegateBase):
             logger.info("Client urn=%s, uuid=%s, email=%s" % (
                 client_urn, client_uuid, client_email,))
 
-        route = DBManager().get_slice_routing_keys(urns)
+        route = db_sync_manager.get_slice_routing_keys(urns)
         logger.debug("Route=%s" % (route,))
 
         for r, v in route.iteritems():
-            peer = DBManager().get_configured_peer(r)
+            peer = db_sync_manager.get_configured_peer(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get('type') == 'sdn_networking':
                 last_slice, of_slivers =\
@@ -266,11 +269,11 @@ class GENIv3Delegate(GENIv3DelegateBase):
             logger.info("Client urn=%s, uuid=%s, email=%s" % (
                 client_urn, client_uuid, client_email,))
 
-        route = DBManager().get_slice_routing_keys(urns)
+        route = db_sync_manager.get_slice_routing_keys(urns)
         logger.debug("Route=%s" % (route,))
 
         for r, v in route.iteritems():
-            peer = DBManager().get_configured_peer(r)
+            peer = db_sync_manager.get_configured_peer(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get('type') == 'sdn_networking':
                 of_slivers = self.__manage_sdn_operational_action(
@@ -298,11 +301,11 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         logger.info("best_effort=%s" % (best_effort,))
 
-        route = DBManager().get_slice_routing_keys(urns)
+        route = db_sync_manager.get_slice_routing_keys(urns)
         logger.debug("Route=%s" % (route,))
 
         for r, v in route.iteritems():
-            peer = DBManager().get_configured_peer(r)
+            peer = db_sync_manager.get_configured_peer(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get('type') == 'sdn_networking':
                 of_slivers = self.__manage_sdn_delete(
@@ -317,7 +320,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             db_urns.append(s.get('geni_sliver_urn'))
         logger.debug("RO-Slivers=%s, DB-URNs=%s" % (ro_slivers, db_urns))
 
-        DBManager().delete_slice_urns(db_urns)
+        db_sync_manager.delete_slice_urns(db_urns)
         return ro_slivers
 
     def shutdown(self, slice_urn, client_cert, credentials):
@@ -334,7 +337,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def __update_sdn_route(self, route, values):
         for v in values:
             for dpid in v.get('dpids'):
-                k = DBManager().get_sdn_datapath_routing_key(dpid)
+                k = db_sync_manager.get_sdn_datapath_routing_key(dpid)
                 dpid['routing_key'] = k
                 if k not in route:
                     sl = "http://www.geni.net/resources/rspec/3/request.xsd"
@@ -371,23 +374,11 @@ class GENIv3Delegate(GENIv3DelegateBase):
                                  m.get('packet').get('tp_dst'))
                 rspec.match(match.serialize())
 
-    def __adaptor_create(self, peerDB):
-        return AdaptorFactory.create(peerDB.get('type'),
-                                     peerDB.get('protocol'),
-                                     peerDB.get('user'),
-                                     peerDB.get('password'),
-                                     peerDB.get('address'),
-                                     peerDB.get('port'),
-                                     peerDB.get('endpoint'),
-                                     peerDB.get('_id'),
-                                     peerDB.get('am_type'),
-                                     peerDB.get('am_version'))
-
     def __send_sdn_request_rspec(self, routing_key, of_req_rspec, slice_urn,
                                  credentials, end_time):
-        peer = DBManager().get_configured_peer(routing_key)
+        peer = db_sync_manager.get_configured_peer(routing_key)
         logger.debug("Peer=%s" % (peer,))
-        adaptor = self.__adaptor_create(peer)
+        adaptor = AdaptorFactory.create_from_db(peer)
         return adaptor.allocate(slice_urn, credentials[0]["geni_value"],
                                 "%s" % of_req_rspec, end_time)
 
@@ -429,7 +420,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         return (manifests, slivers, db_slivers)
 
     def __manage_sdn_describe(self, peer, urns, creds):
-        adaptor = self.__adaptor_create(peer)
+        adaptor = AdaptorFactory.create_from_db(peer)
         m, urn, ss = adaptor.describe(urns, creds[0]["geni_value"])
         manifest = OFv3ManifestParser(from_string=m)
         logger.debug("OFv3ManifestParser=%s" % (manifest,))
@@ -440,21 +431,21 @@ class GENIv3Delegate(GENIv3DelegateBase):
         return (sliver, urn, ss)
 
     def __manage_sdn_status(self, peer, urns, creds):
-        adaptor = self.__adaptor_create(peer)
+        adaptor = AdaptorFactory.create_from_db(peer)
         return adaptor.status(urns, creds[0]["geni_value"])
 
     def __manage_sdn_renew(self, peer, urns, creds, etime, beffort):
-        adaptor = self.__adaptor_create(peer)
+        adaptor = AdaptorFactory.create_from_db(peer)
         return adaptor.renew(urns, creds[0]["geni_value"], etime, beffort)
 
     def __manage_sdn_operational_action(self, peer, urns, creds,
                                         action, beffort):
-        adaptor = self.__adaptor_create(peer)
+        adaptor = AdaptorFactory.create_from_db(peer)
         return adaptor.perform_operational_action(
             urns, creds[0]["geni_value"], action, beffort)
 
     def __manage_sdn_delete(self, peer, urns, creds, beffort):
-        adaptor = self.__adaptor_create(peer)
+        adaptor = AdaptorFactory.create_from_db(peer)
         return adaptor.delete(urns, creds[0]["geni_value"], beffort)
 
     def __validate_rspec(self, generic_rspec):
@@ -480,6 +471,15 @@ class GENIv3Delegate(GENIv3DelegateBase):
         elif geni_action == self.OPERATIONAL_ACTION_START:
             return "startslice"
         return "unknown"
+
+    def __schedule_slice_release(self, end_time, slivers):
+        scheduler = ROSchedulerService.get_scheduler()
+        logger.debug("schedule_slice_release: endtime=%s, slivers=%s, obj=%s" %
+                     (end_time, slivers, scheduler,))
+        if (end_time is not None) and (scheduler is not None):
+            urns = [s.get('geni_sliver_urn') for s in slivers]
+            ROSchedulerService.get_scheduler().add_job(
+                slice_expiration, 'date', run_date=end_time, args=[urns])
 
     # Helper methods
     def _get_sliver_status_hash(self, lease, include_allocation_status=False,

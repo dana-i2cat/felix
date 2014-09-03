@@ -1,7 +1,7 @@
 import xmlrpclib
 from lxml import etree
 from delegate.geni.v3 import exceptions
-from delegate.geni.v3.db_manager import DBManager
+from delegate.geni.v3.db_manager import db_sync_manager
 from models.c_resource_table import CResourceTable
 
 import core
@@ -25,7 +25,7 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
     def get_am_info(uri, id):
         client = SFAClient(uri)
         (type, version) = client.get_version()
-        DBManager().update_am_info(id, type, version)
+        db_sync_manager.update_am_info(id, type, version)
         return (type, version)
 
     @staticmethod
@@ -49,6 +49,25 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
                 return SDNRMGeniv3Adaptor(uri)
 
         raise exceptions.GeneralError("Type not implemented yet!")
+
+    @staticmethod
+    def create_from_db(peer_db):
+        return AdaptorFactory.create(
+            peer_db.get('type'), peer_db.get('protocol'), peer_db.get('user'),
+            peer_db.get('password'), peer_db.get('address'),
+            peer_db.get('port'), peer_db.get('endpoint'), peer_db.get('_id'),
+            peer_db.get('am_type'), peer_db.get('am_version'))
+
+    @staticmethod
+    def geni_v3_credentials():
+        # XXX_FIXME_XXX: can we move this stuff into a proper way?
+        import sys
+        sys.path.insert(0, "../")
+        from test.utils import calls
+
+        (text, ucredential) = calls.getusercred(
+            user_cert_filename="alice-cert.pem", geni_api=3)
+        return ucredential["geni_value"]
 
 
 class SFAClient(AdaptorFactory):

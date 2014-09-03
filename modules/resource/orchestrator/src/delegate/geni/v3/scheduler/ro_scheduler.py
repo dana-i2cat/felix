@@ -20,6 +20,10 @@ class ROSchedulerService(Service):
             "ROSchedulerService", interval)
         self.first_time = True
 
+    @staticmethod
+    def get_scheduler():
+        return ro_scheduler
+
     def do_action(self):
         jobs = ro_scheduler.get_jobs()
         logger.debug("Scheduled Jobs=%s" % (jobs,))
