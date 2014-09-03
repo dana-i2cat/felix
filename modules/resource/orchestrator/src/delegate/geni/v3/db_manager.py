@@ -183,7 +183,7 @@ class DBManager(object):
                 modif.get(key).append(v)
 
         if len(modif.get(key)) > 0:
-            modif.extend(entry.get(key))
+            modif.get(key).extend(entry.get(key))
             logger.debug("(%s) extend slivers info %s" % (tname, modif,))
             table.update({'_id': entry.get('_id')},
                          {"$set": modif})
