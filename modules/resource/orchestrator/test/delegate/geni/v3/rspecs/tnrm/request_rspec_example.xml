@@ -1,0 +1,36 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<rspec type="request"
+       xmlns="http://www.geni.net/resources/rspec/3"
+       xmlns:sharedvlan="http://www.geni.net/resources/rspec/ext/shared-vlan/1"
+       xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
+       xs:schemaLocation="http://www.geni.net/resources/rspec/3/request.xsd
+            http://www.geni.net/resources/rspec/ext/shared-vlan/1/request.xsd">
+
+    <node client_id="edge-node-1"
+          component_manager_id="urn:publicid:IDN+AIST+authority+cm"
+          exclusive="false">
+        <sliver_type name="nsi-aist-domain-edge-node-1"/>
+        <interface client_id="edge-node-1:if1">
+            <ip address="10.10.10.1" netmask="255.255.255.0" type="ipv4"/>
+        </interface>
+    </node>
+    <node client_id="edge-node-2"
+          component_manager_id="urn:publicid:IDN+AIST+authority+cm"
+          exclusive="false">
+        <sliver_type name="nsi-aist-domain-edge-node-2"/>
+        <interface client_id="edge-node-2:if1">
+            <ip address="20.20.20.1" netmask="255.255.255.0" type="ipv4"/>
+        </interface>
+    </node>
+
+    <link client_id="from-edge-1-to-edge-2">
+        <component_manager name="urn:publicid:IDN+AIST+authority+cm"/>
+        <interface_ref client_id="edge-node-1:if1"/>
+        <interface_ref client_id="edge-node-2:if1"/>
+        <property source_id="edge-node-1:if1" dest_id="edge-node-2:if1"
+                  capacity="100"/>
+        <property source_id="edge-node-2:if1" dest_id="edge-node-1:if1"
+                  capacity="100"/>
+        <sharedvlan:link_shared_vlan name="ival-15" vlanTag="15"/>
+    </link>
+</rspec>

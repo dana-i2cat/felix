@@ -1,0 +1,74 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<rspec type="advertisement"
+       xmlns="http://www.geni.net/resources/rspec/3"
+       xmlns:sharedvlan="http://www.geni.net/resources/rspec/ext/shared-vlan/1"
+       xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
+       xs:schemaLocation="http://www.geni.net/resources/rspec/3/ad.xsd
+            http://www.geni.net/resources/rspec/ext/shared-vlan/1/ad.xsd">
+
+    <node component_id="edge-node-1"
+          component_manager_id="urn:publicid:IDN+AIST+authority+cm"
+          exclusive="false">
+        <sliver_type name="nsi-aist-domain-edge-node-1"/>
+        <interface component_id="edge-node-1:if1">
+            <ip address="10.10.10.1" netmask="255.255.255.0" type="ipv4"/>
+        </interface>
+    </node>
+    <node component_id="edge-node-2"
+          component_manager_id="urn:publicid:IDN+AIST+authority+cm"
+          exclusive="false">
+        <sliver_type name="nsi-aist-domain-edge-node-2"/>
+        <interface component_id="edge-node-2:if1">
+            <ip address="20.20.20.1" netmask="255.255.255.0" type="ipv4"/>
+        </interface>
+    </node>
+    <node component_id="edge-node-3"
+          component_manager_id="urn:publicid:IDN+AIST+authority+cm"
+          exclusive="false">
+        <sliver_type name="nsi-aist-domain-edge-node-3"/>
+        <interface component_id="edge-node-3:if1">
+            <ip address="30.30.30.1" netmask="255.255.255.0" type="ipv4"/>
+        </interface>
+    </node>
+    <node component_id="edge-node-4"
+          component_manager_id="urn:publicid:IDN+AIST+authority+cm"
+          exclusive="false">
+        <sliver_type name="nsi-aist-domain-edge-node-4"/>
+        <interface component_id="edge-node-4:if1">
+            <ip address="40.40.40.1" netmask="255.255.255.0" type="ipv4"/>
+        </interface>
+    </node>
+
+    <link component_id="from-edge-1-to-edge-2">
+        <component_manager name="urn:publicid:IDN+AIST+authority+cm"/>
+        <interface_ref component_id="edge-node-1:if1"/>
+        <interface_ref component_id="edge-node-2:if1"/>
+        <property source_id="edge-node-1:if1" dest_id="edge-node-2:if1"
+                  capacity="1000"/>
+        <property source_id="edge-node-2:if1" dest_id="edge-node-1:if1"
+                  capacity="500"/>
+        <sharedvlan:available name="ival-15" description="internal-vlan-tag-15"
+                              localTag="15"/>
+        <sharedvlan:available name="ival-25" description="internal-vlan-tag-25"
+                              localTag="25"/>
+        <sharedvlan:available name="ival-35" description="internal-vlan-tag-35"
+                              localTag="35"/>
+        <sharedvlan:available name="ival-45" description="internal-vlan-tag-45"
+                              localTag="45"/>
+    </link>
+    <link component_id="from-edge-3-to-edge-4">
+        <component_manager name="urn:publicid:IDN+AIST+authority+cm"/>
+        <interface_ref component_id="edge-node-3:if1"/>
+        <interface_ref component_id="edge-node-4:if1"/>
+        <property source_id="edge-node-3:if1" dest_id="edge-node-4:if1"
+                  capacity="700"/>
+        <property source_id="edge-node-4:if1" dest_id="edge-node-3:if1"
+                  capacity="5000"/>
+        <sharedvlan:available name="ival-1005"
+                              description="internal-vlan-tag-1005"
+                              localTag="1500"/>
+        <sharedvlan:available name="ival-1006"
+                              description="internal-vlan-tag-1006"
+                              localTag="1006"/>
+    </link>
+</rspec>
