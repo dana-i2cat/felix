@@ -18,6 +18,20 @@ class TNv3AdvertisementFormatter(FormatterBase):
             {"sharedvlan": "%s" % (sharedvlan)}, xmlns, xs)
         self.__sv = sharedvlan
 
+    def __interface_details(self, interface_tag, details):
+        ip_tag = None
+        if (details.get("ip_address") is not None) or\
+           (details.get("ip_netmask") is not None) or\
+           (details.get("ip_type") is not None):
+            ip_tag = etree.SubElement(interface_tag, "{%s}ip" % (self.xmlns))
+
+        if (ip_tag is not None) and (details.get("ip_address") is not None):
+            ip_tag.attrib["address"] = details.get("ip_address")
+        if (ip_tag is not None) and (details.get("ip_netmask") is not None):
+            ip_tag.attrib["netmask"] = details.get("ip_netmask")
+        if (ip_tag is not None) and (details.get("ip_type") is not None):
+            ip_tag.attrib["type"] = details.get("ip_type")
+
     def node(self, node):
         n = etree.SubElement(self.rspec, "{%s}node" % (self.xmlns))
         n.attrib["component_id"] = node.get("component_id")
@@ -31,10 +45,8 @@ class TNv3AdvertisementFormatter(FormatterBase):
         for i in node.get("interfaces"):
             interface = etree.SubElement(n, "{%s}interface" % (self.xmlns))
             interface.attrib["component_id"] = i.get("component_id")
-            ip = etree.SubElement(interface, "{%s}ip" % (self.xmlns))
-            ip.attrib["address"] = i.get("ip_address")
-            ip.attrib["netmask"] = i.get("ip_netmask")
-            ip.attrib["type"] = i.get("ip_type")
+
+            self.__interface_details(interface, i)
 
     def link(self, link):
         l = etree.SubElement(self.rspec, "{%s}link" % (self.xmlns))

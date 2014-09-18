@@ -11,10 +11,16 @@ class Node(object):
                      'sliver_type_name': sliver_type_name,
                      'interfaces': []}
 
-    def add_interface(self, name, address, netmask, type):
-        self.node['interfaces'].append(
-            {'component_id': self.node.get('component_id') + ":" + name,
-             'ip_address': address, 'ip_netmask': netmask, 'ip_type': type})
+    def add_interface(self, name, address=None, netmask=None, typee=None):
+        i = {'component_id': name}
+        if address is not None:
+            i['ip_address'] = address
+        if netmask is not None:
+            i['ip_netmask'] = netmask
+        if typee is not None:
+            i['ip_type'] = typee
+
+        self.node['interfaces'].append(i)
 
     def serialize(self):
         return self.node
@@ -35,9 +41,12 @@ class Link(object):
         self.link['property'].append(
             {'source_id': source, 'dest_id': dest, 'capacity': str(capacity)})
 
-    def add_shared_vlan(self, name, descr, tag):
-        self.link['shared_vlan'].append(
-            {'name': name, 'description': descr, 'localTag': tag})
+    def add_shared_vlan(self, name, tag, descr=None):
+        l = {'name': name, 'localTag': tag}
+        if descr is not None:
+            l['description'] = descr
+
+        self.link['shared_vlan'].append(l)
 
     def serialize(self):
         return self.link
