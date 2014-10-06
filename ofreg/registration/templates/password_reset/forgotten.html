@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load form_helper %}
+
+{% block content%}
+<p>
+{{ message }}	
+</p>
+
+<form action="{% url registration.views.password_reset.forgotten %}" method="post">
+	{{ form.non_field_errors }}
+	{% field_row form "email" %}
+	{% field_row form "challenge" %}
+	<div>
+        <label><p></p></label>
+        <p><img src="/static/img/warning.png" title="Warning"> Remember your input here, since it will become part of your new password.</p>
+    </div>
+	{% submit_row "Reset" %}
+</form>
+
+{% endblock %}

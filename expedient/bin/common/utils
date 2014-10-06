@@ -1,0 +1,247 @@
+#!/bin/bash
+
+###
+#       @author: msune, CarolinaFernandez
+#	@organization: i2CAT
+#	@project: Ofelia FP7
+#	@description: Shell utils file 
+###
+
+
+
+###I/O functions
+
+##Output utils
+txtrst=$(tput sgr0) # Text reset
+txtred=$(tput setaf 1) # Red
+txtgreen=$(tput setaf 2) # Green
+txtylw=$(tput setaf 3) # Yellow
+txtbold=$(tput bold) # Bold text
+
+#Log function
+function log()
+{
+	if [ "$USE_LOG" == 1 ]; then
+		echo -e "`date`>  $1" >> $LOG
+	fi
+}
+
+#Simple print
+function print()
+{
+	if [ "$2" == 1 ]; then
+		#stderr
+		OUT="/dev/stderr"
+	else
+		OUT="/dev/stdout"
+	fi
+		log "$1"
+		echo -e "$1" > $OUT
+}
+
+#Make bold text
+function printBold()
+{
+	print "${txtbold} $@ ${txtrst}"
+}
+
+#Heading print
+function printHeader()
+{
+	print ""
+	print ""
+#	print "${txtgreen}$1 ${txtrst} $2"
+#	printBold "${txtgreen}$1 `printBold $2`"
+	printBold "${txtgreen}$1 $2"
+}
+
+#debug print
+function printDebug()
+{
+	if [ "$DEBUG" == 1 ]; then
+		print "$1"
+		log "$1"
+	fi
+}
+
+#Warning
+function warning()
+{
+	print "${txtylw}WARNING:${txtrst} $1"
+}
+
+#Splash
+function splash()
+{
+	echo -e "\n$APP_NAME v$APP_VER \n"
+	if [ "$1" == "1" ]; then 
+		echo -e "Description: $APP_DESC"
+		echo -e "Authorship: $APP_AUTHOR"
+	fi
+	echo -e "Websites: $APP_WEB"
+	echo ""	
+}
+
+#Summary
+function summary()
+{	
+	print ""
+	print ""
+	print SUMMARY INSTALL/UPGRADE
+	print "******************************************************************************"
+	print "Action type: ${txtgreen} $ACTION ${txtrst}"
+	if [ "$ACTION" == "install" ]; then
+		print "Targeted version: $TARGETED_VERSION" 
+	else
+		print "Targeted version: $TARGETED_VERSION \t Current(installed): $CURRENT_VERSION"
+	fi
+	print ""
+	print "Flags:"
+	
+	#Flags
+	if [ "$ACTION" == "upgrade" ]; then 
+		if [ "$BACKUP" == "0"  ]; then 
+			print "\t - ${txtylw}Backup DISABLED!!!!${txtrst}"
+		else
+			print "\t + ${txtgreen}Backup enabled${txtrst}"
+		fi
+	fi
+
+	if [ "$USE_LOG" == "1"  ]; then 
+		print "\t + Logging enabled"
+	else
+		print "\t - Logging disabled"
+	fi
+	if [ "$DEBUG" == "1"  ]; then 
+		print "\t + Debug Mode enabled"
+	fi
+	if [ "$FORCE" == "1"  ]; then 
+		print "\t + ${txtred}Force mode...${txtrst}"
+	fi	
+
+	print ""
+	#Description
+	if [ -n "$1"  ]; then 
+		print "Description:"
+		cat "$1"
+	fi
+	print "******************************************************************************"
+
+}
+
+#Error function; invoques restore
+function error()
+{
+	local ERROR="${txtred}FATAL ERROR:${txtrst} $1"
+
+	print "$ERROR" 
+
+	if [ -z "$2" ]; then
+		loadModule rollback
+	fi 
+	
+	#printDebug "Unlocking and exiting..."
+	unlock
+	rm -rf $UPGRADE_REG
+ 	
+	exit 1 
+}
+
+##Input utils
+
+#Confirmation with exit
+# Usage: $1: message, [$2 throw error on its presence $NO_RETURN], [$3 when $2 present, do not rollback; $NO_RESCUE]
+function confirm()
+{
+	local VALUE
+	while :
+	do
+		echo "$1. Do you confirm (Y/N)?"
+		read VALUE
+
+		if [ "$VALUE" == "Y" ] || [ "$VALUE" == "y" ]; then
+			#Accepted
+			return 0
+		elif [ "$VALUE" == "N" ] || [ "$VALUE" == "n" ]; then
+			#Rejected
+			if [ "$2" == "$DONT_ABORT" ]; then 
+				return 1
+			else
+				error "'$1' clause not confirmed. Aborting..." $3 
+			fi
+		fi
+	done
+		
+}
+
+function pause
+{
+	echo $1
+	echo -n "Press any key to continue..."
+	read 
+}
+
+##File utils
+#Recover directory path
+#$1 contains 
+function getDirectory()
+{
+	echo `dirname $(readlink -f $1)`
+}
+
+#Aux functions for lock
+function is_number()
+{
+    printf '%f' "$1" &>/dev/null && echo "1" || echo "0";
+}
+
+function get_parent_pid()
+{
+    process=$1
+    while [[ `is_number $process` == 1 ]]; do
+        if [[ $process -gt 0 ]]; then
+            process=`cat /proc/$((process))/stat | awk '{print $4 }'`
+            echo $process
+        else
+            break
+        fi
+    done
+}
+
+function contains_element()
+{
+	local e
+	for e in "${@:2}"; do [[ "$e" == "$1" ]] && return 1; done
+	return 0
+}
+
+#Check that no other OFVER instance is already running
+function lock()
+{
+	currentPID=$$
+	pids=( $(ps aux | grep "ofver" | grep "bash" | grep -v "grep" | awk '{print $2}') )
+	for pid in "${pids[@]}"; do
+		# Do not lock if non-related (not parent of the current
+		# process) and older PIDs run in the same folder
+		if [[ $pid -lt $((currentPID-1)) &&
+		`pwdx $pid | awk '{print $2}'` == $PWD ]]; then
+			pidFromParent=0
+			if [[ $ENABLE_OFVER_SON_PROCESSES -eq 1 ]]; then
+	                        parent_pids=( $(get_parent_pid $currentPID) )
+				contains_element $pid "${parent_pids[@]}"
+				pidFromParent=$?
+			fi
+                        if [[ $pidFromParent -eq 0 ]]; then
+                                print "${txtred}FATAL ERROR:${txtrst} Could not acquire lock... Other instance (PID $pid) of ofver is already running."
+                                exit 1
+                        fi
+        	fi
+	done
+}
+
+#Unlocks automatically (process terminated after execution)
+function unlock()
+{
+	return
+}
+
