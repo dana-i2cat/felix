@@ -24,9 +24,10 @@ def print_error(text):
 ## Paths and files
 
 def get_modules():
+    unallowed_folders = [".git", "deploy", "doc", "modules"]
     ocf_modules = sorted(os.walk(ocf_path).next()[1])
-    ocf_modules.remove("deploy")
-    ocf_modules.remove(".git")
+    for unallowed_folder in unallowed_folders:
+        ocf_modules.remove(unallowed_folder)
     return ocf_modules
 
 def get_installed_modules():
