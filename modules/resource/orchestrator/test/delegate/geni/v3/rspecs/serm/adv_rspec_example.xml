@@ -1,0 +1,31 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<rspec type="advertisement"
+       xmlns="http://www.geni.net/resources/rspec/3"
+       xmlns:sharedvlan="http://www.geni.net/resources/rspec/ext/shared-vlan/1"
+       xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
+       xs:schemaLocation="http://www.geni.net/resources/rspec/3/ad.xsd
+            http://www.geni.net/resources/rspec/ext/shared-vlan/1/ad.xsd">
+
+    <node component_id="urn:publicid:aist-se1"
+          component_manager_id="urn:publicid:IDN+AIST+authority+serm"
+          exclusive="false">
+        <interface component_id="urn:publicid:aist-se1:if1"/>
+        <interface component_id="urn:publicid:aist-se1:if2"/>
+        <interface component_id="urn:publicid:aist-se1:if3"/>
+        <interface component_id="urn:publicid:aist-se1:if4"/>
+    </node>
+
+    <link component_id="urn:publicid:aist-se1:link">
+        <component_manager name="urn:publicid:IDN+NSI+authority+serm"/>
+        <interface_ref component_id="*"/>
+        <interface_ref component_id="*"/>
+        <property source_id="*" dest_id="*" capacity="*"/>
+        <link_type name="vlan_trans"/>
+    </link>
+
+    <link component_id="urn:publicid:aist-se1-dp1">
+        <interface_ref component_id="urn:publicid:aist-se1:if1"/>
+        <interface_ref component_id="urn:publicid:aist-sdn1:if1"/>
+        <link_type name="static"/>
+    </link>
+</rspec>
