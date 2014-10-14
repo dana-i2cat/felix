@@ -1,4 +1,4 @@
-<?xml version="1.1" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <rspec type="request"
        xmlns="http://www.geni.net/resources/rspec/3"
        xmlns:sharedvlan="http://www.geni.net/resources/rspec/ext/shared-vlan/1"
@@ -6,31 +6,30 @@
        xs:schemaLocation="http://www.geni.net/resources/rspec/3/request.xsd
             http://www.geni.net/resources/rspec/ext/shared-vlan/1/request.xsd">
 
-    <node client_id="edge-node-1"
-          component_manager_id="urn:publicid:IDN+AIST+authority+cm"
+    <node client_id="urn:publicid:tn-network1:"
+          component_manager_id="rn:publicid:IDN+AIST+authority+tnrm"
           exclusive="false">
         <sliver_type name="nsi-aist-domain-edge-node-1"/>
-        <interface client_id="edge-node-1:if1">
-            <ip address="10.10.10.1" netmask="255.255.255.0" type="ipv4"/>
+        <interface client_id="urn:publicid:tn-network1:aist-stp1">
+            <sharedvlan:link_shared_vlan name="urn:publicid:IDN+AIST+authority+tnrm+component+aist-stp1+vlan+1980-1989"
+                                         vlantag="1980-1989"/>
         </interface>
-    </node>
-    <node client_id="edge-node-2"
-          component_manager_id="urn:publicid:IDN+AIST+authority+cm"
-          exclusive="false">
-        <sliver_type name="nsi-aist-domain-edge-node-2"/>
-        <interface client_id="edge-node-2:if1">
-            <ip address="20.20.20.1" netmask="255.255.255.0" type="ipv4"/>
+        <interface client_id="urn:publicid:tn-network1:xxx-stp1"/>
+        <interface client_id="urn:publicid:tn-network1:yyy-stp2"/>
+        <interface client_id="urn:publicid:tn-network1:i2cat-stp2">
+            <sharedvlan:link_shared_vlan name="urn:publicid:IDN+AIST+authority+tnrm+component+i2cat-stp2+vlan+1980-1989"
+                                         vlantag="1980-1989"/>
         </interface>
     </node>
 
-    <link client_id="from-edge-1-to-edge-2">
-        <component_manager name="urn:publicid:IDN+AIST+authority+cm"/>
-        <interface_ref client_id="edge-node-1:if1"/>
-        <interface_ref client_id="edge-node-2:if1"/>
-        <property source_id="edge-node-1:if1" dest_id="edge-node-2:if1"
-                  capacity="100"/>
-        <property source_id="edge-node-2:if1" dest_id="edge-node-1:if1"
-                  capacity="100"/>
-        <sharedvlan:link_shared_vlan name="ival-15" vlanTag="15"/>
+    <link client_id=" urn:publicid:IDN+AIST+authority+tnrm ">
+        <component_manager name="urn:publicid:IDN+AIST+authority+tnrm"/>
+        <interface_ref client_id="urn:publicid:tn-network1:aist-stp1"/>
+        <interface_ref client_id="urn:publicid:tn-network1:xxx-stp1"/>
+        <interface_ref client_id="urn:publicid:tn-network1:yyy-stp2"/>
+        <interface_ref client_id="urn:publicid:tn-network1:i2cat-stp2"/>
+        <property source_id="urn:publicid:eu-network1:zpoint"
+                  dest_id="urn:publicid:jp-network1:apoint"
+                  capacity="500"/>
     </link>
 </rspec>
