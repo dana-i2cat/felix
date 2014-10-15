@@ -1,21 +1,11 @@
 from delegate.geni.v3.rspecs.parser_base import ParserBase
-from delegate.geni.v3.rspecs.commons_tn import Node, Link
+from delegate.geni.v3.rspecs.commons_tn import Node, Link, Interface
 
 
 class TNRMv3RequestParser(ParserBase):
     def __init__(self, from_file=None, from_string=None):
         super(TNRMv3RequestParser, self).__init__(from_file, from_string)
         self.__sv = self.rspec.nsmap.get('sharedvlan')
-
-    def __interface_details(self, node, interface_tag):
-        ip_tag = interface_tag.find("{%s}ip" % (self.none))
-        if ip_tag is None:
-            node.add_interface(interface_tag.attrib.get("client_id"))
-        else:
-            node.add_interface(interface_tag.attrib.get("client_id"),
-                               ip_tag.attrib.get("address"),
-                               ip_tag.attrib.get("netmask"),
-                               ip_tag.attrib.get("type"))
 
     def nodes(self):
         nodes_ = []
@@ -29,8 +19,12 @@ class TNRMv3RequestParser(ParserBase):
                       n.attrib.get("exclusive"),
                       sliver_.attrib.get("name"))
 
-            [self.__interface_details(n_, i)
-             for i in n.iterfind("{%s}interface" % (self.none))]
+            for i in n.iterfind("{%s}interface" % (self.none)):
+                i_ = Interface(i.attrib.get("client_id"))
+                for sv in i.iterfind("{%s}link_shared_vlan" % (self.__sv)):
+                    i_.add_vlan(sv.attrib.get("vlantag"),
+                                sv.attrib.get("name"))
+                n_.add_interface(i_.serialize())
 
             nodes_.append(n_.serialize())
 
@@ -52,13 +46,6 @@ class TNRMv3RequestParser(ParserBase):
                              p.attrib.get("dest_id"),
                              p.attrib.get("capacity"))
              for p in l.iterfind("{%s}property" % (self.none))]
-
-            sv_ = l.find("{%s}link_shared_vlan" % (self.__sv))
-            if sv_ is None:
-                self.raise_exception("Shared-Vlan tag not found in link!")
-
-            l_.add_shared_vlan(sv_.attrib.get("name"),
-                               sv_.attrib.get("vlanTag"))
 
             links_.append(l_.serialize())
 
