@@ -219,6 +219,50 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
+    # (felix_ro) TNNodeTable
+    def store_tn_nodes(self, routingKey, values):
+        table = pymongo.MongoClient().felix_ro.TNNodeTable
+        try:
+            ids = []
+            self.__mutex.acquire()
+            for v in values:
+                row = table.find_one({
+                    'routing_key': routingKey,
+                    'component_id': v.get('component_id'),
+                    'component_manager_id': v.get('component_manager_id'),
+                    'sliver_type_name': v.get('sliver_type_name')})
+                if row is None:
+                    v['routing_key'] = routingKey
+                    ids.append(table.insert(v))
+                    continue
+                # update the object (if needed)
+                self.__update_list('tnnodes-table', table, row, 'interfaces',
+                                   v.get('interfaces'))
+            return ids
+        finally:
+            self.__mutex.release()
+
+    # (felix_ro) TNLinkTable
+    def store_tn_links(self, routingKey, values):
+        table = pymongo.MongoClient().felix_ro.TNLinkTable
+        try:
+            ids = []
+            self.__mutex.acquire()
+            for v in values:
+                row = table.find_one({
+                    'routing_key': routingKey,
+                    'component_id': v.get('component_id'),
+                    'component_manager_name': v.get('component_manager_name')})
+                if row is None:
+                    v['routing_key'] = routingKey
+                    ids.append(table.insert(v))
+                else:
+                    logger.debug(
+                        "(tnlink-table) %s already stored!" % (row.get('_id')))
+            return ids
+        finally:
+            self.__mutex.release()
+
     # utilities
     def __update_list(self, tname, table, entry, key, values):
         logger.debug("(%s) %s already stored!" % (tname, entry.get('_id'),))

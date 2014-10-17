@@ -5,6 +5,8 @@ from delegate.geni.v3.rspecs.openflow.advertisement_parser\
     import OFv3AdvertisementParser
 from delegate.geni.v3.rspecs.serm.advertisement_parser\
     import SERMv3AdvertisementParser
+from delegate.geni.v3.rspecs.tnrm.advertisement_parser\
+    import TNRMv3AdvertisementParser
 import core
 logger = core.log.getLogger("resource-detector")
 
@@ -43,6 +45,9 @@ class ResourceDetector():
             elif peer.get('type') == "stitching_entity":
                 (nodes, links) = self.__decode_se_rspec(result)
                 self.__store_se_resources(peer.get('_id'), nodes, links)
+            elif peer.get('type') == "transport_network":
+                (nodes, links) = self.__decode_tn_rspec(result)
+                self.__store_tn_resources(peer.get('_id'), nodes, links)
             elif peer.get('type') == "virtualisation":
                 self.__decode_computing_rspec(result)
             else:
@@ -72,6 +77,10 @@ class ResourceDetector():
                 return db_sync_manager.store_se_nodes(routingKey, data)
             elif action == "store_se_links":
                 return db_sync_manager.store_se_links(routingKey, data)
+            elif action == "store_tn_nodes":
+                return db_sync_manager.store_tn_nodes(routingKey, data)
+            elif action == "store_tn_links":
+                return db_sync_manager.store_tn_links(routingKey, data)
             else:
                 self.error("Unmanaged action type (%s)!" % (action,))
 
@@ -134,31 +143,52 @@ class ResourceDetector():
             self.error("Exception: %s" % str(e))
         return (nodes, links)
 
-    def __store_sdn_resources(self, peerID, dpids, links):
-        if dpids is None or len(dpids) == 0:
-            self.error("Datapaths list does not exist or is empty!")
-        else:
-            ids = self.__db("store_sdn_datapaths", peerID, dpids)
-            self.info("IDs dpids=%s" % (ids,))
+    def __decode_tn_rspec(self, result):
+        (nodes, links) = (None, None)
 
-        if links is None or len(links) == 0:
-            self.error("Links list does not exist or is empty!")
+        rspec = result.get('value', None)
+        if rspec is None:
+            self.error("Unable to get RSpec value from %s" % (result,))
+            return (nodes, links)
+
+        try:
+            tn_rspec = TNRMv3AdvertisementParser(from_string=rspec)
+            self.debug("TNRSpec=%s" % (tn_rspec,))
+            # validate
+            (result, error) = Commons.validate(tn_rspec.get_rspec())
+            if not result:
+                self.error("Validation failure: %s" % error)
+                return (nodes, links)
+
+            self.info("Validation success!")
+            nodes = tn_rspec.nodes()
+            self.info("Nodes(%d)=%s" % (len(nodes), nodes,))
+
+            links = tn_rspec.links()
+            self.info("Links(%d)=%s" % (len(links), links,))
+
+        except Exception as e:
+            self.error("Exception: %s" % str(e))
+        return (nodes, links)
+
+    def __store(self, data, name, action, peer):
+        if data is None or len(data) == 0:
+            self.error("%s list does not exist or is empty!" % (name,))
         else:
-            ids = self.__db("store_sdn_links", peerID, links)
-            self.info("IDs links=%s" % (ids,))
+            ids = self.__db(action, peer, data)
+            self.info("IDs %s=%s" % (name, ids,))
+
+    def __store_sdn_resources(self, peerID, dpids, links):
+        self.__store(dpids, "Datapaths", "store_sdn_datapaths", peerID)
+        self.__store(links, "Links", "store_sdn_links", peerID)
 
     def __store_se_resources(self, peerID, nodes, links):
-        if nodes is None or len(nodes) == 0:
-            self.error("Nodes list does not exist or is empty!")
-        else:
-            ids = self.__db("store_se_nodes", peerID, nodes)
-            self.info("IDs nodes=%s" % (ids,))
+        self.__store(nodes, "Nodes", "store_se_nodes", peerID)
+        self.__store(links, "Links", "store_se_links", peerID)
 
-        if links is None or len(links) == 0:
-            self.error("Links list does not exist or is empty!")
-        else:
-            ids = self.__db("store_se_links", peerID, links)
-            self.info("IDs links=%s" % (ids,))
+    def __store_tn_resources(self, peerID, nodes, links):
+        self.__store(nodes, "Nodes", "store_tn_nodes", peerID)
+        self.__store(links, "Links", "store_tn_links", peerID)
 
     def __decode_computing_rspec(self, result):
         rspec = result.get('value', None)

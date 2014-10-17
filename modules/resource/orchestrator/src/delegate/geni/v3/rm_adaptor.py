@@ -49,6 +49,8 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
                 return SDNRMGeniv3Adaptor(uri)
             elif type == 'stitching_entity':
                 return SERMGeniv3Adaptor(uri)
+            elif type == 'transport_network':
+                return TNRMGeniv3Adaptor(uri)
 
         raise exceptions.GeneralError("Type not implemented yet!")
 
@@ -349,3 +351,11 @@ class SERMGeniv3Adaptor(GENIv3Client):
 
     def list_resources(self, credentials, available):
         return self.list_resources_base(credentials, available, "SERMGeniv3")
+
+
+class TNRMGeniv3Adaptor(GENIv3Client):
+    def __init__(self, uri):
+        GENIv3Client.__init__(self, uri)
+
+    def list_resources(self, credentials, available):
+        return self.list_resources_base(credentials, available, "TNRMGeniv3")
