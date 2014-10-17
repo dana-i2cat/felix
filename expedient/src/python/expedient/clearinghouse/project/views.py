@@ -31,6 +31,8 @@ from django.conf import settings
 from django.contrib.auth.models import User
 import ldap 
 from django.contrib.sites.models import Site
+from expedient.clearinghouse.fapi.cbas import *
+from expedient.clearinghouse.defaultsettings.cbas import *
 
 
 logger = logging.getLogger("project.views")
@@ -205,15 +207,28 @@ def create_project_roles(project, user):
 )
 def create(request):
     '''Create a new project'''
-   
+
+    from expedient.clearinghouse.users.models import UserProfile
+    user_profile = UserProfile.get_or_create_profile(request.user)
+    cert = user_profile.certificate
+    creds = user_profile.credentials
+
     def post_save(instance, created):
         # Create default roles in the project
-	#Generate UUID: fixes caching problem on model default value
-	instance.uuid = uuid.uuid4()
-	create_project_roles(instance, request.user)
-	instance.save()
-	#if settings.LDAP_STORE_PROJECTS:
-	#        instance.sync_netgroup_ldap()
+        #Generate UUID: fixes caching problem on model default value
+        instance.uuid = uuid.uuid4()
+        #<UT>
+        instance.urn = 'n/a'
+        #import pdb; pdb.set_trace()
+        if ENABLE_CBAS:
+            project_urn = create_project(certificate=cert, credentials=creds,
+                                    project_name=instance.name, project_desc=instance.description)
+            if project_urn:
+                instance.urn = project_urn
+        create_project_roles(instance, request.user)
+        instance.save()
+        #if settings.LDAP_STORE_PROJECTS:
+        #        instance.sync_netgroup_ldap()
         
     def redirect(instance):
         return reverse("project_detail", args=[instance.id])

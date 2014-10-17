@@ -65,7 +65,9 @@ class Slice(models.Model):
             " now." % settings.MAX_SLICE_LIFE,
         max_date=_get_slice_max_date,
    )
-    
+    #<UT>
+    urn = models.TextField(default="")
+
     def __unicode__(self):
         return u"Slice '%s' in project '%s'" % (self.name, self.project.name)
     
