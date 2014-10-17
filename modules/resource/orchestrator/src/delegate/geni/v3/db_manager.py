@@ -174,6 +174,52 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
+    # (felix_ro) SENodeTable
+    def store_se_nodes(self, routingKey, values):
+        table = pymongo.MongoClient().felix_ro.SENodeTable
+        try:
+            ids = []
+            self.__mutex.acquire()
+            for v in values:
+                row = table.find_one({
+                    'routing_key': routingKey,
+                    'component_id': v.get('component_id'),
+                    'component_manager_id': v.get('component_manager_id'),
+                    'sliver_type_name': v.get('sliver_type_name')})
+                if row is None:
+                    v['routing_key'] = routingKey
+                    ids.append(table.insert(v))
+                    continue
+                # update the object (if needed)
+                self.__update_list('senodes-table', table, row, 'interfaces',
+                                   v.get('interfaces'))
+            return ids
+        finally:
+            self.__mutex.release()
+
+    # (felix_ro) SELinkTable
+    def store_se_links(self, routingKey, values):
+        table = pymongo.MongoClient().felix_ro.SELinkTable
+        try:
+            ids = []
+            self.__mutex.acquire()
+            for v in values:
+                row = table.find_one({
+                    'routing_key': routingKey,
+                    'component_id': v.get('component_id'),
+                    'component_manager_name': v.get('component_manager_name'),
+                    'link_type': v.get('link_type')})
+                if row is None:
+                    v['routing_key'] = routingKey
+                    ids.append(table.insert(v))
+                else:
+                    logger.debug(
+                        "(selink-table) %s already stored!" % (row.get('_id')))
+            return ids
+        finally:
+            self.__mutex.release()
+
+    # utilities
     def __update_list(self, tname, table, entry, key, values):
         logger.debug("(%s) %s already stored!" % (tname, entry.get('_id'),))
         modif = {key: []}

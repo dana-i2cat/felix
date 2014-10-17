@@ -47,6 +47,8 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
         elif am_type in ['geni', ] and int(am_version) == 3:
             if type == 'sdn_networking':
                 return SDNRMGeniv3Adaptor(uri)
+            elif type == 'stitching_entity':
+                return SERMGeniv3Adaptor(uri)
 
         raise exceptions.GeneralError("Type not implemented yet!")
 
@@ -79,7 +81,7 @@ class SFAClient(AdaptorFactory):
 
     def get_version(self):
         try:
-            # Get the required information of the peer
+            logger.debug("Get the required information of the peer")
             rspec_version = self.GetVersion()
             logger.debug("Rspec version: %s" % (rspec_version,))
             values = rspec_version.get('value')
@@ -138,6 +140,17 @@ class GENIv3Client(SFAClient):
         if best_effort is not None:
             options['geni_best_effort'] = best_effort
         return options
+
+    def list_resources_base(self, credentials, available, typee):
+        options = self.format_options(available=available, compress=False)
+        logger.debug("Options: %s" % (options,))
+        try:
+            params = [credentials, options, ]
+            return self.ListResources(*params)
+
+        except Exception as e:
+            err = "%s ListResources failure: %s" % (typee, str(e))
+            raise exceptions.RPCError(err)
 
 
 class CRMGeniv2Adaptor(SFAv2Client):
@@ -244,16 +257,7 @@ class SDNRMGeniv3Adaptor(GENIv3Client):
         GENIv3Client.__init__(self, uri)
 
     def list_resources(self, credentials, available):
-        options = self.format_options(available=available,
-                                      compress=False)
-        logger.debug("Options: %s" % (options,))
-        try:
-            params = [credentials, options, ]
-            return self.ListResources(*params)
-
-        except Exception as e:
-            err = "SDNRMGeniv3 ListResources failure: %s" % str(e)
-            raise exceptions.RPCError(err)
+        return self.list_resources_base(credentials, available, "SDNRMGeniv3")
 
     def allocate(self, slice_urn, credentials, rspec, end_time):
         options = self.format_options(end_time=end_time)
@@ -337,3 +341,11 @@ class SDNRMGeniv3Adaptor(GENIv3Client):
         except Exception as e:
             err = "SDNRMGeniv3 Delete failure: %s" % str(e)
             raise exceptions.RPCError(err)
+
+
+class SERMGeniv3Adaptor(GENIv3Client):
+    def __init__(self, uri):
+        GENIv3Client.__init__(self, uri)
+
+    def list_resources(self, credentials, available):
+        return self.list_resources_base(credentials, available, "SERMGeniv3")

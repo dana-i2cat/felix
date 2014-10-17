@@ -16,6 +16,24 @@ def sdn_resource_detector():
         logger.error('sdn_resource_detector failure: %s' % (e,))
 
 
+def se_resource_detector():
+    try:
+        rd = ResourceDetector('stitching_entity')
+        rd.do_action()
+
+    except Exception as e:
+        logger.error('se_resource_detector failure: %s' % (e,))
+
+
+def tn_resource_detector():
+    try:
+        rd = ResourceDetector('transport_network')
+        rd.do_action()
+
+    except Exception as e:
+        logger.error('sdn_resource_detector failure: %s' % (e,))
+
+
 # automatic release the slice resources for the end-time expiration
 def slice_expiration(urns):
     logger.info("slice expiration timeout: %s" % (urns,))

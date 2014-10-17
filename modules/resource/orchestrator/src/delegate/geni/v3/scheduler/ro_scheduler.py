@@ -1,6 +1,7 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta
-from jobs import sdn_resource_detector
+from jobs import sdn_resource_detector, se_resource_detector,\
+    tn_resource_detector
 from core.service import Service
 import core
 logger = core.log.getLogger('ro-scheduler')
@@ -38,19 +39,28 @@ class ROSchedulerService(Service):
         logger.info("ro_scheduler shutdown")
         super(ROSchedulerService, self).stop()
 
-    def __oneshot_jobs(self):
+    def __add_oneshot(self, secs_, func_, id_):
         try:
-            run_time = datetime.now() + timedelta(seconds=1)
-            ro_scheduler.add_job(sdn_resource_detector, 'date',
-                                 id='oneshot_sdn_resource_detector',
-                                 run_date=run_time)
+            run_time = datetime.now() + timedelta(seconds=secs_)
+            ro_scheduler.add_job(func_, 'date', id=id_, run_date=run_time)
+
         except Exception as e:
             logger.warning("oneshot_jobs failure: %s" % (e,))
 
-    def __cron_jobs(self):
+    def __oneshot_jobs(self):
+        self.__add_oneshot(1, sdn_resource_detector, 'oneshot_sdn_rd')
+        self.__add_oneshot(11, se_resource_detector, 'oneshot_se_rd')
+        self.__add_oneshot(21, tn_resource_detector, 'oneshot_tn_rd')
+
+    def __add_cron(self, func_, id_, hour_, min_, sec_):
         try:
-            ro_scheduler.add_job(sdn_resource_detector, 'cron',
-                                 id='cron_sdn_resource_detector',
-                                 hour=1, minute=0, second=0)
+            ro_scheduler.add_job(func_, 'cron', id=id_,
+                                 hour=hour_, minute=min_, second=sec_)
+
         except Exception as e:
             logger.warning("cron_jobs failure: %s" % (e,))
+
+    def __cron_jobs(self):
+        self.__add_cron(sdn_resource_detector, 'cron_sdn_rd', 0, 1, 0)
+        self.__add_cron(se_resource_detector, 'cron_se_rd', 0, 11, 0)
+        self.__add_cron(tn_resource_detector, 'cron_tn_rd', 0, 21, 0)
