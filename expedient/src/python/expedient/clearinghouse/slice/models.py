@@ -66,7 +66,7 @@ class Slice(models.Model):
         max_date=_get_slice_max_date,
    )
     #<UT>
-    urn = models.TextField(default="")
+    urn = models.CharField(max_length=200, default="")
 
     def __unicode__(self):
         return u"Slice '%s' in project '%s'" % (self.name, self.project.name)

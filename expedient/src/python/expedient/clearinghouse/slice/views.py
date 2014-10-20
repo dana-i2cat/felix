@@ -23,6 +23,7 @@ from expedient.clearinghouse.slice.utils import parseFVexception
 from expedient.clearinghouse.urls import PLUGIN_LOADER, TOPOLOGY_GENERATOR
 from expedient.clearinghouse.fapi.cbas import *
 from expedient.clearinghouse.defaultsettings.cbas import *
+from expedient.clearinghouse.users.models import UserProfile
 
 TEMPLATE_PATH = "expedient/clearinghouse/slice"
 
@@ -33,7 +34,6 @@ def create(request, proj_id):
     must_have_permission(request.user, project, "can_create_slices")
 
     #<UT>
-    from expedient.clearinghouse.users.models import UserProfile
     user_profile = UserProfile.get_or_create_profile(request.user)
     user_urn = user_profile.urn
     user_cert = user_profile.certificate
@@ -134,6 +134,12 @@ def detail(request, slice_id):
 
     must_have_permission(request.user, slice.project, "can_view_project")    
     resource_list = [rsc.as_leaf_class() for rsc in slice.resource_set.all()]
+
+    user_profile = UserProfile.get_or_create_profile(request.user)
+    user_urn = user_profile.urn
+    user_cert = user_profile.certificate
+    creds = get_slice_credentials(slice.project.urn, slice.urn, user_urn, user_cert)
+    print_debug_message(str(creds))
 
     template_list_computation = []
     template_list_network = []

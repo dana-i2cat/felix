@@ -78,7 +78,7 @@ class Project(models.Model):
     description = models.TextField(validators=[descriptionLightValidator])
     uuid = models.CharField(max_length=200, default = "", unique=True, editable =False)
     #<UT>
-    urn = models.CharField(default="")
+    urn = models.CharField(max_length=200, default="")
 
     '''
     save = permissions_save_override(

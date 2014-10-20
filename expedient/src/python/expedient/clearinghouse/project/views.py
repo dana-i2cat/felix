@@ -33,7 +33,7 @@ import ldap
 from django.contrib.sites.models import Site
 from expedient.clearinghouse.fapi.cbas import *
 from expedient.clearinghouse.defaultsettings.cbas import *
-
+from expedient.clearinghouse.users.models import UserProfile
 
 logger = logging.getLogger("project.views")
 
@@ -208,7 +208,6 @@ def create_project_roles(project, user):
 def create(request):
     '''Create a new project'''
 
-    from expedient.clearinghouse.users.models import UserProfile
     user_profile = UserProfile.get_or_create_profile(request.user)
     cert = user_profile.certificate
     creds = user_profile.credentials
@@ -410,6 +409,13 @@ def add_member(request, proj_id):
         form = AddMemberForm(project=project, giver=request.user, data=request.POST)
         if form.is_valid():
             user = User.objects.get(id = request.POST['user'] )
+            #<UT>
+            if ENABLE_CBAS:
+                user_to_add = UserProfile.get_or_create_profile(user)
+                op_user = UserProfile.get_or_create_profile(request.user)
+                add_member_to_project(project_urn=project.urn, to_add_user_urn=user_to_add.urn,
+                                      to_add_user_certificate=user_to_add.certificate,
+                                      authz_user_urn=op_user.urn, authz_user_certificate=op_user.certificate)
             form.save()
             try:
                 #Sync LDAP
@@ -513,6 +519,12 @@ def remove_member(request, proj_id, user_id):
     member = get_object_or_404(User, id=user_id)
 
     if request.method == "POST":
+        #<UT>
+        if ENABLE_CBAS:
+            authz_user = UserProfile.get_or_create_profile(request.user)
+            user_to_remove = UserProfile.get_or_create_profile(member)
+            remove_member_from_project(project.urn, user_to_remove.urn,
+                                       authz_user.urn, authz_user.certificate)
         member = Permittee.objects.get_as_permittee(member)
         # Remove the roles
         for role in ProjectRole.objects.filter(project=project):
