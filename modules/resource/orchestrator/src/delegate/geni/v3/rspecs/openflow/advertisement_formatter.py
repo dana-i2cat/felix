@@ -18,8 +18,8 @@ class OFv3AdvertisementFormatter(FormatterBase):
             xmlns, xs)
         self.__of = openflow
 
-    def datapath(self, dpath):
-        d = etree.SubElement(self.rspec, "{%s}datapath" % (self.__of))
+    def add_datapath(self, rspec, dpath):
+        d = etree.SubElement(rspec, "{%s}datapath" % (self.__of))
         d.attrib["component_id"] = dpath.get("component_id")
         d.attrib["component_manager_id"] = dpath.get("component_manager_id")
         d.attrib["dpid"] = dpath.get("dpid")
@@ -30,8 +30,11 @@ class OFv3AdvertisementFormatter(FormatterBase):
             if p.get("name") is not None:
                 port.attrib["name"] = p.get("name")
 
-    def of_link(self, link):
-        l = etree.SubElement(self.rspec, "{%s}link" % (self.xmlns))
+    def datapath(self, dpath):
+        self.add_datapath(self.rspec, dpath)
+
+    def add_of_link(self, rspec, link):
+        l = etree.SubElement(rspec, "{%s}link" % (self.xmlns))
         l.attrib["component_id"] = link.get("component_id")
 
         for d in link.get("dpids"):
@@ -44,8 +47,11 @@ class OFv3AdvertisementFormatter(FormatterBase):
             port = etree.SubElement(l, "{%s}port" % (self.__of))
             port.attrib["port_num"] = p.get("port_num")
 
-    def fed_link(self, link):
-        l = etree.SubElement(self.rspec, "{%s}link" % (self.xmlns))
+    def of_link(self, link):
+        self.add_of_link(self.rspec, link)
+
+    def add_fed_link(self, rspec, link):
+        l = etree.SubElement(rspec, "{%s}link" % (self.xmlns))
         l.attrib["component_id"] = link.get("component_id")
 
         ltype = etree.SubElement(l, "{%s}link_type" % (self.xmlns))
@@ -57,3 +63,6 @@ class OFv3AdvertisementFormatter(FormatterBase):
         for ifref in link.get("interface_ref_id"):
             ref = etree.SubElement(l, "{%s}interface_ref" % (self.xmlns))
             ref.attrib["component_id"] = ifref
+
+    def fed_link(self, link):
+        self.add_fed_link(self.rspec, link)

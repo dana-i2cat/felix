@@ -16,7 +16,7 @@ class DBManager(object):
         table = pymongo.MongoClient().felix_ro.RoutingTable
         try:
             self.__mutex.acquire()
-            return [row for row in table.find()]
+            return table.find()
         finally:
             self.__mutex.release()
 
@@ -122,7 +122,7 @@ class DBManager(object):
         table = pymongo.MongoClient().felix_ro.OFDatapathTable
         try:
             self.__mutex.acquire()
-            return [row for row in table.find()]
+            return table.find()
         finally:
             self.__mutex.release()
 
@@ -242,6 +242,14 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
+    def get_tn_nodes(self):
+        table = pymongo.MongoClient().felix_ro.TNNodeTable
+        try:
+            self.__mutex.acquire()
+            return table.find()
+        finally:
+            self.__mutex.release()
+
     # (felix_ro) TNLinkTable
     def store_tn_links(self, routingKey, values):
         table = pymongo.MongoClient().felix_ro.TNLinkTable
@@ -260,6 +268,14 @@ class DBManager(object):
                     logger.debug(
                         "(tnlink-table) %s already stored!" % (row.get('_id')))
             return ids
+        finally:
+            self.__mutex.release()
+
+    def get_tn_links(self):
+        table = pymongo.MongoClient().felix_ro.TNLinkTable
+        try:
+            self.__mutex.acquire()
+            return table.find()
         finally:
             self.__mutex.release()
 

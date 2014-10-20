@@ -75,6 +75,10 @@ class GENIv3Delegate(GENIv3DelegateBase):
             for d in db_sync_manager.get_sdn_datapaths():
                 rspec.datapath(d)
 
+            logger.debug("TN resources: nodes")
+            for n in db_sync_manager.get_tn_nodes():
+                rspec.tn_node(n)
+
             logger.debug("OF resources: of-links & fed-links")
             (of_links, fed_links) = db_sync_manager.get_sdn_links()
             for l in of_links:
@@ -82,6 +86,11 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
             for l in fed_links:
                 rspec.fed_link(l)
+
+            logger.debug("TN resources: tn-links")
+            for l in db_sync_manager.get_tn_links():
+                logger.error("TN-LINK=%s" % l)
+                rspec.tn_link(l)
 
         except Exception as e:
             raise geni_ex.GENIv3GeneralError(str(e))

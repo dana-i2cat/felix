@@ -1,7 +1,7 @@
-from rspecs.commons import DEFAULT_XMLNS, DEFAULT_XS,\
+from delegate.geni.v3.rspecs.commons import DEFAULT_XMLNS, DEFAULT_XS,\
     DEFAULT_SCHEMA_LOCATION, DSL_PREFIX
-from rspecs.commons_tn import DEFAULT_SHARED_VLAN
-from rspecs.formatter_base import FormatterBase
+from delegate.geni.v3.rspecs.commons_tn import DEFAULT_SHARED_VLAN
+from delegate.geni.v3.rspecs.formatter_base import FormatterBase
 from lxml import etree
 
 DEFAULT_AD_SCHEMA_LOCATION = DEFAULT_SCHEMA_LOCATION
@@ -18,8 +18,8 @@ class TNv3AdvertisementFormatter(FormatterBase):
             {"sharedvlan": "%s" % (sharedvlan)}, xmlns, xs)
         self.__sv = sharedvlan
 
-    def node(self, node):
-        n = etree.SubElement(self.rspec, "{%s}node" % (self.xmlns))
+    def add_node(self, rspec, node):
+        n = etree.SubElement(rspec, "{%s}node" % (self.xmlns))
         n.attrib["component_id"] = node.get("component_id")
         n.attrib["component_manager_id"] = node.get("component_manager_id")
         n.attrib["exclusive"] = node.get("exclusive")
@@ -41,8 +41,11 @@ class TNv3AdvertisementFormatter(FormatterBase):
                 if v.get("description") is not None:
                     available.attrib["description"] = v.get("description")
 
-    def link(self, link):
-        l = etree.SubElement(self.rspec, "{%s}link" % (self.xmlns))
+    def node(self, node):
+        self.add_node(self.rspec, node)
+
+    def add_link(self, rspec, link):
+        l = etree.SubElement(rspec, "{%s}link" % (self.xmlns))
         l.attrib["component_id"] = link.get("component_id")
 
         m = etree.SubElement(l, "{%s}component_manager" % (self.xmlns))
@@ -57,3 +60,6 @@ class TNv3AdvertisementFormatter(FormatterBase):
             prop.attrib["source_id"] = p.get("source_id")
             prop.attrib["dest_id"] = p.get("dest_id")
             prop.attrib["capacity"] = p.get("capacity")
+
+    def link(self, link):
+        self.add_link(self.rspec, link)
