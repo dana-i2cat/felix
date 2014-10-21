@@ -15,7 +15,7 @@ if __name__ == '__main__':
         sys.path.insert(0, pref + "/delegate/geni/v3/rspecs/tnrm")
 
 from commons import validate
-from advertisement_parser import TNRMv3AdvertisementParser
+from manifest_parser import TNRMv3ManifestParser
 
 
 def main(argv=None):
@@ -23,8 +23,8 @@ def main(argv=None):
         argv = sys.argv
 
     print 'Start the test environment'
-    print '=== TNRMv3AdvertisementParser ==='
-    rspec = TNRMv3AdvertisementParser("adv_rspec_example.xml")
+    print '=== SERMv3ManifestParser ==='
+    rspec = TNRMv3ManifestParser("manifest_rspec_example.xml")
 
     (result, error) = validate(rspec.get_rspec())
     if not result:

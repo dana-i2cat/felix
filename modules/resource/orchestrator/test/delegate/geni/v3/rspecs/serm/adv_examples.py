@@ -23,7 +23,7 @@ def main(argv=None):
         argv = sys.argv
 
     print 'Start the test environment'
-    print '=== SERMv3RequestParser ==='
+    print '=== SERMv3AdvertisementParser ==='
     rspec = SERMv3AdvertisementParser("adv_rspec_example.xml")
 
     (result, error) = validate(rspec.get_rspec())

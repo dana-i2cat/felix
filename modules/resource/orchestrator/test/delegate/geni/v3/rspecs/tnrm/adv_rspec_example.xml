@@ -9,45 +9,30 @@
     <node component_id="urn:publicid:tn-network1:"
           component_manager_id="urn:publicid:IDN+NSI+authority+tnrm"
           exclusive="false">
-        <sliver_type name="urn:publicid:IDN+AIST+authority+tnrm+sliver+edge-node-1"/>
-        <interface component_id="urn:publicid:tn-network1:aist-stp1">
-            <sharedvlan:available name="urn:publicid:IDN+AIST+authority+tnrm+component+aist-stp1+vlan+1980"
-                                  description="internal-vlan-1980"
-                                  localTag="1980"/>
-            <sharedvlan:available name="urn:publicid:IDN+AIST+authority+tnrm+component+aist-stp1+vlan+1981"
-                                  description="internal-vlan-1981"
-                                  localTag="1981"/>
+        <interface component_id="urn:publicid:tn:aist:network1+urn:ogf:network:aist:network1:stp1">
+            <sharedvlan:available name="urn:publicid:tn:aist:network1+urn:ogf:network:aist:network1:stp1+vlan"
+                                  description="1980-1989"/>
         </interface>
-        <interface component_id="urn:publicid:tn-network1:aist-stp2">
-            <sharedvlan:available localTag="1980-1989"/>
+        <interface component_id="urn:publicid:tn:aist:network1+urn:ogf:network:aist:network1:stp2">
+            <sharedvlan:available name="urn:publicid:tn:aist:network1+urn:ogf:network:aist:network1:stp2+vlan"
+                                  description="1980-1989"/>
         </interface>
-        <interface component_id="urn:publicid:tn-network1:i2cat-stp1">
-            <sharedvlan:available localTag="1980-1989"/>
+        <interface component_id="urn:publicid:tn:i2cat:network1+urn:felix:i2cat-stp1">
+            <sharedvlan:available name="urn:publicid:tn:i2cat:network1+urn:felix:i2cat-stp1+vlan"
+                                  description="1980-1989"/>
         </interface>
-        <interface component_id="urn:publicid:tn-network1:i2cat-stp2">
-            <sharedvlan:available localTag="1980-1989"/>
+        <interface component_id="urn:publicid:tn:i2cat:network1+urn:felix:i2cat-stp2">
+            <sharedvlan:available name="urn:publicid:tn:i2cat:network1+urn:felix:i2cat-stp1+vlan"
+                                  description="1980-1989"/>
         </interface>
-        <interface component_id="urn:publicid:tn-network1:xxx-stp1">
-            <sharedvlan:available localTag="1980-1989"/>
+        <interface component_id="urn:ogf:network:xxx:stp1">
+            <sharedvlan:available name="urn:ogf:network:xxx:stp1+vlan"
+                                  description="1980-1989"/>
         </interface>
-        <interface component_id="urn:publicid:tn-network1:yyy-stp2">
-            <sharedvlan:available localTag="1980-1989"/>
+        <interface component_id="urn:ogf:network:yyy:stp2">
+            <sharedvlan:available name="urn:ogf:network:xxx:stp2+vlan"
+                                  description="1980-1989"/>
         </interface>
     </node>
-
-    <link component_id="urn:publicid:tn-network1:link">
-        <component_manager name="urn:publicid:IDN+NSI+authority+tnrm"/>
-        <interface_ref component_id="*"/>
-        <interface_ref component_id="*"/>
-        <property source_id="*" dest_id="*" capacity="*"/>
-    </link>
-    <link component_id="from-edge-1-to-edge-2">
-        <component_manager name="urn:publicid:IDN+AIST+authority+cm"/>
-        <interface_ref component_id="edge-node-1:if1"/>
-        <interface_ref component_id="edge-node-2:if1"/>
-        <property source_id="edge-node-1:if1" dest_id="edge-node-2:if1"
-                  capacity="1000"/>
-        <property source_id="edge-node-2:if1" dest_id="edge-node-1:if1"
-                  capacity="500"/>
-    </link>
+    <!-- link tag is not used: full mesh networks is assumed! -->
 </rspec>
