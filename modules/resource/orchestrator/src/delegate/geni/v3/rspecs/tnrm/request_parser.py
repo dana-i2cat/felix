@@ -7,9 +7,9 @@ class TNRMv3RequestParser(ParserBase):
         super(TNRMv3RequestParser, self).__init__(from_file, from_string)
         self.__sv = self.rspec.nsmap.get('sharedvlan')
 
-    def nodes(self):
+    def get_nodes(self, rspec):
         nodes_ = []
-        for n in self.rspec.findall(".//{%s}node" % (self.none)):
+        for n in rspec.findall(".//{%s}node" % (self.none)):
             sliver_ = n.find("{%s}sliver_type" % (self.none))
             if sliver_ is None:
                 self.raise_exception("Sliver-Type tag not found in node!")
@@ -30,9 +30,12 @@ class TNRMv3RequestParser(ParserBase):
 
         return nodes_
 
-    def links(self):
+    def nodes(self):
+        return self.get_nodes(self.rspec)
+
+    def get_links(self, rspec):
         links_ = []
-        for l in self.rspec.findall(".//{%s}link" % (self.none)):
+        for l in rspec.findall(".//{%s}link" % (self.none)):
             manager_ = l.find("{%s}component_manager" % (self.none))
             if manager_ is None:
                 self.raise_exception("Component-Mgr tag not found in link!")
@@ -50,3 +53,6 @@ class TNRMv3RequestParser(ParserBase):
             links_.append(l_.serialize())
 
         return links_
+
+    def links(self):
+        return self.get_links(self.rspec)

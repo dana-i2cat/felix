@@ -1,3 +1,4 @@
+DEFAULT_TN = "http://www.geni.net/resources/rspec/ext/tn/3"
 DEFAULT_SHARED_VLAN = "http://www.geni.net/resources/rspec/ext/shared-vlan/1"
 
 

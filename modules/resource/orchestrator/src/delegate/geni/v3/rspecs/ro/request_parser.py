@@ -1,75 +1,39 @@
-from delegate.geni.v3.rspecs.commons_of import Datapath, Match, Group,\
-    DEFAULT_OPENFLOW
 from delegate.geni.v3.rspecs.parser_base import ParserBase
+from delegate.geni.v3.rspecs.openflow.request_parser import OFv3RequestParser
+from delegate.geni.v3.rspecs.tnrm.request_parser import TNRMv3RequestParser
 
 
 class RORequestParser(ParserBase):
     def __init__(self, from_file=None, from_string=None):
         super(RORequestParser, self).__init__(from_file, from_string)
-        self.__of = self.rspec.nsmap.get('openflow')
-        if self.__of is None:
-            self.__of = DEFAULT_OPENFLOW
+        self.__of_parser = OFv3RequestParser(from_file, from_string)
+        self.__tn_parser = TNRMv3RequestParser(from_file, from_string)
 
+    # OF resources
     def of_sliver(self):
-        s = self.rspec.find("{%s}sliver" % (self.__of))
-        if s is None:
+        try:
+            return self.__of_parser.get_sliver(self.rspec)
+        except Exception:
             return None
-        return {"description": s.attrib.get("description"),
-                "ref": s.attrib.get("ref"),
-                "email": s.attrib.get("email")}
 
     def of_controllers(self):
-        return [
-            {"url": c.attrib.get("url"), "type": c.attrib.get("type")}
-            for c in self.rspec.findall(".//{%s}controller" % (self.__of))]
+        return self.__of_parser.get_controllers(self.rspec)
 
     def of_groups(self):
-        groups = []
-        for group in self.rspec.findall(".//{%s}group" % (self.__of)):
-            g = Group(group.get('name'))
-            for dp in group.iterfind("{%s}datapath" % (self.__of)):
-                g.add_datapath(self.__datapath(dp))
-
-            groups.append(g.serialize())
-        return groups
+        return self.__of_parser.get_groups(self.rspec)
 
     def of_matches(self):
-        matches = []
-        for match in self.rspec.findall(".//{%s}match" % (self.__of)):
-            m = Match()
-            for ug in match.iterfind("{%s}use-group" % (self.__of)):
-                m.add_use_group(ug.attrib.get("name"))
+        return self.__of_parser.get_matches(self.rspec)
 
-            for dp in match.iterfind("{%s}datapath" % (self.__of)):
-                m.add_datapath(self.__datapath(dp))
+    # TN resources
+    def tn_nodes(self):
+        try:
+            return self.__tn_parser.get_nodes(self.rspec)
+        except Exception:
+            return []
 
-            packet = match.find("{%s}packet" % (self.__of))
-            if packet is not None:
-                dl_src = self.__packet(packet, "dl_src")
-                dl_dst = self.__packet(packet, "dl_dst")
-                dl_type = self.__packet(packet, "dl_type")
-                dl_vlan = self.__packet(packet, "dl_vlan")
-                nw_src = self.__packet(packet, "nw_src")
-                nw_dst = self.__packet(packet, "nw_dst")
-                nw_proto = self.__packet(packet, "nw_proto")
-                tp_src = self.__packet(packet, "tp_src")
-                tp_dst = self.__packet(packet, "tp_dst")
-
-                m.set_packet(dl_src, dl_dst, dl_type, dl_vlan,
-                             nw_src, nw_dst, nw_proto, tp_src, tp_dst)
-
-            matches.append(m.serialize())
-        return matches
-
-    def __datapath(self, element):
-        d = Datapath(element.attrib.get("component_id"),
-                     element.attrib.get("component_manager_id"),
-                     element.attrib.get("dpid"))
-        for p in element.iterfind("{%s}port" % (self.__of)):
-            d.add_port(p.attrib.get("num"), p.attrib.get("name"))
-
-        return d.serialize()
-
-    def __packet(self, element, tag):
-        value = element.find("{%s}%s" % (self.__of, tag))
-        return value.attrib.get("value") if (value is not None) else None
+    def tn_links(self):
+        try:
+            return self.__tn_parser.get_links(self.rspec)
+        except Exception:
+            return []

@@ -14,7 +14,10 @@ from delegate.geni.v3.rspecs.ro.request_parser import RORequestParser
 from delegate.geni.v3.rspecs.ro.manifest_formatter import ROManifestFormatter
 from delegate.geni.v3.rspecs.openflow.request_formatter import\
     OFv3RequestFormatter
+from delegate.geni.v3.rspecs.tnrm.request_formatter import\
+    TNRMv3RequestFormatter
 from delegate.geni.v3.rspecs.openflow.manifest_parser import OFv3ManifestParser
+from delegate.geni.v3.rspecs.tnrm.manifest_parser import TNRMv3ManifestParser
 
 from dateutil import parser as dateparser
 
@@ -154,7 +157,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         self.__validate_rspec(req_rspec.get_rspec())
 
         ro_manifest, ro_slivers, ro_db_slivers = ROManifestFormatter(), [], []
-
+        # OF resources
         sliver = req_rspec.of_sliver()
         if sliver is not None:
             logger.debug("Found an OF-sliver segment: %s", sliver)
@@ -164,10 +167,30 @@ class GENIv3Delegate(GENIv3DelegateBase):
             logger.debug("of_m=%s, of_s=%s, db_s=%s" %
                          (of_m_info, of_slivers, db_slivers))
             for m in of_m_info:
-                ro_manifest.sliver(m.get('description'),
-                                   m.get('ref'),
-                                   m.get('email'))
+                ro_manifest.of_sliver(m.get('description'),
+                                      m.get('ref'),
+                                      m.get('email'))
             ro_slivers.extend(of_slivers)
+            ro_db_slivers.extend(db_slivers)
+
+        # TN resources
+        nodes = req_rspec.tn_nodes()
+        links = req_rspec.tn_links()
+        if (len(nodes) > 0) or (len(links) > 0):
+            logger.debug("Found a TN-nodes segment (%d): %s" %
+                         (len(nodes), nodes,))
+            logger.debug("Found a TN-links segment (%d): %s" %
+                         (len(links), links,))
+            (tn_m_info, tn_slivers, db_slivers) = self.__manage_tn_allocate(
+                slice_urn, credentials, end_time, nodes, links)
+
+            logger.debug("tn_m=%s, tn_s=%s, db_s=%s" %
+                         (tn_m_info, tn_slivers, db_slivers))
+            for m in tn_m_info:
+                ro_manifest.tn_sliver(m.get('description'),
+                                      m.get('ref'),
+                                      m.get('email'))
+            ro_slivers.extend(tn_slivers)
             ro_db_slivers.extend(db_slivers)
 
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
@@ -383,13 +406,20 @@ class GENIv3Delegate(GENIv3DelegateBase):
                                  m.get('packet').get('tp_dst'))
                 rspec.match(match.serialize())
 
-    def __send_sdn_request_rspec(self, routing_key, of_req_rspec, slice_urn,
-                                 credentials, end_time):
+    def __send_request_rspec(self, routing_key, req_rspec, slice_urn,
+                             credentials, end_time):
         peer = db_sync_manager.get_configured_peer(routing_key)
         logger.debug("Peer=%s" % (peer,))
         adaptor = AdaptorFactory.create_from_db(peer)
         return adaptor.allocate(slice_urn, credentials[0]["geni_value"],
-                                "%s" % of_req_rspec, end_time)
+                                "%s" % req_rspec, end_time)
+
+    def __extend_slivers(self, values, routing_key, slivers, db_slivers):
+        logger.info("Slivers=%s" % (values,))
+        slivers.extend(values)
+        for dbs in values:
+            db_slivers.append({'geni_sliver_urn': dbs.get('geni_sliver_urn'),
+                               'routing_key': routing_key})
 
     def __manage_sdn_allocate(self, surn, creds, end, sliver, parser):
         route = {}
@@ -410,7 +440,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         manifests, slivers, db_slivers = [], [], []
 
         for k, v in route.iteritems():
-            (m, ss) = self.__send_sdn_request_rspec(k, v, surn, creds, end)
+            (m, ss) = self.__send_request_rspec(k, v, surn, creds, end)
             manifest = OFv3ManifestParser(from_string=m)
             logger.debug("OFv3ManifestParser=%s" % (manifest,))
 
@@ -418,13 +448,51 @@ class GENIv3Delegate(GENIv3DelegateBase):
             logger.info("Sliver=%s" % (sliver,))
             manifests.append(sliver)
 
-            logger.info("Slivers=%s" % (ss,))
-            slivers.extend(ss)
+            self.__extend_slivers(ss, k, slivers, db_slivers)
 
-            for dbs in ss:
-                db_slivers.append({
-                    'geni_sliver_urn': dbs.get('geni_sliver_urn'),
-                    'routing_key': k})
+        return (manifests, slivers, db_slivers)
+
+    def __update_tn_route(self, route, values, db_func):
+        for v in values:
+            k = db_func(v.get('component_id'))
+            v['routing_key'] = k
+            if k not in route:
+                sl = "http://www.geni.net/resources/rspec/3/request.xsd"
+                route[k] = TNRMv3RequestFormatter(schema_location=sl)
+
+    def __update_tn_route_rspec(self, route, nodes, links):
+        for key, rspec in route.iteritems():
+            for n in nodes:
+                if n.get('routing_key') == key:
+                    rspec.node(n)
+            for l in links:
+                if l.get('routing_key') == key:
+                    rspec.link(l)
+
+    def __manage_tn_allocate(self, surn, creds, end, nodes, links):
+        route = {}
+        self.__update_tn_route(route, nodes,
+                               db_sync_manager.get_tn_node_routing_key)
+        logger.debug("Nodes(%d)=%s" % (len(nodes), nodes,))
+        self.__update_tn_route(route, links,
+                               db_sync_manager.get_tn_link_routing_key)
+        logger.debug("Links(%d)=%s" % (len(links), links,))
+
+        self.__update_tn_route_rspec(route, nodes, links)
+        logger.info("Route=%s" % (route,))
+
+        manifests, slivers, db_slivers = [], [], []
+
+        for k, v in route.iteritems():
+            (m, ss) = self.__send_request_rspec(k, v, surn, creds, end)
+            manifest = TNRMv3ManifestParser(from_string=m)
+            logger.debug("TNRMv3ManifestParser=%s" % (manifest,))
+
+            sliver = manifest.sliver()
+            logger.info("Sliver=%s" % (sliver,))
+            manifests.append(sliver)
+
+            self.__extend_slivers(ss, k, slivers, db_slivers)
 
         return (manifests, slivers, db_slivers)
 

@@ -145,13 +145,27 @@ class GENIv3Client(SFAClient):
 
     def list_resources_base(self, credentials, available, typee):
         options = self.format_options(available=available, compress=False)
-        logger.debug("Options: %s" % (options,))
+        logger.debug("%s Options: %s" % (typee, options,))
         try:
             params = [credentials, options, ]
             return self.ListResources(*params)
 
         except Exception as e:
             err = "%s ListResources failure: %s" % (typee, str(e))
+            raise exceptions.RPCError(err)
+
+    def allocate_base(self, slice_urn, credentials, rspec, end_time, typee):
+        options = self.format_options(end_time=end_time)
+        logger.debug("%s Options: %s" % (typee, options,))
+        try:
+            params = [slice_urn, credentials, rspec, options, ]
+            result = self.Allocate(*params)
+            logger.info("%s Allocate result=%s" % (typee, result,))
+            return (result.get('value').get('geni_rspec'),
+                    result.get('value').get('geni_slivers'))
+
+        except Exception as e:
+            err = "%s Allocate failure: %s" % (typee, str(e))
             raise exceptions.RPCError(err)
 
 
@@ -262,18 +276,8 @@ class SDNRMGeniv3Adaptor(GENIv3Client):
         return self.list_resources_base(credentials, available, "SDNRMGeniv3")
 
     def allocate(self, slice_urn, credentials, rspec, end_time):
-        options = self.format_options(end_time=end_time)
-        logger.debug("Options: %s" % (options,))
-        try:
-            params = [slice_urn, credentials, rspec, options, ]
-            result = self.Allocate(*params)
-            logger.info("Allocate result=%s" % (result,))
-            return (result.get('value').get('geni_rspec'),
-                    result.get('value').get('geni_slivers'))
-
-        except Exception as e:
-            err = "SDNRMGeniv3 Allocate failure: %s" % str(e)
-            raise exceptions.RPCError(err)
+        return self.allocate_base(slice_urn, credentials, rspec, end_time,
+                                  "SDNRMGeniv3")
 
     def describe(self, urns, credentials):
         options = self.format_options()
@@ -359,3 +363,7 @@ class TNRMGeniv3Adaptor(GENIv3Client):
 
     def list_resources(self, credentials, available):
         return self.list_resources_base(credentials, available, "TNRMGeniv3")
+
+    def allocate(self, slice_urn, credentials, rspec, end_time):
+        return self.allocate_base(slice_urn, credentials, rspec, end_time,
+                                  "TNRMGeniv3")

@@ -250,6 +250,17 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
+    def get_tn_node_routing_key(self, cid):
+        table = pymongo.MongoClient().felix_ro.TNNodeTable
+        try:
+            self.__mutex.acquire()
+            row = table.find_one({'component_id': cid})
+            if row is None:
+                raise Exception("CompId %s not found into RO-TNNode-DB!" % cid)
+            return row.get('routing_key')
+        finally:
+            self.__mutex.release()
+
     # (felix_ro) TNLinkTable
     def store_tn_links(self, routingKey, values):
         table = pymongo.MongoClient().felix_ro.TNLinkTable
@@ -276,6 +287,17 @@ class DBManager(object):
         try:
             self.__mutex.acquire()
             return table.find()
+        finally:
+            self.__mutex.release()
+
+    def get_tn_link_routing_key(self, cid):
+        table = pymongo.MongoClient().felix_ro.TNLinkTable
+        try:
+            self.__mutex.acquire()
+            row = table.find_one({'component_id': cid})
+            if row is None:
+                raise Exception("CompId %s not found into RO-TNLink-DB!" % cid)
+            return row.get('routing_key')
         finally:
             self.__mutex.release()
 
