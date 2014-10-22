@@ -17,8 +17,8 @@ class SERMv3RequestParser(TNRMv3RequestParser):
             if type_ is None:
                 self.raise_exception("Link-Type tag not found in link!")
 
-            l_ = SELink(l.attrib.get("client_id"), manager_.attrib.get("name"),
-                        type_.attrib.get("name"))
+            l_ = SELink(l.attrib.get("client_id"), type_.attrib.get("name"),
+                        manager_.attrib.get("name"))
 
             [l_.add_interface_ref(i.attrib.get("client_id"))
              for i in l.iterfind("{%s}interface_ref" % (self.none))]

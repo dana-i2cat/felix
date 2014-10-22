@@ -15,8 +15,9 @@ class SERMv3AdvertisementFormatter(TNRMv3AdvertisementFormatter):
         l = etree.SubElement(self.rspec, "{%s}link" % (self.xmlns))
         l.attrib["component_id"] = link.get("component_id")
 
-        m = etree.SubElement(l, "{%s}component_manager" % (self.xmlns))
-        m.attrib["name"] = link.get("component_manager_name")
+        if link.get("component_manager_name") is not None:
+            m = etree.SubElement(l, "{%s}component_manager" % (self.xmlns))
+            m.attrib["name"] = link.get("component_manager_name")
 
         t = etree.SubElement(l, "{%s}link_type" % (self.xmlns))
         t.attrib["name"] = link.get("link_type")
