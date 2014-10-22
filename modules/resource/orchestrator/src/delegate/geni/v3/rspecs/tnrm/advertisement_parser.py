@@ -10,14 +10,14 @@ class TNRMv3AdvertisementParser(ParserBase):
     def nodes(self):
         nodes_ = []
         for n in self.rspec.iterchildren("{%s}node" % (self.none)):
+            s_ = None
             sliver_type = n.find("{%s}sliver_type" % (self.none))
-            if sliver_type is None:
-                self.raise_exception("Sliver_type tag not found!")
+            if sliver_type is not None:
+                s_ = sliver_type.attrib.get("name")
 
             n_ = Node(n.attrib.get("component_id"),
                       n.attrib.get("component_manager_id"),
-                      n.attrib.get("exclusive"),
-                      sliver_type.attrib.get("name"))
+                      n.attrib.get("exclusive"), s_)
 
             for i in n.iterfind("{%s}interface" % (self.none)):
                 i_ = Interface(i.attrib.get("component_id"))

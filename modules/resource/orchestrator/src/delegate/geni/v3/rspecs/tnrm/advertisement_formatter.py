@@ -35,7 +35,8 @@ class TNv3AdvertisementFormatter(FormatterBase):
             for v in i.get("vlan"):
                 available = etree.SubElement(interface,
                                              "{%s}available" % (self.__sv))
-                available.attrib["localTag"] = v.get("tag")
+                if v.get("tag") is not None:
+                    available.attrib["localTag"] = v.get("tag")
                 if v.get("name") is not None:
                     available.attrib["name"] = v.get("name")
                 if v.get("description") is not None:

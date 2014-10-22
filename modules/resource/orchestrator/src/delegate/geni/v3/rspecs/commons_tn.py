@@ -8,8 +8,10 @@ class Interface(object):
         self.interface = {'component_id': component_id,
                           'vlan': []}
 
-    def add_vlan(self, tag, name=None, descr=None):
-        v = {'tag': tag}
+    def add_vlan(self, tag=None, name=None, descr=None):
+        v = {}
+        if tag is not None:
+            v['tag'] = tag
         if name is not None:
             v['name'] = name
         if descr is not None:
@@ -22,8 +24,8 @@ class Interface(object):
 
 
 class Node(object):
-    def __init__(self, component_id, component_manager_id, exclusive,
-                 sliver_type_name):
+    def __init__(self, component_id, component_manager_id, exclusive=None,
+                 sliver_type_name=None):
         self.node = {'component_id': component_id,
                      'component_manager_id': component_manager_id,
                      'exclusive': exclusive,
@@ -38,9 +40,10 @@ class Node(object):
 
 
 class Link(object):
-    def __init__(self, component_id, component_manager_name):
+    def __init__(self, component_id, component_manager_name, vlantag=None):
         self.link = {'component_id': component_id,
                      'component_manager_name': component_manager_name,
+                     'vlantag': vlantag,
                      'interface_ref': [],
                      'property': []}
 

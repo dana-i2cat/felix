@@ -10,14 +10,14 @@ class TNRMv3RequestParser(ParserBase):
     def get_nodes(self, rspec):
         nodes_ = []
         for n in rspec.findall(".//{%s}node" % (self.none)):
+            s_ = None
             sliver_ = n.find("{%s}sliver_type" % (self.none))
-            if sliver_ is None:
-                self.raise_exception("Sliver-Type tag not found in node!")
+            if sliver_ is not None:
+                s_ = sliver_.attrib.get("name")
 
             n_ = Node(n.attrib.get("client_id"),
                       n.attrib.get("component_manager_id"),
-                      n.attrib.get("exclusive"),
-                      sliver_.attrib.get("name"))
+                      n.attrib.get("exclusive"), s_)
 
             for i in n.iterfind("{%s}interface" % (self.none)):
                 i_ = Interface(i.attrib.get("client_id"))
