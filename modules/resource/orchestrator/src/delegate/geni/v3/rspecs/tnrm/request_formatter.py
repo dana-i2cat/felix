@@ -22,10 +22,13 @@ class TNRMv3RequestFormatter(FormatterBase):
         node_ = etree.SubElement(self.rspec, "{%s}node" % (self.xmlns))
         node_.attrib["client_id"] = n.get("component_id")
         node_.attrib["component_manager_id"] = n.get("component_manager_id")
-        node_.attrib["exclusive"] = n.get("exclusive")
 
-        sliver_ = etree.SubElement(node_, "{%s}sliver_type" % (self.xmlns))
-        sliver_.attrib["name"] = n.get("sliver_type_name")
+        if n.get("exclusive") is not None:
+            node_.attrib["exclusive"] = n.get("exclusive")
+
+        if n.get("sliver_type_name") is not None:
+            sliver_ = etree.SubElement(node_, "{%s}sliver_type" % (self.xmlns))
+            sliver_.attrib["name"] = n.get("sliver_type_name")
 
         for i in n.get("interfaces"):
             intf_ = etree.SubElement(node_, "{%s}interface" % (self.xmlns))

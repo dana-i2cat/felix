@@ -19,8 +19,8 @@ class TNRMv3ManifestFormatter(FormatterBase):
             xmlns, xs)
         self.__sv = sharedvlan
 
-    def node(self, n):
-        node_ = etree.SubElement(self.rspec, "{%s}node" % (self.xmlns))
+    def add_node(self, rspec, n):
+        node_ = etree.SubElement(rspec, "{%s}node" % (self.xmlns))
         node_.attrib["client_id"] = n.get("component_id")
         node_.attrib["component_manager_id"] = n.get("component_manager_id")
         if n.get("exclusive") is not None:
@@ -43,8 +43,11 @@ class TNRMv3ManifestFormatter(FormatterBase):
                 if v.get("description") is not None:
                     svlan_.attrib["description"] = v.get("description")
 
-    def link(self, l):
-        link_ = etree.SubElement(self.rspec, "{%s}link" % (self.xmlns))
+    def node(self, n):
+        self.add_node(self.rspec, n)
+
+    def add_link(self, rspec, l):
+        link_ = etree.SubElement(rspec, "{%s}link" % (self.xmlns))
         link_.attrib["client_id"] = l.get("component_id")
 
         if l.get("vlantag") is not None:
@@ -62,3 +65,6 @@ class TNRMv3ManifestFormatter(FormatterBase):
             prop_.attrib["source_id"] = p.get("source_id")
             prop_.attrib["dest_id"] = p.get("dest_id")
             prop_.attrib["capacity"] = p.get("capacity")
+
+    def link(self, l):
+        self.add_link(self.rspec, l)

@@ -22,8 +22,6 @@ class ROAdvertisementFormatter(FormatterBase):
                "sharedvlan": "%s" % (sharedvlan)}
         super(ROAdvertisementFormatter, self).__init__(
             "advertisement", schema_location, ns_, xmlns, xs)
-        self.__of = openflow
-        self.__sv = sharedvlan
         self.__of_formatter = OFv3AdvertisementFormatter()
         self.__tnrm_formatter = TNv3AdvertisementFormatter()
 

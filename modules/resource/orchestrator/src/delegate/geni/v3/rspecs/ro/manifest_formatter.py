@@ -4,6 +4,8 @@ from delegate.geni.v3.rspecs.commons_of import DEFAULT_OPENFLOW
 from delegate.geni.v3.rspecs.commons_tn import DEFAULT_TN
 from delegate.geni.v3.rspecs.formatter_base import FormatterBase
 from lxml import etree
+from delegate.geni.v3.rspecs.tnrm.manifest_formatter import\
+    TNRMv3ManifestFormatter
 
 DEFAULT_MANIFEST_SCHEMA_LOCATION = DEFAULT_SCHEMA_LOCATION
 DEFAULT_MANIFEST_SCHEMA_LOCATION += DSL_PREFIX + "3/request.xsd "
@@ -19,7 +21,7 @@ class ROManifestFormatter(FormatterBase):
         super(ROManifestFormatter, self).__init__(
             "manifest", schema_location, ns_, xmlns, xs)
         self.__of = openflow
-        self.__tn = tn
+        self.__tn_formatter = TNRMv3ManifestFormatter()
 
     # OF resources
     def of_sliver(self, description=None, ref=None, email=None):
@@ -32,11 +34,8 @@ class ROManifestFormatter(FormatterBase):
             s.attrib["email"] = email
 
     # TN resources
-    def tn_sliver(self, description=None, ref=None, email=None):
-        s = etree.SubElement(self.rspec, "{%s}sliver" % (self.__tn))
-        if description is not None:
-            s.attrib["description"] = description
-        if ref is not None:
-            s.attrib["ref"] = ref
-        if email is not None:
-            s.attrib["email"] = email
+    def tn_node(self, n):
+        self.__tn_formatter.add_node(self.rspec, n)
+
+    def tn_link(self, l):
+        self.__tn_formatter.add_link(self.rspec, l)

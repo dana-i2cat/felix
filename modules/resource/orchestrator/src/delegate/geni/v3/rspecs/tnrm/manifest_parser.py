@@ -1,18 +1,32 @@
-from delegate.geni.v3.rspecs.commons_tn import DEFAULT_TN
-from delegate.geni.v3.rspecs.parser_base import ParserBase
+from delegate.geni.v3.rspecs.tnrm.request_parser import TNRMv3RequestParser
+from delegate.geni.v3.rspecs.commons_tn import Link
 
 
-class TNRMv3ManifestParser(ParserBase):
+class TNRMv3ManifestParser(TNRMv3RequestParser):
     def __init__(self, from_file=None, from_string=None):
         super(TNRMv3ManifestParser, self).__init__(from_file, from_string)
-        self.__tn = self.rspec.nsmap.get('tn')
-        if self.__tn is None:
-            self.__tn = DEFAULT_TN
 
-    def sliver(self):
-        s = self.rspec.find("{%s}sliver" % (self.__tn))
-        if s is None:
-            return None
-        return {"description": s.attrib.get("description"),
-                "ref": s.attrib.get("ref"),
-                "email": s.attrib.get("email")}
+    def get_links(self, rspec):
+        links_ = []
+        for l in rspec.findall(".//{%s}link" % (self.none)):
+            manager_ = l.find("{%s}component_manager" % (self.none))
+            if manager_ is None:
+                self.raise_exception("Component-Mgr tag not found in link!")
+
+            l_ = Link(l.attrib.get("client_id"), manager_.attrib.get("name"),
+                      l.attrib.get("vlantag"))
+
+            for i in l.iterfind("{%s}interface_ref" % (self.none)):
+                l_.add_interface_ref(i.attrib.get("client_id"))
+
+            for p in l.iterfind("{%s}property" % (self.none)):
+                l_.add_property(p.attrib.get("source_id"),
+                                p.attrib.get("dest_id"),
+                                p.attrib.get("capacity"))
+
+            links_.append(l_.serialize())
+
+        return links_
+
+    def links(self):
+        return self.get_links(self.rspec)

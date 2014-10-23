@@ -187,9 +187,11 @@ class GENIv3Delegate(GENIv3DelegateBase):
             logger.debug("tn_m=%s, tn_s=%s, db_s=%s" %
                          (tn_m_info, tn_slivers, db_slivers))
             for m in tn_m_info:
-                ro_manifest.tn_sliver(m.get('description'),
-                                      m.get('ref'),
-                                      m.get('email'))
+                for n in m.get('nodes'):
+                    ro_manifest.tn_node(n)
+                for l in m.get('links'):
+                    ro_manifest.tn_link(l)
+
             ro_slivers.extend(tn_slivers)
             ro_db_slivers.extend(db_slivers)
 
@@ -452,9 +454,19 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         return (manifests, slivers, db_slivers)
 
-    def __update_tn_route(self, route, values, db_func):
+    def __update_tn_node_route(self, route, values):
         for v in values:
-            k = db_func(v.get('component_id'))
+            k = db_sync_manager.get_tn_node_routing_key(v.get('component_id'))
+            v['routing_key'] = k
+            if k not in route:
+                sl = "http://www.geni.net/resources/rspec/3/request.xsd"
+                route[k] = TNRMv3RequestFormatter(schema_location=sl)
+
+    def __update_tn_link_route(self, route, values):
+        for v in values:
+            k = db_sync_manager.get_tn_link_routing_key(
+                v.get('component_id'), v.get('component_manager_name'),
+                [i.get('component_id') for i in v.get('interface_ref')])
             v['routing_key'] = k
             if k not in route:
                 sl = "http://www.geni.net/resources/rspec/3/request.xsd"
@@ -471,11 +483,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def __manage_tn_allocate(self, surn, creds, end, nodes, links):
         route = {}
-        self.__update_tn_route(route, nodes,
-                               db_sync_manager.get_tn_node_routing_key)
+        self.__update_tn_node_route(route, nodes)
         logger.debug("Nodes(%d)=%s" % (len(nodes), nodes,))
-        self.__update_tn_route(route, links,
-                               db_sync_manager.get_tn_link_routing_key)
+        self.__update_tn_link_route(route, links)
         logger.debug("Links(%d)=%s" % (len(links), links,))
 
         self.__update_tn_route_rspec(route, nodes, links)
@@ -487,10 +497,14 @@ class GENIv3Delegate(GENIv3DelegateBase):
             (m, ss) = self.__send_request_rspec(k, v, surn, creds, end)
             manifest = TNRMv3ManifestParser(from_string=m)
             logger.debug("TNRMv3ManifestParser=%s" % (manifest,))
+            self.__validate_rspec(manifest.get_rspec())
 
-            sliver = manifest.sliver()
-            logger.info("Sliver=%s" % (sliver,))
-            manifests.append(sliver)
+            nodes = manifest.nodes()
+            logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
+            links = manifest.links()
+            logger.info("Links(%d)=%s" % (len(links), links,))
+
+            manifests.append({'nodes': nodes, 'links': links})
 
             self.__extend_slivers(ss, k, slivers, db_slivers)
 
