@@ -27,8 +27,8 @@ FELIX_RO_NAME=felix-ro
 FELIX_RO_TITLE="FELIX Resource Orchestrator"
 
 # Name of the user to be used to execute the service
-#FELIX_RO_USER=root
-FELIX_RO_USER=i2cat
+FELIX_RO_USER=root
+#FELIX_RO_USER=i2cat
 
 # In which directory is the shell script that this service will execute
 #FELIX_RO_HOME=/opt/felix/felix-dev/modules/resource/orchestrator
@@ -115,8 +115,9 @@ do_start() {
 		PID=`ps xaww | grep "$PROCESS_TYPE" | grep "$EXEC" | grep -v "grep" | tail -1 | awk '{print $1}'`
 		echo $PID > $PID_FILE
 	else
-		start-stop-daemon --start --chuid $FELIX_RO_USER --user $FELIX_RO_USER \
-		--name $FELIX_RO_USER -b --make-pidfile --pidfile $PID_FILE --exec $EXEC
+		#start-stop-daemon --start --chuid $FELIX_RO_USER --user $FELIX_RO_USER \
+		#--name $FELIX_RO_USER -b --make-pidfile --pidfile $PID_FILE --exec $EXEC
+		start-stop-daemon --start -b --make-pidfile --pidfile $PID_FILE --exec $EXEC
 	fi
 
 	touch $LOCK_FILE
