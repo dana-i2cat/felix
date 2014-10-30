@@ -38,18 +38,18 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
 
         logger.debug("AM type: %s, version: %s" % (am_type, am_version,))
 
-        if am_type in ['geni', 'geni_sfa', 'sfa'] and am_version <= 2:
-            if type == 'virtualisation':
+        if am_type in ["geni", "geni_sfa", "sfa"] and am_version <= 2:
+            if type == "virtualisation":
                 return CRMGeniv2Adaptor(uri)
-            elif type == 'sdn_networking':
+            elif type == "sdn_networking":
                 return SDNRMGeniv2Adaptor(uri)
 
-        elif am_type in ['geni', ] and int(am_version) == 3:
-            if type == 'sdn_networking':
+        elif am_type in ["geni", ] and int(am_version) == 3:
+            if type in ["virtualisation", "sdn_networking"]:
                 return SDNRMGeniv3Adaptor(uri)
-            elif type == 'stitching_entity':
+            elif type == "stitching_entity":
                 return SERMGeniv3Adaptor(uri)
-            elif type == 'transport_network':
+            elif type == "transport_network":
                 return TNRMGeniv3Adaptor(uri)
 
         raise exceptions.GeneralError("Type not implemented yet!")
@@ -57,10 +57,10 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
     @staticmethod
     def create_from_db(peer_db):
         return AdaptorFactory.create(
-            peer_db.get('type'), peer_db.get('protocol'), peer_db.get('user'),
-            peer_db.get('password'), peer_db.get('address'),
-            peer_db.get('port'), peer_db.get('endpoint'), peer_db.get('_id'),
-            peer_db.get('am_type'), peer_db.get('am_version'))
+            peer_db.get("type"), peer_db.get("protocol"), peer_db.get("user"),
+            peer_db.get("password"), peer_db.get("address"),
+            peer_db.get("port"), peer_db.get("endpoint"), peer_db.get("_id"),
+            peer_db.get("am_type"), peer_db.get("am_version"))
 
     @staticmethod
     def geni_v3_credentials():
@@ -72,6 +72,7 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
         (text, ucredential) = calls.getusercred(
             user_cert_filename="alice-cert.pem", geni_api=3)
         return ucredential["geni_value"]
+        return ""
 
 
 class SFAClient(AdaptorFactory):
@@ -86,13 +87,13 @@ class SFAClient(AdaptorFactory):
             logger.debug("Get the required information of the peer")
             rspec_version = self.GetVersion()
             logger.debug("Rspec version: %s" % (rspec_version,))
-            values = rspec_version.get('value')
+            values = rspec_version.get("value")
             # We need at least the type and the (supported) request version
-            self.geni_type = rspec_version.get('code').get('am_type')
-            self.geni_api_version = values.get('geni_api')
+            self.geni_type = rspec_version.get("code").get("am_type")
+            self.geni_api_version = values.get("geni_api")
 
             if not self.geni_type:  # we assume GENI as default
-                self.geni_type = 'geni'
+                self.geni_type = "geni"
 
             return (self.geni_type, self.geni_api_version)
 
@@ -115,7 +116,7 @@ class SFAClient(AdaptorFactory):
 
 class SFAv2Client(SFAClient):
     def __init__(self, uri):
-        SFAClient.__init__(self, uri, type='sfa', version=2)
+        SFAClient.__init__(self, uri, type="sfa", version=2)
 
     def format_options(self, available):
         return {"geni_available": available,
@@ -127,20 +128,20 @@ class SFAv2Client(SFAClient):
 
 class GENIv3Client(SFAClient):
     def __init__(self, uri):
-        SFAClient.__init__(self, uri, type='geni', version=3)
+        SFAClient.__init__(self, uri, type="geni", version=3)
 
     def format_options(self, available=None, compress=None, end_time=None,
                        best_effort=None):
-        options = {'geni_rspec_version': {'type': 'geni',
-                                          'version': 3, }}
+        options = {"geni_rspec_version": {"type": "geni",
+                                          "version": 3, }}
         if available is not None:
-            options['geni_available'] = available
+            options["geni_available"] = available
         if compress is not None:
-            options['geni_compress'] = compress
+            options["geni_compress"] = compress
         if end_time is not None:
-            options['end_time'] = end_time
+            options["end_time"] = end_time
         if best_effort is not None:
-            options['geni_best_effort'] = best_effort
+            options["geni_best_effort"] = best_effort
         return options
 
     def list_resources_base(self, credentials, available, typee):
@@ -148,7 +149,11 @@ class GENIv3Client(SFAClient):
         logger.debug("%s Options: %s" % (typee, options,))
         try:
             params = [credentials, options, ]
-            return self.ListResources(*params)
+            logger.debug("\n\n\n\n\n[REMOVE] Credentials: %s\n\n\n\n\n" % str(credentials))
+            a = self.ListResources(*params)
+            logger.debug("\n\n\n\n\n[REMOVE] GENIv3 client list_resources result: %s\n\n\n\n\n" % str(a))
+            return a
+#            return self.ListResources(*params)
 
         except Exception as e:
             err = "%s ListResources failure: %s" % (typee, str(e))
@@ -161,8 +166,8 @@ class GENIv3Client(SFAClient):
             params = [slice_urn, credentials, rspec, options, ]
             result = self.Allocate(*params)
             logger.info("%s Allocate result=%s" % (typee, result,))
-            return (result.get('value').get('geni_rspec'),
-                    result.get('value').get('geni_slivers'))
+            return (result.get("value").get("geni_rspec"),
+                    result.get("value").get("geni_slivers"))
 
         except Exception as e:
             err = "%s Allocate failure: %s" % (typee, str(e))
@@ -174,39 +179,39 @@ class CRMGeniv2Adaptor(SFAv2Client):
         SFAv2Client.__init__(self, uri)
 
     def __filter_list_resources_rspec(self, rspec):
-        root = etree.fromstring(rspec.get('value'))
+        root = etree.fromstring(rspec.get("value"))
         # logger.debug("ROOT: %s" % (etree.tostring(root, pretty_print=True),))
-        for network in root.iter('network'):
-            for node in network.iter('node'):
+        for network in root.iter("network"):
+            for node in network.iter("node"):
                 # Follow the schema proposed into the models
                 entry = CResourceTable()
-                entry.network_name(network.get('name'))
-                entry.node(node.get('component_id'),
-                           node.get('component_manager_id'),
-                           node.get('component_name'),
-                           node.get('exclusive'))
-                entry.hostname(node.findtext('hostname'))
-                entry.name(node.findtext('name'))
+                entry.network_name(network.get("name"))
+                entry.node(node.get("component_id"),
+                           node.get("component_manager_id"),
+                           node.get("component_name"),
+                           node.get("exclusive"))
+                entry.hostname(node.findtext("hostname"))
+                entry.name(node.findtext("name"))
                 logger.debug("Entry: %s" % (entry,))
 
-                for service in node.iter('service'):
+                for service in node.iter("service"):
                     entry.clear_services()
                     # Filter on the service type
-                    service_type = service.get('type')
+                    service_type = service.get("type")
                     if service_type == "Range":
                         entry.add_range_service(
-                            service.findtext('type'),
-                            service.findtext('name'),
-                            service.findtext('start_value'),
-                            service.findtext('end_value'))
+                            service.findtext("type"),
+                            service.findtext("name"),
+                            service.findtext("start_value"),
+                            service.findtext("end_value"))
                         # Log the Range Entry
                         logger.debug("Range Entry: %s" % (entry,))
 
                     elif service_type == "NetworkInterface":
                         entry.add_netif_service(
-                            service.findtext('from_server_interface_name'),
-                            service.findtext('to_network_interface_id'),
-                            service.findtext('to_network_interface_port'))
+                            service.findtext("from_server_interface_name"),
+                            service.findtext("to_network_interface_id"),
+                            service.findtext("to_network_interface_port"))
                         # Log the NetworkInterface info
                         logger.debug("NetworkInterface Entry: %s" % (entry,))
 
@@ -214,11 +219,11 @@ class CRMGeniv2Adaptor(SFAv2Client):
                         logger.info("Modify the rspec: delete this service!")
                         node.remove(service)
 
-                if node.find('service') is None:
+                if node.find("service") is None:
                     logger.info("No more services are available on this node!")
                     network.remove(node)
 
-        rspec['value'] = etree.tostring(root)
+        rspec["value"] = etree.tostring(root)
         # logger.debug("RSPEC: %s" % (rspec,))
         return rspec
 
@@ -256,6 +261,7 @@ class SDNRMGeniv2Adaptor(SFAv2Client):
             # Get the list of sdn networking resources
             params = [credentials, options, ]
             rspec = self.ListResources(*params)
+            logger.debug("\n\n\n\n\n[REMOVE] GENIv3 SDNGENIv2Adaptor ListResources result: %s\n\n\n\n\n" % str(rspec))
             # if available==True, we should remove the sdn networking
             # "local reserved" resources (stored in a mongoDB tables)
             if available is True:
@@ -270,10 +276,13 @@ class SDNRMGeniv2Adaptor(SFAv2Client):
 
 class SDNRMGeniv3Adaptor(GENIv3Client):
     def __init__(self, uri):
+        logger.debug("\n\n\n\n[REMOVE] starting SDNRMGeniv3Adaptor\n\n\n\n")
         GENIv3Client.__init__(self, uri)
 
     def list_resources(self, credentials, available):
-        return self.list_resources_base(credentials, available, "SDNRMGeniv3")
+        a = self.list_resources_base(credentials, available, "SDNRMGeniv3")
+        logger.debug("\n\n\n\n\n[REMOVE] SDNRMGeniv3Adaptor. list_resources: %s\n\n\n\n\n" % str(a))
+        return a
 
     def allocate(self, slice_urn, credentials, rspec, end_time):
         return self.allocate_base(slice_urn, credentials, rspec, end_time,
@@ -286,9 +295,9 @@ class SDNRMGeniv3Adaptor(GENIv3Client):
             params = [urns, credentials, options, ]
             result = self.Describe(*params)
             logger.info("Describe result=%s" % (result,))
-            return (result.get('value').get('geni_rspec'),
-                    result.get('value').get('geni_urn'),
-                    result.get('value').get('geni_slivers'))
+            return (result.get("value").get("geni_rspec"),
+                    result.get("value").get("geni_urn"),
+                    result.get("value").get("geni_slivers"))
 
         except Exception as e:
             err = "SDNRMGeniv3 Describe failure: %s" % str(e)
@@ -301,8 +310,8 @@ class SDNRMGeniv3Adaptor(GENIv3Client):
             params = [urns, credentials, options, ]
             result = self.Status(*params)
             logger.info("Status result=%s" % (result,))
-            return (result.get('value').get('geni_urn'),
-                    result.get('value').get('geni_slivers'))
+            return (result.get("value").get("geni_urn"),
+                    result.get("value").get("geni_slivers"))
 
         except Exception as e:
             err = "SDNRMGeniv3 Status failure: %s" % str(e)
@@ -315,7 +324,7 @@ class SDNRMGeniv3Adaptor(GENIv3Client):
             params = [urns, credentials, expiration_time, options, ]
             result = self.Renew(*params)
             logger.info("Renew result=%s" % (result,))
-            return result.get('value')
+            return result.get("value")
 
         except Exception as e:
             err = "SDNRMGeniv3 Renew failure: %s" % str(e)
@@ -329,7 +338,7 @@ class SDNRMGeniv3Adaptor(GENIv3Client):
             params = [urns, credentials, action, options, ]
             result = self.PerformOperationalAction(*params)
             logger.info("PerformOperationalAction result=%s" % (result,))
-            return result.get('value')
+            return result.get("value")
 
         except Exception as e:
             err = "SDNRMGeniv3 PerformOperationalAction failure: %s" % str(e)
@@ -342,7 +351,7 @@ class SDNRMGeniv3Adaptor(GENIv3Client):
             params = [urns, credentials, options, ]
             result = self.Delete(*params)
             logger.info("Delete result=%s" % (result,))
-            return result.get('value')
+            return result.get("value")
 
         except Exception as e:
             err = "SDNRMGeniv3 Delete failure: %s" % str(e)
