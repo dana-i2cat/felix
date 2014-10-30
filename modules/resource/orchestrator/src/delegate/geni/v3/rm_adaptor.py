@@ -134,13 +134,13 @@ class GENIv3Client(SFAClient):
                        best_effort=None):
         options = {"geni_rspec_version": {"type": "geni",
                                           "version": 3, }}
-        if available is not None:
+        if available:
             options["geni_available"] = available
-        if compress is not None:
+        if compress:
             options["geni_compress"] = compress
-        if end_time is not None:
+        if end_time:
             options["end_time"] = end_time
-        if best_effort is not None:
+        if best_effort:
             options["geni_best_effort"] = best_effort
         return options
 
