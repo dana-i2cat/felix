@@ -19,7 +19,7 @@ def main(argv=None):
         geni_v3_handler = GENIv3Handler()
         geni_v3_delegate = GENIv3Delegate()
         geni_v3_handler.setDelegate(geni_v3_delegate)
-        xmlrpc.registerXMLRPC("geni3_ro", geni_v3_handler, "/geni/3")
+        xmlrpc.registerXMLRPC("geni3_ro", geni_v3_handler, "/xmlrpc/geni/3/")
         # Services/Workers to add
         # Topology update
         geni_v3_scheduler = ROSchedulerService()
