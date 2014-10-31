@@ -72,13 +72,25 @@ class ResourceDetector():
 
     def __db(self, action, routingKey, data):
         try:
-            try:
-                # Methods must be implemented with the EXACT name as the action
-                # and use the same arguments
-                method = getattr(self, action)(routingKey, data)
-                return method()
-            except:
+            if action == "store_sdn_datapaths":
+                return db_sync_manager.store_sdn_datapaths(routingKey, data)
+            elif action == "store_sdn_links":
+                return db_sync_manager.store_sdn_links(routingKey, data)
+            elif action == "store_se_nodes":
+                return db_sync_manager.store_se_nodes(routingKey, data)
+            elif action == "store_se_links":
+                return db_sync_manager.store_se_links(routingKey, data)
+            elif action == "store_tn_nodes":
+                return db_sync_manager.store_tn_nodes(routingKey, data)
+            elif action == "store_tn_links":
+                return db_sync_manager.store_tn_links(routingKey, data)
+            elif action == "store_com_nodes":
+                return db_sync_manager.store_com_nodes(routingKey, data)
+            elif action == "store_com_links":
+                return db_sync_manager.store_com_links(routingKey, data)
+            else:
                 self.error("Unmanaged action type (%s)!" % (action,))
+
         except Exception as e:
             self.error("Exception on %s: %s" % (action, str(e)))
 
@@ -109,7 +121,7 @@ class ResourceDetector():
         except Exception as e:
             self.error("Exception: %s" % str(e))
         return (nodes, links)
-    
+
     def __decode_sdn_rspec(self, result):
         (ofdpids, links) = (None, None)
 
@@ -204,7 +216,7 @@ class ResourceDetector():
     def __store_com_resources(self, peerID, dpids, links):
         self.__store(dpids, "Nodes", "store_com_nodes", peerID)
         self.__store(links, "Links", "store_com_links", peerID)
-    
+
     def __store_sdn_resources(self, peerID, dpids, links):
         self.__store(dpids, "Datapaths", "store_sdn_datapaths", peerID)
         self.__store(links, "Links", "store_sdn_links", peerID)
