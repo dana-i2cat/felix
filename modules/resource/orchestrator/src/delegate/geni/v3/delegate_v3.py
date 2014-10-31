@@ -16,8 +16,11 @@ from delegate.geni.v3.rspecs.openflow.request_formatter import\
     OFv3RequestFormatter
 from delegate.geni.v3.rspecs.tnrm.request_formatter import\
     TNRMv3RequestFormatter
+from delegate.geni.v3.rspecs.serm.request_formatter import\
+    SERMv3RequestFormatter
 from delegate.geni.v3.rspecs.openflow.manifest_parser import OFv3ManifestParser
 from delegate.geni.v3.rspecs.tnrm.manifest_parser import TNRMv3ManifestParser
+from delegate.geni.v3.rspecs.serm.manifest_parser import SERMv3ManifestParser
 
 from dateutil import parser as dateparser
 
@@ -168,11 +171,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         ro_manifest, ro_slivers, ro_db_slivers = ROManifestFormatter(), [], []
         # OF resources
+        se_sdn_info = None
         sliver = req_rspec.of_sliver()
         if sliver is not None:
             logger.debug("Found an OF-sliver segment: %s", sliver)
-            (of_m_info, of_slivers, db_slivers) = self.__manage_sdn_allocate(
-                slice_urn, credentials, end_time, sliver, req_rspec)
+            (of_m_info, of_slivers, db_slivers, se_sdn_info) =\
+                self.__manage_sdn_allocate(slice_urn, credentials, end_time,
+                                           sliver, req_rspec)
 
             logger.debug("of_m=%s, of_s=%s, db_s=%s" %
                          (of_m_info, of_slivers, db_slivers))
@@ -184,6 +189,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             ro_db_slivers.extend(db_slivers)
 
         # TN resources
+        se_tn_info = None
         nodes = req_rspec.tn_nodes()
         links = req_rspec.tn_links()
         if (len(nodes) > 0) or (len(links) > 0):
@@ -191,8 +197,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                          (len(nodes), nodes,))
             logger.debug("Found a TN-links segment (%d): %s" %
                          (len(links), links,))
-            (tn_m_info, tn_slivers, db_slivers) = self.__manage_tn_allocate(
-                slice_urn, credentials, end_time, nodes, links)
+            (tn_m_info, tn_slivers, db_slivers, se_tn_info) =\
+                self.__manage_tn_allocate(slice_urn, credentials, end_time,
+                                          nodes, links)
 
             logger.debug("tn_m=%s, tn_s=%s, db_s=%s" %
                          (tn_m_info, tn_slivers, db_slivers))
@@ -204,6 +211,19 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
             ro_slivers.extend(tn_slivers)
             ro_db_slivers.extend(db_slivers)
+
+        # SE resources
+        if (se_sdn_info is not None) and (len(se_sdn_info) > 0) and\
+           (se_sdn_info is not None) and (len(se_tn_info) > 0):
+            logger.debug("Found a SE-sdn segment (%d): %s" %
+                         (len(se_sdn_info), se_sdn_info,))
+            logger.debug("Found a SE-tn segment (%d): %s" %
+                         (len(se_tn_info), se_tn_info,))
+            (se_m_info, se_slivers, db_slivers) =\
+                self.__manage_se_allocate(slice_urn, credentials, end_time,
+                                          se_sdn_info, se_tn_info)
+            logger.debug("se_m=%s, se_s=%s, db_s=%s" %
+                         (se_m_info, se_slivers, db_slivers))
 
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
 
@@ -433,6 +453,28 @@ class GENIv3Delegate(GENIv3DelegateBase):
             db_slivers.append({"geni_sliver_urn": dbs.get("geni_sliver_urn"),
                                "routing_key": routing_key})
 
+    def __extract_se_from_sdn(self, groups, matches):
+        ret = []
+        for m in matches:
+            vlan_id = m.get('packet').get('dl_vlan')
+            if vlan_id is None:
+                continue
+
+            dpids = []
+            for mg in m.get('use_groups'):
+                for g in groups:
+                    if g.get('name') == mg.get('name'):
+                        for gds in g.get('dpids'):
+                            dpids.append(gds.get('component_id'))
+
+            for mds in m.get('dpids'):
+                dpids.append(mds.get('component_id'))
+
+            if len(dpids) > 0:
+                ret.append({'vlan': vlan_id, 'dpids': dpids})
+
+        return ret
+
     def __manage_sdn_allocate(self, surn, creds, end, sliver, parser):
         route = {}
         controllers = parser.of_controllers()
@@ -445,6 +487,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
         matches = parser.of_matches()
         self.__update_sdn_route(route, matches)
         logger.debug("Matches=%s" % (matches,))
+
+        se_sdn_info = self.__extract_se_from_sdn(groups, matches)
+        logger.debug("SE-SDN-INFO=%s" % (se_sdn_info,))
 
         self.__update_sdn_route_rspec(route, sliver, controllers, groups,
                                       matches)
@@ -462,7 +507,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
             self.__extend_slivers(ss, k, slivers, db_slivers)
 
-        return (manifests, slivers, db_slivers)
+        return (manifests, slivers, db_slivers, se_sdn_info)
 
     def __update_tn_node_route(self, route, values):
         for v in values:
@@ -491,6 +536,22 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 if l.get("routing_key") == key:
                     rspec.link(l)
 
+    def __extract_se_from_tn(self, nodes, links):
+        ret, ifref = [], set()
+        for l in links:
+            for p in l.get('property'):
+                ifref.add(p.get('source_id'))
+                ifref.add(p.get('dest_id'))
+
+        for n in nodes:
+            for i in n.get('interfaces'):
+                if i.get('component_id') in ifref:
+                    for v in i.get('vlan'):
+                        ret.append({'vlan': v.get('tag'),
+                                    'interface': i.get('component_id')})
+
+        return ret
+
     def __manage_tn_allocate(self, surn, creds, end, nodes, links):
         route = {}
         self.__update_tn_node_route(route, nodes)
@@ -501,7 +562,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         self.__update_tn_route_rspec(route, nodes, links)
         logger.info("Route=%s" % (route,))
 
-        manifests, slivers, db_slivers = [], [], []
+        manifests, slivers, db_slivers, se_tn_info = [], [], [], []
 
         for k, v in route.iteritems():
             (m, ss) = self.__send_request_rspec(k, v, surn, creds, end)
@@ -518,6 +579,41 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
             self.__extend_slivers(ss, k, slivers, db_slivers)
 
+            se_tn = self.__extract_se_from_tn(nodes, links)
+            logger.debug("SE-TN-INFO=%s" % (se_tn,))
+            if len(se_tn) > 0:
+                se_tn_info.extend(se_tn)
+
+        return (manifests, slivers, db_slivers, se_tn_info)
+
+    def __update_se_info_route(self, route, values, key):
+        for v in values:
+            k, ifs = db_sync_manager.get_se_link_routing_key(v.get(key))
+            v['routing_key'] = k
+            v['internal_ifs'] = ifs
+            node = db_sync_manager.get_se_node_info(k)
+            v['node'] = node
+            if (k is not None) and (k not in route):
+                sl = "http://www.geni.net/resources/rspec/3/request.xsd"
+                route[k] = SERMv3RequestFormatter(schema_location=sl)
+
+    def __update_se_route_rspec(self, route, sdn_info, tn_info):
+        # XXX_TODO_XXX: here we need to compose the request RSPEC!
+        return
+
+    def __manage_se_allocate(self, surn, creds, end, sdn_info, tn_info):
+        route = {}
+        self.__update_se_info_route(route, sdn_info, 'dpids')
+        logger.debug("SE-SdnInfo(%d)=%s" % (len(sdn_info), sdn_info,))
+        self.__update_se_info_route(route, tn_info, 'interface')
+        logger.debug("SE-TnInfo(%d)=%s" % (len(tn_info), tn_info,))
+
+        self.__update_se_route_rspec(route, sdn_info, tn_info)
+        logger.info("Route=%s" % (route,))
+
+        manifests, slivers, db_slivers = [], [], []
+
+        # XXX_TODO_XXX: here we need to send and parse the manifest RSPEC!
         return (manifests, slivers, db_slivers)
 
     def __manage_sdn_describe(self, peer, urns, creds):
