@@ -258,6 +258,20 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
+    def get_se_node_info(self, routingKey):
+        table = pymongo.MongoClient().felix_ro.SENodeTable
+        try:
+            self.__mutex.acquire()
+            row = table.find_one({'routing_key': routingKey})
+            if row is not None:
+                return {
+                    'component_id': row.get('component_id'),
+                    'component_manager_id': row.get('component_manager_id')}
+
+            return None
+        finally:
+            self.__mutex.release()
+
     # (felix_ro) SELinkTable
     def store_se_links(self, routingKey, values):
         table = pymongo.MongoClient().felix_ro.SELinkTable
@@ -277,6 +291,22 @@ class DBManager(object):
                     logger.debug(
                         "(selink-table) %s already stored!" % (row.get("_id")))
             return ids
+        finally:
+            self.__mutex.release()
+
+    def get_se_link_routing_key(self, values):
+        table = pymongo.MongoClient().felix_ro.SELinkTable
+        try:
+            key, ifs = None, []
+            self.__mutex.acquire()
+            for r in table.find():
+                ifrefs = r.get('interface_ref')
+                for i in ifrefs:
+                    if i.get('component_id') in values:
+                        key = r.get('routing_key')
+                        ifrefs.remove(i)
+                        ifs.append(ifrefs[0])
+            return key, ifs
         finally:
             self.__mutex.release()
 
