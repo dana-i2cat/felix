@@ -74,7 +74,8 @@ class ResourceDetector():
         try:
             try:
                 # Methods must be implemented with the EXACT name as the action
-                method = getattr(self, action)
+                # and use the same arguments
+                method = getattr(self, action)(routingKey, data)
                 return method()
             except:
                 self.error("Unmanaged action type (%s)!" % (action,))
