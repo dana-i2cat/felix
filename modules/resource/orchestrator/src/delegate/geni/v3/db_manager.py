@@ -118,7 +118,7 @@ class DBManager(object):
             return ids
         finally:
             self.__mutex.release()
-    
+
     def get_com_nodes(self):
         table = pymongo.MongoClient().felix_ro.COMNodeTable
         try:
@@ -126,7 +126,7 @@ class DBManager(object):
             return table.find()
         finally:
             self.__mutex.release()
-    
+
     # (felix_ro) COMLinkTable
     # TODO Ensure correctness
     def store_com_links(self, routingKey, values):
@@ -155,7 +155,7 @@ class DBManager(object):
             return table.find()
         finally:
             self.__mutex.release()
-    
+
     # (felix_ro) OFDatapathTable
     def store_sdn_datapaths(self, routingKey, values):
         table = pymongo.MongoClient().felix_ro.OFDatapathTable
@@ -307,6 +307,19 @@ class DBManager(object):
                         ifrefs.remove(i)
                         ifs.append(ifrefs[0])
             return key, ifs
+        finally:
+            self.__mutex.release()
+
+    def get_se_link_info(self, node_cid):
+        table = pymongo.MongoClient().felix_ro.SELinkTable
+        try:
+            self.__mutex.acquire()
+            for r in table.find():
+                i = r.get('component_id').find(node_cid)
+                if i != -1:
+                    return r.get('link_type'), r.get('component_manager_name')
+
+            return None, None
         finally:
             self.__mutex.release()
 
