@@ -1,4 +1,4 @@
-from delegate.geni.v3.rspecs.tn.manifest_formatter import\
+from delegate.geni.v3.rspecs.tnrm.manifest_formatter import\
     TNRMv3ManifestFormatter
 from delegate.geni.v3.rspecs.commons import DEFAULT_XMLNS, DEFAULT_XS,\
     DSL_PREFIX
@@ -17,8 +17,8 @@ class SERMv3ManifestFormatter(TNRMv3ManifestFormatter):
         super(SERMv3ManifestFormatter, self).__init__(
             xmlns, xs, sharedvlan, schema_location)
 
-    def link(self, l):
-        link_ = etree.SubElement(self.rspec, "{%s}link" % (self.xmlns))
+    def add_link(self, rspec, l):
+        link_ = etree.SubElement(rspec, "{%s}link" % (self.xmlns))
         link_.attrib["client_id"] = l.get("component_id")
 
         if l.get("sliver_id") is not None:
@@ -30,6 +30,9 @@ class SERMv3ManifestFormatter(TNRMv3ManifestFormatter):
         mgr_ = etree.SubElement(link_, "{%s}component_manager" % (self.xmlns))
         mgr_.attrib["name"] = l.get("component_manager_name")
 
+        typee_ = etree.SubElement(link_, "{%s}link_type" % (self.xmlns))
+        typee_.attrib["name"] = l.get("link_type")
+
         for i in l.get("interface_ref"):
             ifr_ = etree.SubElement(link_, "{%s}interface_ref" % (self.xmlns))
             ifr_.attrib["client_id"] = i.get("component_id")
@@ -39,3 +42,6 @@ class SERMv3ManifestFormatter(TNRMv3ManifestFormatter):
             prop_.attrib["source_id"] = p.get("source_id")
             prop_.attrib["dest_id"] = p.get("dest_id")
             prop_.attrib["capacity"] = p.get("capacity")
+
+    def link(self, l):
+        self.add_link(self.rspec, l)

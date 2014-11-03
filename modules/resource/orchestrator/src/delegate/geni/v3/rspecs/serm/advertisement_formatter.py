@@ -11,8 +11,8 @@ class SERMv3AdvertisementFormatter(TNRMv3AdvertisementFormatter):
         super(SERMv3AdvertisementFormatter, self).__init__(
             xmlns, xs, sharedvlan, schema_location)
 
-    def link(self, link):
-        l = etree.SubElement(self.rspec, "{%s}link" % (self.xmlns))
+    def add_link(self, rspec, link):
+        l = etree.SubElement(rspec, "{%s}link" % (self.xmlns))
         l.attrib["component_id"] = link.get("component_id")
 
         if link.get("component_manager_name") is not None:
@@ -31,3 +31,6 @@ class SERMv3AdvertisementFormatter(TNRMv3AdvertisementFormatter):
             prop.attrib["source_id"] = p.get("source_id")
             prop.attrib["dest_id"] = p.get("dest_id")
             prop.attrib["capacity"] = p.get("capacity")
+
+    def link(self, link):
+        self.add_link(self.rspec, link)

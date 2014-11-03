@@ -13,7 +13,7 @@ class SERMv3RequestFormatter(TNRMv3RequestFormatter):
 
     def link(self, link):
         l = etree.SubElement(self.rspec, "{%s}link" % (self.xmlns))
-        l.attrib["component_id"] = link.get("component_id")
+        l.attrib["client_id"] = link.get("component_id")
 
         if link.get("component_manager_name") is not None:
             m = etree.SubElement(l, "{%s}component_manager" % (self.xmlns))

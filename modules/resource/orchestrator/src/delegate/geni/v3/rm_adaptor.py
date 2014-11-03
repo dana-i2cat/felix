@@ -365,6 +365,10 @@ class SERMGeniv3Adaptor(GENIv3Client):
     def list_resources(self, credentials, available):
         return self.list_resources_base(credentials, available, "SERMGeniv3")
 
+    def allocate(self, slice_urn, credentials, rspec, end_time):
+        return self.allocate_base(slice_urn, credentials, rspec, end_time,
+                                  "SERMGeniv3")
+
 
 class TNRMGeniv3Adaptor(GENIv3Client):
     def __init__(self, uri):

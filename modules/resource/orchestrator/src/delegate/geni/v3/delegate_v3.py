@@ -226,14 +226,23 @@ class GENIv3Delegate(GENIv3DelegateBase):
                                           se_sdn_info, se_tn_info)
             logger.debug("se_m=%s, se_s=%s, db_s=%s" %
                          (se_m_info, se_slivers, db_slivers))
+            for m in se_m_info:
+                for n in m.get("nodes"):
+                    ro_manifest.se_node(n)
+                for l in m.get("links"):
+                    ro_manifest.se_link(l)
+
+            ro_slivers.extend(se_slivers)
+            ro_db_slivers.extend(db_slivers)
 
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
 
         for s in ro_slivers:
             s["geni_expires"] = self.__str2datetime(s["geni_expires"])
-        logger.debug("RO-Slivers=%s" % (ro_slivers,))
+        logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
 
-        logger.debug("RO-DB-Slivers=%s" % (ro_db_slivers,))
+        logger.debug("RO-DB-Slivers(%d)=%s" %
+                     (len(ro_db_slivers), ro_db_slivers,))
         id_ = db_sync_manager.store_slice_info(slice_urn, ro_db_slivers)
 
         logger.info("allocate successfully completed: %s", id_)
@@ -445,6 +454,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         peer = db_sync_manager.get_configured_peer(routing_key)
         logger.debug("Peer=%s" % (peer,))
         adaptor = AdaptorFactory.create_from_db(peer)
+        logger.debug("Adaptor=%s" % (adaptor,))
         return adaptor.allocate(slice_urn, credentials[0]["geni_value"],
                                 "%s" % req_rspec, end_time)
 
@@ -691,7 +701,21 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         manifests, slivers, db_slivers = [], [], []
 
-        # XXX_TODO_XXX: here we need to send and parse the manifest RSPEC!
+        for k, v in route.iteritems():
+            (m, ss) = self.__send_request_rspec(k, v, surn, creds, end)
+            manifest = SERMv3ManifestParser(from_string=m)
+            logger.debug("SERMv3ManifestParser=%s" % (manifest,))
+            self.__validate_rspec(manifest.get_rspec())
+
+            nodes = manifest.nodes()
+            logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
+            links = manifest.links()
+            logger.info("Links(%d)=%s" % (len(links), links,))
+
+            manifests.append({"nodes": nodes, "links": links})
+
+            self.__extend_slivers(ss, k, slivers, db_slivers)
+
         return (manifests, slivers, db_slivers)
 
     def __manage_sdn_describe(self, peer, urns, creds):
