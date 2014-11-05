@@ -144,10 +144,36 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 logger.debug("of_m=%s, of_s=%s, urn=%s" %
                              (of_m_info, of_slivers, last_slice))
 
-                ro_manifest.sliver(of_m_info.get("description"),
-                                   of_m_info.get("ref"),
-                                   of_m_info.get("email"))
+                ro_manifest.of_sliver(of_m_info.get("description"),
+                                      of_m_info.get("ref"),
+                                      of_m_info.get("email"))
                 ro_slivers.extend(of_slivers)
+
+            elif peer.get("type") == "transport_network":
+                tn_m_info, last_slice, tn_slivers =\
+                    self.__manage_tn_describe(peer, v, credentials)
+
+                logger.debug("tn_m=%s, tn_s=%s, urn=%s" %
+                             (tn_m_info, tn_slivers, last_slice))
+                for n in tn_m_info.get("nodes"):
+                    ro_manifest.tn_node(n)
+                for l in tn_m_info.get("links"):
+                    ro_manifest.tn_link(l)
+
+                ro_slivers.extend(tn_slivers)
+
+            elif peer.get("type") == "stitching_entity":
+                se_m_info, last_slice, se_slivers =\
+                    self.__manage_se_describe(peer, v, credentials)
+
+                logger.debug("se_m=%s, se_s=%s, urn=%s" %
+                             (se_m_info, se_slivers, last_slice))
+                for n in se_m_info.get("nodes"):
+                    ro_manifest.se_node(n)
+                for l in se_m_info.get("links"):
+                    ro_manifest.se_link(l)
+
+                ro_slivers.extend(se_slivers)
 
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
         logger.debug("RO-Slivers=%s" % (ro_slivers,))
@@ -721,13 +747,45 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def __manage_sdn_describe(self, peer, urns, creds):
         adaptor = AdaptorFactory.create_from_db(peer)
         m, urn, ss = adaptor.describe(urns, creds[0]["geni_value"])
+
         manifest = OFv3ManifestParser(from_string=m)
         logger.debug("OFv3ManifestParser=%s" % (manifest,))
+        #self.__validate_rspec(manifest.get_rspec())
 
         sliver = manifest.sliver()
         logger.info("Sliver=%s" % (sliver,))
 
         return (sliver, urn, ss)
+
+    def __manage_tn_describe(self, peer, urns, creds):
+        adaptor = AdaptorFactory.create_from_db(peer)
+        m, urn, ss = adaptor.describe(urns, creds[0]["geni_value"])
+
+        manifest = TNRMv3ManifestParser(from_string=m)
+        logger.debug("TNRMv3ManifestParser=%s" % (manifest,))
+        self.__validate_rspec(manifest.get_rspec())
+
+        nodes = manifest.nodes()
+        logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
+        links = manifest.links()
+        logger.info("Links(%d)=%s" % (len(links), links,))
+
+        return ({"nodes": nodes, "links": links}, urn, ss)
+
+    def __manage_se_describe(self, peer, urns, creds):
+        adaptor = AdaptorFactory.create_from_db(peer)
+        m, urn, ss = adaptor.describe(urns, creds[0]["geni_value"])
+
+        manifest = SERMv3ManifestParser(from_string=m)
+        logger.debug("SERMv3ManifestParser=%s" % (manifest,))
+        self.__validate_rspec(manifest.get_rspec())
+
+        nodes = manifest.nodes()
+        logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
+        links = manifest.links()
+        logger.info("Links(%d)=%s" % (len(links), links,))
+
+        return ({"nodes": nodes, "links": links}, urn, ss)
 
     def __manage_sdn_status(self, peer, urns, creds):
         adaptor = AdaptorFactory.create_from_db(peer)

@@ -173,6 +173,21 @@ class GENIv3Client(SFAClient):
             err = "%s Allocate failure: %s" % (typee, str(e))
             raise exceptions.RPCError(err)
 
+    def describe_base(self, urns, credentials, typee):
+        options = self.format_options()
+        logger.debug("%s Options: %s" % (typee, options,))
+        try:
+            params = [urns, credentials, options, ]
+            result = self.Describe(*params)
+            logger.info("%s Describe result=%s" % (typee, result,))
+            return (result.get("value").get("geni_rspec"),
+                    result.get("value").get("geni_urn"),
+                    result.get("value").get("geni_slivers"))
+
+        except Exception as e:
+            err = "%s Describe failure: %s" % (typee, str(e))
+            raise exceptions.RPCError(err)
+
 
 class CRMGeniv2Adaptor(SFAv2Client):
     def __init__(self, uri):
@@ -289,19 +304,7 @@ class SDNRMGeniv3Adaptor(GENIv3Client):
                                   "SDNRMGeniv3")
 
     def describe(self, urns, credentials):
-        options = self.format_options()
-        logger.debug("Options: %s" % (options,))
-        try:
-            params = [urns, credentials, options, ]
-            result = self.Describe(*params)
-            logger.info("Describe result=%s" % (result,))
-            return (result.get("value").get("geni_rspec"),
-                    result.get("value").get("geni_urn"),
-                    result.get("value").get("geni_slivers"))
-
-        except Exception as e:
-            err = "SDNRMGeniv3 Describe failure: %s" % str(e)
-            raise exceptions.RPCError(err)
+        return self.describe_base(urns, credentials, "SDNRMGeniv3")
 
     def status(self, urns, credentials):
         options = self.format_options()
@@ -369,6 +372,9 @@ class SERMGeniv3Adaptor(GENIv3Client):
         return self.allocate_base(slice_urn, credentials, rspec, end_time,
                                   "SERMGeniv3")
 
+    def describe(self, urns, credentials):
+        return self.describe_base(urns, credentials, "SERMGeniv3")
+
 
 class TNRMGeniv3Adaptor(GENIv3Client):
     def __init__(self, uri):
@@ -380,3 +386,6 @@ class TNRMGeniv3Adaptor(GENIv3Client):
     def allocate(self, slice_urn, credentials, rspec, end_time):
         return self.allocate_base(slice_urn, credentials, rspec, end_time,
                                   "TNRMGeniv3")
+
+    def describe(self, urns, credentials):
+        return self.describe_base(urns, credentials, "TNRMGeniv3")
