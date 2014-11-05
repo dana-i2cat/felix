@@ -72,25 +72,13 @@ class ResourceDetector():
 
     def __db(self, action, routingKey, data):
         try:
-            if action == "store_sdn_datapaths":
-                return db_sync_manager.store_sdn_datapaths(routingKey, data)
-            elif action == "store_sdn_links":
-                return db_sync_manager.store_sdn_links(routingKey, data)
-            elif action == "store_se_nodes":
-                return db_sync_manager.store_se_nodes(routingKey, data)
-            elif action == "store_se_links":
-                return db_sync_manager.store_se_links(routingKey, data)
-            elif action == "store_tn_nodes":
-                return db_sync_manager.store_tn_nodes(routingKey, data)
-            elif action == "store_tn_links":
-                return db_sync_manager.store_tn_links(routingKey, data)
-            elif action == "store_com_nodes":
-                return db_sync_manager.store_com_nodes(routingKey, data)
-            elif action == "store_com_links":
-                return db_sync_manager.store_com_links(routingKey, data)
-            else:
+            try:
+                # Methods must be implemented with the EXACT name as the action...
+                method = getattr(db_sync_manager, action)
+            except:
                 self.error("Unmanaged action type (%s)!" % (action,))
-
+            # ...And use the same arguments
+            return method(routingKey, data)
         except Exception as e:
             self.error("Exception on %s: %s" % (action, str(e)))
 
