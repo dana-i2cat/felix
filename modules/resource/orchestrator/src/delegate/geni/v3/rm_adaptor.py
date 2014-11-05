@@ -43,9 +43,10 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
                 return CRMGeniv2Adaptor(uri)
             elif type == "sdn_networking":
                 return SDNRMGeniv2Adaptor(uri)
-
         elif am_type in ["geni", ] and int(am_version) == 3:
-            if type in ["virtualisation", "sdn_networking"]:
+            if type == "virtualisation":
+                return CRMGeniv3Adaptor(uri)
+            elif type == "sdn_networking":
                 return SDNRMGeniv3Adaptor(uri)
             elif type == "stitching_entity":
                 return SERMGeniv3Adaptor(uri)
@@ -72,7 +73,6 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
         (text, ucredential) = calls.getusercred(
             user_cert_filename="alice-cert.pem", geni_api=3)
         return ucredential["geni_value"]
-        return ""
 
 
 class SFAClient(AdaptorFactory):
@@ -146,14 +146,21 @@ class GENIv3Client(SFAClient):
             options["geni_best_effort"] = best_effort
         return options
 
+    def format_credentials(self, credentials):
+        # Credentials must be sent in the proper format
+        credentials = [{
+                        "geni_value": credentials,
+                        }]
+        return credentials
+
     def list_resources(self, credentials, available):
         options = self.format_options(available=available, compress=False)
+        # Credentials must be sent in the proper format
+        credentials = self.format_credentials(credentials)
         logger.debug("%s Options: %s" % (self.typee, options,))
         try:
-            params = [credentials, options, ]
+            params = [credentials, options,]
             result = self.ListResources(*params)
-            logger.info("\n\n\n%s ListResources result=%s\n\n\n" %
-                        (self.typee, result,))
             return result
 
         except Exception as e:
@@ -163,6 +170,8 @@ class GENIv3Client(SFAClient):
     def allocate(self, slice_urn, credentials, rspec, end_time):
         options = self.format_options(end_time=end_time)
         logger.debug("%s Options: %s" % (self.typee, options,))
+        # Credentials must be sent in the proper format
+        credentials = self.format_credentials(credentials)
         try:
             params = [slice_urn, credentials, rspec, options, ]
             result = self.Allocate(*params)
@@ -178,6 +187,8 @@ class GENIv3Client(SFAClient):
     def describe(self, urns, credentials):
         options = self.format_options()
         logger.debug("%s Options: %s" % (self.typee, options,))
+        # Credentials must be sent in the proper format
+        credentials = self.format_credentials(credentials)
         try:
             params = [urns, credentials, options, ]
             result = self.Describe(*params)
@@ -194,6 +205,8 @@ class GENIv3Client(SFAClient):
     def renew(self, urns, credentials, expiration_time, best_effort):
         options = self.format_options(best_effort=best_effort)
         logger.debug("%s Options: %s" % (self.typee, options,))
+        # Credentials must be sent in the proper format
+        credentials = self.format_credentials(credentials)
         try:
             params = [urns, credentials, expiration_time, options, ]
             result = self.Renew(*params)
@@ -208,6 +221,8 @@ class GENIv3Client(SFAClient):
     def status(self, urns, credentials):
         options = self.format_options()
         logger.debug("%s Options: %s" % (self.typee, options,))
+        # Credentials must be sent in the proper format
+        credentials = self.format_credentials(credentials)
         try:
             params = [urns, credentials, options, ]
             result = self.Status(*params)
@@ -224,6 +239,8 @@ class GENIv3Client(SFAClient):
                                    best_effort):
         options = self.format_options(best_effort=best_effort)
         logger.debug("%s Options: %s" % (self.typee, options,))
+        # Credentials must be sent in the proper format
+        credentials = self.format_credentials(credentials)
         try:
             params = [urns, credentials, action, options, ]
             result = self.PerformOperationalAction(*params)
@@ -238,6 +255,8 @@ class GENIv3Client(SFAClient):
     def delete(self, urns, credentials, best_effort):
         options = self.format_options(best_effort=best_effort)
         logger.debug("%s Options: %s" % (self.typee, options,))
+        # Credentials must be sent in the proper format
+        credentials = self.format_credentials(credentials)
         try:
             params = [urns, credentials, options, ]
             result = self.Delete(*params)
@@ -350,6 +369,11 @@ class SDNRMGeniv2Adaptor(SFAv2Client):
         except Exception as e:
             raise exceptions.RPCError("SDNRMGeniv2 ListResources failure: %s" %
                                       str(e))
+
+
+class CRMGeniv3Adaptor(GENIv3Client):
+    def __init__(self, uri):
+        GENIv3Client.__init__(self, uri, "CRMGeniv3")
 
 
 class SDNRMGeniv3Adaptor(GENIv3Client):

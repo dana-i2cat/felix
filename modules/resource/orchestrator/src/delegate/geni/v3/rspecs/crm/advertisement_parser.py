@@ -5,17 +5,17 @@ from handler.geni.v3.extensions.sfa.util import xrn
 class CRMv3AdvertisementParser(ParserBase):
     def __init__(self, from_file=None, from_string=None):
         super(CRMv3AdvertisementParser, self).__init__(from_file, from_string)
-        #self.__sv = self.rspec.nsmap.get("emulab")
+        self.__com = "" #self.rspec.nsmap.get("")
     
     def nodes(self):
         
         nodes = []
         
-        # TODO Check that this is retrieving nodes (maybe the current self.none is not good for this case)
+        # TODO Check that this is retrieving nodes (maybe the current self.__com is not good for this case)
         #self.none = "http://www.geni.net/resources/rspec/3"
-        for n in rspec.iterchildren("{%s}node" % (self.none)):
+        for n in self.rspec.iterchildren("{%s}node" % (self.__com)):
             sliver = None
-            available = n.find("{%s}sliver_type" % (self.none))
+            available = n.find("{%s}sliver_type" % (self.__com))
             if available:
                 available = available.attrib.get("now")
             node = Node(n.attrib.get("component_id"),
@@ -42,15 +42,15 @@ class CRMv3AdvertisementParser(ParserBase):
         
         links = []
         
-        for l in rspec.iterchildren("{%s}link" % ns):
+        for l in self.rspec.iterchildren("{%s}link" % self.__com):
             link = Link(l.attrib.get("component_id"),
                 l.attrib.get("component_name"))
     
-            link_type = n.find("{%s}link_type" % (ns))
+            link_type = n.find("{%s}link_type" % (self.__com))
             if link_type:
                 link_type = link_type.attrib.get("name")
     
-            for p in l.iterchildren("{%s}property" % ns):
+            for p in l.iterchildren("{%s}property" % self.__com):
                 link.add_property(p.attrib.get("source_id"),
                     p.attrib.get("dest_id"),
                     p.attrib.get("capacity"))
