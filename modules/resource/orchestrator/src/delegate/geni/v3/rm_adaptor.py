@@ -127,8 +127,10 @@ class SFAv2Client(SFAClient):
 
 
 class GENIv3Client(SFAClient):
-    def __init__(self, uri):
+    def __init__(self, uri, typee):
         SFAClient.__init__(self, uri, type="geni", version=3)
+        self.typee = typee
+        logger.info("GENIv3Client %s created." % (self.typee,))
 
     def format_options(self, available=None, compress=None, end_time=None,
                        best_effort=None):
@@ -144,48 +146,107 @@ class GENIv3Client(SFAClient):
             options["geni_best_effort"] = best_effort
         return options
 
-    def list_resources_base(self, credentials, available, typee):
+    def list_resources(self, credentials, available):
         options = self.format_options(available=available, compress=False)
-        logger.debug("%s Options: %s" % (typee, options,))
+        logger.debug("%s Options: %s" % (self.typee, options,))
         try:
             params = [credentials, options, ]
-            logger.debug("\n\n\n\n\n[REMOVE] Credentials: %s\n\n\n\n\n" % str(credentials))
-            a = self.ListResources(*params)
-            logger.debug("\n\n\n\n\n[REMOVE] GENIv3 client list_resources result: %s\n\n\n\n\n" % str(a))
-            return a
-#            return self.ListResources(*params)
+            result = self.ListResources(*params)
+            logger.info("\n\n\n%s ListResources result=%s\n\n\n" %
+                        (self.typee, result,))
+            return result
 
         except Exception as e:
-            err = "%s ListResources failure: %s" % (typee, str(e))
+            err = "%s ListResources failure: %s" % (self.typee, str(e))
             raise exceptions.RPCError(err)
 
-    def allocate_base(self, slice_urn, credentials, rspec, end_time, typee):
+    def allocate(self, slice_urn, credentials, rspec, end_time):
         options = self.format_options(end_time=end_time)
-        logger.debug("%s Options: %s" % (typee, options,))
+        logger.debug("%s Options: %s" % (self.typee, options,))
         try:
             params = [slice_urn, credentials, rspec, options, ]
             result = self.Allocate(*params)
-            logger.info("%s Allocate result=%s" % (typee, result,))
+            logger.info("\n\n\n%s Allocate result=%s\n\n\n" %
+                        (self.typee, result,))
             return (result.get("value").get("geni_rspec"),
                     result.get("value").get("geni_slivers"))
 
         except Exception as e:
-            err = "%s Allocate failure: %s" % (typee, str(e))
+            err = "%s Allocate failure: %s" % (self.ypee, str(e))
             raise exceptions.RPCError(err)
 
-    def describe_base(self, urns, credentials, typee):
+    def describe(self, urns, credentials):
         options = self.format_options()
-        logger.debug("%s Options: %s" % (typee, options,))
+        logger.debug("%s Options: %s" % (self.typee, options,))
         try:
             params = [urns, credentials, options, ]
             result = self.Describe(*params)
-            logger.info("%s Describe result=%s" % (typee, result,))
+            logger.info("\n\n\n%s Describe result=%s\n\n\n" %
+                        (self.typee, result,))
             return (result.get("value").get("geni_rspec"),
                     result.get("value").get("geni_urn"),
                     result.get("value").get("geni_slivers"))
 
         except Exception as e:
-            err = "%s Describe failure: %s" % (typee, str(e))
+            err = "%s Describe failure: %s" % (self.typee, str(e))
+            raise exceptions.RPCError(err)
+
+    def renew(self, urns, credentials, expiration_time, best_effort):
+        options = self.format_options(best_effort=best_effort)
+        logger.debug("%s Options: %s" % (self.typee, options,))
+        try:
+            params = [urns, credentials, expiration_time, options, ]
+            result = self.Renew(*params)
+            logger.info("\n\n\n%s Renew result=%s\n\n\n" %
+                        (self.typee, result,))
+            return result.get("value")
+
+        except Exception as e:
+            err = "%s Renew failure: %s" % (self.typee, str(e))
+            raise exceptions.RPCError(err)
+
+    def status(self, urns, credentials):
+        options = self.format_options()
+        logger.debug("%s Options: %s" % (self.typee, options,))
+        try:
+            params = [urns, credentials, options, ]
+            result = self.Status(*params)
+            logger.info("\n\n\n%s Status result=%s\n\n\n" %
+                        (self.typee, result,))
+            return (result.get("value").get("geni_urn"),
+                    result.get("value").get("geni_slivers"))
+
+        except Exception as e:
+            err = "%s Status failure: %s" % (self.typee, str(e))
+            raise exceptions.RPCError(err)
+
+    def perform_operational_action(self, urns, credentials, action,
+                                   best_effort):
+        options = self.format_options(best_effort=best_effort)
+        logger.debug("%s Options: %s" % (self.typee, options,))
+        try:
+            params = [urns, credentials, action, options, ]
+            result = self.PerformOperationalAction(*params)
+            logger.info("\n\n\n%s PerformOperationalAction result=%s\n\n\n" %
+                        (self.typee, result,))
+            return result.get("value")
+
+        except Exception as e:
+            err = "%s PerformOpAction failure: %s" % (self.typee, str(e))
+            raise exceptions.RPCError(err)
+
+    def delete(self, urns, credentials, best_effort):
+        options = self.format_options(best_effort=best_effort)
+        logger.debug("%s Options: %s" % (self.typee, options,))
+        try:
+            params = [urns, credentials, options, ]
+            result = self.Delete(*params)
+            logger.info("\n\n\n%s Delete result=%s\n\n\n" %
+                        (self.typee, result,))
+            return result.get("value")
+
+        except Exception as e:
+            err = "%s Delete failure: %s" % (self.typee, str(e))
             raise exceptions.RPCError(err)
 
 
@@ -276,7 +337,9 @@ class SDNRMGeniv2Adaptor(SFAv2Client):
             # Get the list of sdn networking resources
             params = [credentials, options, ]
             rspec = self.ListResources(*params)
-            logger.debug("\n\n\n\n\n[REMOVE] GENIv3 SDNGENIv2Adaptor ListResources result: %s\n\n\n\n\n" % str(rspec))
+            i = "\n\n[REMOVE] SDNGENIv2Adaptor ListResources rspec: %s\n\n" %\
+                (str(rspec))
+            logger.debug(i)
             # if available==True, we should remove the sdn networking
             # "local reserved" resources (stored in a mongoDB tables)
             if available is True:
@@ -291,101 +354,14 @@ class SDNRMGeniv2Adaptor(SFAv2Client):
 
 class SDNRMGeniv3Adaptor(GENIv3Client):
     def __init__(self, uri):
-        logger.debug("\n\n\n\n[REMOVE] starting SDNRMGeniv3Adaptor\n\n\n\n")
-        GENIv3Client.__init__(self, uri)
-
-    def list_resources(self, credentials, available):
-        a = self.list_resources_base(credentials, available, "SDNRMGeniv3")
-        logger.debug("\n\n\n\n\n[REMOVE] SDNRMGeniv3Adaptor. list_resources: %s\n\n\n\n\n" % str(a))
-        return a
-
-    def allocate(self, slice_urn, credentials, rspec, end_time):
-        return self.allocate_base(slice_urn, credentials, rspec, end_time,
-                                  "SDNRMGeniv3")
-
-    def describe(self, urns, credentials):
-        return self.describe_base(urns, credentials, "SDNRMGeniv3")
-
-    def status(self, urns, credentials):
-        options = self.format_options()
-        logger.debug("Options: %s" % (options,))
-        try:
-            params = [urns, credentials, options, ]
-            result = self.Status(*params)
-            logger.info("Status result=%s" % (result,))
-            return (result.get("value").get("geni_urn"),
-                    result.get("value").get("geni_slivers"))
-
-        except Exception as e:
-            err = "SDNRMGeniv3 Status failure: %s" % str(e)
-            raise exceptions.RPCError(err)
-
-    def renew(self, urns, credentials, expiration_time, best_effort):
-        options = self.format_options(best_effort=best_effort)
-        logger.debug("Options: %s" % (options,))
-        try:
-            params = [urns, credentials, expiration_time, options, ]
-            result = self.Renew(*params)
-            logger.info("Renew result=%s" % (result,))
-            return result.get("value")
-
-        except Exception as e:
-            err = "SDNRMGeniv3 Renew failure: %s" % str(e)
-            raise exceptions.RPCError(err)
-
-    def perform_operational_action(self, urns, credentials, action,
-                                   best_effort):
-        options = self.format_options(best_effort=best_effort)
-        logger.debug("Options: %s" % (options,))
-        try:
-            params = [urns, credentials, action, options, ]
-            result = self.PerformOperationalAction(*params)
-            logger.info("PerformOperationalAction result=%s" % (result,))
-            return result.get("value")
-
-        except Exception as e:
-            err = "SDNRMGeniv3 PerformOperationalAction failure: %s" % str(e)
-            raise exceptions.RPCError(err)
-
-    def delete(self, urns, credentials, best_effort):
-        options = self.format_options(best_effort=best_effort)
-        logger.debug("Options: %s" % (options,))
-        try:
-            params = [urns, credentials, options, ]
-            result = self.Delete(*params)
-            logger.info("Delete result=%s" % (result,))
-            return result.get("value")
-
-        except Exception as e:
-            err = "SDNRMGeniv3 Delete failure: %s" % str(e)
-            raise exceptions.RPCError(err)
+        GENIv3Client.__init__(self, uri, "SDNRMGeniv3")
 
 
 class SERMGeniv3Adaptor(GENIv3Client):
     def __init__(self, uri):
-        GENIv3Client.__init__(self, uri)
-
-    def list_resources(self, credentials, available):
-        return self.list_resources_base(credentials, available, "SERMGeniv3")
-
-    def allocate(self, slice_urn, credentials, rspec, end_time):
-        return self.allocate_base(slice_urn, credentials, rspec, end_time,
-                                  "SERMGeniv3")
-
-    def describe(self, urns, credentials):
-        return self.describe_base(urns, credentials, "SERMGeniv3")
+        GENIv3Client.__init__(self, uri, "SERMGeniv3")
 
 
 class TNRMGeniv3Adaptor(GENIv3Client):
     def __init__(self, uri):
-        GENIv3Client.__init__(self, uri)
-
-    def list_resources(self, credentials, available):
-        return self.list_resources_base(credentials, available, "TNRMGeniv3")
-
-    def allocate(self, slice_urn, credentials, rspec, end_time):
-        return self.allocate_base(slice_urn, credentials, rspec, end_time,
-                                  "TNRMGeniv3")
-
-    def describe(self, urns, credentials):
-        return self.describe_base(urns, credentials, "TNRMGeniv3")
+        GENIv3Client.__init__(self, uri, "TNRMGeniv3")

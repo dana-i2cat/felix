@@ -294,16 +294,30 @@ class GENIv3Delegate(GENIv3DelegateBase):
         route = db_sync_manager.get_slice_routing_keys(urns)
         logger.debug("Route=%s" % (route,))
 
+        etime_str = self.__datetime2str(expiration_time)
         for r, v in route.iteritems():
             peer = db_sync_manager.get_configured_peer(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") == "sdn_networking":
-                etime_str = self.__datetime2str(expiration_time)
                 of_slivers = self.__manage_sdn_renew(
                     peer, v, credentials, etime_str, best_effort)
 
                 logger.debug("of_s=%s" % (of_slivers,))
                 ro_slivers.extend(of_slivers)
+
+            elif peer.get("type") == "transport_network":
+                tn_slivers = self.__manage_tn_renew(
+                    peer, v, credentials, etime_str, best_effort)
+
+                logger.debug("tn_s=%s" % (tn_slivers,))
+                ro_slivers.extend(tn_slivers)
+
+            elif peer.get("type") == "stitching_entity":
+                se_slivers = self.__manage_se_renew(
+                    peer, v, credentials, etime_str, best_effort)
+
+                logger.debug("se_s=%s" % (se_slivers,))
+                ro_slivers.extend(se_slivers)
 
         for s in ro_slivers:
             s["geni_expires"] = self.__str2datetime(s["geni_expires"])
@@ -750,7 +764,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         manifest = OFv3ManifestParser(from_string=m)
         logger.debug("OFv3ManifestParser=%s" % (manifest,))
-        #self.__validate_rspec(manifest.get_rspec())
+        # self.__validate_rspec(manifest.get_rspec())
 
         sliver = manifest.sliver()
         logger.info("Sliver=%s" % (sliver,))
@@ -792,6 +806,14 @@ class GENIv3Delegate(GENIv3DelegateBase):
         return adaptor.status(urns, creds[0]["geni_value"])
 
     def __manage_sdn_renew(self, peer, urns, creds, etime, beffort):
+        adaptor = AdaptorFactory.create_from_db(peer)
+        return adaptor.renew(urns, creds[0]["geni_value"], etime, beffort)
+
+    def __manage_se_renew(self, peer, urns, creds, etime, beffort):
+        adaptor = AdaptorFactory.create_from_db(peer)
+        return adaptor.renew(urns, creds[0]["geni_value"], etime, beffort)
+
+    def __manage_tn_renew(self, peer, urns, creds, etime, beffort):
         adaptor = AdaptorFactory.create_from_db(peer)
         return adaptor.renew(urns, creds[0]["geni_value"], etime, beffort)
 
