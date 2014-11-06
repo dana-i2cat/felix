@@ -5,16 +5,16 @@ import re
 import xmlrpclib
 
 
-def api_call(method_name, endpoint, params=[], user_name='alice', verbose=False):
+def api_call(method_name, endpoint, params=[], user_name="alice", verbose=False):
     key_path, cert_path = "%s-key.pem" % (user_name,), "%s-cert.pem" % (user_name,)
     res = ssl_call(method_name, params, endpoint, key_path=key_path, cert_path=cert_path)
     if verbose:
         print_call(method_name, params, res)
-    return res.get('code', None), res.get('value', None), res.get('output', None)
+    return res.get("code", None), res.get("value", None), res.get("output", None)
 
-def ch_call(method_name, endpoint="", params=[], user_name='alice', verbose=False):
+def ch_call(method_name, endpoint="", params=[], user_name="alice", verbose=False):
     key_path, cert_path = "%s-key.pem" % (user_name,), "%s-cert.pem" % (user_name,)
-    res = ssl_call(method_name, params, endpoint, key_path=key_path, cert_path=cert_path, host='127.0.0.1', port=8000)
+    res = ssl_call(method_name, params, endpoint, key_path=key_path, cert_path=cert_path, host="127.0.0.1", port=8000)
     return res
 
 class SafeTransportWithCert(xmlrpclib.SafeTransport):
@@ -26,11 +26,11 @@ class SafeTransportWithCert(xmlrpclib.SafeTransport):
 
     def make_connection(self, host):
         """This method will automatically be called by the ServerProxy class when a transport channel is needed."""
-        host_with_cert = (host, {'key_file' : self._key_path, 'cert_file' : self._cert_path})
+        host_with_cert = (host, {"key_file" : self._key_path, "cert_file" : self._cert_path})
         return xmlrpclib.SafeTransport.make_connection(self, host_with_cert) # no super, because old style class
 
-def ssl_call(method_name, params, endpoint, key_path='alice-key.pem', cert_path='alice-cert.pem', host='127.0.0.1', port=8440):
-    creds_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '../..', 'cert'))
+def ssl_call(method_name, params, endpoint, key_path="alice-key.pem", cert_path="alice-cert.pem", host="127.0.0.1", port=8440):
+    creds_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "../..", "cert"))
     if not os.path.isabs(key_path):
         key_path = os.path.join(creds_path, key_path)
     if not os.path.isabs(cert_path):
@@ -40,6 +40,9 @@ def ssl_call(method_name, params, endpoint, key_path='alice-key.pem', cert_path=
     if not os.path.isfile(key_path) or not os.path.isfile(cert_path):
         raise RuntimeError("Key or cert file not found (%s, %s)" % (key_path, cert_path))
     transport = SafeTransportWithCert(key_path, cert_path)
+    if endpoint:
+        if endpoint[0] == "/":
+            endpoint = endpoint[1:]
     proxy = xmlrpclib.ServerProxy("https://%s:%s/%s" % (host, str(port), endpoint), transport=transport)
     # return proxy.get_version()
     method = getattr(proxy, method_name)
@@ -50,7 +53,7 @@ def wrap_cred(cred):
     Wrap the given cred in the appropriate struct for this framework.
     """
     if isinstance(cred, dict):
-        print "Called wrap on a cred that's already a dict? %s", cred
+        print "Called wrap on a cred that is already a dict? %s", cred
         return cred
     elif not isinstance(cred, str):
         print "Called wrap on non string cred? Stringify. %s", cred
@@ -82,7 +85,7 @@ def getusercred(user_cert_filename = "alice-cert.pem", geni_api = 3):
       Get user credential, save to a file with filename prefix mystuff:
         omni.py -o -p mystuff getusercred
 """
-    creds_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '../..', 'cert'))
+    creds_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "../..", "cert"))
     cert_path = os.path.join(creds_path, user_cert_filename)
     user_cert = open(cert_path, "r").read()
     # Contacting GCH for it by passing the certificate
@@ -101,11 +104,11 @@ def getusercred(user_cert_filename = "alice-cert.pem", geni_api = 3):
     return "Retrieved %s user credential" % user, cred
 
 def get_creds_file_contents(filename):
-    creds_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '../..', 'creds'))
+    creds_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "../..", "creds"))
     if not os.path.isabs(filename):
         filename = os.path.join(creds_path, filename)
     filename = os.path.abspath(os.path.expanduser(filename))
     contents = None
-    with open(filename, 'r') as f:
+    with open(filename, "r") as f:
         contents = f.read()
     return contents

@@ -38,18 +38,19 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
 
         logger.debug("AM type: %s, version: %s" % (am_type, am_version,))
 
-        if am_type in ['geni', 'geni_sfa', 'sfa'] and am_version <= 2:
-            if type == 'virtualisation':
+        if am_type in ["geni", "geni_sfa", "sfa"] and am_version <= 2:
+            if type == "virtualisation":
                 return CRMGeniv2Adaptor(uri)
-            elif type == 'sdn_networking':
+            elif type == "sdn_networking":
                 return SDNRMGeniv2Adaptor(uri)
-
-        elif am_type in ['geni', ] and int(am_version) == 3:
-            if type == 'sdn_networking':
+        elif am_type in ["geni", ] and int(am_version) == 3:
+            if type == "virtualisation":
+                return CRMGeniv3Adaptor(uri)
+            elif type == "sdn_networking":
                 return SDNRMGeniv3Adaptor(uri)
-            elif type == 'stitching_entity':
+            elif type == "stitching_entity":
                 return SERMGeniv3Adaptor(uri)
-            elif type == 'transport_network':
+            elif type == "transport_network":
                 return TNRMGeniv3Adaptor(uri)
 
         raise exceptions.GeneralError("Type not implemented yet!")
@@ -57,10 +58,10 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
     @staticmethod
     def create_from_db(peer_db):
         return AdaptorFactory.create(
-            peer_db.get('type'), peer_db.get('protocol'), peer_db.get('user'),
-            peer_db.get('password'), peer_db.get('address'),
-            peer_db.get('port'), peer_db.get('endpoint'), peer_db.get('_id'),
-            peer_db.get('am_type'), peer_db.get('am_version'))
+            peer_db.get("type"), peer_db.get("protocol"), peer_db.get("user"),
+            peer_db.get("password"), peer_db.get("address"),
+            peer_db.get("port"), peer_db.get("endpoint"), peer_db.get("_id"),
+            peer_db.get("am_type"), peer_db.get("am_version"))
 
     @staticmethod
     def geni_v3_credentials():
@@ -86,13 +87,13 @@ class SFAClient(AdaptorFactory):
             logger.debug("Get the required information of the peer")
             rspec_version = self.GetVersion()
             logger.debug("Rspec version: %s" % (rspec_version,))
-            values = rspec_version.get('value')
+            values = rspec_version.get("value")
             # We need at least the type and the (supported) request version
-            self.geni_type = rspec_version.get('code').get('am_type')
-            self.geni_api_version = values.get('geni_api')
+            self.geni_type = rspec_version.get("code").get("am_type")
+            self.geni_api_version = values.get("geni_api")
 
             if not self.geni_type:  # we assume GENI as default
-                self.geni_type = 'geni'
+                self.geni_type = "geni"
 
             return (self.geni_type, self.geni_api_version)
 
@@ -115,7 +116,7 @@ class SFAClient(AdaptorFactory):
 
 class SFAv2Client(SFAClient):
     def __init__(self, uri):
-        SFAClient.__init__(self, uri, type='sfa', version=2)
+        SFAClient.__init__(self, uri, type="sfa", version=2)
 
     def format_options(self, available):
         return {"geni_available": available,
@@ -126,46 +127,145 @@ class SFAv2Client(SFAClient):
 
 
 class GENIv3Client(SFAClient):
-    def __init__(self, uri):
-        SFAClient.__init__(self, uri, type='geni', version=3)
+    def __init__(self, uri, typee):
+        SFAClient.__init__(self, uri, type="geni", version=3)
+        self.typee = typee
+        logger.info("GENIv3Client %s created." % (self.typee,))
 
     def format_options(self, available=None, compress=None, end_time=None,
                        best_effort=None):
-        options = {'geni_rspec_version': {'type': 'geni',
-                                          'version': 3, }}
-        if available is not None:
-            options['geni_available'] = available
-        if compress is not None:
-            options['geni_compress'] = compress
-        if end_time is not None:
-            options['end_time'] = end_time
-        if best_effort is not None:
-            options['geni_best_effort'] = best_effort
+        options = {"geni_rspec_version": {"type": "geni",
+                                          "version": 3, }}
+        if available:
+            options["geni_available"] = available
+        if compress:
+            options["geni_compress"] = compress
+        if end_time:
+            options["end_time"] = end_time
+        if best_effort:
+            options["geni_best_effort"] = best_effort
         return options
 
-    def list_resources_base(self, credentials, available, typee):
+    def format_credentials(self, credentials):
+        # Credentials must be sent in the proper format
+        credentials = [{
+                        "geni_value": credentials,
+                        }]
+        return credentials
+
+    def list_resources(self, credentials, available):
         options = self.format_options(available=available, compress=False)
-        logger.debug("%s Options: %s" % (typee, options,))
+        # Credentials must be sent in the proper format
+        credentials = self.format_credentials(credentials)
+        logger.debug("%s Options: %s" % (self.typee, options,))
         try:
-            params = [credentials, options, ]
-            return self.ListResources(*params)
+            params = [credentials, options,]
+            result = self.ListResources(*params)
+            return result
 
         except Exception as e:
-            err = "%s ListResources failure: %s" % (typee, str(e))
+            err = "%s ListResources failure: %s" % (self.typee, str(e))
             raise exceptions.RPCError(err)
 
-    def allocate_base(self, slice_urn, credentials, rspec, end_time, typee):
+    def allocate(self, slice_urn, credentials, rspec, end_time):
         options = self.format_options(end_time=end_time)
-        logger.debug("%s Options: %s" % (typee, options,))
+        logger.debug("%s Options: %s" % (self.typee, options,))
+        # Credentials must be sent in the proper format
+        credentials = self.format_credentials(credentials)
         try:
             params = [slice_urn, credentials, rspec, options, ]
             result = self.Allocate(*params)
-            logger.info("%s Allocate result=%s" % (typee, result,))
-            return (result.get('value').get('geni_rspec'),
-                    result.get('value').get('geni_slivers'))
+            logger.info("\n\n\n%s Allocate result=%s\n\n\n" %
+                        (self.typee, result,))
+            return (result.get("value").get("geni_rspec"),
+                    result.get("value").get("geni_slivers"))
 
         except Exception as e:
-            err = "%s Allocate failure: %s" % (typee, str(e))
+            err = "%s Allocate failure: %s" % (self.ypee, str(e))
+            raise exceptions.RPCError(err)
+
+    def describe(self, urns, credentials):
+        options = self.format_options()
+        logger.debug("%s Options: %s" % (self.typee, options,))
+        # Credentials must be sent in the proper format
+        credentials = self.format_credentials(credentials)
+        try:
+            params = [urns, credentials, options, ]
+            result = self.Describe(*params)
+            logger.info("\n\n\n%s Describe result=%s\n\n\n" %
+                        (self.typee, result,))
+            return (result.get("value").get("geni_rspec"),
+                    result.get("value").get("geni_urn"),
+                    result.get("value").get("geni_slivers"))
+
+        except Exception as e:
+            err = "%s Describe failure: %s" % (self.typee, str(e))
+            raise exceptions.RPCError(err)
+
+    def renew(self, urns, credentials, expiration_time, best_effort):
+        options = self.format_options(best_effort=best_effort)
+        logger.debug("%s Options: %s" % (self.typee, options,))
+        # Credentials must be sent in the proper format
+        credentials = self.format_credentials(credentials)
+        try:
+            params = [urns, credentials, expiration_time, options, ]
+            result = self.Renew(*params)
+            logger.info("\n\n\n%s Renew result=%s\n\n\n" %
+                        (self.typee, result,))
+            return result.get("value")
+
+        except Exception as e:
+            err = "%s Renew failure: %s" % (self.typee, str(e))
+            raise exceptions.RPCError(err)
+
+    def status(self, urns, credentials):
+        options = self.format_options()
+        logger.debug("%s Options: %s" % (self.typee, options,))
+        # Credentials must be sent in the proper format
+        credentials = self.format_credentials(credentials)
+        try:
+            params = [urns, credentials, options, ]
+            result = self.Status(*params)
+            logger.info("\n\n\n%s Status result=%s\n\n\n" %
+                        (self.typee, result,))
+            return (result.get("value").get("geni_urn"),
+                    result.get("value").get("geni_slivers"))
+
+        except Exception as e:
+            err = "%s Status failure: %s" % (self.typee, str(e))
+            raise exceptions.RPCError(err)
+
+    def perform_operational_action(self, urns, credentials, action,
+                                   best_effort):
+        options = self.format_options(best_effort=best_effort)
+        logger.debug("%s Options: %s" % (self.typee, options,))
+        # Credentials must be sent in the proper format
+        credentials = self.format_credentials(credentials)
+        try:
+            params = [urns, credentials, action, options, ]
+            result = self.PerformOperationalAction(*params)
+            logger.info("\n\n\n%s PerformOperationalAction result=%s\n\n\n" %
+                        (self.typee, result,))
+            return result.get("value")
+
+        except Exception as e:
+            err = "%s PerformOpAction failure: %s" % (self.typee, str(e))
+            raise exceptions.RPCError(err)
+
+    def delete(self, urns, credentials, best_effort):
+        options = self.format_options(best_effort=best_effort)
+        logger.debug("%s Options: %s" % (self.typee, options,))
+        # Credentials must be sent in the proper format
+        credentials = self.format_credentials(credentials)
+        try:
+            params = [urns, credentials, options, ]
+            result = self.Delete(*params)
+            logger.info("\n\n\n%s Delete result=%s\n\n\n" %
+                        (self.typee, result,))
+            return result.get("value")
+
+        except Exception as e:
+            err = "%s Delete failure: %s" % (self.typee, str(e))
             raise exceptions.RPCError(err)
 
 
@@ -174,39 +274,39 @@ class CRMGeniv2Adaptor(SFAv2Client):
         SFAv2Client.__init__(self, uri)
 
     def __filter_list_resources_rspec(self, rspec):
-        root = etree.fromstring(rspec.get('value'))
+        root = etree.fromstring(rspec.get("value"))
         # logger.debug("ROOT: %s" % (etree.tostring(root, pretty_print=True),))
-        for network in root.iter('network'):
-            for node in network.iter('node'):
+        for network in root.iter("network"):
+            for node in network.iter("node"):
                 # Follow the schema proposed into the models
                 entry = CResourceTable()
-                entry.network_name(network.get('name'))
-                entry.node(node.get('component_id'),
-                           node.get('component_manager_id'),
-                           node.get('component_name'),
-                           node.get('exclusive'))
-                entry.hostname(node.findtext('hostname'))
-                entry.name(node.findtext('name'))
+                entry.network_name(network.get("name"))
+                entry.node(node.get("component_id"),
+                           node.get("component_manager_id"),
+                           node.get("component_name"),
+                           node.get("exclusive"))
+                entry.hostname(node.findtext("hostname"))
+                entry.name(node.findtext("name"))
                 logger.debug("Entry: %s" % (entry,))
 
-                for service in node.iter('service'):
+                for service in node.iter("service"):
                     entry.clear_services()
                     # Filter on the service type
-                    service_type = service.get('type')
+                    service_type = service.get("type")
                     if service_type == "Range":
                         entry.add_range_service(
-                            service.findtext('type'),
-                            service.findtext('name'),
-                            service.findtext('start_value'),
-                            service.findtext('end_value'))
+                            service.findtext("type"),
+                            service.findtext("name"),
+                            service.findtext("start_value"),
+                            service.findtext("end_value"))
                         # Log the Range Entry
                         logger.debug("Range Entry: %s" % (entry,))
 
                     elif service_type == "NetworkInterface":
                         entry.add_netif_service(
-                            service.findtext('from_server_interface_name'),
-                            service.findtext('to_network_interface_id'),
-                            service.findtext('to_network_interface_port'))
+                            service.findtext("from_server_interface_name"),
+                            service.findtext("to_network_interface_id"),
+                            service.findtext("to_network_interface_port"))
                         # Log the NetworkInterface info
                         logger.debug("NetworkInterface Entry: %s" % (entry,))
 
@@ -214,11 +314,11 @@ class CRMGeniv2Adaptor(SFAv2Client):
                         logger.info("Modify the rspec: delete this service!")
                         node.remove(service)
 
-                if node.find('service') is None:
+                if node.find("service") is None:
                     logger.info("No more services are available on this node!")
                     network.remove(node)
 
-        rspec['value'] = etree.tostring(root)
+        rspec["value"] = etree.tostring(root)
         # logger.debug("RSPEC: %s" % (rspec,))
         return rspec
 
@@ -256,6 +356,9 @@ class SDNRMGeniv2Adaptor(SFAv2Client):
             # Get the list of sdn networking resources
             params = [credentials, options, ]
             rspec = self.ListResources(*params)
+            i = "\n\n[REMOVE] SDNGENIv2Adaptor ListResources rspec: %s\n\n" %\
+                (str(rspec))
+            logger.debug(i)
             # if available==True, we should remove the sdn networking
             # "local reserved" resources (stored in a mongoDB tables)
             if available is True:
@@ -268,102 +371,21 @@ class SDNRMGeniv2Adaptor(SFAv2Client):
                                       str(e))
 
 
+class CRMGeniv3Adaptor(GENIv3Client):
+    def __init__(self, uri):
+        GENIv3Client.__init__(self, uri, "CRMGeniv3")
+
+
 class SDNRMGeniv3Adaptor(GENIv3Client):
     def __init__(self, uri):
-        GENIv3Client.__init__(self, uri)
-
-    def list_resources(self, credentials, available):
-        return self.list_resources_base(credentials, available, "SDNRMGeniv3")
-
-    def allocate(self, slice_urn, credentials, rspec, end_time):
-        return self.allocate_base(slice_urn, credentials, rspec, end_time,
-                                  "SDNRMGeniv3")
-
-    def describe(self, urns, credentials):
-        options = self.format_options()
-        logger.debug("Options: %s" % (options,))
-        try:
-            params = [urns, credentials, options, ]
-            result = self.Describe(*params)
-            logger.info("Describe result=%s" % (result,))
-            return (result.get('value').get('geni_rspec'),
-                    result.get('value').get('geni_urn'),
-                    result.get('value').get('geni_slivers'))
-
-        except Exception as e:
-            err = "SDNRMGeniv3 Describe failure: %s" % str(e)
-            raise exceptions.RPCError(err)
-
-    def status(self, urns, credentials):
-        options = self.format_options()
-        logger.debug("Options: %s" % (options,))
-        try:
-            params = [urns, credentials, options, ]
-            result = self.Status(*params)
-            logger.info("Status result=%s" % (result,))
-            return (result.get('value').get('geni_urn'),
-                    result.get('value').get('geni_slivers'))
-
-        except Exception as e:
-            err = "SDNRMGeniv3 Status failure: %s" % str(e)
-            raise exceptions.RPCError(err)
-
-    def renew(self, urns, credentials, expiration_time, best_effort):
-        options = self.format_options(best_effort=best_effort)
-        logger.debug("Options: %s" % (options,))
-        try:
-            params = [urns, credentials, expiration_time, options, ]
-            result = self.Renew(*params)
-            logger.info("Renew result=%s" % (result,))
-            return result.get('value')
-
-        except Exception as e:
-            err = "SDNRMGeniv3 Renew failure: %s" % str(e)
-            raise exceptions.RPCError(err)
-
-    def perform_operational_action(self, urns, credentials, action,
-                                   best_effort):
-        options = self.format_options(best_effort=best_effort)
-        logger.debug("Options: %s" % (options,))
-        try:
-            params = [urns, credentials, action, options, ]
-            result = self.PerformOperationalAction(*params)
-            logger.info("PerformOperationalAction result=%s" % (result,))
-            return result.get('value')
-
-        except Exception as e:
-            err = "SDNRMGeniv3 PerformOperationalAction failure: %s" % str(e)
-            raise exceptions.RPCError(err)
-
-    def delete(self, urns, credentials, best_effort):
-        options = self.format_options(best_effort=best_effort)
-        logger.debug("Options: %s" % (options,))
-        try:
-            params = [urns, credentials, options, ]
-            result = self.Delete(*params)
-            logger.info("Delete result=%s" % (result,))
-            return result.get('value')
-
-        except Exception as e:
-            err = "SDNRMGeniv3 Delete failure: %s" % str(e)
-            raise exceptions.RPCError(err)
+        GENIv3Client.__init__(self, uri, "SDNRMGeniv3")
 
 
 class SERMGeniv3Adaptor(GENIv3Client):
     def __init__(self, uri):
-        GENIv3Client.__init__(self, uri)
-
-    def list_resources(self, credentials, available):
-        return self.list_resources_base(credentials, available, "SERMGeniv3")
+        GENIv3Client.__init__(self, uri, "SERMGeniv3")
 
 
 class TNRMGeniv3Adaptor(GENIv3Client):
     def __init__(self, uri):
-        GENIv3Client.__init__(self, uri)
-
-    def list_resources(self, credentials, available):
-        return self.list_resources_base(credentials, available, "TNRMGeniv3")
-
-    def allocate(self, slice_urn, credentials, rspec, end_time):
-        return self.allocate_base(slice_urn, credentials, rspec, end_time,
-                                  "TNRMGeniv3")
+        GENIv3Client.__init__(self, uri, "TNRMGeniv3")

@@ -7,31 +7,39 @@ logger = core.log.getLogger("jobs")
 
 
 # resource detector scheduled jobs
-def sdn_resource_detector():
+def com_resource_detector():
     try:
-        rd = ResourceDetector('sdn_networking')
+        rd = ResourceDetector("virtualisation")
         rd.do_action()
 
     except Exception as e:
-        logger.error('sdn_resource_detector failure: %s' % (e,))
+        logger.error("com_resource_detector failure: %s" % (e,))
+
+def sdn_resource_detector():
+    try:
+        rd = ResourceDetector("sdn_networking")
+        rd.do_action()
+
+    except Exception as e:
+        logger.error("sdn_resource_detector failure: %s" % (e,))
 
 
 def se_resource_detector():
     try:
-        rd = ResourceDetector('stitching_entity')
+        rd = ResourceDetector("stitching_entity")
         rd.do_action()
 
     except Exception as e:
-        logger.error('se_resource_detector failure: %s' % (e,))
+        logger.error("se_resource_detector failure: %s" % (e,))
 
 
 def tn_resource_detector():
     try:
-        rd = ResourceDetector('transport_network')
+        rd = ResourceDetector("transport_network")
         rd.do_action()
 
     except Exception as e:
-        logger.error('sdn_resource_detector failure: %s' % (e,))
+        logger.error("sdn_resource_detector failure: %s" % (e,))
 
 
 # automatic release the slice resources for the end-time expiration
@@ -52,6 +60,6 @@ def slice_expiration(urns):
         logger.debug("of_s=%s" % (of_slivers,))
         ro_slivers.extend(of_slivers)
 
-    db_urns = [s.get('geni_sliver_urn') for s in ro_slivers]
+    db_urns = [s.get("geni_sliver_urn") for s in ro_slivers]
     logger.debug("RO-Slivers=%s, DB-URNs=%s" % (ro_slivers, db_urns))
     db_sync_manager.delete_slice_urns(db_urns)

@@ -5,6 +5,7 @@ DSL_PREFIX = "http://www.geni.net/resources/rspec/"
 DEFAULT_SCHEMA_LOCATION = DSL_PREFIX + "3 "
 
 
+# Not working on CRM RSpecs: why?
 def validate(ingress_root):
     import urllib2
     from lxml import etree
@@ -30,6 +31,36 @@ def validate(ingress_root):
             errors.append(str(e))
 
     return (False, errors)
+
+
+def validate_new(rspec_string):
+    """
+    New version for validating against multiple schemas
+    """
+    import urllib2
+    from lxml import etree
+    
+    rspec_root = etree.fromstring(rspec_string)
+    schema_locations = rspec_root.get("{http://www.w3.org/2001/XMLSchema-instance}schemaLocation")
+    validate = True
+    if schema_locations:
+        schema_location_list = filter(lambda x: ".xsd" in x, schema_locations.split(" "))
+        xmlschema_contents = urllib2.urlopen(schema_location_list[0]) # try to download the schema
+        xmlschema_doc = etree.parse(xmlschema_contents)
+        errors = []
+        for n, sl in enumerate(schema_location_list[1:], start=1):
+            try:
+                xmlschema_doc_new_import = etree.Element('{http://www.w3.org/2001/XMLSchema}import',
+                    schemaLocation="%s" % sl)
+                xmlschema_doc.getroot().insert(0, xmlschema_doc_new_import)
+            except Exception as e:
+                errors.append(str(e))
+        xmlschema = etree.XMLSchema(xmlschema_doc)
+        # validate RSpec against specified schemaLocations
+        validate &= xmlschema.validate(rspec_root)
+    if validate:
+        errors = ""
+    return (validate, errors)
 
 
 # Data Models

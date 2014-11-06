@@ -8,6 +8,8 @@ from delegate.geni.v3.scheduler.jobs import slice_expiration
 
 from delegate.geni.v3.rspecs.commons import validate
 from delegate.geni.v3.rspecs.commons_of import Match
+from delegate.geni.v3.rspecs.commons_tn import Node, Interface
+from delegate.geni.v3.rspecs.commons_se import SELink
 from delegate.geni.v3.rspecs.ro.advertisement_formatter import\
     ROAdvertisementFormatter
 from delegate.geni.v3.rspecs.ro.request_parser import RORequestParser
@@ -16,8 +18,11 @@ from delegate.geni.v3.rspecs.openflow.request_formatter import\
     OFv3RequestFormatter
 from delegate.geni.v3.rspecs.tnrm.request_formatter import\
     TNRMv3RequestFormatter
+from delegate.geni.v3.rspecs.serm.request_formatter import\
+    SERMv3RequestFormatter
 from delegate.geni.v3.rspecs.openflow.manifest_parser import OFv3ManifestParser
 from delegate.geni.v3.rspecs.tnrm.manifest_parser import TNRMv3ManifestParser
+from delegate.geni.v3.rspecs.serm.manifest_parser import SERMv3ManifestParser
 
 from dateutil import parser as dateparser
 
@@ -29,7 +34,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
     """
     """
     # TODO should also include a changing component, identified by a config key
-    URN_PREFIX = 'urn:RO'
+    URN_PREFIX = "urn:RO"
 
     def __init__(self):
         super(GENIv3Delegate, self).__init__()
@@ -37,18 +42,18 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def get_request_extensions_mapping(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        return {'resource-orchestrator':
-                'http://example.com/resource-orchestrator'}  # /request.xsd
+        return {"resource-orchestrator":
+                "http://example.com/resource-orchestrator"}  # /request.xsd
 
     def get_manifest_extensions_mapping(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        return {'resource-orchestrator':
-                'http://example.com/resource-orchestrator'}  # /manifest.xsd
+        return {"resource-orchestrator":
+                "http://example.com/resource-orchestrator"}  # /manifest.xsd
 
     def get_ad_extensions_mapping(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        return {'resource-orchestrator':
-                'http://example.com/resource-orchestrator'}  # /ad.xsd
+        return {"resource-orchestrator":
+                "http://example.com/resource-orchestrator"}  # /ad.xsd
 
     def is_single_allocation(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase.
@@ -59,13 +64,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def get_allocation_mode(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase.
         We allow to incrementally add new slivers (IPs)."""
-        return 'geni_many'
+        return "geni_many"
 
     def list_resources(self, client_cert, credentials, geni_available):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        logger.debug('list_resources: authenticate the user...')
+        logger.debug("list_resources: authenticate the user...")
         client_urn, client_uuid, client_email =\
-            self.auth(client_cert, credentials, None, ('listslices',))
+            self.auth(client_cert, credentials, None, ("listslices",))
 
         logger.info("Client urn=%s, uuid=%s, email=%s" % (
             client_urn, client_uuid, client_email,))
@@ -73,7 +78,12 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         sl = "http://www.geni.net/resources/rspec/3/ad.xsd"
         rspec = ROAdvertisementFormatter(schema_location=sl)
+        logger.debug("\n\n\n\n\n[REMOVE] DELEGATE.list_resources\n\n\n\n\n")
         try:
+            logger.debug("COM resources: nodes")
+            for n in db_sync_manager.get_com_nodes():
+                rspec.com_node(n)
+
             logger.debug("OF resources: datapaths")
             for d in db_sync_manager.get_sdn_datapaths():
                 rspec.datapath(d)
@@ -81,6 +91,11 @@ class GENIv3Delegate(GENIv3DelegateBase):
             logger.debug("TN resources: nodes")
             for n in db_sync_manager.get_tn_nodes():
                 rspec.tn_node(n)
+
+            logger.debug("COM resources: com-links")
+            for l in db_sync_manager.get_com_links():
+                logger.error("COM-LINK=%s" % l)
+                rspec.com_link(l)
 
             logger.debug("OF resources: of-links & fed-links")
             (of_links, fed_links) = db_sync_manager.get_sdn_links()
@@ -109,9 +124,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
         ro_manifest, ro_slivers, last_slice = ROManifestFormatter(), [], ""
 
         for urn in urns:
-            logger.debug('describe: authenticate the user for %s' % (urn))
+            logger.debug("describe: authenticate the user for %s" % (urn))
             client_urn, client_uuid, client_email =\
-                self.auth(client_cert, credentials, urn, ('sliverstatus',))
+                self.auth(client_cert, credentials, urn, ("sliverstatus",))
 
             logger.info("Client urn=%s, uuid=%s, email=%s" % (
                 client_urn, client_uuid, client_email,))
@@ -122,31 +137,57 @@ class GENIv3Delegate(GENIv3DelegateBase):
         for r, v in route.iteritems():
             peer = db_sync_manager.get_configured_peer(r)
             logger.debug("peer=%s" % (peer,))
-            if peer.get('type') == 'sdn_networking':
+            if peer.get("type") == "sdn_networking":
                 of_m_info, last_slice, of_slivers =\
                     self.__manage_sdn_describe(peer, v, credentials)
 
                 logger.debug("of_m=%s, of_s=%s, urn=%s" %
                              (of_m_info, of_slivers, last_slice))
 
-                ro_manifest.sliver(of_m_info.get('description'),
-                                   of_m_info.get('ref'),
-                                   of_m_info.get('email'))
+                ro_manifest.of_sliver(of_m_info.get("description"),
+                                      of_m_info.get("ref"),
+                                      of_m_info.get("email"))
                 ro_slivers.extend(of_slivers)
+
+            elif peer.get("type") == "transport_network":
+                tn_m_info, last_slice, tn_slivers =\
+                    self.__manage_tn_describe(peer, v, credentials)
+
+                logger.debug("tn_m=%s, tn_s=%s, urn=%s" %
+                             (tn_m_info, tn_slivers, last_slice))
+                for n in tn_m_info.get("nodes"):
+                    ro_manifest.tn_node(n)
+                for l in tn_m_info.get("links"):
+                    ro_manifest.tn_link(l)
+
+                ro_slivers.extend(tn_slivers)
+
+            elif peer.get("type") == "stitching_entity":
+                se_m_info, last_slice, se_slivers =\
+                    self.__manage_se_describe(peer, v, credentials)
+
+                logger.debug("se_m=%s, se_s=%s, urn=%s" %
+                             (se_m_info, se_slivers, last_slice))
+                for n in se_m_info.get("nodes"):
+                    ro_manifest.se_node(n)
+                for l in se_m_info.get("links"):
+                    ro_manifest.se_link(l)
+
+                ro_slivers.extend(se_slivers)
 
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
         logger.debug("RO-Slivers=%s" % (ro_slivers,))
 
-        return {'geni_rspec': "%s" % ro_manifest,
-                'geni_urn': last_slice,
-                'geni_slivers': ro_slivers}
+        return {"geni_rspec": "%s" % ro_manifest,
+                "geni_urn": last_slice,
+                "geni_slivers": ro_slivers}
 
     def allocate(self, slice_urn, client_cert, credentials,
                  rspec, end_time=None):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        logger.debug('allocate: authenticate the user...')
+        logger.debug("allocate: authenticate the user...")
         client_urn, client_uuid, client_email =\
-            self.auth(client_cert, credentials, slice_urn, ('createsliver',))
+            self.auth(client_cert, credentials, slice_urn, ("createsliver",))
 
         logger.info("Client urn=%s, uuid=%s, email=%s" % (
             client_urn, client_uuid, client_email,))
@@ -158,22 +199,25 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         ro_manifest, ro_slivers, ro_db_slivers = ROManifestFormatter(), [], []
         # OF resources
+        se_sdn_info = None
         sliver = req_rspec.of_sliver()
         if sliver is not None:
             logger.debug("Found an OF-sliver segment: %s", sliver)
-            (of_m_info, of_slivers, db_slivers) = self.__manage_sdn_allocate(
-                slice_urn, credentials, end_time, sliver, req_rspec)
+            (of_m_info, of_slivers, db_slivers, se_sdn_info) =\
+                self.__manage_sdn_allocate(slice_urn, credentials, end_time,
+                                           sliver, req_rspec)
 
             logger.debug("of_m=%s, of_s=%s, db_s=%s" %
                          (of_m_info, of_slivers, db_slivers))
             for m in of_m_info:
-                ro_manifest.of_sliver(m.get('description'),
-                                      m.get('ref'),
-                                      m.get('email'))
+                ro_manifest.of_sliver(m.get("description"),
+                                      m.get("ref"),
+                                      m.get("email"))
             ro_slivers.extend(of_slivers)
             ro_db_slivers.extend(db_slivers)
 
         # TN resources
+        se_tn_info = None
         nodes = req_rspec.tn_nodes()
         links = req_rspec.tn_links()
         if (len(nodes) > 0) or (len(links) > 0):
@@ -181,27 +225,50 @@ class GENIv3Delegate(GENIv3DelegateBase):
                          (len(nodes), nodes,))
             logger.debug("Found a TN-links segment (%d): %s" %
                          (len(links), links,))
-            (tn_m_info, tn_slivers, db_slivers) = self.__manage_tn_allocate(
-                slice_urn, credentials, end_time, nodes, links)
+            (tn_m_info, tn_slivers, db_slivers, se_tn_info) =\
+                self.__manage_tn_allocate(slice_urn, credentials, end_time,
+                                          nodes, links)
 
             logger.debug("tn_m=%s, tn_s=%s, db_s=%s" %
                          (tn_m_info, tn_slivers, db_slivers))
             for m in tn_m_info:
-                for n in m.get('nodes'):
+                for n in m.get("nodes"):
                     ro_manifest.tn_node(n)
-                for l in m.get('links'):
+                for l in m.get("links"):
                     ro_manifest.tn_link(l)
 
             ro_slivers.extend(tn_slivers)
             ro_db_slivers.extend(db_slivers)
 
+        # SE resources
+        if (se_sdn_info is not None) and (len(se_sdn_info) > 0) and\
+           (se_sdn_info is not None) and (len(se_tn_info) > 0):
+            logger.debug("Found a SE-sdn segment (%d): %s" %
+                         (len(se_sdn_info), se_sdn_info,))
+            logger.debug("Found a SE-tn segment (%d): %s" %
+                         (len(se_tn_info), se_tn_info,))
+            (se_m_info, se_slivers, db_slivers) =\
+                self.__manage_se_allocate(slice_urn, credentials, end_time,
+                                          se_sdn_info, se_tn_info)
+            logger.debug("se_m=%s, se_s=%s, db_s=%s" %
+                         (se_m_info, se_slivers, db_slivers))
+            for m in se_m_info:
+                for n in m.get("nodes"):
+                    ro_manifest.se_node(n)
+                for l in m.get("links"):
+                    ro_manifest.se_link(l)
+
+            ro_slivers.extend(se_slivers)
+            ro_db_slivers.extend(db_slivers)
+
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
 
         for s in ro_slivers:
-            s['geni_expires'] = self.__str2datetime(s['geni_expires'])
-        logger.debug("RO-Slivers=%s" % (ro_slivers,))
+            s["geni_expires"] = self.__str2datetime(s["geni_expires"])
+        logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
 
-        logger.debug("RO-DB-Slivers=%s" % (ro_db_slivers,))
+        logger.debug("RO-DB-Slivers(%d)=%s" %
+                     (len(ro_db_slivers), ro_db_slivers,))
         id_ = db_sync_manager.store_slice_info(slice_urn, ro_db_slivers)
 
         logger.info("allocate successfully completed: %s", id_)
@@ -214,9 +281,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
         ro_slivers = []
 
         for urn in urns:
-            logger.debug('renew: authenticate the user for %s' % (urn))
+            logger.debug("renew: authenticate the user for %s" % (urn))
             client_urn, client_uuid, client_email =\
-                self.auth(client_cert, credentials, urn, ('renewsliver',))
+                self.auth(client_cert, credentials, urn, ("renewsliver",))
 
             logger.info("Client urn=%s, uuid=%s, email=%s" % (
                 client_urn, client_uuid, client_email,))
@@ -227,19 +294,33 @@ class GENIv3Delegate(GENIv3DelegateBase):
         route = db_sync_manager.get_slice_routing_keys(urns)
         logger.debug("Route=%s" % (route,))
 
+        etime_str = self.__datetime2str(expiration_time)
         for r, v in route.iteritems():
             peer = db_sync_manager.get_configured_peer(r)
             logger.debug("peer=%s" % (peer,))
-            if peer.get('type') == 'sdn_networking':
-                etime_str = self.__datetime2str(expiration_time)
+            if peer.get("type") == "sdn_networking":
                 of_slivers = self.__manage_sdn_renew(
                     peer, v, credentials, etime_str, best_effort)
 
                 logger.debug("of_s=%s" % (of_slivers,))
                 ro_slivers.extend(of_slivers)
 
+            elif peer.get("type") == "transport_network":
+                tn_slivers = self.__manage_tn_renew(
+                    peer, v, credentials, etime_str, best_effort)
+
+                logger.debug("tn_s=%s" % (tn_slivers,))
+                ro_slivers.extend(tn_slivers)
+
+            elif peer.get("type") == "stitching_entity":
+                se_slivers = self.__manage_se_renew(
+                    peer, v, credentials, etime_str, best_effort)
+
+                logger.debug("se_s=%s" % (se_slivers,))
+                ro_slivers.extend(se_slivers)
+
         for s in ro_slivers:
-            s['geni_expires'] = self.__str2datetime(s['geni_expires'])
+            s["geni_expires"] = self.__str2datetime(s["geni_expires"])
         logger.debug("RO-Slivers=%s" % (ro_slivers,))
         return ro_slivers
 
@@ -247,9 +328,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                   geni_users):
         """Documentation see [geniv3rpc] GENIv3DelegateBase.
         {geni_users} is not relevant here."""
-        logger.debug('provision: authenticate the user...')
+        logger.debug("provision: authenticate the user...")
         client_urn, client_uuid, client_email =\
-            self.auth(client_cert, credentials, urns, ('renewsliver',))
+            self.auth(client_cert, credentials, urns, ("renewsliver",))
 
         logger.info("Client urn=%s, uuid=%s, email=%s" % (
             client_urn, client_uuid, client_email,))
@@ -262,9 +343,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
         ro_slivers, last_slice = [], ""
 
         for urn in urns:
-            logger.debug('status: authenticate the user for %s' % (urn))
+            logger.debug("status: authenticate the user for %s" % (urn))
             client_urn, client_uuid, client_email =\
-                self.auth(client_cert, credentials, urn, ('sliverstatus',))
+                self.auth(client_cert, credentials, urn, ("sliverstatus",))
 
             logger.info("Client urn=%s, uuid=%s, email=%s" % (
                 client_urn, client_uuid, client_email,))
@@ -275,7 +356,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         for r, v in route.iteritems():
             peer = db_sync_manager.get_configured_peer(r)
             logger.debug("peer=%s" % (peer,))
-            if peer.get('type') == 'sdn_networking':
+            if peer.get("type") == "sdn_networking":
                 last_slice, of_slivers =\
                     self.__manage_sdn_status(peer, v, credentials)
 
@@ -283,7 +364,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 ro_slivers.extend(of_slivers)
 
         for s in ro_slivers:
-            s['geni_expires'] = self.__str2datetime(s['geni_expires'])
+            s["geni_expires"] = self.__str2datetime(s["geni_expires"])
         logger.debug("RO-Slivers=%s" % (ro_slivers,))
         return last_slice, ro_slivers
 
@@ -296,7 +377,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     (action, best_effort, internal_action,))
 
         for urn in urns:
-            logger.debug('poa: authenticate the user for %s' % (urn))
+            logger.debug("poa: authenticate the user for %s" % (urn))
             client_urn, client_uuid, client_email =\
                 self.auth(client_cert, credentials, urn, (internal_action,))
 
@@ -309,7 +390,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         for r, v in route.iteritems():
             peer = db_sync_manager.get_configured_peer(r)
             logger.debug("peer=%s" % (peer,))
-            if peer.get('type') == 'sdn_networking':
+            if peer.get("type") == "sdn_networking":
                 of_slivers = self.__manage_sdn_operational_action(
                     peer, v, credentials, action, best_effort)
 
@@ -317,7 +398,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 ro_slivers.extend(of_slivers)
 
         for s in ro_slivers:
-            s['geni_expires'] = self.__str2datetime(s['geni_expires'])
+            s["geni_expires"] = self.__str2datetime(s["geni_expires"])
         logger.debug("RO-Slivers=%s" % (ro_slivers,))
         return ro_slivers
 
@@ -326,9 +407,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
         ro_slivers = []
 
         for urn in urns:
-            logger.debug('delete: authenticate the user for %s' % (urn))
+            logger.debug("delete: authenticate the user for %s" % (urn))
             client_urn, client_uuid, client_email =\
-                self.auth(client_cert, credentials, urn, ('deletesliver',))
+                self.auth(client_cert, credentials, urn, ("deletesliver",))
 
             logger.info("Client urn=%s, uuid=%s, email=%s" % (
                 client_urn, client_uuid, client_email,))
@@ -341,7 +422,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         for r, v in route.iteritems():
             peer = db_sync_manager.get_configured_peer(r)
             logger.debug("peer=%s" % (peer,))
-            if peer.get('type') == 'sdn_networking':
+            if peer.get("type") == "sdn_networking":
                 of_slivers = self.__manage_sdn_delete(
                     peer, v, credentials, best_effort)
 
@@ -350,8 +431,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         db_urns = []
         for s in ro_slivers:
-            s['geni_expires'] = self.__str2datetime(s['geni_expires'])
-            db_urns.append(s.get('geni_sliver_urn'))
+            s["geni_expires"] = self.__str2datetime(s["geni_expires"])
+            db_urns.append(s.get("geni_sliver_urn"))
         logger.debug("RO-Slivers=%s, DB-URNs=%s" % (ro_slivers, db_urns))
 
         db_sync_manager.delete_slice_urns(db_urns)
@@ -359,9 +440,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def shutdown(self, slice_urn, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        logger.debug('shutdown: authenticate the user...')
+        logger.debug("shutdown: authenticate the user...")
         client_urn, client_uuid, client_email =\
-            self.auth(client_cert, credentials, slice_urn, ('shutdown',))
+            self.auth(client_cert, credentials, slice_urn, ("shutdown",))
 
         logger.info("Client urn=%s, uuid=%s, email=%s" % (
             client_urn, client_uuid, client_email,))
@@ -370,9 +451,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def __update_sdn_route(self, route, values):
         for v in values:
-            for dpid in v.get('dpids'):
+            for dpid in v.get("dpids"):
                 k = db_sync_manager.get_sdn_datapath_routing_key(dpid)
-                dpid['routing_key'] = k
+                dpid["routing_key"] = k
                 if k not in route:
                     sl = "http://www.geni.net/resources/rspec/3/request.xsd"
                     route[k] = OFv3RequestFormatter(schema_location=sl)
@@ -380,32 +461,32 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def __update_sdn_route_rspec(self, route, sliver, controllers,
                                  groups, matches):
         for key, rspec in route.iteritems():
-            rspec.sliver(sliver.get('description'),
-                         sliver.get('ref'),
-                         sliver.get('email'))
+            rspec.sliver(sliver.get("description"),
+                         sliver.get("ref"),
+                         sliver.get("email"))
             for c in controllers:
-                rspec.controller(c.get('url'), c.get('type'))
+                rspec.controller(c.get("url"), c.get("type"))
             for g in groups:
-                rspec.group(g.get('name'))
-                for dpid in g.get('dpids'):
-                    if dpid.get('routing_key') == key:
-                        rspec.group_datapath(g.get('name'), dpid)
+                rspec.group(g.get("name"))
+                for dpid in g.get("dpids"):
+                    if dpid.get("routing_key") == key:
+                        rspec.group_datapath(g.get("name"), dpid)
             for m in matches:
                 match = Match()
-                for uf in m.get('use_groups'):
-                    match.add_use_group(uf.get('name'))
-                for dpid in m.get('dpids'):
-                    if dpid.get('routing_key') == key:
+                for uf in m.get("use_groups"):
+                    match.add_use_group(uf.get("name"))
+                for dpid in m.get("dpids"):
+                    if dpid.get("routing_key") == key:
                         match.add_datapath(dpid)
-                match.set_packet(m.get('packet').get('dl_src'),
-                                 m.get('packet').get('dl_dst'),
-                                 m.get('packet').get('dl_type'),
-                                 m.get('packet').get('dl_vlan'),
-                                 m.get('packet').get('nw_src'),
-                                 m.get('packet').get('nw_dst'),
-                                 m.get('packet').get('nw_proto'),
-                                 m.get('packet').get('tp_src'),
-                                 m.get('packet').get('tp_dst'))
+                match.set_packet(m.get("packet").get("dl_src"),
+                                 m.get("packet").get("dl_dst"),
+                                 m.get("packet").get("dl_type"),
+                                 m.get("packet").get("dl_vlan"),
+                                 m.get("packet").get("nw_src"),
+                                 m.get("packet").get("nw_dst"),
+                                 m.get("packet").get("nw_proto"),
+                                 m.get("packet").get("tp_src"),
+                                 m.get("packet").get("tp_dst"))
                 rspec.match(match.serialize())
 
     def __send_request_rspec(self, routing_key, req_rspec, slice_urn,
@@ -413,6 +494,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         peer = db_sync_manager.get_configured_peer(routing_key)
         logger.debug("Peer=%s" % (peer,))
         adaptor = AdaptorFactory.create_from_db(peer)
+        logger.debug("Adaptor=%s" % (adaptor,))
         return adaptor.allocate(slice_urn, credentials[0]["geni_value"],
                                 "%s" % req_rspec, end_time)
 
@@ -420,8 +502,30 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.info("Slivers=%s" % (values,))
         slivers.extend(values)
         for dbs in values:
-            db_slivers.append({'geni_sliver_urn': dbs.get('geni_sliver_urn'),
-                               'routing_key': routing_key})
+            db_slivers.append({"geni_sliver_urn": dbs.get("geni_sliver_urn"),
+                               "routing_key": routing_key})
+
+    def __extract_se_from_sdn(self, groups, matches):
+        ret = []
+        for m in matches:
+            vlan_id = m.get('packet').get('dl_vlan')
+            if vlan_id is None:
+                continue
+
+            dpids = []
+            for mg in m.get('use_groups'):
+                for g in groups:
+                    if g.get('name') == mg.get('name'):
+                        for gds in g.get('dpids'):
+                            dpids.append(gds.get('component_id'))
+
+            for mds in m.get('dpids'):
+                dpids.append(mds.get('component_id'))
+
+            if len(dpids) > 0:
+                ret.append({'vlan': vlan_id, 'dpids': dpids})
+
+        return ret
 
     def __manage_sdn_allocate(self, surn, creds, end, sliver, parser):
         route = {}
@@ -435,6 +539,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
         matches = parser.of_matches()
         self.__update_sdn_route(route, matches)
         logger.debug("Matches=%s" % (matches,))
+
+        se_sdn_info = self.__extract_se_from_sdn(groups, matches)
+        logger.debug("SE-SDN-INFO=%s" % (se_sdn_info,))
 
         self.__update_sdn_route_rspec(route, sliver, controllers, groups,
                                       matches)
@@ -452,12 +559,12 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
             self.__extend_slivers(ss, k, slivers, db_slivers)
 
-        return (manifests, slivers, db_slivers)
+        return (manifests, slivers, db_slivers, se_sdn_info)
 
     def __update_tn_node_route(self, route, values):
         for v in values:
-            k = db_sync_manager.get_tn_node_routing_key(v.get('component_id'))
-            v['routing_key'] = k
+            k = db_sync_manager.get_tn_node_routing_key(v.get("component_id"))
+            v["routing_key"] = k
             if k not in route:
                 sl = "http://www.geni.net/resources/rspec/3/request.xsd"
                 route[k] = TNRMv3RequestFormatter(schema_location=sl)
@@ -465,9 +572,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def __update_tn_link_route(self, route, values):
         for v in values:
             k = db_sync_manager.get_tn_link_routing_key(
-                v.get('component_id'), v.get('component_manager_name'),
-                [i.get('component_id') for i in v.get('interface_ref')])
-            v['routing_key'] = k
+                v.get("component_id"), v.get("component_manager_name"),
+                [i.get("component_id") for i in v.get("interface_ref")])
+            v["routing_key"] = k
             if k not in route:
                 sl = "http://www.geni.net/resources/rspec/3/request.xsd"
                 route[k] = TNRMv3RequestFormatter(schema_location=sl)
@@ -475,11 +582,27 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def __update_tn_route_rspec(self, route, nodes, links):
         for key, rspec in route.iteritems():
             for n in nodes:
-                if n.get('routing_key') == key:
+                if n.get("routing_key") == key:
                     rspec.node(n)
             for l in links:
-                if l.get('routing_key') == key:
+                if l.get("routing_key") == key:
                     rspec.link(l)
+
+    def __extract_se_from_tn(self, nodes, links):
+        ret, ifref = [], set()
+        for l in links:
+            for p in l.get('property'):
+                ifref.add(p.get('source_id'))
+                ifref.add(p.get('dest_id'))
+
+        for n in nodes:
+            for i in n.get('interfaces'):
+                if i.get('component_id') in ifref:
+                    for v in i.get('vlan'):
+                        ret.append({'vlan': v.get('tag'),
+                                    'interface': i.get('component_id')})
+
+        return ret
 
     def __manage_tn_allocate(self, surn, creds, end, nodes, links):
         route = {}
@@ -491,7 +614,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         self.__update_tn_route_rspec(route, nodes, links)
         logger.info("Route=%s" % (route,))
 
-        manifests, slivers, db_slivers = [], [], []
+        manifests, slivers, db_slivers, se_tn_info = [], [], [], []
 
         for k, v in route.iteritems():
             (m, ss) = self.__send_request_rspec(k, v, surn, creds, end)
@@ -504,7 +627,132 @@ class GENIv3Delegate(GENIv3DelegateBase):
             links = manifest.links()
             logger.info("Links(%d)=%s" % (len(links), links,))
 
-            manifests.append({'nodes': nodes, 'links': links})
+            manifests.append({"nodes": nodes, "links": links})
+
+            self.__extend_slivers(ss, k, slivers, db_slivers)
+
+            se_tn = self.__extract_se_from_tn(nodes, links)
+            logger.debug("SE-TN-INFO=%s" % (se_tn,))
+            if len(se_tn) > 0:
+                se_tn_info.extend(se_tn)
+
+        return (manifests, slivers, db_slivers, se_tn_info)
+
+    def __update_se_info_route(self, route, values, key):
+        for v in values:
+            k, ifs = db_sync_manager.get_se_link_routing_key(v.get(key))
+            v['routing_key'] = k
+            v['internal_ifs'] = ifs
+            node = db_sync_manager.get_se_node_info(k)
+            v['node'] = node
+            if (k is not None) and (k not in route):
+                sl = "http://www.geni.net/resources/rspec/3/request.xsd"
+                route[k] = SERMv3RequestFormatter(schema_location=sl)
+
+    def __update_se_nodes(self, nodes, values):
+        for v in values:
+            if v.get('node') is not None:
+                cid = v.get('node').get('component_id')
+                cmid = v.get('node').get('component_manager_id')
+                if len(nodes) > 0:
+                    for i in nodes:
+                        if (i.serialize().get('component_id') != cid) and\
+                           (i.serialize().get('component_manager_id') != cmid):
+                            n = Node(cid, cmid,
+                                     sliver_type_name=v.get('routing_key'))
+                            nodes.append(n)
+                else:
+                    n = Node(cid, cmid, sliver_type_name=v.get('routing_key'))
+                    nodes.append(n)
+
+        for v in values:
+            if v.get('node') is not None:
+                for n in nodes:
+                    scid = v.get('node').get('component_id')
+                    scmid = v.get('node').get('component_manager_id')
+                    ncid = n.serialize().get('component_id')
+                    ncmid = n.serialize().get('component_manager_id')
+                    if (scid == ncid) and (scmid == ncmid):
+                        for i in v.get('internal_ifs'):
+                            intf = Interface(i.get('component_id'))
+                            intf.add_vlan(v.get('vlan'), "")
+                            n.add_interface(intf.serialize())
+
+    def __create_selink(self, if1, if2, sliver_id):
+        i = if1.rindex(':')
+        n1, name1 = if1[0:i], if1[i+1:len(if1)]
+        i = if2.rindex(':')
+        n2, name2 = if2[0:i], if2[i+1:len(if1)]
+
+        if n1 != n2:
+            raise Exception("SELink: differs node cid (%s,%s)" % (n1, n2))
+
+        cid = n1 + ':' + name1 + '-' + name2
+        typee, cm_name = db_sync_manager.get_se_link_info(n1)
+
+        l = SELink(cid, typee, cm_name, sliver=sliver_id)
+        l.add_interface_ref(if1)
+        l.add_interface_ref(if2)
+        return l
+
+    def __update_se_link(self, links, svalues, tvalues):
+        for s in svalues:
+            for sintf in s.get('internal_ifs'):
+                for t in tvalues:
+                    for tintf in t.get('internal_ifs'):
+                        if s.get('routing_key') == t.get('routing_key'):
+                            l = self.__create_selink(sintf.get('component_id'),
+                                                     tintf.get('component_id'),
+                                                     s.get('routing_key'))
+                            links.append(l)
+
+    def __extract_se_info(self, sdn, tn):
+        nodes, links = [], []
+        self.__update_se_nodes(nodes, sdn)
+        self.__update_se_nodes(nodes, tn)
+        self.__update_se_link(links, sdn, tn)
+
+        return [n.serialize() for n in nodes], [l.serialize() for l in links]
+
+    def __update_se_route_rspec(self, route, sdn_info, tn_info):
+        nodes, links = self.__extract_se_info(sdn_info, tn_info)
+        logger.debug("SE-Nodes=%s" % (nodes,))
+        logger.debug("SE-Links=%s" % (links,))
+
+        for key, rspec in route.iteritems():
+            for n in nodes:
+                if n.get("sliver_type_name") == key:
+                    n["sliver_type_name"] = None
+                    rspec.node(n)
+            for l in links:
+                if l.get("sliver_id") == key:
+                    l["sliver"] = None
+                    rspec.link(l)
+
+    def __manage_se_allocate(self, surn, creds, end, sdn_info, tn_info):
+        route = {}
+        self.__update_se_info_route(route, sdn_info, 'dpids')
+        logger.debug("SE-SdnInfo(%d)=%s" % (len(sdn_info), sdn_info,))
+        self.__update_se_info_route(route, tn_info, 'interface')
+        logger.debug("SE-TnInfo(%d)=%s" % (len(tn_info), tn_info,))
+
+        self.__update_se_route_rspec(route, sdn_info, tn_info)
+        logger.info("Route=%s" % (route,))
+
+        manifests, slivers, db_slivers = [], [], []
+
+        for k, v in route.iteritems():
+            (m, ss) = self.__send_request_rspec(k, v, surn, creds, end)
+            manifest = SERMv3ManifestParser(from_string=m)
+            logger.debug("SERMv3ManifestParser=%s" % (manifest,))
+            self.__validate_rspec(manifest.get_rspec())
+
+            nodes = manifest.nodes()
+            logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
+            links = manifest.links()
+            logger.info("Links(%d)=%s" % (len(links), links,))
+
+            manifests.append({"nodes": nodes, "links": links})
 
             self.__extend_slivers(ss, k, slivers, db_slivers)
 
@@ -513,19 +761,59 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def __manage_sdn_describe(self, peer, urns, creds):
         adaptor = AdaptorFactory.create_from_db(peer)
         m, urn, ss = adaptor.describe(urns, creds[0]["geni_value"])
+
         manifest = OFv3ManifestParser(from_string=m)
         logger.debug("OFv3ManifestParser=%s" % (manifest,))
+        # self.__validate_rspec(manifest.get_rspec())
 
         sliver = manifest.sliver()
         logger.info("Sliver=%s" % (sliver,))
 
         return (sliver, urn, ss)
 
+    def __manage_tn_describe(self, peer, urns, creds):
+        adaptor = AdaptorFactory.create_from_db(peer)
+        m, urn, ss = adaptor.describe(urns, creds[0]["geni_value"])
+
+        manifest = TNRMv3ManifestParser(from_string=m)
+        logger.debug("TNRMv3ManifestParser=%s" % (manifest,))
+        self.__validate_rspec(manifest.get_rspec())
+
+        nodes = manifest.nodes()
+        logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
+        links = manifest.links()
+        logger.info("Links(%d)=%s" % (len(links), links,))
+
+        return ({"nodes": nodes, "links": links}, urn, ss)
+
+    def __manage_se_describe(self, peer, urns, creds):
+        adaptor = AdaptorFactory.create_from_db(peer)
+        m, urn, ss = adaptor.describe(urns, creds[0]["geni_value"])
+
+        manifest = SERMv3ManifestParser(from_string=m)
+        logger.debug("SERMv3ManifestParser=%s" % (manifest,))
+        self.__validate_rspec(manifest.get_rspec())
+
+        nodes = manifest.nodes()
+        logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
+        links = manifest.links()
+        logger.info("Links(%d)=%s" % (len(links), links,))
+
+        return ({"nodes": nodes, "links": links}, urn, ss)
+
     def __manage_sdn_status(self, peer, urns, creds):
         adaptor = AdaptorFactory.create_from_db(peer)
         return adaptor.status(urns, creds[0]["geni_value"])
 
     def __manage_sdn_renew(self, peer, urns, creds, etime, beffort):
+        adaptor = AdaptorFactory.create_from_db(peer)
+        return adaptor.renew(urns, creds[0]["geni_value"], etime, beffort)
+
+    def __manage_se_renew(self, peer, urns, creds, etime, beffort):
+        adaptor = AdaptorFactory.create_from_db(peer)
+        return adaptor.renew(urns, creds[0]["geni_value"], etime, beffort)
+
+    def __manage_tn_renew(self, peer, urns, creds, etime, beffort):
         adaptor = AdaptorFactory.create_from_db(peer)
         return adaptor.renew(urns, creds[0]["geni_value"], etime, beffort)
 
@@ -547,7 +835,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.info("Validation success!")
 
     def __datetime2str(self, dt):
-        return dt.strftime('%Y-%m-%d %H:%M:%S.%fZ')
+        return dt.strftime("%Y-%m-%d %H:%M:%S.%fZ")
 
     def __str2datetime(self, strval):
         result = dateparser.parse(strval)
@@ -568,9 +856,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.debug("schedule_slice_release: endtime=%s, slivers=%s, obj=%s" %
                      (end_time, slivers, scheduler,))
         if (end_time is not None) and (scheduler is not None):
-            urns = [s.get('geni_sliver_urn') for s in slivers]
+            urns = [s.get("geni_sliver_urn") for s in slivers]
             ROSchedulerService.get_scheduler().add_job(
-                slice_expiration, 'date', run_date=end_time, args=[urns])
+                slice_expiration, "date", run_date=end_time, args=[urns])
 
     # Helper methods
     def _get_sliver_status_hash(self, lease, include_allocation_status=False,
@@ -578,24 +866,24 @@ class GENIv3Delegate(GENIv3DelegateBase):
                                 error_message=None):
         """Helper method to create the sliver_status return
         values of allocate and other calls."""
-        result = {'geni_sliver_urn': self._ip_to_urn(str(lease["ip_str"])),
-                  'geni_expires': lease["end_time"],
-                  'geni_allocation_status': self.ALLOCATION_STATE_ALLOCATED}
+        result = {"geni_sliver_urn": self._ip_to_urn(str(lease["ip_str"])),
+                  "geni_expires": lease["end_time"],
+                  "geni_allocation_status": self.ALLOCATION_STATE_ALLOCATED}
 
-        result['geni_allocation_status'] = self.ALLOCATION_STATE_UNALLOCATED\
+        result["geni_allocation_status"] = self.ALLOCATION_STATE_UNALLOCATED\
             if lease["available"] else self.ALLOCATION_STATE_PROVISIONED
 
         # there is no state to an ip, so we always return ready
         if (include_operational_status):
-            result['geni_operational_status'] = self.OPERATIONAL_STATE_READY
+            result["geni_operational_status"] = self.OPERATIONAL_STATE_READY
 
         if (error_message):
-            result['geni_error'] = error_message
+            result["geni_error"] = error_message
 
         return result
 
     def _get_manifest_rspec(self, leases):
-        E = self.lxml_manifest_element_maker('resource-orchestrator')
+        E = self.lxml_manifest_element_maker("resource-orchestrator")
         manifest = self.lxml_manifest_root()
         for lease in leases:
             # assemble manifest

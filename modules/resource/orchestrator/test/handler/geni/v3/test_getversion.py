@@ -22,35 +22,15 @@ class TestGetVersion(testcase.TestCase):
         # Contact GCH for it by passing the certificate. Equivalent to 'omni.py getusercred'
         (text, self.user_credential) = geniv3_handler_tools.getusercred(geni_api = 3)
 
-        self.geni_v3_credentials = [{
-            "geni_type": "geni_sfa",
-            "geni_value": self.user_credential["geni_value"],
-        }]
-        # Any AM is required to honor the following options
-        self.geni_v3_options = {
-            "geni_available": True,
-            # XXX: it should say 'compressed' (as for GENIv3), not 'compress' (as in AMsoil)
-            # http://groups.geni.net/geni/wiki/GAPI_AM_API_V3#ListResources
-            #"geni_compressed": False,
-            "geni_compress": False, # True => seems to return a base64 compressed and encoded value
-            "geni_rspec_version": {
-                "type": "geni",
-                "version": "3",
-            }
-        }
         self.geni_options_expected_key_info = {
             "geni_credential_types": {"type": dict, "value": {"geni_version": "3", "geni_type": "geni_sfa"}},
             "geni_ad_rspec_versions": {"type": list},
             "geni_request_rspec_versions": {"type": list},
             "geni_api": {"type": str, "value": "3"},
-            "geni_api_versions": {"type": dict, "value": {"3": "/geni/3"}},
+            "geni_api_versions": {"type": dict, "value": {"3": "/xmlrpc/geni/3/"}},
             "geni_single_allocation": {"type": bool},
             "geni_allocate": {"type": str},
         }
-        self.geni_params = [
-            self.geni_v3_credentials,
-            self.geni_v3_options,
-        ]
     
     def tearDown(self):
         pass

@@ -17,7 +17,7 @@ def handler_call(method_name, params=[], user_name="alice", arg=[]):
         verbose = True
     else:
         verbose = False
-    return calls.api_call(method_name, "geni/3", params=params, user_name=user_name, verbose=verbose)
+    return calls.api_call(method_name, "/xmlrpc/geni/3/", params=params, user_name=user_name, verbose=verbose)
 
 def getusercred(user_cert_filename = "alice-cert.pem", geni_api = 3):
     return calls.getusercred(user_cert_filename, geni_api)

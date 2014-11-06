@@ -1,4 +1,5 @@
 from delegate.geni.v3.rspecs.parser_base import ParserBase
+from delegate.geni.v3.rspecs.crm.request_parser import CRMv3RequestParser
 from delegate.geni.v3.rspecs.openflow.request_parser import OFv3RequestParser
 from delegate.geni.v3.rspecs.tnrm.request_parser import TNRMv3RequestParser
 
@@ -6,9 +7,23 @@ from delegate.geni.v3.rspecs.tnrm.request_parser import TNRMv3RequestParser
 class RORequestParser(ParserBase):
     def __init__(self, from_file=None, from_string=None):
         super(RORequestParser, self).__init__(from_file, from_string)
+        self.__com_parser = CRMv3RequestParser(from_file, from_string)
         self.__of_parser = OFv3RequestParser(from_file, from_string)
         self.__tn_parser = TNRMv3RequestParser(from_file, from_string)
+    
+    # C resources
+    def com_nodes(self):
+        try:
+            return self.__com_parser.get_nodes(self.rspec)
+        except Exception:
+            return []
 
+    def com_links(self):
+        try:
+            return self.__com_parser.get_links(self.rspec)
+        except Exception:
+            return []
+    
     # OF resources
     def of_sliver(self):
         try:
@@ -24,7 +39,7 @@ class RORequestParser(ParserBase):
 
     def of_matches(self):
         return self.__of_parser.get_matches(self.rspec)
-
+    
     # TN resources
     def tn_nodes(self):
         try:

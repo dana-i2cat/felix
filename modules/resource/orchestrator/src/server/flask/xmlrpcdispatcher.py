@@ -10,11 +10,11 @@ class XMLRPCDispatcher(object):
 
     def requestCertificate(self):
         """Retrieve the certificate which the client has sent."""
-        # get it from the request's environment
-        if request.environ.has_key('CLIENT_RAW_CERT'): # check nginx
-            return request.environ['CLIENT_RAW_CERT']
-        if request.environ.has_key('SSL_CLIENT_CERT'): # check apache
-            return request.environ['SSL_CLIENT_CERT']
+        # get it from the request"s environment
+        if request.environ.has_key("CLIENT_RAW_CERT"): # check nginx
+            return request.environ["CLIENT_RAW_CERT"]
+        if request.environ.has_key("SSL_CLIENT_CERT"): # check apache
+            return request.environ["SSL_CLIENT_CERT"]
         return None
 
     def _dispatch(self, method, params):

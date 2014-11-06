@@ -1,19 +1,19 @@
-from delegate.geni.v3.rspecs.tnrm.advertisement_formatter import DEFAULT_XS,\
-    TNRMv3AdvertisementFormatter, DEFAULT_XMLNS, DEFAULT_SHARED_VLAN,\
-    DEFAULT_AD_SCHEMA_LOCATION
+from delegate.geni.v3.rspecs.tnrm.request_formatter import DEFAULT_XS,\
+    TNRMv3RequestFormatter, DEFAULT_XMLNS, DEFAULT_SHARED_VLAN,\
+    DEFAULT_REQ_SCHEMA_LOCATION
 from lxml import etree
 
 
-class SERMv3AdvertisementFormatter(TNRMv3AdvertisementFormatter):
+class SERMv3RequestFormatter(TNRMv3RequestFormatter):
     def __init__(self, xmlns=DEFAULT_XMLNS, xs=DEFAULT_XS,
                  sharedvlan=DEFAULT_SHARED_VLAN,
-                 schema_location=DEFAULT_AD_SCHEMA_LOCATION):
-        super(SERMv3AdvertisementFormatter, self).__init__(
+                 schema_location=DEFAULT_REQ_SCHEMA_LOCATION):
+        super(SERMv3RequestFormatter, self).__init__(
             xmlns, xs, sharedvlan, schema_location)
 
-    def add_link(self, rspec, link):
-        l = etree.SubElement(rspec, "{%s}link" % (self.xmlns))
-        l.attrib["component_id"] = link.get("component_id")
+    def link(self, link):
+        l = etree.SubElement(self.rspec, "{%s}link" % (self.xmlns))
+        l.attrib["client_id"] = link.get("component_id")
 
         if link.get("component_manager_name") is not None:
             m = etree.SubElement(l, "{%s}component_manager" % (self.xmlns))
@@ -31,6 +31,3 @@ class SERMv3AdvertisementFormatter(TNRMv3AdvertisementFormatter):
             prop.attrib["source_id"] = p.get("source_id")
             prop.attrib["dest_id"] = p.get("dest_id")
             prop.attrib["capacity"] = p.get("capacity")
-
-    def link(self, link):
-        self.add_link(self.rspec, link)
