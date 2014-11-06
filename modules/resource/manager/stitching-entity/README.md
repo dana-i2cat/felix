@@ -1,5 +1,5 @@
-Transit Network Resource Manager
-================================
+Stitching Entity Resource Manager
+=================================
 
 Aim
 ---
