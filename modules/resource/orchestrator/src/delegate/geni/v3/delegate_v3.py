@@ -176,7 +176,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 ro_slivers.extend(se_slivers)
 
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
-        logger.debug("RO-Slivers=%s" % (ro_slivers,))
+        logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
 
         return {"geni_rspec": "%s" % ro_manifest,
                 "geni_urn": last_slice,
@@ -298,30 +298,17 @@ class GENIv3Delegate(GENIv3DelegateBase):
         for r, v in route.iteritems():
             peer = db_sync_manager.get_configured_peer(r)
             logger.debug("peer=%s" % (peer,))
-            if peer.get("type") == "sdn_networking":
-                of_slivers = self.__manage_sdn_renew(
+            if peer.get("type") in ["sdn_networking", "transport_network",
+                                    "stitching_entity"]:
+                slivers = self.__manage_renew(
                     peer, v, credentials, etime_str, best_effort)
 
-                logger.debug("of_s=%s" % (of_slivers,))
-                ro_slivers.extend(of_slivers)
-
-            elif peer.get("type") == "transport_network":
-                tn_slivers = self.__manage_tn_renew(
-                    peer, v, credentials, etime_str, best_effort)
-
-                logger.debug("tn_s=%s" % (tn_slivers,))
-                ro_slivers.extend(tn_slivers)
-
-            elif peer.get("type") == "stitching_entity":
-                se_slivers = self.__manage_se_renew(
-                    peer, v, credentials, etime_str, best_effort)
-
-                logger.debug("se_s=%s" % (se_slivers,))
-                ro_slivers.extend(se_slivers)
+                logger.debug("slivers=%s" % (slivers,))
+                ro_slivers.extend(slivers)
 
         for s in ro_slivers:
             s["geni_expires"] = self.__str2datetime(s["geni_expires"])
-        logger.debug("RO-Slivers=%s" % (ro_slivers,))
+        logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
         return ro_slivers
 
     def provision(self, urns, client_cert, credentials, best_effort, end_time,
@@ -356,16 +343,16 @@ class GENIv3Delegate(GENIv3DelegateBase):
         for r, v in route.iteritems():
             peer = db_sync_manager.get_configured_peer(r)
             logger.debug("peer=%s" % (peer,))
-            if peer.get("type") == "sdn_networking":
-                last_slice, of_slivers =\
-                    self.__manage_sdn_status(peer, v, credentials)
+            if peer.get("type") in ["sdn_networking", "transport_network",
+                                    "stitching_entity"]:
+                lastslice, slivers = self.__manage_status(peer, v, credentials)
 
-                logger.debug("of_s=%s, urn=%s" % (of_slivers, last_slice))
-                ro_slivers.extend(of_slivers)
+                logger.debug("slivers=%s, urn=%s" % (slivers, lastslice))
+                ro_slivers.extend(slivers)
 
         for s in ro_slivers:
             s["geni_expires"] = self.__str2datetime(s["geni_expires"])
-        logger.debug("RO-Slivers=%s" % (ro_slivers,))
+        logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
         return last_slice, ro_slivers
 
     def perform_operational_action(self, urns, client_cert, credentials,
@@ -390,16 +377,17 @@ class GENIv3Delegate(GENIv3DelegateBase):
         for r, v in route.iteritems():
             peer = db_sync_manager.get_configured_peer(r)
             logger.debug("peer=%s" % (peer,))
-            if peer.get("type") == "sdn_networking":
-                of_slivers = self.__manage_sdn_operational_action(
+            if peer.get("type") in ["sdn_networking", "transport_network",
+                                    "stitching_entity"]:
+                slivers = self.__manage_operational_action(
                     peer, v, credentials, action, best_effort)
 
-                logger.debug("of_s=%s" % (of_slivers,))
-                ro_slivers.extend(of_slivers)
+                logger.debug("slivers=%s" % (slivers,))
+                ro_slivers.extend(slivers)
 
         for s in ro_slivers:
             s["geni_expires"] = self.__str2datetime(s["geni_expires"])
-        logger.debug("RO-Slivers=%s" % (ro_slivers,))
+        logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
         return ro_slivers
 
     def delete(self, urns, client_cert, credentials, best_effort):
@@ -422,18 +410,20 @@ class GENIv3Delegate(GENIv3DelegateBase):
         for r, v in route.iteritems():
             peer = db_sync_manager.get_configured_peer(r)
             logger.debug("peer=%s" % (peer,))
-            if peer.get("type") == "sdn_networking":
-                of_slivers = self.__manage_sdn_delete(
+            if peer.get("type") in ["sdn_networking", "transport_network",
+                                    "stitching_entity"]:
+                slivers = self.__manage_delete(
                     peer, v, credentials, best_effort)
 
-                logger.debug("of_s=%s" % (of_slivers,))
-                ro_slivers.extend(of_slivers)
+                logger.debug("slivers=%s" % (slivers,))
+                ro_slivers.extend(slivers)
 
         db_urns = []
         for s in ro_slivers:
             s["geni_expires"] = self.__str2datetime(s["geni_expires"])
             db_urns.append(s.get("geni_sliver_urn"))
-        logger.debug("RO-Slivers=%s, DB-URNs=%s" % (ro_slivers, db_urns))
+        logger.debug("RO-Slivers(%d)=%s, DB-URNs(%d)=%s" %
+                     (len(ro_slivers), ro_slivers, len(db_urns), db_urns))
 
         db_sync_manager.delete_slice_urns(db_urns)
         return ro_slivers
@@ -801,29 +791,20 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         return ({"nodes": nodes, "links": links}, urn, ss)
 
-    def __manage_sdn_status(self, peer, urns, creds):
+    def __manage_status(self, peer, urns, creds):
         adaptor = AdaptorFactory.create_from_db(peer)
         return adaptor.status(urns, creds[0]["geni_value"])
 
-    def __manage_sdn_renew(self, peer, urns, creds, etime, beffort):
+    def __manage_renew(self, peer, urns, creds, etime, beffort):
         adaptor = AdaptorFactory.create_from_db(peer)
         return adaptor.renew(urns, creds[0]["geni_value"], etime, beffort)
 
-    def __manage_se_renew(self, peer, urns, creds, etime, beffort):
-        adaptor = AdaptorFactory.create_from_db(peer)
-        return adaptor.renew(urns, creds[0]["geni_value"], etime, beffort)
-
-    def __manage_tn_renew(self, peer, urns, creds, etime, beffort):
-        adaptor = AdaptorFactory.create_from_db(peer)
-        return adaptor.renew(urns, creds[0]["geni_value"], etime, beffort)
-
-    def __manage_sdn_operational_action(self, peer, urns, creds,
-                                        action, beffort):
+    def __manage_operational_action(self, peer, urns, creds, action, beffort):
         adaptor = AdaptorFactory.create_from_db(peer)
         return adaptor.perform_operational_action(
             urns, creds[0]["geni_value"], action, beffort)
 
-    def __manage_sdn_delete(self, peer, urns, creds, beffort):
+    def __manage_delete(self, peer, urns, creds, beffort):
         adaptor = AdaptorFactory.create_from_db(peer)
         return adaptor.delete(urns, creds[0]["geni_value"], beffort)
 

@@ -15,15 +15,15 @@ class GenericCommand:
 
     def isCompleted(self):
         if not self.__active:
-            raise AttributeError('Command is NOT active!')
+            raise AttributeError("Command is NOT active!")
 
         self.validate()
 
     def validate(self):
-        raise Exception('Validate method is NOT implemented!')
+        raise Exception("Validate method is NOT implemented!")
 
     def execute(self):
-        raise Exception('Execute method is NOT implemented!')
+        raise Exception("Execute method is NOT implemented!")
 
 
 class RoutingTableCommand(GenericCommand):
@@ -68,13 +68,13 @@ class RoutingTableCommand(GenericCommand):
 
     def checkAllNone(self):
         if self.type_ is not None:
-            raise AttributeError('Type argument is NOT allowed!')
+            raise AttributeError("Type argument is NOT allowed!")
 
         if self.addr_ is not None:
-            raise AttributeError('Address argument is NOT allowed!')
+            raise AttributeError("Address argument is NOT allowed!")
 
         if self.port_ is not None:
-            raise AttributeError('Port argument is NOT allowed!')
+            raise AttributeError("Port argument is NOT allowed!")
 
     def getTable(self):
         client_ = pymongo.MongoClient()
@@ -89,13 +89,13 @@ class Dump(RoutingTableCommand):
     def execute(self):
         table_ = self.getTable()
 
-        print '(RO) RoutingTable has %s rows\n' % (table_.count(),)
+        print "(RO) RoutingTable has %s rows\n" % (table_.count(),)
 
         for row_ in table_.find():
-            print '%s' % (row_,)
+            print "%s" % (row_,)
 
-    def helpMsg(self):
-        return 'dump' + '\n\tGet a dump of the mongoDB db'
+    def helpMessage(self):
+        return "dump" + "\n\tGet a dump of the mongoDB db"
 
 
 class DeleteAll(RoutingTableCommand):
@@ -106,45 +106,45 @@ class DeleteAll(RoutingTableCommand):
         table_ = self.getTable()
         table_.remove()
 
-        print '(RO) RoutingTable delete all rows\n'
+        print "(RO) RoutingTable delete all rows\n"
 
-    def helpMsg(self):
-        return 'delete_all' + '\n\tDelete all entries of the mongoDB db'
+    def helpMessage(self):
+        return "delete_all" + "\n\tDelete all entries of the mongoDB db"
 
 
 class AddRouteEntry(RoutingTableCommand):
     def validate(self):
         if self.type_ is None:
-            raise AttributeError('Type argument is NOT specified!')
+            raise AttributeError("Type argument is NOT specified!")
 
         if self.addr_ is None:
-            raise AttributeError('Address argument is NOT specified!')
+            raise AttributeError("Address argument is NOT specified!")
 
         if self.port_ is None:
-            raise AttributeError('Port argument is NOT specified!')
+            raise AttributeError("Port argument is NOT specified!")
 
     def execute(self):
         table_ = self.getTable()
 
-        row_ = {'type': self.type_,
-                'address': self.addr_,
-                'port': self.port_,
-                'protocol': self.protocol_,
-                'endpoint': self.endpoint_,
-                'user': self.user_,
-                'password': self.password_,
-                'am_type': self.am_type_,
-                'am_version': self.am_version_}
+        row_ = {"type": self.type_,
+                "address": self.addr_,
+                "port": self.port_,
+                "protocol": self.protocol_,
+                "endpoint": self.endpoint_,
+                "user": self.user_,
+                "password": self.password_,
+                "am_type": self.am_type_,
+                "am_version": self.am_version_}
 
         row_id_ = table_.insert(row_)
-        print '(RO) RoutingTable insert row: %s\n' % (row_id_,)
+        print "(RO) RoutingTable insert row: %s\n" % (row_id_,)
 
-    def helpMsg(self):
-        return 'add_route_entry -t <type> -a <address> -p <port>' +\
-               ' [--protocol <protocol] [--endpoint <endpoint>]' +\
-               ' [--user <username>] [--password <password>]' +\
-               ' [--am_type <type>] [--am_version <version>]' +\
-               '\n\tAdd a new entry in the mongoDB db'
+    def helpMessage(self):
+        return "add_route_entry -t <type> -a <address> -p <port>" +\
+               " [--protocol <protocol] [--endpoint <endpoint>]" +\
+               " [--user <username>] [--password <password>]" +\
+               " [--am_type <type>] [--am_version <version>]" +\
+               "\n\tAdd a new entry in the mongoDB db"
 
 
 class DelRouteEntry(RoutingTableCommand):
@@ -152,34 +152,34 @@ class DelRouteEntry(RoutingTableCommand):
         if self.type_ is None and\
            self.addr_ is None and\
            self.port_ is None:
-            raise AttributeError('You MUST specify at least 1 arg ' +
-                                 '(type or address or port)!')
+            raise AttributeError("You MUST specify at least 1 arg " +
+                                 "(type or address or port)!")
 
     def execute(self):
         table_ = self.getTable()
 
         row_ = {}
         if self.type_ is not None:
-            row_['type'] = self.type_
+            row_["type"] = self.type_
 
         if self.addr_ is not None:
-            row_['address'] = self.addr_
+            row_["address"] = self.addr_
 
         if self.port_ is not None:
-            row_['port'] = self.port_
+            row_["port"] = self.port_
 
         table_.remove(row_)
-        print '(RO) RoutingTable delete row: %s\n' % (row_,)
+        print "(RO) RoutingTable delete row: %s\n" % (row_,)
 
-    def helpMsg(self):
-        return 'delete_route_entry [-t <type>] [-a <address>] [-p <port>]' +\
-               '\n\tDelete an entry(/ies)in the mongoDB db'
+    def helpMessage(self):
+        return "delete_route_entry [-t <type>] [-a <address>] [-p <port>]" +\
+               "\n\tDelete an entry(/ies)in the mongoDB db"
 
 
-commands = {'dump': Dump(),
-            'delete_all': DeleteAll(),
-            'add_route_entry': AddRouteEntry(),
-            'delete_route_entry': DelRouteEntry()}
+commands = {"dump": Dump(),
+            "delete_all": DeleteAll(),
+            "add_route_entry": AddRouteEntry(),
+            "delete_route_entry": DelRouteEntry()}
 
 
 class CmdManager:
@@ -228,19 +228,19 @@ class CmdManager:
 
     @staticmethod
     def helpMessage():
-        print 'Usage:\n'
+        print "Usage:\n"
         for (_, value) in commands.items():
-            print value.helpMsg() + '\n'
+            print value.helpMessage() + "\n"
 
 
 class CmdConsume(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        if values == '?':
+        if values == "?":
             CmdManager.helpMessage()
             sys.exit(0)
 
         if not CmdManager.find(values):
-            print 'UNMANAGED command %s' % (values,)
+            print "UNMANAGED command %s" % (values,)
             sys.exit(False)
 
         CmdManager.activate(values)
@@ -252,44 +252,49 @@ def main(argv=None):
         argv = sys.argv
 
     try:
-        bug_reporter_ = '<r.monno@nextworks.it>'
+        bug_reporter_ = "<r.monno@nextworks.it>"
         parser_ = argparse.ArgumentParser(
-            description='RO dbmanage',
-            epilog='Please, report bugs to ' + bug_reporter_,
+            description="RO dbmanage",
+            epilog="Please, report bugs to " + bug_reporter_,
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-        parser_.add_argument('command',
-                             action=CmdConsume,
-                             help='?=describe how to use every single command')
+        parser_.add_argument("command",
+                         action=CmdConsume,
+                         help="?=describe how to use every single command")
 
-        parser_.add_argument('-t', help='Set the type of RM')
+#        for command in commands.keys():
+#            parser_.add_argument(command),
+#                             action=CmdConsume,
+#                             help="?=%s" % getattr(commands[command], "helpMessage")())
 
-        parser_.add_argument('-a', help='Set the address of RM')
+        parser_.add_argument("-t", help="Set the type of RM")
 
-        parser_.add_argument('-p', help='Set the port of RM')
+        parser_.add_argument("-a", help="Set the address of RM")
 
-        parser_.add_argument('--protocol', default='http',
-                             help='Set the protocol to communicate with RM')
+        parser_.add_argument("-p", help="Set the port of RM")
 
-        parser_.add_argument('--endpoint', default='',
-                             help='Set the endpoint of RM')
+        parser_.add_argument("--protocol", default="http",
+                             help="Set the protocol to communicate with RM")
 
-        parser_.add_argument('--user', default='',
-                             help='Set the username to access the RM')
+        parser_.add_argument("--endpoint", default="",
+                             help="Set the endpoint of RM")
 
-        parser_.add_argument('--password', default='',
-                             help='Set the password to access the RM')
+        parser_.add_argument("--user", default="",
+                             help="Set the username to access the RM")
 
-        parser_.add_argument('--am_type', default=None,
-                             help='Set the AM type')
+        parser_.add_argument("--password", default="",
+                             help="Set the password to access the RM")
 
-        parser_.add_argument('--am_version', default=None,
-                             help='Set the AM type')
+        parser_.add_argument("--am_type", default=None,
+                             help="Set the AM type")
+
+        parser_.add_argument("--am_version", default=None,
+                             help="Set the AM type")
 
         args_ = parser_.parse_args()
 
     except Exception as ex:
-        print 'Got an exception parsing flags/options:', ex
+        print "Got an exception parsing flags/options:", ex
         return False
 
     # print "Args=%s" % (args_,)
@@ -316,21 +321,21 @@ def main(argv=None):
         comMng_.analyze(args_.command)
 
     except AttributeError as ex:
-        print 'MALFORMED command %s' % (args_.command,)
-        print 'What: %s' % (str(ex),)
+        print "MALFORMED command %s" % (args_.command,)
+        print "What: %s" % (str(ex),)
         return False
 
     try:
         comMng_.execute(args_.command)
 
     except Exception as ex:
-        print 'RUNTIME exception command %s' % (args_.command,)
-        print 'What: %s' % (str(ex),)
+        print "RUNTIME exception command %s" % (args_.command,)
+        print "What: %s" % (str(ex),)
         return False
 
     return True
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # update sys-path
     bp_ = os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0])))
     if bp_ not in [os.path.abspath(x) for x in sys.path]:
