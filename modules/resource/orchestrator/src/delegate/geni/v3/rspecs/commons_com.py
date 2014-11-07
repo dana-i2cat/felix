@@ -5,16 +5,20 @@ DEFAULT_COM = "http://www.geni.net/resources/rspec/3"
 class Node(object):
     # Node unavailable unless the contrary is said
     def __init__(self, component_id, component_name, component_manager_id, 
-                 exclusive=None, available=False):
+                 exclusive=None, available=False, interfaces=[]):
         self.node = {"component_id": component_id,
                      "component_name": component_name,
                      "component_manager_id": component_manager_id,
                      "exclusive": exclusive,
                      "available": available,
-                     "interfaces": []}
+                     "interfaces": interfaces}
     
-    def add_interface(self, intf):
-        self.node["interfaces"].append(intf)
+    def add_interface(self, interface):
+        if interface not in self.node["interfaces"]:
+            self.node["interfaces"].append(interface)
+    
+    def clear_interfaces(self):
+        self.node["interfaces"] = []
     
     def serialize(self):
         return self.node
