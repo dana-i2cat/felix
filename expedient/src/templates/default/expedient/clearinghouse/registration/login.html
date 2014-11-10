@@ -9,7 +9,17 @@
 
 <div class="login">
 	<form class="form" method="post" action=".">{% csrf_token %}
-		{{ form.as_p }}
+        <p><label for="id_cert">Certificate:</label> <textarea rows="5" cols="50" id="id_cert" name="cert" ></textarea></p>
+        <p><label for="id_key">Private Key:</label> <textarea rows="3" cols="50" id="id_key" name="key" ></textarea></p>
+        <p>&nbsp;</p>
+        <div style="height: 2px; background-color: #000090; text-align: center; width:70%; margin:auto">
+          <span style="background-color: white; position: relative; top: -0.5em;">
+            &nbsp;OR&nbsp;
+          </span>
+        </div>
+        <p>&nbsp;</p>
+        <p><label for="id_username">Username:</label> <input id="id_username" type="text" name="username" maxlength="30" /></p>
+        <p><label for="id_password">Password:</label> <input id="id_password" type="password" name="password" maxlength="4096" /></p>
 		<div>
 			<input type="submit" class="centered" value="Log in" />
 		</div>

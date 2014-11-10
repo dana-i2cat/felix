@@ -130,12 +130,14 @@ MIDDLEWARE_CLASSES = [
     'expedient.common.middleware.threadlocals.ThreadLocals',
     'expedient.common.permissions.middleware.PermissionMiddleware',
     'expedient.clearinghouse.geni.middleware.CreateUserGID',
+    'mit.ScriptsRemoteUserMiddleware',
 ]
 append_to_local_setting(
     "MIDDLEWARE_CLASSES", MIDDLEWARE_CLASSES, globals(), at_start=True,
 )
 
 AUTHENTICATION_BACKENDS = [
+    'mit.ScriptsRemoteUserBackend',
     'django.contrib.auth.backends.ModelBackend',
     'expedient.clearinghouse.geni.backends.GENIRemoteUserBackend',
 ]

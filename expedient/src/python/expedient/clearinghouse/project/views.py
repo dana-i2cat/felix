@@ -70,6 +70,7 @@ def list(request):
         queryset=qs,
         template_name=TEMPLATE_PATH+"/list.html",
         template_object_name="project",
+        extra_context={'CBAS_STATUS': is_cbas_server_active(), 'CBAS_NAME': CBAS_HOST_NAME, 'CBAS_IP_ADDR':CBAS_HOST_IP, 'CBAS_PORT': CBAS_HOST_PORT},
     )
 
 def list_details(request, proj_id):

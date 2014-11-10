@@ -17,6 +17,11 @@ NUMBER_RE = "^([0-9])+$"
 RESOURCE_RE = "^([0-9a-zA-Z\-\_])+$"
 RESOURCE_VM_RE = "^([0-9a-zA-Z\-]){1,64}$"
 TEXT_RE = "^([0-9a-zA-Z\-\_\ \.\!\?\"\'\r\n])+$"
+SLICE_NAME_RE = '^[a-zA-Z0-9][A-Za-z0-9-]{1,19}$'
+
+sliceNameValidator = RegexValidator(re.compile(SLICE_NAME_RE),
+                                u"SLICE_NAME field must be <= 19 characters, must only contain alphanumeric characters or hyphens and those hyphens must not be leading.",
+                                "invalid")
 
 asciiValidator = RegexValidator(re.compile(ASCII_RE),
                                 u"Please do not use accented characters and avoid using \'@\'.",

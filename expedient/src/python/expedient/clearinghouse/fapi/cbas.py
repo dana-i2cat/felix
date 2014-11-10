@@ -13,13 +13,16 @@ def get_certificate_from_file(user_name):
 
 EXPEDIENT_CREDENTIALS = get_credentials_from_file('expedient')
 EXPEDIENT_CERTIFICATE = get_certificate_from_file('expedient')
-logger = logging.getLogger('CBAS')
-logger.setLevel(logging.DEBUG)
-fh = logging.FileHandler('/var/log/apache2/cbas.log')
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-fh.setFormatter(formatter)
-fh.setLevel(logging.DEBUG)
-logger.addHandler(fh)
+
+if CBAS_DEBUG:
+    logger = logging.getLogger('CBAS')
+    logger.setLevel(logging.DEBUG)
+    fh = logging.FileHandler('/var/log/apache2/expedient/clearinghouse/cbas.log')
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    fh.setLevel(logging.DEBUG)
+    logger.addHandler(fh)
+
 
 def ma_call(method_name, params=[]):
 
@@ -42,14 +45,14 @@ def create_slice(owner_urn, owner_certificate, slice_name, slice_desc, slice_pro
         cert = EXPEDIENT_CERTIFICATE
         creds = EXPEDIENT_CREDENTIALS
 
-    logger.info(slice_project_urn)
+    print_debug_message(slice_project_urn)
 
     create_data = {'SLICE_NAME': slice_name, 'SLICE_DESCRIPTION': slice_desc, 'SLICE_PROJECT_URN': slice_project_urn}
     code, value, output = sa_call('create', ['SLICE', cert, creds, {'fields': create_data}])
     if code == 0:
         slice_urn = value['SLICE_URN']
     else:
-        logger.debug('create_slice()\npcode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
+        print_debug_message('create_slice()\npcode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
         slice_urn = None
 
     return slice_urn
@@ -64,7 +67,7 @@ def create_project(certificate, credentials, project_name, project_desc):
         project_urn = value['PROJECT_URN']
     else:
         project_urn = None
-        logger.debug('create_project()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
+        print_debug_message('create_project()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
 
     return project_urn
 
@@ -87,7 +90,7 @@ def add_member_to_project(project_urn, to_add_user_urn, to_add_user_certificate,
                                                         creds, add_data])
 
     if not code == 0:
-        logger.debug('add_member_to_project()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
+        print_debug_message('add_member_to_project()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
 
 
 def remove_member_from_project(project_urn, user_urn, authz_user_urn, authz_user_certificate):
@@ -107,7 +110,7 @@ def remove_member_from_project(project_urn, user_urn, authz_user_urn, authz_user
                                                         creds, remove_data])
 
     if not code == 0:
-        logger.debug('remove_member_from_project()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
+        print_debug_message('remove_member_from_project()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
 
 
 def add_member_to_slice(project_urn, slice_urn, to_add_user_urn, to_add_user_certificate, authz_user_urn, authz_user_certificate):
@@ -127,7 +130,7 @@ def add_member_to_slice(project_urn, slice_urn, to_add_user_urn, to_add_user_cer
     code, value, output = sa_call('modify_membership', ['SLICE', slice_urn, cert,
                                                         creds, add_data])
     if not code == 0:
-        logger.debug('add_member_to_slice()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
+        print_debug_message('add_member_to_slice()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
 
 
 def remove_member_from_slice(slice_urn, user_urn):
@@ -150,7 +153,7 @@ def get_slice_credentials(project_urn, slice_urn, user_urn, user_certificate):
         membership_info = lookup_results[0]
         return membership_info['SLICE_CREDENTIALS']
     else:
-        logger.debug('get_slice_credentials() FAILED!')
+        print_debug_message('get_slice_credentials() FAILED!')
         return None
 
 
@@ -166,7 +169,7 @@ def get_project_credentials(project_urn, user_urn):
         membership_info = lookup_results[0]
         credentials = membership_info['PROJECT_CREDENTIALS']
     else:
-        logger.debug('get_project_credentials() Returned no results!')
+        print_debug_message('get_project_credentials() Returned no results!')
         credentials = None
 
     return credentials
@@ -188,7 +191,7 @@ def get_member_info(username):
         return user_info['MEMBER_URN'], user_info['MEMBER_CERTIFICATE'], \
                user_info['MEMBER_CERTIFICATE_KEY'], user_info['MEMBER_CREDENTIALS']
     else:
-        logger.debug('get_member_info() FAILED!')
+        print_debug_message('get_member_info() FAILED!')
         return None
 
 
@@ -207,9 +210,9 @@ def lookup(match, object_type, _filter=[], certificate=None, credentials=None):
     if object_type in ['SLICE', 'PROJECT']:
         code, value, output = sa_call('lookup', [object_type, certificate, credentials, options])
         if not code == 0:
-            logger.debug('lookup()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
+            print_debug_message('lookup()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
     else:
-        logger.debug('lookup\nUnsupported Object type:'+object_type)
+        print_debug_message('lookup\nUnsupported Object type:'+object_type)
 
     return value
 
@@ -236,13 +239,13 @@ def lookup_members(match, object_type, _filter=[], object_urn=None, certificate=
     if object_type in ['MEMBER', 'KEY']:
         code, value, output = ma_call('lookup', [object_type, certificate, credentials, options])
         if not code == 0:
-            logger.debug('lookup_members()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
+            print_debug_message('lookup_members()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
     elif object_type in ['SLICE', 'PROJECT']:
         code, value, output = sa_call('lookup_members', [object_type, object_urn, certificate, credentials, options])
         if not code == 0:
-            logger.debug('lookup_members()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
+            print_debug_message('lookup_members()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
     else:
-        logger.debug('lookup_members()\nUnsupported Object type:'+object_type)
+        print_debug_message('lookup_members()\nUnsupported Object type:'+object_type)
 
     return value
 
@@ -254,12 +257,34 @@ def register_user(username):
 
     code, value, output = ma_call('create', ['MEMBER', EXPEDIENT_CERTIFICATE, EXPEDIENT_CREDENTIALS, {'fields': fields, 'privileges': options}])
     if not code == 0:
-        logger.debug('code:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
+        print_debug_message('register_user()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
         return None
     else:
         return value
 
 
 def print_debug_message(msg):
-    logger.debug(msg)
-    pass
+    if CBAS_DEBUG:
+        logger.debug(msg)
+
+def verify_certificate(cert_str):
+
+    code, value, output = ma_call('verify_certificate', [cert_str, EXPEDIENT_CERTIFICATE, EXPEDIENT_CREDENTIALS])
+    if not code == 0:
+        print_debug_message('verify_certificate()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
+        return False
+    else:
+        return True
+
+def is_cbas_server_active():
+
+    try:
+        code, value, output = sa_call('get_version', [])
+        if not code == 0:
+            print_debug_message('is_cbas_server_active()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
+            return False
+        else:
+            return True
+    except Exception as e:
+        print_debug_message('is_cbas_server_active()\n'+str(e.message))
+        return False
