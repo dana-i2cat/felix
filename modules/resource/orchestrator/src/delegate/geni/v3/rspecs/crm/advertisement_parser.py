@@ -1,7 +1,7 @@
 from delegate.geni.v3.rspecs.parser_base import ParserBase
 from delegate.geni.v3.rspecs.commons_com import Node, Link
 from handler.geni.v3.extensions.sfa.util import xrn
-from delegate.geni.v3.rspecs.commons_com import DEFAULT_COM
+from delegate.geni.v3.rspecs.commons import DEFAULT_XMLNS
 
 import core
 logger = core.log.getLogger("com-advertisement-parser")
@@ -9,21 +9,17 @@ logger = core.log.getLogger("com-advertisement-parser")
 class CRMv3AdvertisementParser(ParserBase):
     def __init__(self, from_file=None, from_string=None):
         super(CRMv3AdvertisementParser, self).__init__(from_file, from_string)
-        self.__com = DEFAULT_COM
+        self.xmlns = DEFAULT_XMLNS
     
     def nodes(self):
-        from lxml import etree
         nodes = []
-
-        # TODO Check that this is retrieving nodes (maybe the current self.__com is not good for this case)
-        #self.none = "http://www.geni.net/resources/rspec/3"
 
         # Retrieve interfaces from links and postprocess the data before returning the links
         links = self.links()
 
-        for n in self.rspec.iterchildren("{%s}node" % (self.__com)):
+        for n in self.rspec.iterchildren("{%s}node" % (self.xmlns)):
             sliver = None
-            available = n.find("{%s}available" % (self.__com))
+            available = n.find("{%s}available" % (self.xmlns))
             if available is not None:
                 available = available.attrib.get("now")
             node = Node(n.attrib.get("component_id"),
@@ -42,6 +38,7 @@ class CRMv3AdvertisementParser(ParserBase):
                     # Get last part of the interface resource
                     node_interface = xrn.urn_to_hrn(node_interface[0])[0].split(".")[-1]
                     node.add_interface(node_interface)
+
             nodes.append(node.serialize())
         return nodes
     
@@ -49,15 +46,15 @@ class CRMv3AdvertisementParser(ParserBase):
         
         links = []
         
-        for l in self.rspec.iterchildren("{%s}link" % self.__com):
+        for l in self.rspec.iterchildren("{%s}link" % self.xmlns):
             link = Link(l.attrib.get("component_id"),
                 l.attrib.get("component_name"))
     
-            link_type = l.find("{%s}link_type" % (self.__com))
+            link_type = l.find("{%s}link_type" % (self.xmlns))
             if len(link_type):
                 link_type = link_type.attrib.get("name")
     
-            for p in l.iterchildren("{%s}property" % self.__com):
+            for p in l.iterchildren("{%s}property" % self.xmlns):
                 link.add_property(p.attrib.get("source_id"),
                     p.attrib.get("dest_id"),
                     p.attrib.get("capacity"))

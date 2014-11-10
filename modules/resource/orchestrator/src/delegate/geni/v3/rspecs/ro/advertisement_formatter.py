@@ -3,6 +3,8 @@ from delegate.geni.v3.rspecs.commons import DEFAULT_XMLNS, DEFAULT_XS,\
 from delegate.geni.v3.rspecs.commons_of import DEFAULT_OPENFLOW
 from delegate.geni.v3.rspecs.commons_tn import DEFAULT_SHARED_VLAN
 from delegate.geni.v3.rspecs.formatter_base import FormatterBase
+from delegate.geni.v3.rspecs.crm.advertisement_formatter\
+    import CRMv3AdvertisementFormatter
 from delegate.geni.v3.rspecs.openflow.advertisement_formatter\
     import OFv3AdvertisementFormatter
 from delegate.geni.v3.rspecs.tnrm.advertisement_formatter\
@@ -12,18 +14,31 @@ DEFAULT_AD_SCHEMA_LOCATION = DEFAULT_SCHEMA_LOCATION
 DEFAULT_AD_SCHEMA_LOCATION += DSL_PREFIX + "3/ad.xsd "
 DEFAULT_AD_SCHEMA_LOCATION += DSL_PREFIX + "ext/openflow/3/of-ad.xsd"
 
+import core
+logger = core.log.getLogger("ro-advertisement-formatter")
+
 
 class ROAdvertisementFormatter(FormatterBase):
     def __init__(self, xmlns=DEFAULT_XMLNS, xs=DEFAULT_XS,
                  openflow=DEFAULT_OPENFLOW,
                  sharedvlan=DEFAULT_SHARED_VLAN,
                  schema_location=DEFAULT_AD_SCHEMA_LOCATION):
+        # Every namespace is outputted, as the resulting RSpec
+        # from RO is a mixture of them all
         ns_ = {"openflow": "%s" % (openflow),
                "sharedvlan": "%s" % (sharedvlan)}
         super(ROAdvertisementFormatter, self).__init__(
             "advertisement", schema_location, ns_, xmlns, xs)
+        self.__crm_formatter = CRMv3AdvertisementFormatter()
         self.__of_formatter = OFv3AdvertisementFormatter()
         self.__tnrm_formatter = TNv3AdvertisementFormatter()
+
+    # COM resources
+    def com_node(self, node):
+        self.__crm_formatter.add_node(self.rspec, node)
+
+    def com_link(self, link):
+        self.__crm_formatter.add_link(self.rspec, link)
 
     # OF resources
     def datapath(self, dpath):
@@ -41,3 +56,4 @@ class ROAdvertisementFormatter(FormatterBase):
 
     def tn_link(self, link):
         self.__tnrm_formatter.add_link(self.rspec, link)
+

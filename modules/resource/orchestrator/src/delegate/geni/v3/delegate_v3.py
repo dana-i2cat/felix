@@ -68,7 +68,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def list_resources(self, client_cert, credentials, geni_available):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        logger.debug("list_resources: authenticate the user...")
+        from lxml import etree
         client_urn, client_uuid, client_email =\
             self.auth(client_cert, credentials, None, ("listslices",))
 
@@ -78,7 +78,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         sl = "http://www.geni.net/resources/rspec/3/ad.xsd"
         rspec = ROAdvertisementFormatter(schema_location=sl)
-        logger.debug("\n\n\n\n\n[REMOVE] DELEGATE.list_resources\n\n\n\n\n")
+        
         try:
             logger.debug("COM resources: nodes")
             for n in db_sync_manager.get_com_nodes():
@@ -115,8 +115,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         logger.debug("ROAdvertisementFormatter=%s" % (rspec,))
         self.__validate_rspec(rspec.get_rspec())
-
-        logger.info("list_resources successfully completed!")
         return "%s" % rspec
 
     def describe(self, urns, client_cert, credentials):
@@ -198,6 +196,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         self.__validate_rspec(req_rspec.get_rspec())
 
         ro_manifest, ro_slivers, ro_db_slivers = ROManifestFormatter(), [], []
+
         # OF resources
         se_sdn_info = None
         sliver = req_rspec.of_sliver()

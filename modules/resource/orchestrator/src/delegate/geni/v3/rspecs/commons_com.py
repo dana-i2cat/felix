@@ -3,7 +3,7 @@ DEFAULT_COM = "http://www.geni.net/resources/rspec/3"
 
 # COM Data Models
 class Node(object):
-    # Node unavailable unless the contrary is said
+    # Node "unavailable" unless the contrary is said
     def __init__(self, component_id, component_name, component_manager_id, 
                  exclusive=None, available=False, interfaces=[]):
         self.node = {"component_id": component_id,
