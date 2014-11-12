@@ -32,7 +32,7 @@ import uuid
 from expedient.common.federation.sfa.trust.certificate import Certificate
 from expedient.common.federation.sfa.util.namespace import *
 from expedient.common.federation.sfa.util.sfalogging import logger
-
+import datetime
 ##
 # Create a new uuid. Returns the UUID as a string.
 
@@ -217,3 +217,11 @@ class GID(Certificate):
                 raise GidParentHrn("Trusted roots HRN %s isnt start of this cert %s" % (trusted_hrn, cur_hrn))
 
         return
+
+    def get_notBefore(self):
+        str_val = self.cert.get_notBefore()
+        return datetime.datetime.strptime(str_val[0:-1],'%Y%m%d%H%M%S')
+
+    def get_notAfter(self):
+        str_val = self.cert.get_notAfter()
+        return datetime.datetime.strptime(str_val[0:-1],'%Y%m%d%H%M%S')

@@ -12,6 +12,9 @@ from expedient.common.federation.sfa.trust.gid import GID
 from expedient.common.federation.sfa.trust.certificate import Keypair
 from expedient.clearinghouse.geni.utils import get_user_key_fname, get_user_cert_fname,\
     get_trusted_cert_filenames
+from expedient.clearinghouse.users.models import UserProfile
+from expedient.clearinghouse.fapi.cbas import *
+from expedient.clearinghouse.defaultsettings.cbas import *
 
 logger = logging.getLogger("geni.forms")
 
@@ -82,6 +85,50 @@ class UploadCertForm(forms.Form):
         self.key.save_to_file(key_fname)
         self.cert.save_to_file(cert_fname)
     
+class UploadKeyForm(forms.Form):
+    """Form to upload a public SSH key."""
+
+    key_file = forms.FileField(
+        help_text="Select the file that contains the public SSH key to upload.")
+
+    clean_key_file = _clean_x_file_factory("key")
+
+    def clean(self):
+        """Perform minimal sanity check"""
+
+        logger.debug("cleaned_data %s" % self.cleaned_data)
+        if self.files:
+            self.key_str = self.files["key_file"].read()
+            if not self.key_str or not self.key_str.startswith('ssh-rsa '):
+                raise forms.ValidationError(
+                    "Provided file does not seem to contain a valid public SSH key."
+                    " Please check and try again."
+                )
+
+        return self.cleaned_data
+
+    def save(self, user):
+        """Update the SSH keys
+
+        @param user: the user to update SSH keys for.
+        @type user: C{django.contrib.auth.models.User}
+        """
+        user_profile = UserProfile.get_or_create_profile(user)
+        cert = user_profile.certificate
+        creds = user_profile.credentials
+
+        ret_value = update_ssh_key(user_profile.urn, self.key_str, cert, creds)
+        if not ret_value == 0:
+            raise forms.ValidationError(
+                    "Could not update SSH key."
+                    " Please check if C-BAS is reachable"
+            )
+        else:
+            user_profile.private_ssh_key = ''
+            user_profile.public_ssh_key = self.key_str
+            user_profile.save()
+
+
 def geni_aggregate_form_factory(agg_model):
     class GENIAggregateForm(forms.ModelForm):
         class Meta:

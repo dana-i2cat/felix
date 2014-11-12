@@ -175,21 +175,22 @@ def get_project_credentials(project_urn, user_urn):
     return credentials
 
 
-def get_member_info(username):
+def get_member_info(username, user_details=None):
 
     lookup_results = lookup_members({'MEMBER_USERNAME': username}, 'MEMBER')
     user_info = None
+    ssh_key_pair = None
 
     if lookup_results:
         for key in lookup_results:
             user_info = lookup_results[key]
             user_info['MEMBER_URN'] = key
     else:
-        user_info = register_user(username)
+        user_info, ssh_key_pair = register_user(username, user_details)
 
     if user_info:
         return user_info['MEMBER_URN'], user_info['MEMBER_CERTIFICATE'], \
-               user_info['MEMBER_CERTIFICATE_KEY'], user_info['MEMBER_CREDENTIALS']
+               user_info['MEMBER_CERTIFICATE_KEY'], user_info['MEMBER_CREDENTIALS'], ssh_key_pair
     else:
         print_debug_message('get_member_info() FAILED!')
         return None
@@ -215,6 +216,22 @@ def lookup(match, object_type, _filter=[], certificate=None, credentials=None):
         print_debug_message('lookup\nUnsupported Object type:'+object_type)
 
     return value
+
+def update_ssh_key(user_urn, pub_ssh_key, certificate=None, credentials=None):
+
+    fields = {'KEY_PUBLIC': pub_ssh_key}
+
+    if credentials and certificate:
+        cert = certificate
+        creds = [{"SFA": credentials}]
+    else:
+        cert = EXPEDIENT_CERTIFICATE
+        creds = EXPEDIENT_CREDENTIALS
+
+    code, value, output = ma_call('update', ['KEY', user_urn, cert, creds, {'fields': fields}])
+    if not code == 0:
+        print_debug_message('update_ssh_key()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
+    return code
 
 def lookup_members(match, object_type, _filter=[], object_urn=None, certificate=None, credentials=None):
     """
@@ -250,9 +267,20 @@ def lookup_members(match, object_type, _filter=[], object_urn=None, certificate=
     return value
 
 
-def register_user(username):
+def register_user(username, user_details):
 
-    fields = {'MEMBER_FIRSTNAME':username, 'MEMBER_LASTNAME':username, 'MEMBER_USERNAME':username, 'MEMBER_EMAIL':''}
+    pub_ssh_key, priv_ssh_key = generate_ssh_keys(username)
+
+    fields = {'MEMBER_FIRSTNAME':username, 'MEMBER_LASTNAME':username, 'MEMBER_USERNAME':username, 'MEMBER_EMAIL':'', 'KEY_PUBLIC': pub_ssh_key}
+
+    if user_details:
+        if 'FIRST_NAME' in user_details:
+            fields['MEMBER_FIRSTNAME'] = user_details['FIRST_NAME']
+        if 'LAST_NAME' in user_details:
+            fields['MEMBER_LASTNAME'] = user_details['LAST_NAME']
+        if 'EMAIL' in user_details:
+            fields['MEMBER_EMAIL'] = user_details['EMAIL']
+
     options = ['CAN_CREATE_PROJECT']
 
     code, value, output = ma_call('create', ['MEMBER', EXPEDIENT_CERTIFICATE, EXPEDIENT_CREDENTIALS, {'fields': fields, 'privileges': options}])
@@ -260,7 +288,7 @@ def register_user(username):
         print_debug_message('register_user()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
         return None
     else:
-        return value
+        return value, [pub_ssh_key, priv_ssh_key]
 
 
 def print_debug_message(msg):
@@ -288,3 +316,26 @@ def is_cbas_server_active():
     except Exception as e:
         print_debug_message('is_cbas_server_active()\n'+str(e.message))
         return False
+
+def generate_ssh_keys(username, password=None):
+    """
+    Set the C{ssh_public_key} and C{ssh_private_key} attributes to be
+        new keys. Note that the keys are stored in base64.
+
+        @parameter password: password to use to encrypt the private key
+        @type password: string
+    """
+    from paramiko import RSAKey
+    from StringIO import StringIO
+
+    key = RSAKey.generate(1024)
+
+    output = StringIO()
+    key.write_private_key(output, password=password)
+    ssh_private_key = output.getvalue()
+    output.close()
+
+    ssh_public_key = "ssh-rsa %s %s" % (key.get_base64(), username)
+
+    return ssh_public_key, ssh_private_key
+

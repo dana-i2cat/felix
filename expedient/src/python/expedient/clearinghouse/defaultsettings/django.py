@@ -139,7 +139,7 @@ append_to_local_setting(
 AUTHENTICATION_BACKENDS = [
     'mit.ScriptsRemoteUserBackend',
     'django.contrib.auth.backends.ModelBackend',
-    'expedient.clearinghouse.geni.backends.GENIRemoteUserBackend',
+#    'expedient.clearinghouse.geni.backends.GENIRemoteUserBackend',
 ]
 if ENABLE_LDAP_BACKEND:
     AUTHENTICATION_BACKENDS.insert(1,'django_auth_ldap.backend.LDAPBackend')

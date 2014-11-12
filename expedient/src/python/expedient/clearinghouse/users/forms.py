@@ -23,7 +23,7 @@ class UserProfileForm(forms.ModelForm):
     class Meta:
         model = UserProfile
         #exclude = ('user')
-        exclude = ('user', 'urn', 'credentials', 'certificate', 'certificate_key')
+        exclude = ('user', 'urn', 'credentials', 'certificate', 'certificate_key', 'private_ssh_key', 'public_ssh_key')
 
 class UserForm(forms.ModelForm):
     '''
