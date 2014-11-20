@@ -1,32 +1,23 @@
-from delegate.geni.v3.rspecs.tnrm.request_parser import CRMv3RequestParser
-from delegate.geni.v3.rspecs.commons_com import Link
+from delegate.geni.v3.rspecs.crm.request_parser import CRMv3RequestParser
+from delegate.geni.v3.rspecs.commons_com import Sliver
 
 
 class CRMv3ManifestParser(CRMv3RequestParser):
     def __init__(self, from_file=None, from_string=None):
         super(CRMv3ManifestParser, self).__init__(from_file, from_string)
 
-    def get_links(self, rspec):
-        links_ = []
-        for l in rspec.findall(".//{%s}link" % (self.none)):
-            manager_ = l.find("{%s}component_manager" % (self.none))
-            if manager_ is None:
-                self.raise_exception("Component-Mgr tag not found in link!")
+    def get_sliver(self, rspec=None):
+        rspec = rspec or self.rspec
+        sliver_list = []
+        slivers = rspec.findall("{%s}node" % (self.xmlns))
+        for sliver in slivers:
+            sliver_info = {"client_id": sliver.attrib.get("client_id"),
+                            # Sliver's component manager is the CRM itself
+                            "component_id": sliver.attrib.get("component_manager_id"),
+                            "component_name": sliver.attrib.get("component_name"),
+                            "sliver_id": sliver.attrib.get("sliver_id")}
+            sliver_list.append(sliver_info)
+        return sliver_list
 
-            l_ = Link(l.attrib.get("client_id"), manager_.attrib.get("name"),
-                      l.attrib.get("vlantag"))
-
-            for i in l.iterfind("{%s}interface_ref" % (self.none)):
-                l_.add_interface_ref(i.attrib.get("client_id"))
-
-            for p in l.iterfind("{%s}property" % (self.none)):
-                l_.add_property(p.attrib.get("source_id"),
-                                p.attrib.get("dest_id"),
-                                p.attrib.get("capacity"))
-
-            links_.append(l_.serialize())
-
-        return links_
-
-    def links(self):
-        return self.get_links(self.rspec)
+    def sliver(self):
+        return self.get_sliver(self.rspec)

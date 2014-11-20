@@ -20,6 +20,7 @@ from delegate.geni.v3.rspecs.tnrm.request_formatter import\
     TNRMv3RequestFormatter
 from delegate.geni.v3.rspecs.serm.request_formatter import\
     SERMv3RequestFormatter
+from delegate.geni.v3.rspecs.crm.manifest_parser import CRMv3ManifestParser
 from delegate.geni.v3.rspecs.openflow.manifest_parser import OFv3ManifestParser
 from delegate.geni.v3.rspecs.tnrm.manifest_parser import TNRMv3ManifestParser
 from delegate.geni.v3.rspecs.serm.manifest_parser import SERMv3ManifestParser
@@ -196,6 +197,24 @@ class GENIv3Delegate(GENIv3DelegateBase):
         self.__validate_rspec(req_rspec.get_rspec())
 
         ro_manifest, ro_slivers, ro_db_slivers = ROManifestFormatter(), [], []
+
+        # COM resources
+        se_com_info = None
+        slivers = req_rspec.com_slivers()
+        logger.debug("\n\n\n\n\n\n\n\n\n\n\n\n\n COM slivers=%s", slivers)
+        if len(slivers) > 0:
+            logger.debug("Found a COM-slivers segment (%d): %s" %
+                         (len(slivers), slivers,))
+            (com_m_info, com_slivers, db_slivers) =\
+                self.__manage_com_allocate(slice_urn, credentials, end_time,
+                                          slivers, req_rspec)
+            logger.debug("com_m=%s, com_s=%s, com_s=%s" %
+                         (com_m_info, com_slivers, db_slivers))
+            for m in com_m_info:
+                for s in m.get("slivers"):
+                    ro_manifest.com_sliver(s)
+            ro_slivers.extend(com_slivers)
+            ro_db_slivers.extend(db_slivers)
 
         # OF resources
         se_sdn_info = None
@@ -515,6 +534,41 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 ret.append({'vlan': vlan_id, 'dpids': dpids})
 
         return ret
+
+    def __manage_com_allocate(self, slice_urn, credentials, slice_expiration, sliver, parser):
+        # TODO CHECK THAT IT WORKS
+        route = {}
+        slivers = parser.com_slivers()
+        logger.debug("Slivers=%s" % (slivers,))
+
+        #m = """<rspec type="manifest" xmlns="http://www.geni.net/resources/rspec/3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.geni.net/resources/rspec/3 http://www.geni.net/resources/rspec/3/manifest.xsd">  
+#  <node client_id="None" component_id="urn:publicid:IDN+ocf:i2cat:vtam+node+Verdaguer" component_manager_id="urn:publicid:IDN+ocf:i2cat:vtam+authority+cm" sliver_id="urn:publicid:IDN+ocf:i2cat:vtam:Verdaguer+sliver+692550">
+#</node>  
+#</rspec>"""
+#        manifest = CRMv3ManifestParser(from_string=m)
+#        print "manifest >>>>>>>>>>", manifest
+#        slivers = manifest.sliver()
+#        print "slivers >>>>>>>>>>", slivers
+
+        for sliver in slivers:
+            route.update(sliver)
+
+        logger.info("Route=%s" % (route,))
+        manifests, slivers, db_slivers = [], [], []
+
+        for k, v in route.iteritems():
+            (m, ss) = self.__send_request_rspec(k, v, slice_urn, credentials, slice_expiration)
+            logger.debug("delegate > manifest: %s" % str(m))
+            manifest = COMv3ManifestParser(from_string=m)
+            logger.debug("COMv3ManifestParser=%s" % (manifest,))
+
+            sliver = manifest.sliver()
+            logger.info("Sliver=%s" % (sliver,))
+            manifests.append(sliver)
+
+            self.__extend_slivers(ss, k, slivers, db_slivers)
+
+        return (manifests, slivers, db_slivers)
 
     def __manage_sdn_allocate(self, surn, creds, end, sliver, parser):
         route = {}

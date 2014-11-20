@@ -12,18 +12,12 @@ class RORequestParser(ParserBase):
         self.__tn_parser = TNRMv3RequestParser(from_file, from_string)
     
     # C resources
-    def com_nodes(self):
+    def com_slivers(self):
         try:
-            return self.__com_parser.get_nodes(self.rspec)
+            return self.__com_parser.get_slivers()
         except Exception:
             return []
 
-    def com_links(self):
-        try:
-            return self.__com_parser.get_links(self.rspec)
-        except Exception:
-            return []
-    
     # OF resources
     def of_sliver(self):
         try:

@@ -1,59 +1,62 @@
+from delegate.geni.v3.rspecs.commons import DEFAULT_XMLNS
+from delegate.geni.v3.rspecs.commons_com import EMULAB_XMLNS, Sliver
 from delegate.geni.v3.rspecs.parser_base import ParserBase
-#from delegate.geni.v3.rspecs.commons_com import Node, Link, Interface
-from delegate.geni.v3.rspecs.commons_com import Node, Link
 
 
 class CRMv3RequestParser(ParserBase):
     def __init__(self, from_file=None, from_string=None):
         super(CRMv3RequestParser, self).__init__(from_file, from_string)
-        #self.__sv = self.rspec.nsmap.get("sharedvlan")
+        self.xmlns = DEFAULT_XMLNS
+        self.__com = EMULAB_XMLNS
 
-    def get_nodes(self, rspec):
-        nodes_ = []
-        for n in rspec.findall(".//{%s}node" % (self.none)):
-            s_ = None
-            sliver_ = n.find("{%s}sliver_type" % (self.none))
-            if sliver_ is not None:
-                s_ = sliver_.attrib.get("name")
+    def get_slivers(self):
+#        nodes = self.rspec.xpath("//d:node[@component_id='%s']" % component_id,
+#                namespaces = {"d": self.xmlns})
+        nodes = self.__find_nodes()
+        sliver_list = []
+        for node in nodes:
+            server_component_id = node.attrib.get("component_id")
+            sliver_type = self.__find_sliver(node)
+            sliver_type_name = sliver_type.attrib.get("name")
+            ram = None
+            disk = None
+            cores = None
+            img_instance = sliver_type.find("{%s}xen" % self.rspec.nsmap.get("emulab")) #EMULAB_XMLNS
+            if img_instance is not None:
+                cores = img_instance.attrib.get("cores")
+                ram = img_instance.attrib.get("ram")
+                disk = img_instance.attrib.get("disk")
+            disk_image_name = "default"
+            disk_image = sliver_type.find("{%s}disk_image" % self.xmlns)
+            if disk_image is not None:
+                disk_image_name = disk_image.attrib.get("name")
+            sliver_elem = Sliver(server_component_id, sliver_type_name, disk_image_name, 
+                        ram, disk, cores)
+            if sliver_elem is not None:
+                # Retrieve contects of Sliver object
+                sliver_list.append(sliver_elem.__dict__["sliver"])
+        return sliver_list
 
-            n_ = Node(n.attrib.get("client_id"),
-                      n.attrib.get("component_manager_id"),
-                      n.attrib.get("exclusive"), s_)
+    def __find_nodes(self):
+        nodes = self.rspec.findall("{%s}node" % self.xmlns)
+        if nodes is None:
+            self.raise_exception("Node tag not found!")
+        return nodes
 
-#            for i in n.iterfind("{%s}interface" % (self.none)):
-#                i_ = Interface(i.attrib.get("client_id"))
-#                for sv in i.iterfind("{%s}link_shared_vlan" % (self.__sv)):
-#                    i_.add_vlan(sv.attrib.get("vlantag"),
-#                                sv.attrib.get("name"))
-#                n_.add_interface(i_.serialize())
+    def __find_sliver(self, node):
+        sliver_type = node.find("{%s}sliver_type" % self.xmlns)
+        if sliver_type is None:
+            self.raise_exception("Sliver_type tag not found!")
+        return sliver_type
 
-            nodes_.append(n_.serialize())
+#    def __find_slivers(self, nodes=None):
+#        slivers = []
+#        if nodes is not None:
+#            for node in nodes:
+#                slivers.extend(node.findall("{%s}sliver_type" % self.xmlns))
+#        else:
+#            slivers = self.rspec.findall("{%s}sliver_type" % self.xmlns)
+#        if slivers is None:
+#            self.raise_exception("Sliver_type tag not found!")
+#        return slivers
 
-        return nodes_
-
-    def nodes(self):
-        return self.get_nodes(self.rspec)
-
-    def get_links(self, rspec):
-        links_ = []
-        for l in rspec.findall(".//{%s}link" % (self.none)):
-            manager_ = l.find("{%s}component_manager" % (self.none))
-            if manager_ is None:
-                self.raise_exception("Component-Mgr tag not found in link!")
-
-            l_ = Link(l.attrib.get("client_id"), manager_.attrib.get("name"))
-
-#            [l_.add_interface_ref(i.attrib.get("client_id"))
-#             for i in l.iterfind("{%s}interface_ref" % (self.none))]
-
-            [l_.add_property(p.attrib.get("source_id"),
-                             p.attrib.get("dest_id"),
-                             p.attrib.get("capacity"))
-             for p in l.iterfind("{%s}property" % (self.none))]
-
-            links_.append(l_.serialize())
-
-        return links_
-
-    def links(self):
-        return self.get_links(self.rspec)
