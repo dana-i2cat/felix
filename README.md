@@ -1,5 +1,5 @@
-FELIX
-=====
+FELIX - Stitching Element Resource Manager
+==========================================
 
 FELIX aims to create a common framework in which users can request, monitor and manage a slice provisioned over distributed and distant Future Internet experimental facilities in Europe and Japan.
 
