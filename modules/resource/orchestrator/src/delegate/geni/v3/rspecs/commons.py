@@ -7,15 +7,15 @@ DEFAULT_SCHEMA_LOCATION = DSL_PREFIX + "3 "
 import core
 logger = core.log.getLogger("delegate-commons")
 
-def validate_old(ingress_root):
+def validate(ingress_root):
     import urllib2
     from lxml import etree
-
+    
     xs = ingress_root.nsmap.get("xs")
     schemas = ingress_root.attrib.get("{%s}schemaLocation" % (xs))
     if (schemas is None) or (len(schemas) == 0):
         return (False, "Unable to find schemas locations!")
-
+    
     errors = []
     for schema in schemas.split():
         try:
@@ -27,43 +27,15 @@ def validate_old(ingress_root):
             xmlschema = etree.XMLSchema(doc)
             if xmlschema.validate(ingress_root):
                 return (True, "")
-
+        
         except Exception as e:
             errors.append(str(e))
-
+    
     return (False, errors)
 
-# XXX Not validating SDN-RM (SFA). This is expected because of the invalid imports (https, incorrect location, etc)
-def validate(rspec_root):
-    import urllib2
-    from lxml import etree
-    # parse
-    #rspec_root = etree.fromstring(rspec_string)
-    schema_locations = rspec_root.get("{%s}schemaLocation" % DEFAULT_XS)
-    errors = []
-    valid_xml = True
-    if schema_locations:
-        schema_location_list = filter(lambda x: ".xsd" in x, schema_locations.split(" "))
-        xmlschema_contents = urllib2.urlopen(schema_location_list[0]) # try to download the schema
-        xmlschema_doc = etree.parse(xmlschema_contents)
-        for sl in schema_location_list[1:]:
-            try:
-                xmlschema_doc_new_import = etree.Element("{%s}import" % DEFAULT_XS,
-                    #namespace="/".join(sl.split('/')[:-1]),
-                    schemaLocation="%s" % sl)
-                xmlschema_doc.getroot().insert(0, xmlschema_doc_new_import)
-            except Exception as e:
-                errors.append(str(e))
-        xmlschema = etree.XMLSchema(xmlschema_doc)
-        # validate RSpec against specified schemaLocations
-        valid_xml &= xmlschema.validate(rspec_root)
-    if valid_xml:
-        errors = ""
-    return (valid_xml, errors)
-
-def validate_new(rspec_string):
+def validate_namespaces(rspec_string):
     """
-    New version for validating against multiple schemas
+    Intended to validate against multiple schemas
     """
     import urllib2
     from lxml import etree
