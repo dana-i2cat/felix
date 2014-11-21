@@ -16,12 +16,17 @@ class CRMv3RequestParser(ParserBase):
         sliver_list = []
         for node in nodes:
             server_component_id = node.attrib.get("component_id")
+            server_cm_id = node.attrib.get("component_manager_id")
+            server_client_id = node.attrib.get("client_id")
+            server_exclusive = node.attrib.get("exclusive")
+
             sliver_type = self.__find_sliver(node)
             sliver_type_name = sliver_type.attrib.get("name")
             ram = None
             disk = None
             cores = None
-            img_instance = sliver_type.find("{%s}xen" % self.rspec.nsmap.get("emulab")) #EMULAB_XMLNS
+            img_instance = sliver_type.find(
+                "{%s}xen" % self.rspec.nsmap.get("emulab")) #EMULAB_XMLNS
             if img_instance is not None:
                 cores = img_instance.attrib.get("cores")
                 ram = img_instance.attrib.get("ram")
@@ -30,8 +35,10 @@ class CRMv3RequestParser(ParserBase):
             disk_image = sliver_type.find("{%s}disk_image" % self.xmlns)
             if disk_image is not None:
                 disk_image_name = disk_image.attrib.get("name")
-            sliver_elem = Sliver(server_component_id, sliver_type_name, disk_image_name, 
-                        ram, disk, cores)
+            sliver_elem = Sliver(server_component_id, sliver_type_name,
+                                 disk_image_name, ram, disk, cores,
+                                 server_cm_id, server_client_id,
+                                 server_exclusive)
             if sliver_elem is not None:
                 # Retrieve contects of Sliver object
                 sliver_list.append(sliver_elem.__dict__["sliver"])

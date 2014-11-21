@@ -127,6 +127,17 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
+    def get_com_node_routing_key(self, cid):
+        table = pymongo.MongoClient().felix_ro.COMNodeTable
+        try:
+            self.__mutex.acquire()
+            row = table.find_one({"component_id": cid})
+            if row is None:
+                raise Exception("CompId %s not found in RO-COMNode-DB!" % cid)
+            return row.get("routing_key")
+        finally:
+            self.__mutex.release()
+
     # (felix_ro) COMLinkTable
     # TODO Ensure correctness
     def store_com_links(self, routingKey, values):
