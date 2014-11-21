@@ -559,8 +559,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
         for k, v in route.iteritems():
             (m, ss) = self.__send_request_rspec(k, v, slice_urn, credentials, slice_expiration)
             logger.debug("delegate > manifest: %s" % str(m))
-            manifest = COMv3ManifestParser(from_string=m)
-            logger.debug("COMv3ManifestParser=%s" % (manifest,))
+            manifest = CRMv3ManifestParser(from_string=m)
+            logger.debug("CRMv3ManifestParser=%s" % (manifest,))
 
             sliver = manifest.sliver()
             logger.info("Sliver=%s" % (sliver,))
