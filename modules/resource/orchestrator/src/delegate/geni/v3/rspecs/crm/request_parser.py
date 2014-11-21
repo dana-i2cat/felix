@@ -15,10 +15,11 @@ class CRMv3RequestParser(ParserBase):
         nodes = self.__find_nodes()
         sliver_list = []
         for node in nodes:
-            server_component_id = node.attrib.get("component_id")
+            server_c_id = node.attrib.get("component_id")
             server_cm_id = node.attrib.get("component_manager_id")
             server_client_id = node.attrib.get("client_id")
             server_exclusive = node.attrib.get("exclusive")
+            server_available = False # Default, not important at this point
 
             sliver_type = self.__find_sliver(node)
             sliver_type_name = sliver_type.attrib.get("name")
@@ -35,26 +36,30 @@ class CRMv3RequestParser(ParserBase):
             disk_image = sliver_type.find("{%s}disk_image" % self.xmlns)
             if disk_image is not None:
                 disk_image_name = disk_image.attrib.get("name")
-            sliver_elem = Sliver(server_component_id, sliver_type_name,
-                                 disk_image_name, ram, disk, cores,
-                                 server_cm_id, server_client_id,
-                                 server_exclusive)
+            sliver_elem = Sliver(server_cm_id, server_c_id, server_client_id,
+                                 server_exclusive, server_available, 
+                                 sliver_type_name, disk_image_name, 
+                                 ram, disk, cores, 
+                                 )
             if sliver_elem is not None:
                 # Retrieve contects of Sliver object
-                sliver_list.append(sliver_elem.__dict__["sliver"])
+                sliver_list.append(sliver_elem.__dict__)
         return sliver_list
-
-    def __find_nodes(self):
-        nodes = self.rspec.findall("{%s}node" % self.xmlns)
-        if nodes is None:
-            self.raise_exception("Node tag not found!")
-        return nodes
 
     def __find_sliver(self, node):
         sliver_type = node.find("{%s}sliver_type" % self.xmlns)
         if sliver_type is None:
             self.raise_exception("Sliver_type tag not found!")
         return sliver_type
+
+    def __find_nodes(self):
+        nodes = self.get_nodes()
+        if nodes is None:
+            self.raise_exception("Node tag not found!")
+        return nodes
+
+    def get_nodes(self):
+        nodes = self.rspec.findall("{%s}node" % self.xmlns)
 
 #    def __find_slivers(self, nodes=None):
 #        slivers = []

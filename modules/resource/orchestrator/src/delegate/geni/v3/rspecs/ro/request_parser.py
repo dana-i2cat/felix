@@ -11,7 +11,13 @@ class RORequestParser(ParserBase):
         self.__of_parser = OFv3RequestParser(from_file, from_string)
         self.__tn_parser = TNRMv3RequestParser(from_file, from_string)
     
-    # C resources
+    # COM resources
+    def com_nodes(self):
+        try:
+            return self.__com_parser.get_nodes()
+        except Exception:
+            return []
+
     def com_slivers(self):
         try:
             return self.__com_parser.get_slivers()

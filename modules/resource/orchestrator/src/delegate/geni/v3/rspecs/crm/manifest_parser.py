@@ -11,12 +11,13 @@ class CRMv3ManifestParser(CRMv3RequestParser):
         sliver_list = []
         slivers = rspec.findall("{%s}node" % (self.xmlns))
         for sliver in slivers:
-            print "\n\n\n\n\n\n\n\nDEBUG MANIFEST sliver >>>>>> %s\n\n\n\n\n\n\n\n\n\n" % str(sliver)
-            sliver_info = {"client_id": sliver.attrib.get("client_id"),
+            sliver_info = {
+                            "client_id": sliver.attrib.get("client_id"),
                             # Sliver's component manager is the CRM itself
                             "component_id": sliver.attrib.get("component_manager_id"),
                             "component_name": sliver.attrib.get("component_name"),
-                            "sliver_id": sliver.attrib.get("sliver_id")}
+                            "sliver_id": sliver.attrib.get("sliver_id")
+                            }
             sliver_list.append(sliver_info)
         return sliver_list
 

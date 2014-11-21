@@ -15,15 +15,13 @@ class CRMv3ManifestFormatter(FormatterBase):
             "manifest", schema_location, {},
             xmlns, xs)
         self.__com = DEFAULT_XMLNS
-
-    def add_node(self, rspec, n):
-        node = etree.SubElement(rspec, "{%s}node" % (self.xmlns))
-        server_component_id = n.get("geni_sliver_urn")
-        node.attrib["client_id"] = server_component_id.split("+")[-1]
-        node.attrib["component_id"] = server_component_id
-        node.attrib["component_manager_id"] = ""
-        node.attrib["sliver_id"] = server_component_id
-
-    def node(self, n):
-        self.add_node(self.rspec, n)
+    
+    def add_sliver(self, rspec, n):
+        sliver = etree.SubElement(rspec, "{%s}node" % (self.xmlns))
+        node_keys = ["geni_sliver_urn", "component_manager_id", "component_id", "sliver_id"]
+        for key in node_keys:
+            sliver.attrib[key] = getattr(n, key)
+    
+    def sliver(self, n):
+        self.add_sliver(self.rspec, n)
 

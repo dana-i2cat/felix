@@ -23,8 +23,8 @@ class CRMv3AdvertisementParser(ParserBase):
             if available is not None:
                 available = available.attrib.get("now")
             node = Node(n.attrib.get("component_id"),
-                  n.attrib.get("component_name"),
                   n.attrib.get("component_manager_id"),
+                  n.attrib.get("component_name"),
                   n.attrib.get("exclusive"), available)
 
             node_id = xrn.urn_to_hrn(n.get("component_id"))[0]

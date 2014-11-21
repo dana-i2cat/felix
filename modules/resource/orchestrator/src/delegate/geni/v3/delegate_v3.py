@@ -201,7 +201,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         # COM resources
         slivers = req_rspec.com_slivers()
-        logger.debug("\n\n\n\n\n\n\n\n\n\n\n\n\n COM slivers=%s", slivers)
+        nodes = req_rspec.com_nodes()
+
         if len(slivers) > 0:
             logger.debug("Found a COM-slivers segment (%d): %s" %
                          (len(slivers), slivers,))
@@ -210,9 +211,14 @@ class GENIv3Delegate(GENIv3DelegateBase):
                                            slivers, req_rspec)
             logger.debug("com_m=%s, com_s=%s, com_s=%s" %
                          (com_m_info, com_slivers, db_slivers))
-            for m in com_m_info:
-                for s in com_slivers:
-                    ro_manifest.com_sliver(s)
+            # XXX What to do with com_slivers for the XML manifest?
+            # It should be kept for the "geni_slivers" list
+#            for m in com_m_info:
+#                for s in com_slivers:                        
+#                    ro_manifest.com_sliver(s)
+
+            for s in slivers:
+                ro_manifest.com_sliver(s)
 
             ro_slivers.extend(com_slivers)
             ro_db_slivers.extend(db_slivers)
@@ -565,7 +571,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         for k, v in route.iteritems():
             (m, ss) = self.__send_request_rspec(
                 k, v, slice_urn, credentials, slice_expiration)
-            logger.debug("delegate > manifest: %s" % str(m))
+            logger.debug("\n\n\n\n\n\n\n\n\n\n\n\ndelegate > manifest: %s\n\n\n\n\n\n\n\n\n\n\n\n" % str(m))
             manifest = CRMv3ManifestParser(from_string=m)
             logger.debug("CRMv3ManifestParser=%s" % (manifest,))
 
