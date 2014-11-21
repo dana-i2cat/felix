@@ -15,7 +15,9 @@ class CommandMgr(object):
         "ScheduledJobs": pymongo.MongoClient().felix_ro.ScheduledJobs,
         "SliceTable": pymongo.MongoClient().felix_ro.SliceTable,
         "TNLinkTable": pymongo.MongoClient().felix_ro.TNLinkTable,
-        "TNNodeTable": pymongo.MongoClient().felix_ro.TNNodeTable}
+        "TNNodeTable": pymongo.MongoClient().felix_ro.TNNodeTable,
+        "COMNodeTable": pymongo.MongoClient().felix_ro.COMNodeTable,
+        "COMLinkTable": pymongo.MongoClient().felix_ro.COMLinkTable}
 
     def __select(self, table, name):
         print "\n\n" + "(RO) %s has %d rows\n" % (name, table.count())

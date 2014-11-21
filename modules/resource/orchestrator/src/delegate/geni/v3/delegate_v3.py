@@ -21,6 +21,7 @@ from delegate.geni.v3.rspecs.tnrm.request_formatter import\
 from delegate.geni.v3.rspecs.serm.request_formatter import\
     SERMv3RequestFormatter
 from delegate.geni.v3.rspecs.crm.manifest_parser import CRMv3ManifestParser
+from delegate.geni.v3.rspecs.crm.request_formatter import CRMv3RequestFormatter
 from delegate.geni.v3.rspecs.openflow.manifest_parser import OFv3ManifestParser
 from delegate.geni.v3.rspecs.tnrm.manifest_parser import TNRMv3ManifestParser
 from delegate.geni.v3.rspecs.serm.manifest_parser import SERMv3ManifestParser
@@ -79,7 +80,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         sl = "http://www.geni.net/resources/rspec/3/ad.xsd"
         rspec = ROAdvertisementFormatter(schema_location=sl)
-        
+
         try:
             logger.debug("COM resources: nodes")
             for n in db_sync_manager.get_com_nodes():
@@ -199,7 +200,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
         ro_manifest, ro_slivers, ro_db_slivers = ROManifestFormatter(), [], []
 
         # COM resources
-        se_com_info = None
         slivers = req_rspec.com_slivers()
         logger.debug("\n\n\n\n\n\n\n\n\n\n\n\n\n COM slivers=%s", slivers)
         if len(slivers) > 0:
@@ -207,12 +207,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
                          (len(slivers), slivers,))
             (com_m_info, com_slivers, db_slivers) =\
                 self.__manage_com_allocate(slice_urn, credentials, end_time,
-                                          slivers, req_rspec)
+                                           slivers, req_rspec)
             logger.debug("com_m=%s, com_s=%s, com_s=%s" %
                          (com_m_info, com_slivers, db_slivers))
             for m in com_m_info:
-                for s in m.get("slivers"):
+                for s in com_slivers:
                     ro_manifest.com_sliver(s)
+
             ro_slivers.extend(com_slivers)
             ro_db_slivers.extend(db_slivers)
 
@@ -535,29 +536,35 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         return ret
 
-    def __manage_com_allocate(self, slice_urn, credentials, slice_expiration, sliver, parser):
+    def __update_com_route(self, route, values):
+        for v in values:
+            cid = v.get("component_id")
+            k = db_sync_manager.get_com_node_routing_key(cid)
+            v["routing_key"] = k
+            if k not in route:
+                sl = "http://www.geni.net/resources/rspec/3/request.xsd"
+                route[k] = CRMv3RequestFormatter(schema_location=sl)
+
+    def __update_com_route_rspec(self, route, slivers):
+        for key, rspec in route.iteritems():
+            for s in slivers:
+                if s.get("routing_key") == key:
+                    rspec.node(s)
+
+    def __manage_com_allocate(self, slice_urn, credentials,
+                              slice_expiration, slivers, parser):
         # TODO CHECK THAT IT WORKS
         route = {}
-        slivers = parser.com_slivers()
+        self.__update_com_route(route, slivers)
         logger.debug("Slivers=%s" % (slivers,))
 
-        #m = """<rspec type="manifest" xmlns="http://www.geni.net/resources/rspec/3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.geni.net/resources/rspec/3 http://www.geni.net/resources/rspec/3/manifest.xsd">  
-#  <node client_id="None" component_id="urn:publicid:IDN+ocf:i2cat:vtam+node+Verdaguer" component_manager_id="urn:publicid:IDN+ocf:i2cat:vtam+authority+cm" sliver_id="urn:publicid:IDN+ocf:i2cat:vtam:Verdaguer+sliver+692550">
-#</node>  
-#</rspec>"""
-#        manifest = CRMv3ManifestParser(from_string=m)
-#        print "manifest >>>>>>>>>>", manifest
-#        slivers = manifest.sliver()
-#        print "slivers >>>>>>>>>>", slivers
-
-        for sliver in slivers:
-            route.update(sliver)
-
+        self.__update_com_route_rspec(route, slivers)
         logger.info("Route=%s" % (route,))
         manifests, slivers, db_slivers = [], [], []
 
         for k, v in route.iteritems():
-            (m, ss) = self.__send_request_rspec(k, v, slice_urn, credentials, slice_expiration)
+            (m, ss) = self.__send_request_rspec(
+                k, v, slice_urn, credentials, slice_expiration)
             logger.debug("delegate > manifest: %s" % str(m))
             manifest = CRMv3ManifestParser(from_string=m)
             logger.debug("CRMv3ManifestParser=%s" % (manifest,))
