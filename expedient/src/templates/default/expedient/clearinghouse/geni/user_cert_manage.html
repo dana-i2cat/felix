@@ -41,11 +41,13 @@
 </div>
 <div>
 	{% if cert %}
-		<input type="button" id="download_cert" value="Download cert" onclick="document.location='{% url gcf_cert_download curr_user.pk %}'"/>
-		<input type="button" id="download_key" value="Download cert key" onclick="document.location='{% url gcf_key_download curr_user.pk %}'"/>
-    {% comment %}
-		<input type="button" id="regenerate_credentials" value="Regenerate cert" onclick="document.location='{% url gcf_cert_generate curr_user.pk %}'"/>
-    {% endcomment %}
+        <p><strong>Your certificate:</strong>
+		    <input type="button" id="download_cert" value="Download" onclick="document.location='{% url gcf_cert_download curr_user.pk %}'"/>
+            <input type="button" id="regenerate_credentials" value="Regenerate" onclick="document.location='{% url gcf_cert_generate curr_user.pk %}'"/>
+        </p>
+        <p><strong>Your certificate key:</strong> Private key associated with your certificate is not stored on server.
+            Private key is made available for download only once when the certificate is generated.
+            You may regenerate your certificate to get a new pair of certificate and key.</p>
 	{% else %}
 		<input type="button" id="generate_credentials" value="Generate" onclick="document.location='{% url gcf_cert_generate curr_user.pk %}'">
 	{% endif %}
@@ -56,12 +58,14 @@
 
 <div style="margin-top: 1em !important; ">
 	<h1>Manage user {{ curr_user.username }}'s SSH keys</h1>
-    <input type="button" id="download_pub_ssh_key" value="Download public SSH key" onclick="document.location='{% url gcf_pub_ssh_key_download curr_user.pk %}'"/>
-    {% if private_ssh_key_exists %}
-        <input type="button" id="download_priv_ssh_key" value="Download private SSH key" onclick="document.location='{% url gcf_priv_ssh_key_download curr_user.pk %}'"/>
-    {% endif %}
-	<input type="button" id="upload_ssh_keys" value="Upload public SSH key" onclick="document.location='{% url gcf_ssh_upload curr_user.pk %}'">
-
+    <p><strong>Public SSH key:</strong>
+        <input type="button" id="download_pub_ssh_key" value="Download" onclick="document.location='{% url gcf_pub_ssh_key_download curr_user.pk %}'"/>
+        <input type="button" id="regenerate_ssh_keys" value="Regenerate a new pair" onclick="document.location='{% url gcf_ssh_keys_generate curr_user.pk %}'"/>
+        <input type="button" id="upload_ssh_keys" value="Upload your own" onclick="document.location='{% url gcf_ssh_upload curr_user.pk %}'">
+    </p>
+    <p><strong>Private SSH key:</strong> Private SSH key is not stored on server.
+            Private key is made available for download only once when the SSH key pair is generated.
+            You may regenerate a new pair of SSH keys.</p>
 </div>
 
 <div style="margin-top: 1em !important; ">

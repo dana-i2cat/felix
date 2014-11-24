@@ -29,10 +29,9 @@ def home(request):
         user_details = {'FIRST_NAME': user_profile.user.first_name, 'LAST_NAME': user_profile.user.last_name, 'EMAIL': user_profile.user.email}
         # if not (user_profile.urn and user_profile.certificate and
         #         user_profile.certificate_key and user_profile.credentials):
-        urn, cert, cert_key, creds, ssh_key_pair = get_member_info(str(request.user), user_details)
+        urn, cert, creds, ssh_key_pair = get_member_info(str(request.user), user_details)
         user_profile.urn = urn
         user_profile.certificate = cert
-        user_profile.certificate_key = cert_key
         user_profile.credentials = creds
         if ssh_key_pair: # Keys are returned only for new registration
             user_profile.public_ssh_key = ssh_key_pair[0]

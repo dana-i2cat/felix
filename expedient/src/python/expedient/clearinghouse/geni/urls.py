@@ -7,6 +7,7 @@ urlpatterns = patterns('geni.views',
     # Certificate management
     url(r'^certs/manage/(?P<user_id>\d+)/$', 'user_cert_manage', name='gcf_cert_manage'),
     url(r'^certs/create/(?P<user_id>\d+)/$', 'user_cert_generate', name='gcf_cert_generate'),
+    url(r'^certs/create_keys/(?P<user_id>\d+)/$', 'user_ssh_keys_generate', name='gcf_ssh_keys_generate'),
     url(r'^certs/cert/(?P<user_id>\d+)/$', 'user_cert_download', name='gcf_cert_download'),
     url(r'^certs/pub/(?P<user_id>\d+)/$', 'user_public_ssh_key_download', name='gcf_pub_ssh_key_download'),
     url(r'^certs/priv/(?P<user_id>\d+)/$', 'user_private_ssh_key_download', name='gcf_priv_ssh_key_download'),

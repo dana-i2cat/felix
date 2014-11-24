@@ -190,11 +190,30 @@ def get_member_info(username, user_details=None):
 
     if user_info:
         return user_info['MEMBER_URN'], user_info['MEMBER_CERTIFICATE'], \
-               user_info['MEMBER_CERTIFICATE_KEY'], user_info['MEMBER_CREDENTIALS'], ssh_key_pair
+               user_info['MEMBER_CREDENTIALS'], ssh_key_pair
     else:
         print_debug_message('get_member_info() FAILED!')
         return None
 
+def regenerate_member_creds(user_urn):
+
+    update_data = {'MEMBER_CERTIFICATE': ''}
+    code, value, output = ma_call('update', ['MEMBER', user_urn, EXPEDIENT_CERTIFICATE, EXPEDIENT_CREDENTIALS,
+                                             {'fields': update_data}])
+    if not code == 0:
+        print_debug_message('regenerate_member_creds()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
+    else:
+        return value['MEMBER_CERTIFICATE'], value['MEMBER_CERTIFICATE_KEY'], value['MEMBER_CREDENTIALS']
+
+def regenerate_ssh_keys(user_urn, username, certificate=None, credentials=None):
+
+    pub_key, priv_key = generate_ssh_keys(username)
+    code = update_ssh_key(user_urn, pub_key, certificate, credentials)
+    if not code == 0:
+        print_debug_message('regenerate_ssh_keys()\ncode:'+str(code))
+        return None, None
+    else:
+        return pub_key, priv_key
 
 def lookup(match, object_type, _filter=[], certificate=None, credentials=None):
     options = {}
@@ -293,7 +312,7 @@ def register_user(username, user_details):
 
 def print_debug_message(msg):
     if CBAS_DEBUG:
-        logger.debug(msg)
+        logger.debug(msg+'\n')
 
 def verify_certificate(cert_str):
 
