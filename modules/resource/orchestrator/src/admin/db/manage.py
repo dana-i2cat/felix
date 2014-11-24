@@ -86,13 +86,16 @@ class Dump(RoutingTableCommand):
     def validate(self):
         self.checkAllNone()
 
-    def execute(self):
-        table_ = self.getTable()
+    def __dump_table(self, table, table_name):
+        print "(RO) %s has %s rows\n" % (table_name, table.count(),)
 
-        print "(RO) RoutingTable has %s rows\n" % (table_.count(),)
-
-        for row_ in table_.find():
+        for row_ in table.find():
             print "%s" % (row_,)
+
+    def execute(self):
+        self.__dump_table(self.getTable(), "RoutingTable")
+        self.__dump_table(pymongo.MongoClient().felix_ro.GeneralInfoTable,
+                          "GeneralInfoTable")
 
     def helpMessage(self):
         return "dump" + "\n\tGet a dump of the mongoDB db"

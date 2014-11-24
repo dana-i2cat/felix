@@ -22,8 +22,8 @@ class MonitoringManager(ResourceDetector):
             root.attrib['type'] = 'physical'
             # General information
             self.__add_general_info(root)
-            # XXX_TODO_XXX: SDN resources
-
+            # SDN resources
+            self.__add_sdn_info(root)
             # XXX_TODO_XXX: C resources
 
             self.__send(peer, root)
@@ -47,3 +47,21 @@ class MonitoringManager(ResourceDetector):
     def __add_general_info(self, root):
         d = ET.SubElement(root, 'domain')
         d.attrib['id'] = db_sync_manager.get_domain_id()
+
+    def __add_sdn_info(self, root):
+        datapaths = db_sync_manager.get_sdn_datapaths()
+        for dp in datapaths:
+            self.debug("sdn-datapath=%s" % (dp,))
+            switch = ET.SubElement(root, 'switch')
+            switch.attrib['id'] = dp.get('dpid')
+            for p in dp.get('ports'):
+                intf = ET.SubElement(switch, 'interface')
+                intf.attrib['id'] = p.get('name')
+                intf.attrib['number'] = p.get('num')
+
+        (sdn_links, fed_links) = db_sync_manager.get_sdn_links()
+        for sdnl in sdn_links:
+            self.debug("sdn-link=%s" % (sdnl,))
+
+        for fedl in fed_links:
+            self.debug("fed-link=%s" % (fedl,))

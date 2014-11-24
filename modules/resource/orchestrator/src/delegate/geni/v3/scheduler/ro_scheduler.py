@@ -55,7 +55,7 @@ class ROSchedulerService(Service):
         self.__add_oneshot(11, sdn_resource_detector, "oneshot_sdn_rd")
         self.__add_oneshot(21, se_resource_detector, "oneshot_se_rd")
         self.__add_oneshot(31, tn_resource_detector, "oneshot_tn_rd")
-        self.__add_oneshot(5, phy_monitoring, "oneshot_phy_monitoring")
+        self.__add_oneshot(41, phy_monitoring, "oneshot_phy_monitoring")
 
     def __add_cron(self, func_, id_, hour_, min_, sec_):
         try:
