@@ -1,7 +1,7 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta
 from jobs import com_resource_detector, sdn_resource_detector,\
-    se_resource_detector, tn_resource_detector
+    se_resource_detector, tn_resource_detector, phy_monitoring
 from core.service import Service
 import core
 logger = core.log.getLogger("ro-scheduler")
@@ -17,7 +17,7 @@ class ROSchedulerService(Service):
                                   collection="ScheduledJobs")
         ro_scheduler.start()
 
-        # NOTE Interval should be retrieved using the ConfParser from 
+        # NOTE Interval should be retrieved using the ConfParser from
         # the "resource_detector"."interval" value in the "ro.conf" file
         # Also, consider to considerably increase the interval
         super(ROSchedulerService, self).__init__(
@@ -55,6 +55,7 @@ class ROSchedulerService(Service):
         self.__add_oneshot(11, sdn_resource_detector, "oneshot_sdn_rd")
         self.__add_oneshot(21, se_resource_detector, "oneshot_se_rd")
         self.__add_oneshot(31, tn_resource_detector, "oneshot_tn_rd")
+        self.__add_oneshot(5, phy_monitoring, "oneshot_phy_monitoring")
 
     def __add_cron(self, func_, id_, hour_, min_, sec_):
         try:
@@ -68,3 +69,4 @@ class ROSchedulerService(Service):
         self.__add_cron(sdn_resource_detector, "cron_sdn_rd", 0, 11, 0)
         self.__add_cron(se_resource_detector, "cron_se_rd", 0, 21, 0)
         self.__add_cron(tn_resource_detector, "cron_tn_rd", 0, 31, 0)
+        self.__add_cron(phy_monitoring, "cron_phy_monitoring", 0, 41, 0)

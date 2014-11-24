@@ -1,4 +1,5 @@
 from resource_detector import ResourceDetector
+from monitoring_manager import MonitoringManager
 from delegate.geni.v3.db_manager import db_sync_manager
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
 
@@ -14,6 +15,7 @@ def com_resource_detector():
 
     except Exception as e:
         logger.error("com_resource_detector failure: %s" % (e,))
+
 
 def sdn_resource_detector():
     try:
@@ -40,6 +42,16 @@ def tn_resource_detector():
 
     except Exception as e:
         logger.error("sdn_resource_detector failure: %s" % (e,))
+
+
+# monitoring scheduled jobs
+def phy_monitoring():
+    try:
+        mm = MonitoringManager()
+        mm.physical_info()
+
+    except Exception as e:
+        logger.error("phy_monitoring failure: %s" % (e,))
 
 
 # automatic release the slice resources for the end-time expiration
