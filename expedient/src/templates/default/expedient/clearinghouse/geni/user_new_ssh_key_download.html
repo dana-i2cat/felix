@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Download User Private SSH Key{% endblock title %}
+
+{% block content %}
+<div class="main">
+	<h1>Download private SSH key for {{ curr_user.username }}</h1>
+	<h2>Your SSH key pair has been generated successfully. Your private SSH key is available for ONE time download only. Keep it safe as this key cannot be recovered if lost.</h2>
+    <input type="button" id="download_priv_ssh_key" value="Download Private SSH key"  onclick="document.location='{% url gcf_priv_ssh_key_download curr_user.pk %}'"/>
+    <input type="button" id="download_pub_ssh_key" value="Download Public SSH key" onclick="document.location='{% url gcf_pub_ssh_key_download curr_user.pk %}'"/>
+
+    <div style="margin-top: 1em !important; ">
+        <input type="button" id="go_back" value="Back" onclick="document.location='{% url gcf_cert_manage curr_user.pk %}'">
+    </div>
+
+</div>
+<style>
+    .hidden-div {
+        display:none
+    }
+</style>
+<script type="text/javascript">
+    var button = document.getElementById('download_priv_ssh_key')
+    button.addEventListener('click',hide,false);
+
+    function hide() {
+        //this.style.display = 'none';
+        this.disabled = true;
+        this.style="color: grey"
+    }
+</script>
+{% endblock content %}
