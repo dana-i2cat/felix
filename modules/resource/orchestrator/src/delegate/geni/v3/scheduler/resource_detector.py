@@ -13,7 +13,7 @@ import core
 logger = core.log.getLogger("resource-detector")
 
 
-class ResourceDetector():
+class ResourceDetector(object):
     """
     This object can be used to populate the internal RO"s DB
     with the available resources exposed by RMs.

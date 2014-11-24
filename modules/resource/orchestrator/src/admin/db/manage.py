@@ -176,10 +176,36 @@ class DelRouteEntry(RoutingTableCommand):
                "\n\tDelete an entry(/ies)in the mongoDB db"
 
 
+class AddGeneralInfoEntry(GenericCommand):
+    def __init__(self):
+        GenericCommand.__init__(self)
+        self.domain_ = None
+
+    def updateDomain(self, value):
+        self.domain_ = value
+
+    def validate(self):
+        if self.domain_ is None:
+            raise AttributeError("Domain argument is NOT specified!")
+
+    def execute(self):
+        table_ = pymongo.MongoClient().felix_ro.GeneralInfoTable
+
+        row_ = {"domain": self.domain_}
+
+        row_id_ = table_.insert(row_)
+        print "(RO) GeneralInfoTable insert row: %s\n" % (row_id_,)
+
+    def helpMessage(self):
+        return "add_general-info_entry [--domain <id>]" +\
+               "\n\tAdd a general-info entry in the mongoDB db"
+
+
 commands = {"dump": Dump(),
             "delete_all": DeleteAll(),
             "add_route_entry": AddRouteEntry(),
-            "delete_route_entry": DelRouteEntry()}
+            "delete_route_entry": DelRouteEntry(),
+            "add_general-info_entry": AddGeneralInfoEntry()}
 
 
 class CmdManager:
@@ -215,6 +241,9 @@ class CmdManager:
 
     def updateAMVersion(self, key, value):
         commands[key].updateAMVersion(value)
+
+    def updateDomain(self, key, value):
+        commands[key].updateDomain(value)
 
     @staticmethod
     def find(key):
@@ -259,13 +288,14 @@ def main(argv=None):
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
         parser_.add_argument("command",
-                         action=CmdConsume,
-                         help="?=describe how to use every single command")
+                             action=CmdConsume,
+                             help="?=describe how to use every single command")
 
 #        for command in commands.keys():
 #            parser_.add_argument(command),
 #                             action=CmdConsume,
-#                             help="?=%s" % getattr(commands[command], "helpMessage")())
+#                             help="?=%s" % getattr(commands[command],
+#                             "helpMessage")())
 
         parser_.add_argument("-t", help="Set the type of RM")
 
@@ -291,32 +321,39 @@ def main(argv=None):
         parser_.add_argument("--am_version", default=None,
                              help="Set the AM type")
 
+        parser_.add_argument("--domain", default=None,
+                             help="Set the Domain name")
+
         args_ = parser_.parse_args()
 
     except Exception as ex:
         print "Got an exception parsing flags/options:", ex
         return False
 
-    # print "Args=%s" % (args_,)
+    print "Args=%s" % (args_,)
     comMng_ = CmdManager()
 
     try:
-        if args_.t is not None:
-            comMng_.updateType(args_.command, args_.t)
+        if args_.command == "add_general-info_entry":
+            comMng_.updateDomain(args_.command, args_.domain)
 
-        if args_.a is not None:
-            comMng_.updateAddress(args_.command, args_.a)
+        else:
+            if args_.t is not None:
+                comMng_.updateType(args_.command, args_.t)
 
-        if args_.p is not None:
-            comMng_.updatePort(args_.command, args_.p)
+            if args_.a is not None:
+                comMng_.updateAddress(args_.command, args_.a)
 
-        # Arguments with default values
-        comMng_.updateProtocol(args_.command, args_.protocol)
-        comMng_.updateEndpoint(args_.command, args_.endpoint)
-        comMng_.updateUser(args_.command, args_.user)
-        comMng_.updatePassword(args_.command, args_.password)
-        comMng_.updateAMType(args_.command, args_.am_type)
-        comMng_.updateAMVersion(args_.command, args_.am_version)
+            if args_.p is not None:
+                comMng_.updatePort(args_.command, args_.p)
+
+            # Arguments with default values
+            comMng_.updateProtocol(args_.command, args_.protocol)
+            comMng_.updateEndpoint(args_.command, args_.endpoint)
+            comMng_.updateUser(args_.command, args_.user)
+            comMng_.updatePassword(args_.command, args_.password)
+            comMng_.updateAMType(args_.command, args_.am_type)
+            comMng_.updateAMVersion(args_.command, args_.am_version)
 
         comMng_.analyze(args_.command)
 

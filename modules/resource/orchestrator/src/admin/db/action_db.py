@@ -8,6 +8,7 @@ import pymongo
 class CommandMgr(object):
     TABLES = {
         "RoutingTable": pymongo.MongoClient().felix_ro.RoutingTable,
+        "GeneralInfoTable": pymongo.MongoClient().felix_ro.GeneralInfoTable,
         "OFDatapathTable": pymongo.MongoClient().felix_ro.OFDatapathTable,
         "OFLinkTable": pymongo.MongoClient().felix_ro.OFLinkTable,
         "SELinkTable": pymongo.MongoClient().felix_ro.SELinkTable,

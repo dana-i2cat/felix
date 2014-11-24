@@ -41,6 +41,18 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
+    # (felix_ro) GeneralInfoTable
+    def get_domain_id(self):
+        table = pymongo.MongoClient().felix_ro.GeneralInfoTable
+        try:
+            self.__mutex.acquire()
+            row = table.find_one()
+            if row is None:
+                raise Exception("GeneralInfoEntry not found into RO-DB!")
+            return row.get("domain")
+        finally:
+            self.__mutex.release()
+
     # (felix_ro) SliceTable
     def store_slice_info(self, urn, slivers):
         table = pymongo.MongoClient().felix_ro.SliceTable
@@ -106,8 +118,8 @@ class DBManager(object):
                 row = table.find_one({
                     "routing_key": routingKey,
                     "component_id": v.get("component_id"),
-                    "component_manager_id": v.get("component_manager_id"),})
-                    #"sliver_type_name": v.get("sliver_type_name")})
+                    "component_manager_id": v.get("component_manager_id"), })
+                #   "sliver_type_name": v.get("sliver_type_name")})
                 if not row:
                     v["routing_key"] = routingKey
                     ids.append(table.insert(v))
