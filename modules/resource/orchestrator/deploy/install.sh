@@ -24,7 +24,7 @@ fi
 
 # Fill with data only when database is empty
 db_content=$(python $dbmanage_path/manage.py dump | wc -l)
-db_lines_to_show=$(($db_content-2))
+db_lines_to_show=$(($db_content-4))
 if [[ $(python $dbmanage_path/manage.py dump | tail -$db_lines_to_show) == "" ]]; then
   echo "Filling database..."
   python $dbmanage_path/manage.py add_general-info_entry --domain "nextworks"
