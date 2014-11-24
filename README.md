@@ -38,26 +38,26 @@ Testing RO with omni
 [OMNI](http://trac.gpolab.bbn.com/gcf/wiki/Omni) is a CLI that allows reserving resources at GENI aggregate managers. After [configuring](http://trac.gpolab.bbn.com/gcf/wiki/OmniConfigure/Manual) it, you will be able to send requests against the GENI API v3 of your RM as follows (assume your RM is located at ``https://localhost:8001``):
 
 ```
-    # Retrieve version and meta information of the RM
-    python src/omni.py -o -a https://localhost:8001 -V 3 --debug getversion
-    # Retrieve list of resources provided by the RM (e.g. servers for CRM, switches for SDNRM)
-    python src/omni.py -o -a https://localhost:8001 -V 3 --debug --no-compress listresources
-    # Retrieve contents (slivers) belonging to a given slice
-    python src/omni.py -o -a https://localhost:8001 -V 3 --debug describe slicename
-    # Reserve/Allocate resources within a slice. (Parameter "--end-time" optional)
-    python src/omni.py -o -a https://localhost:8001 -V 3 --debug allocate slicename rspec-req.xml --end-time=2014-04-12T23:20:50.52Z
-    # Renew time where resources from reservation/allocation are kept from other users
-    python src/omni.py -o -a https://localhost:8001 -V 3 --debug renew slicename 2013-02-07T15:00:50.52Z
-    # Provision the resources previously allocated. (Parameter "--end-time" optional)
-    python src/omni.py -o -a https://localhost:8001 -V 3 --debug provision slicename --end-time=2014-04-12T23:20:50.52Z
-    # Retrieve status of a given slice
-    python src/omni.py -o -a https://localhost:8001 -V 3 --debug status slicename
-    # Perform action over a resource or sliver. Actions are usually: [geni_start | geni_stop | geni_restart]
-    python src/omni.py -o -a https://localhost:8001 -V 3 --debug performoperationalaction slicename geni_start
-    # Delete a given slice and all its contents
-    python src/omni.py -o -a https://localhost:8001 -V 3 --debug delete slicename
-    # Shut down a given slice and all its contents. Intended for admin/operator use, not user's
-    python src/omni.py -o -a https://localhost:8001 -V 3 --debug shutdown slicename
+# Retrieve version and meta information of the RM
+python src/omni.py -o -a https://localhost:8001 -V 3 --debug getversion
+# Retrieve list of resources provided by the RM (e.g. servers for CRM, switches for SDNRM)
+python src/omni.py -o -a https://localhost:8001 -V 3 --debug --no-compress listresources
+# Retrieve contents (slivers) belonging to a given slice
+python src/omni.py -o -a https://localhost:8001 -V 3 --debug describe slicename
+# Reserve/Allocate resources within a slice. (Parameter "--end-time" optional)
+python src/omni.py -o -a https://localhost:8001 -V 3 --debug allocate slicename rspec-req.xml --end-time=2014-04-12T23:20:50.52Z
+# Renew time where resources from reservation/allocation are kept from other users
+python src/omni.py -o -a https://localhost:8001 -V 3 --debug renew slicename 2013-02-07T15:00:50.52Z
+# Provision the resources previously allocated. (Parameter "--end-time" optional)
+python src/omni.py -o -a https://localhost:8001 -V 3 --debug provision slicename --end-time=2014-04-12T23:20:50.52Z
+# Retrieve status of a given slice
+python src/omni.py -o -a https://localhost:8001 -V 3 --debug status slicename
+# Perform action over a resource or sliver. Actions are usually: [geni_start | geni_stop | geni_restart]
+python src/omni.py -o -a https://localhost:8001 -V 3 --debug performoperationalaction slicename geni_start
+# Delete a given slice and all its contents
+python src/omni.py -o -a https://localhost:8001 -V 3 --debug delete slicename
+# Shut down a given slice and all its contents. Intended for admin/operator use, not user's
+python src/omni.py -o -a https://localhost:8001 -V 3 --debug shutdown slicename
 ```
 
 Example CRM RSpec for rspec-req.xml:
