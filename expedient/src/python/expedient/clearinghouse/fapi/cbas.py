@@ -202,6 +202,13 @@ def regenerate_member_creds(user_urn):
                                              {'fields': update_data}])
     if not code == 0:
         print_debug_message('regenerate_member_creds()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
+        return None
+
+    update_data = {'MEMBER_CERTIFICATE': value['MEMBER_CERTIFICATE']}
+    code, _, output = sa_call('update_credentials_for_member', [user_urn, EXPEDIENT_CERTIFICATE, EXPEDIENT_CREDENTIALS,
+                                             update_data])
+    if not code == 0:
+        print_debug_message('regenerate_member_creds()\ncode:'+str(code)+'\noutput:'+str(output))
     else:
         return value['MEMBER_CERTIFICATE'], value['MEMBER_CERTIFICATE_KEY'], value['MEMBER_CREDENTIALS']
 

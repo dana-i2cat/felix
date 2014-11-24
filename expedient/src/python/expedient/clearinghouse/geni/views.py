@@ -170,22 +170,28 @@ def user_cert_generate(request, user_id):
 
     if request.method == "POST":
         #create_x509_cert(urn, cert_fname, key_fname)
-        cert, cert_key, creds = regenerate_member_creds(user_urn)
-        user_profile.certificate = cert
-        user_profile.certificate_key = cert_key
-        user_profile.credentials = creds
-        user_profile.save()
-        DatedMessage.objects.post_message_to_user(
-            "Certificate for user %s successfully created." % user.username,
-            user=request.user, msg_type=DatedMessage.TYPE_SUCCESS)
-        return simple.direct_to_template(
-                request,
-                template= TEMPLATE_PATH + "/user_new_keys_download.html",
-                extra_context={
-                    "curr_user": user,
-                },
-            )
-        #return HttpResponseRedirect(reverse(user_cert_manage, args=[user.id]))
+        retValues = regenerate_member_creds(user_urn)
+        if retValues:
+            cert, cert_key, creds = retValues[0:]
+            user_profile.certificate = cert
+            user_profile.certificate_key = cert_key
+            user_profile.credentials = creds
+            user_profile.save()
+            DatedMessage.objects.post_message_to_user(
+                "Certificate for user %s successfully created." % user.username,
+                user=request.user, msg_type=DatedMessage.TYPE_SUCCESS)
+            return simple.direct_to_template(
+                    request,
+                    template= TEMPLATE_PATH + "/user_new_keys_download.html",
+                    extra_context={
+                        "curr_user": user,
+                    },
+                )
+        else:
+            DatedMessage.objects.post_message_to_user(
+                "Certificate for user %s could not be created." % user.username,
+                user=request.user, msg_type=DatedMessage.TYPE_ERROR)
+            return HttpResponseRedirect(reverse(user_cert_manage, args=[user.id]))
     
     return simple.direct_to_template(
         request,
