@@ -1,10 +1,10 @@
-import sys
-
 from delegate.geni.v3.delegate_v3 import GENIv3Delegate
-from delegate.geni.v3.scheduler.ro_scheduler import ROSchedulerService
 from handler.geni.v3.handler_v3 import GENIv3Handler
+from scheduler.ro_scheduler import ROSchedulerService
 from server.flask.flaskserver import FlaskServer
 from server.flask.flaskxmlrpc import FlaskXMLRPC
+
+import sys
 
 
 def main(argv=None):

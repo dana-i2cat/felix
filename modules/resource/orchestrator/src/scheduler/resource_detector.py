@@ -1,6 +1,6 @@
 from delegate.geni.v3.db_manager import db_sync_manager
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
-import delegate.geni.v3.rspecs.commons as Commons
+
 from delegate.geni.v3.rspecs.crm.advertisement_parser\
     import CRMv3AdvertisementParser
 from delegate.geni.v3.rspecs.openflow.advertisement_parser\
@@ -9,7 +9,10 @@ from delegate.geni.v3.rspecs.serm.advertisement_parser\
     import SERMv3AdvertisementParser
 from delegate.geni.v3.rspecs.tnrm.advertisement_parser\
     import TNRMv3AdvertisementParser
+
 import core
+import delegate.geni.v3.rspecs.commons as Commons
+
 logger = core.log.getLogger("resource-detector")
 
 

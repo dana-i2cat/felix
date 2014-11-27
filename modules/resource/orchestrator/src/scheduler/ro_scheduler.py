@@ -1,9 +1,11 @@
 from apscheduler.schedulers.background import BackgroundScheduler
+from core.service import Service
 from datetime import datetime, timedelta
 from jobs import com_resource_detector, sdn_resource_detector,\
     se_resource_detector, tn_resource_detector, phy_monitoring
-from core.service import Service
+
 import core
+
 logger = core.log.getLogger("ro-scheduler")
 
 ro_scheduler = None
@@ -15,7 +17,7 @@ class ROSchedulerService(Service):
         ro_scheduler = BackgroundScheduler()
         ro_scheduler.add_jobstore("mongodb", database="felix_ro",
                                   collection="ScheduledJobs")
-        ro_scheduler.start()
+#        ro_scheduler.start()
 
         # NOTE Interval should be retrieved using the ConfParser from
         # the "resource_detector"."interval" value in the "ro.conf" file

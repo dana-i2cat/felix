@@ -1,10 +1,10 @@
 #!/usr/bin/env python
+
+import algorithm
 import sys
+import topology
 
 sys.path.insert(0, "../../../../")
-
-import topology
-import algorithm
 
 
 def main():

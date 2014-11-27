@@ -1,34 +1,34 @@
+from dateutil import parser as dateparser
 from delegate.geni.v3.base import GENIv3DelegateBase
 from delegate.geni.v3.db_manager import db_sync_manager
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
-from handler.geni.v3 import exceptions as geni_ex
+# Following import cannot be ordered properly
 from delegate.geni.v3 import rm_adaptor
-from delegate.geni.v3.scheduler.ro_scheduler import ROSchedulerService
-from delegate.geni.v3.scheduler.jobs import slice_expiration
-
+from scheduler.jobs import slice_expiration
+from scheduler.ro_scheduler import ROSchedulerService
 from delegate.geni.v3.rspecs.commons import validate
 from delegate.geni.v3.rspecs.commons_of import Match
 from delegate.geni.v3.rspecs.commons_tn import Node, Interface
 from delegate.geni.v3.rspecs.commons_se import SELink
-from delegate.geni.v3.rspecs.ro.advertisement_formatter import\
-    ROAdvertisementFormatter
-from delegate.geni.v3.rspecs.ro.request_parser import RORequestParser
-from delegate.geni.v3.rspecs.ro.manifest_formatter import ROManifestFormatter
-from delegate.geni.v3.rspecs.openflow.request_formatter import\
-    OFv3RequestFormatter
-from delegate.geni.v3.rspecs.tnrm.request_formatter import\
-    TNRMv3RequestFormatter
-from delegate.geni.v3.rspecs.serm.request_formatter import\
-    SERMv3RequestFormatter
 from delegate.geni.v3.rspecs.crm.manifest_parser import CRMv3ManifestParser
 from delegate.geni.v3.rspecs.crm.request_formatter import CRMv3RequestFormatter
+from delegate.geni.v3.rspecs.openflow.request_formatter import\
+    OFv3RequestFormatter
+from delegate.geni.v3.rspecs.ro.advertisement_formatter import\
+    ROAdvertisementFormatter
+from delegate.geni.v3.rspecs.ro.manifest_formatter import ROManifestFormatter
+from delegate.geni.v3.rspecs.ro.request_parser import RORequestParser
 from delegate.geni.v3.rspecs.openflow.manifest_parser import OFv3ManifestParser
-from delegate.geni.v3.rspecs.tnrm.manifest_parser import TNRMv3ManifestParser
 from delegate.geni.v3.rspecs.serm.manifest_parser import SERMv3ManifestParser
-
-from dateutil import parser as dateparser
+from delegate.geni.v3.rspecs.serm.request_formatter import\
+    SERMv3RequestFormatter
+from delegate.geni.v3.rspecs.tnrm.manifest_parser import TNRMv3ManifestParser
+from delegate.geni.v3.rspecs.tnrm.request_formatter import\
+    TNRMv3RequestFormatter
+from handler.geni.v3 import exceptions as geni_ex
 
 import core
+
 logger = core.log.getLogger("geniv3delegate")
 
 
@@ -195,13 +195,20 @@ class GENIv3Delegate(GENIv3DelegateBase):
             slice_urn, end_time, rspec,))
 
         req_rspec = RORequestParser(from_string=rspec)
+        print "\n\n\n\n\n------------------req_rspec >>> ", req_rspec
         self.__validate_rspec(req_rspec.get_rspec())
 
+        print "\n\n\n\n\n------------------after validating CRM request!!!!!!!!-------------------"
         ro_manifest, ro_slivers, ro_db_slivers = ROManifestFormatter(), [], []
+        print "\n\n\n\n\n------------------ro_manifest >>> ", ro_manifest
+        print "\n\n\n\n\n------------------ro_slivers >>> ", ro_slivers
+        print "\n\n\n\n\n------------------ro_db_slivers >>> ", ro_db_slivers
 
         # COM resources
         slivers = req_rspec.com_slivers()
+        print "\n\n\n\n\n------------------slivers >>> ", slivers
         nodes = req_rspec.com_nodes()
+        print "\n\n\n\n\n------------------nodes >>> ", nodes
 
         if len(slivers) > 0:
             logger.debug("Found a COM-slivers segment (%d): %s" %
@@ -561,13 +568,18 @@ class GENIv3Delegate(GENIv3DelegateBase):
                               slice_expiration, slivers, parser):
         # TODO CHECK THAT IT WORKS
         route = {}
+        print "\n\n\n\n\n\n\nupdate com route > route: ", route
+        print "\n\n\n\n\n\n\nupdate com route > slivers: ", slivers
         self.__update_com_route(route, slivers)
         logger.debug("Slivers=%s" % (slivers,))
 
+        print "\n\n\n\n\n\n\nupdate com route rspec > route: ", route
+        print "\n\n\n\n\n\n\nupdate com route rspec > slivers: ", slivers
         self.__update_com_route_rspec(route, slivers)
         logger.info("Route=%s" % (route,))
         manifests, slivers, db_slivers = [], [], []
 
+        print "\n\n\n\n\n\n\nBEFORE ITERITEMS > route: ", route
         for k, v in route.iteritems():
             (m, ss) = self.__send_request_rspec(
                 k, v, slice_urn, credentials, slice_expiration)

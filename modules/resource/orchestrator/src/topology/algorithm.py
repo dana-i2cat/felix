@@ -1,10 +1,12 @@
-import networkx as nwx
 from delegate.geni.v3 import exceptions
+import networkx as nwx
 
 
 class AlgorithmManager:
-    """This object can be used to run the Dijkstra (or any other) algorithm
-       in a graph composed of FELIX resources (C-R, SDN-R and T-R)."""
+    """
+    This object can be used to run the Dijkstra (or any other) algorithm
+       in a graph composed of FELIX resources (C-R, SDN-R and T-R).
+    """
     def __init__(self):
         self.__g = nwx.MultiDiGraph()
 

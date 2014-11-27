@@ -1,9 +1,10 @@
-from resource_detector import ResourceDetector
-from monitoring_manager import MonitoringManager
 from delegate.geni.v3.db_manager import db_sync_manager
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
+from monitoring_manager import MonitoringManager
+from resource_detector import ResourceDetector
 
 import core
+
 logger = core.log.getLogger("jobs")
 
 
