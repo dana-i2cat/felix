@@ -17,7 +17,7 @@ class ROSchedulerService(Service):
         ro_scheduler = BackgroundScheduler()
         ro_scheduler.add_jobstore("mongodb", database="felix_ro",
                                   collection="ScheduledJobs")
-#        ro_scheduler.start()
+        ro_scheduler.start()
 
         # NOTE Interval should be retrieved using the ConfParser from
         # the "resource_detector"."interval" value in the "ro.conf" file

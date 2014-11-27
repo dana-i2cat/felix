@@ -11,8 +11,9 @@ def validate(ingress_root):
     import urllib2
     from lxml import etree
     
-    xs = ingress_root.nsmap.get("xs")
-    schemas = ingress_root.attrib.get("{%s}schemaLocation" % (xs))
+    # Both can work
+    xs_xsi = ingress_root.nsmap.get("xs") or ingress_root.nsmap.get("xsi")
+    schemas = ingress_root.attrib.get("{%s}schemaLocation" % xs_xsi)
     if (schemas is None) or (len(schemas) == 0):
         return (False, "Unable to find schemas locations!")
     

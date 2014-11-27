@@ -8,6 +8,7 @@ logger = core.log.getLogger("db-manager")
 class DBManager(object):
     """This object is a wrapper for MongoClient to communicate to the RO
     (local) mongo-db"""
+
     def __init__(self):
         self.__mutex = threading.Lock()
 
