@@ -23,12 +23,13 @@
 # IN THE WORK.
 #----------------------------------------------------------------------
 """
-   Utilities to parse credentials
+   Utilities to manage credentials
 """
 
 import datetime
 import dateutil.parser
 import logging
+import os
 import traceback
 import xml.dom.minidom as md
 
@@ -256,4 +257,29 @@ def get_cred_xml(cred):
         return cred["geni_value"]
 
     return None
+
+def wrap_cred(cred):
+    """
+    Wrap the given cred in the appropriate struct for this framework.
+    """
+    if isinstance(cred, dict):
+        print "Called wrap on a cred that is already a dict? %s", cred
+        return cred
+    elif not isinstance(cred, str):
+        print "Called wrap on non string cred? Stringify. %s", cred
+        cred = str(cred)
+    ret = dict(geni_type="geni_sfa", geni_version="2", geni_value=cred)
+    if is_valid_v3(None, cred):
+        ret["geni_version"] = "3"
+    return ret
+
+def get_creds_file_contents(filename):
+    creds_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "../..", "creds"))
+    if not os.path.isabs(filename):
+        filename = os.path.join(creds_path, filename)
+    filename = os.path.abspath(os.path.expanduser(filename))
+    contents = None
+    with open(filename, "r") as f:
+        contents = f.read()
+    return contents
 

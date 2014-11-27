@@ -1,12 +1,16 @@
-from utils import geniv3_handler_tools
+#from utils import geniv3_handler_tools
 import sys
 # Adding paths to locate modules within the "src" package
 sys.path.insert(0, "../../../../src")
+
+from core.utils import calls as call_utils
 from handler.geni.v3.extensions.geni.util import cred_util
 from handler.geni.v3.extensions.sfa.trust import gid
+
 # Adding path to locate "utils" module within the "test" package
 sys.path.insert(0, "../../..")
-import testcase
+
+from utils import testcase
 
 
 class TestListResources(testcase.TestCase):
@@ -20,7 +24,7 @@ class TestListResources(testcase.TestCase):
         Sets up environment, e.g. asking for credentials.
         """
         # Contact GCH for it by passing the certificate. Equivalent to 'omni.py getusercred'
-        (text, self.user_credential) = geniv3_handler_tools.getusercred(geni_api = 3)
+        (text, self.user_credential) = call_utils.getusercred(geni_api = 3)
 
         self.geni_v3_credentials = [{
             "geni_type": "geni_sfa",
@@ -56,7 +60,7 @@ class TestListResources(testcase.TestCase):
         pass
     
     def test_should_list_resources_expected_type(self):
-        code, value, output = geniv3_handler_tools.handler_call("ListResources", self.geni_params)
+        code, value, output = call_utils.handler_call("ListResources", self.geni_params)
         self.assertIsInstance(value, str)
 
 if __name__ == '__main__':

@@ -1,12 +1,16 @@
-from utils import geniv3_handler_tools
+#from utils import geniv3_handler_tools
 import sys
 # Adding paths to locate modules within the "src" package
 sys.path.insert(0, "../../../../src")
+
+from core.utils import calls as call_utils
 from handler.geni.v3.extensions.geni.util import cred_util
 from handler.geni.v3.extensions.sfa.trust import gid
+
 # Adding path to locate "utils" module within the "test" package
 sys.path.insert(0, "../../..")
-import testcase
+
+from utils import testcase
 
 
 class TestGetVersion(testcase.TestCase):
@@ -20,7 +24,8 @@ class TestGetVersion(testcase.TestCase):
         Sets up environment, e.g. asking for credentials.
         """
         # Contact GCH for it by passing the certificate. Equivalent to 'omni.py getusercred'
-        (text, self.user_credential) = geniv3_handler_tools.getusercred(geni_api = 3)
+        (text, self.user_credential) = call_utils.getusercred(user_cert_filename = "alice-cert.pem",
+                                                                geni_api = 3)
 
         self.geni_options_expected_key_info = {
             "geni_credential_types": {"type": dict, "value": {"geni_version": "3", "geni_type": "geni_sfa"}},
@@ -36,18 +41,18 @@ class TestGetVersion(testcase.TestCase):
         pass
     
     def test_should_get_version_expected_type(self):
-        code, value, output = geniv3_handler_tools.handler_call("GetVersion")
+        code, value, output = call_utils.handler_call("GetVersion")
         self.assertIsInstance(value, dict)
     
     def test_should_get_version_expected_keys(self):
-        code, value, output = geniv3_handler_tools.handler_call("GetVersion")
+        code, value, output = call_utils.handler_call("GetVersion")
         self.assertIsInstance(value, dict)
         # Ensure keys from returned dictionary
         for expected_key in self.geni_options_expected_key_info:
             self.assertIn(expected_key, value)
     
     def test_should_get_version_keys_expected_type(self):
-        code, value, output = geniv3_handler_tools.handler_call("GetVersion")
+        code, value, output = call_utils.handler_call("GetVersion")
         self.assertIsInstance(value, dict)
         # Ensure type of keys from returned dictionary
         for expected_key in self.geni_options_expected_key_info:
@@ -56,7 +61,7 @@ class TestGetVersion(testcase.TestCase):
                 self.assertIsInstance(value.get(expected_key), expected_key_type)
     
     def test_should_get_version_keys_expected_value(self):
-        code, value, output = geniv3_handler_tools.handler_call("GetVersion")
+        code, value, output = call_utils.handler_call("GetVersion")
         self.assertIsInstance(value, dict)
         # Ensure value of keys from returned dictionary
         for expected_key in self.geni_options_expected_key_info:

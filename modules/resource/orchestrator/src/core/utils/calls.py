@@ -1,5 +1,6 @@
-from output_format import print_call
-import credparsing as credutils
+from formatting import print_call
+
+import credentials
 import os.path
 import re
 import xmlrpclib
@@ -17,6 +18,13 @@ def ch_call(method_name, endpoint="", params=[], user_name="alice", verbose=Fals
     res = ssl_call(method_name, params, endpoint, key_path=key_path, cert_path=cert_path, host="127.0.0.1", port=8000)
     return res
 
+def handler_call(method_name, params=[], user_name="alice", arg=[]):
+    if arg in ["-v", "--verbose"]:
+        verbose = True
+    else:
+        verbose = False
+    return api_call(method_name, "/xmlrpc/geni/3/", params=params, user_name=user_name, verbose=verbose)
+
 class SafeTransportWithCert(xmlrpclib.SafeTransport):
     """Helper class to force the right certificate for the transport class."""
     def __init__(self, key_path, cert_path):
@@ -29,8 +37,9 @@ class SafeTransportWithCert(xmlrpclib.SafeTransport):
         host_with_cert = (host, {"key_file" : self._key_path, "cert_file" : self._cert_path})
         return xmlrpclib.SafeTransport.make_connection(self, host_with_cert) # no super, because old style class
 
-def ssl_call(method_name, params, endpoint, key_path="alice-key.pem", cert_path="alice-cert.pem", host="127.0.0.1", port=8440):
-    creds_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "../..", "cert"))
+def ssl_call(method_name, params, endpoint, key_path="alice-key.pem",
+                 cert_path="alice-cert.pem", host="127.0.0.1", port=8440):
+    creds_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../..", "cert"))
     if not os.path.isabs(key_path):
         key_path = os.path.join(creds_path, key_path)
     if not os.path.isabs(cert_path):
@@ -47,21 +56,6 @@ def ssl_call(method_name, params, endpoint, key_path="alice-key.pem", cert_path=
     # return proxy.get_version()
     method = getattr(proxy, method_name)
     return method(*params)
-
-def wrap_cred(cred):
-    """
-    Wrap the given cred in the appropriate struct for this framework.
-    """
-    if isinstance(cred, dict):
-        print "Called wrap on a cred that is already a dict? %s", cred
-        return cred
-    elif not isinstance(cred, str):
-        print "Called wrap on non string cred? Stringify. %s", cred
-        cred = str(cred)
-    ret = dict(geni_type="geni_sfa", geni_version="2", geni_value=cred)
-    if credutils.is_valid_v3(None, cred):
-        ret["geni_version"] = "3"
-    return ret
 
 def getusercred(user_cert_filename = "alice-cert.pem", geni_api = 3):
     """Retrieve your user credential. Useful for debugging.
@@ -84,8 +78,8 @@ def getusercred(user_cert_filename = "alice-cert.pem", geni_api = 3):
 
       Get user credential, save to a file with filename prefix mystuff:
         omni.py -o -p mystuff getusercred
-"""
-    creds_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "../..", "cert"))
+    """
+    creds_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../..", "cert"))
     cert_path = os.path.join(creds_path, user_cert_filename)
     user_cert = open(cert_path, "r").read()
     # Contacting GCH for it by passing the certificate
@@ -93,8 +87,8 @@ def getusercred(user_cert_filename = "alice-cert.pem", geni_api = 3):
     #(cred, message) = ch_call(method_name = "CreateUserCredential", endpoint = "", params = {"params": user_cert})
     if geni_api >= 3:
         if cred:
-            cred = wrap_cred(cred)
-    credxml = credutils.get_cred_xml(cred)
+            cred = credentials.wrap_cred(cred)
+    credxml = credentials.get_cred_xml(cred)
     # pull the username out of the cred
     # <owner_urn>urn:publicid:IDN+geni:gpo:gcf+user+alice</owner_urn>
     user = ""
@@ -103,12 +97,3 @@ def getusercred(user_cert_filename = "alice-cert.pem", geni_api = 3):
         user = usermatch.group(1)
     return "Retrieved %s user credential" % user, cred
 
-def get_creds_file_contents(filename):
-    creds_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "../..", "creds"))
-    if not os.path.isabs(filename):
-        filename = os.path.join(creds_path, filename)
-    filename = os.path.abspath(os.path.expanduser(filename))
-    contents = None
-    with open(filename, "r") as f:
-        contents = f.read()
-    return contents

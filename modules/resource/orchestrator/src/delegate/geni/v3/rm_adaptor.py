@@ -1,10 +1,11 @@
-import xmlrpclib
-from lxml import etree
 from delegate.geni.v3 import exceptions
 from delegate.geni.v3.db_manager import db_sync_manager
+from lxml import etree
 from models.c_resource_table import CResourceTable
 
 import core
+import xmlrpclib
+
 logger = core.log.getLogger("rmadaptor")
 
 
@@ -65,11 +66,7 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
 
     @staticmethod
     def geni_v3_credentials():
-        # XXX_FIXME_XXX: can we move this stuff into a proper way?
-        import sys
-        sys.path.insert(0, "../")
-        from test.utils import calls
-
+        from core.utils import calls
         (text, ucredential) = calls.getusercred(
             user_cert_filename="alice-cert.pem", geni_api=3)
         return ucredential["geni_value"]
@@ -181,7 +178,7 @@ class GENIv3Client(SFAClient):
                     result.get("value").get("geni_slivers"))
 
         except Exception as e:
-            err = "%s Allocate failure: %s" % (self.ypee, str(e))
+            err = "%s Allocate failure: %s" % (self.typee, str(e))
             raise exceptions.RPCError(err)
 
     def describe(self, urns, credentials):
