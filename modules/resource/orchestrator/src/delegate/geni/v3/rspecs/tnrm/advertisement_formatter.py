@@ -9,11 +9,11 @@ DEFAULT_AD_SCHEMA_LOCATION += DSL_PREFIX + "3/ad.xsd "
 DEFAULT_AD_SCHEMA_LOCATION += DSL_PREFIX + "ext/shared-vlan/1/ad.xsd"
 
 
-class TNv3AdvertisementFormatter(FormatterBase):
+class TNRMv3AdvertisementFormatter(FormatterBase):
     def __init__(self, xmlns=DEFAULT_XMLNS, xs=DEFAULT_XS,
                  sharedvlan=DEFAULT_SHARED_VLAN,
                  schema_location=DEFAULT_AD_SCHEMA_LOCATION):
-        super(TNv3AdvertisementFormatter, self).__init__(
+        super(TNRMv3AdvertisementFormatter, self).__init__(
             "advertisement", schema_location,
             {"sharedvlan": "%s" % (sharedvlan)}, xmlns, xs)
         self.__sv = sharedvlan

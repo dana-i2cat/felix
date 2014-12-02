@@ -18,10 +18,16 @@ class CRMv3ManifestFormatter(FormatterBase):
     
     def add_sliver(self, rspec, n):
         sliver = etree.SubElement(rspec, "{%s}node" % (self.xmlns))
+        # TODO sliver must include these fields before manifest!
         node_keys = ["geni_sliver_urn", "component_manager_id", "component_id", "sliver_id"]
         for key in node_keys:
-            sliver.attrib[key] = getattr(n, key)
+            sliver.attrib[key] = getattr(n, key, "TODO: add field to sliver")
     
     def sliver(self, n):
         self.add_sliver(self.rspec, n)
+
+    def generate(self, slivers):
+        for s in slivers:
+            self.sliver(s)
+        return self.rspec
 

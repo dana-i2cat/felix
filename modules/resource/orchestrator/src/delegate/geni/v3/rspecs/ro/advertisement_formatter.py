@@ -8,7 +8,7 @@ from delegate.geni.v3.rspecs.crm.advertisement_formatter\
 from delegate.geni.v3.rspecs.openflow.advertisement_formatter\
     import OFv3AdvertisementFormatter
 from delegate.geni.v3.rspecs.tnrm.advertisement_formatter\
-    import TNv3AdvertisementFormatter
+    import TNRMv3AdvertisementFormatter
 
 DEFAULT_AD_SCHEMA_LOCATION = DEFAULT_SCHEMA_LOCATION
 DEFAULT_AD_SCHEMA_LOCATION += DSL_PREFIX + "3/ad.xsd "
@@ -31,7 +31,7 @@ class ROAdvertisementFormatter(FormatterBase):
             "advertisement", schema_location, ns_, xmlns, xs)
         self.__crm_formatter = CRMv3AdvertisementFormatter()
         self.__of_formatter = OFv3AdvertisementFormatter()
-        self.__tnrm_formatter = TNv3AdvertisementFormatter()
+        self.__tnrm_formatter = TNRMv3AdvertisementFormatter()
 
     # COM resources
     def com_node(self, node):

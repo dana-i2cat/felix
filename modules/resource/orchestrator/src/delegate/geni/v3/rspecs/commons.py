@@ -4,7 +4,11 @@ DEFAULT_XS = "http://www.w3.org/2001/XMLSchema-instance"
 DSL_PREFIX = "http://www.geni.net/resources/rspec/"
 DEFAULT_SCHEMA_LOCATION = DSL_PREFIX + "3 "
 
-import core
+try:
+    import core
+    core.log
+except:
+    from amsoil import core # Use this notation to avoid import problem
 logger = core.log.getLogger("delegate-commons")
 
 def validate(ingress_root):

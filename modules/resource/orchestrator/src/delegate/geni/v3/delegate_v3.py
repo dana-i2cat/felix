@@ -210,7 +210,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         nodes = req_rspec.com_nodes()
         print "\n\n\n\n\n------------------nodes >>> ", nodes
 
-        if len(slivers) > 0:
+        if slivers:
             logger.debug("Found a COM-slivers segment (%d): %s" %
                          (len(slivers), slivers,))
             (com_m_info, com_slivers, db_slivers) =\
@@ -566,24 +566,20 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def __manage_com_allocate(self, slice_urn, credentials,
                               slice_expiration, slivers, parser):
-        # TODO CHECK THAT IT WORKS
+        # FIXME This is not working
         route = {}
-        print "\n\n\n\n\n\n\nupdate com route > route: ", route
-        print "\n\n\n\n\n\n\nupdate com route > slivers: ", slivers
         self.__update_com_route(route, slivers)
         logger.debug("Slivers=%s" % (slivers,))
 
-        print "\n\n\n\n\n\n\nupdate com route rspec > route: ", route
-        print "\n\n\n\n\n\n\nupdate com route rspec > slivers: ", slivers
         self.__update_com_route_rspec(route, slivers)
         logger.info("Route=%s" % (route,))
         manifests, slivers, db_slivers = [], [], []
 
-        print "\n\n\n\n\n\n\nBEFORE ITERITEMS > route: ", route
+        print "\n\n\n\n\n\n\n> route: ", route
         for k, v in route.iteritems():
             (m, ss) = self.__send_request_rspec(
                 k, v, slice_urn, credentials, slice_expiration)
-            logger.debug("\n\n\n\n\n\n\n\n\n\n\n\ndelegate > manifest: %s\n\n\n\n\n\n\n\n\n\n\n\n" % str(m))
+            logger.debug("\n\n\n\n\n\n\ndelegate > manifest: %s\n\n\n\n\n\n\n" % str(m))
             manifest = CRMv3ManifestParser(from_string=m)
             logger.debug("CRMv3ManifestParser=%s" % (manifest,))
 

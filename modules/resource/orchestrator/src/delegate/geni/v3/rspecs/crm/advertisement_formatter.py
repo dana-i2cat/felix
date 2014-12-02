@@ -2,7 +2,11 @@ from delegate.geni.v3.rspecs.commons import DEFAULT_XMLNS, DEFAULT_XS
 from delegate.geni.v3.rspecs.formatter_base import FormatterBase
 from lxml import etree
 
-import core
+try:
+    import core
+    core.log
+except:
+    from amsoil import core # Use this notation to avoid import problem
 logger = core.log.getLogger("com-advertisement-formatter")
 
 class CRMv3AdvertisementFormatter(FormatterBase):
@@ -32,7 +36,7 @@ class CRMv3AdvertisementFormatter(FormatterBase):
         l.attrib["component_id"] = link.get("component_id")
         l.attrib["component_name"] = link.get("component_name")
 
-        for p in link.get("property"):
+        for p in link.get("links"):
             prop = etree.SubElement(l, "{%s}property" % (self.xmlns))
             prop.attrib["source_id"] = p.get("source_id")
             prop.attrib["dest_id"] = p.get("dest_id")
