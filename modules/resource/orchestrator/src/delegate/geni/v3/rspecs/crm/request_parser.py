@@ -53,13 +53,13 @@ class CRMv3RequestParser(ParserBase):
         return sliver_type
 
     def __find_nodes(self):
-        nodes = self.get_nodes()
+        nodes = self.rspec.findall("{%s}node" % self.xmlns)
         if nodes is None:
             self.raise_exception("Node tag not found!")
         return nodes
 
     def get_nodes(self):
-        nodes = self.rspec.findall("{%s}node" % self.xmlns)
+        return self.__find_nodes()
 
 #    def __find_slivers(self, nodes=None):
 #        slivers = []

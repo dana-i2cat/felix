@@ -58,12 +58,12 @@ class Link(object):
         self.__dict__.update({
                      "component_id": component_id,
                      "component_name": component_name,
-                     "property": [],
+                     "links": [],
                      "link_type": link_type,
                     })
 
-    def add_property(self, source, dest, capacity):
-        self.property.append(
+    def add_link(self, source, dest, capacity):
+        self.links.append(
             {"source_id": source, "dest_id": dest, "capacity": capacity})
 
     def add_type(self, link_type):

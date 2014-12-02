@@ -15,20 +15,20 @@ class RORequestParser(ParserBase):
     def com_nodes(self):
         try:
             return self.__com_parser.get_nodes()
-        except Exception:
+        except:
             return []
 
     def com_slivers(self):
         try:
             return self.__com_parser.get_slivers()
-        except Exception:
+        except:
             return []
 
     # OF resources
     def of_sliver(self):
         try:
             return self.__of_parser.get_sliver(self.rspec)
-        except Exception:
+        except:
             return None
 
     def of_controllers(self):
@@ -44,11 +44,11 @@ class RORequestParser(ParserBase):
     def tn_nodes(self):
         try:
             return self.__tn_parser.get_nodes(self.rspec)
-        except Exception:
+        except:
             return []
 
     def tn_links(self):
         try:
             return self.__tn_parser.get_links(self.rspec)
-        except Exception:
+        except:
             return []

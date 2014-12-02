@@ -30,9 +30,9 @@ class CRMv3AdvertisementParser(ParserBase):
             node_id = xrn.urn_to_hrn(n.get("component_id"))[0]
             for link in links:
                 # Retrieve source_id of link to find the interfaces of the current node
-                node_interface = xrn.urn_to_hrn(link["property"][0]["source_id"])
+                node_interface = xrn.urn_to_hrn(link["links"][0]["source_id"])
                 # Otherwise, retrieve dest_id of link to find the interfaces of the current node
-                node_interface = node_interface or xrn.urn_to_hrn(link["property"][0]["dest_id"])
+                node_interface = node_interface or xrn.urn_to_hrn(link["links"][0]["dest_id"])
             
                 if node_interface:
                     # Get last part of the interface resource
@@ -51,11 +51,11 @@ class CRMv3AdvertisementParser(ParserBase):
                 l.attrib.get("component_name"))
     
             link_type = l.find("{%s}link_type" % (self.xmlns))
-            if len(link_type):
+            if link_type:
                 link_type = link_type.attrib.get("name")
     
             for p in l.iterchildren("{%s}property" % self.xmlns):
-                link.add_property(p.attrib.get("source_id"),
+                link.add_link(p.attrib.get("source_id"),
                     p.attrib.get("dest_id"),
                     p.attrib.get("capacity"))
             

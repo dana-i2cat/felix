@@ -55,7 +55,7 @@ class CRMv3RequestFormatter(FormatterBase):
             ifr_ = etree.SubElement(link_, "{%s}interface_ref" % (self.xmlns))
             ifr_.attrib["client_id"] = i.get("component_id")
 
-        for p in l.get("property"):
+        for p in l.get("links"):
             prop_ = etree.SubElement(link_, "{%s}property" % (self.xmlns))
             prop_.attrib["source_id"] = p.get("source_id")
             prop_.attrib["dest_id"] = p.get("dest_id")
