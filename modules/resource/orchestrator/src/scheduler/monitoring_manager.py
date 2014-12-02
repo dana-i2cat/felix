@@ -1,3 +1,4 @@
+from core.config import ConfParser
 from delegate.geni.v3.db_manager import db_sync_manager
 from resource_detector import ResourceDetector
 
@@ -10,11 +11,22 @@ logger = core.log.getLogger("monitoring-manager")
 
 class MonitoringManager(ResourceDetector):
     """
-    This object can be used to communicate with the MON system.
+    Periodically communicates monitoring data to the MON system.
     """
 
     def __init__(self):
         super(MonitoringManager, self).__init__("monitoring")
+        self.config = ConfParser("ro.conf")
+        self.monitoring_section = self.config.get("monitoring")
+        self.protocol = self.monitoring_section.get("protocol")
+        self.address = self.monitoring_section.get("address")
+        self.port = self.monitoring_section.get("port")
+        self.endpoint = self.monitoring_section.get("endpoint")
+        self.monitoring_system = {"protocol": self.protocol,
+                                    "address": self.address,
+                                    "address": self.address,
+                                    "address": self.address
+                                }
 
     def physical_info(self):
         self.debug("Configured peers=%d" % (len(self.peers)))
@@ -32,7 +44,7 @@ class MonitoringManager(ResourceDetector):
             # Send whole data
             self.__send(peer, root)
 
-    def __send(self, peer, xml_data):
+    def __send(self, xml_data, peer=self.monitoring_system):
         try:
             url = "%s://%s:%s/%s" % (peer.get("protocol"), peer.get("address"),
                                      peer.get("port"), peer.get("endpoint"))
