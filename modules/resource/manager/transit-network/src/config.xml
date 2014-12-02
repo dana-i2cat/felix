@@ -1,0 +1,50 @@
+<resources>
+      <node component_id="urn:publicid:tn-network1:"
+	    component_manager_id="urn:publicid:IDN+NSI+authority+tnrm"
+	    exclusive="false">
+	
+	<interface felix_domain_id="urn:publicid:tn:aist:network1" 
+		   felix_stp_id="urn:ogf:network:aist:network1:stp1"
+		   nsi_stp_id="urn:ogf:network:aist.go.jp:2013:bi-ps"
+		   nsi_stp_id_in="urn:ogf:network:aist.go.jp:2013:in-ps"
+		   nsi_stp_id_out="urn:ogf:network:aist.go.jp:2013:out-ps"
+		   vlan="1779-1799"
+		   capacity="10000" />
+
+	<interface felix_domain_id="urn:publicid:tn:aist:network1" 
+		   felix_stp_id="urn:ogf:network:aist:network1:stp2"
+		   nsi_stp_id="urn:ogf:network:aist.go.jp:2013:bi-video"
+		   nsi_stp_id_in="urn:ogf:network:aist.go.jp:2013:in-video"
+		   nsi_stp_id_out="urn:ogf:network:aist.go.jp:2013:out-video"
+		   vlan="1779-1799"
+		   capacity="10000" />
+
+	<interface felix_domain_id="urn:publicid:tn:i2cat:network1" 
+		   felix_stp_id="urn:felix:i2cat-stp1"
+		   nsi_stp_id="urn:ogf:network:i2cat.net:bi-i2cat-1"
+		   nsi_stp_id_in="urn:ogf:network:i2cat.net:in-i2cat-1"
+		   nsi_stp_id_out="urn:ogf:network:i2cat.net:out-i2cat-1"
+		   vlan="1779-1799"
+		   capacity="10000" />
+	<interface felix_domain_id="urn:publicid:tn:i2cat:network1" 
+		   felix_stp_id="urn:felix:i2cat-stp2"
+		   nsi_stp_id="urn:ogf:network:aist.go.jp:2013:bi-video"
+		   nsi_stp_id_in="urn:ogf:network:i2cat.net:in-i2cat-2"
+		   nsi_stp_id_out="urn:ogf:network:i2cat.net:out-i2cat-2"
+		   vlan="1779-1799"
+		   capacity="10000" />
+
+	<interface felix_domain_id="urn:publicid:tn:xxx:network1" 
+		   felix_stp_id="urn:felix:xxx:stp1"
+		   nsi_stp_id="urn:ogf:network:xxx:bi-stp1"
+		   nsi_stp_id_in="urn:ogf:network:xxx:in-stp1"
+		   nsi_stp_id_out="urn:ogf:network:xxx:out-stp1" />
+
+	<interface felix_domain_id="urn:publicid:tn:yyy:network1" 
+		   felix_stp_id="urn:felix:yyy-stp2"
+		   nsi_stp_id="urn:ogf:network:yyy:bi-stp1"
+		   nsi_stp_id_in="urn:ogf:network:yyy:in-stp1"
+		   nsi_stp_id_out="urn:ogf:network:yyy:out-stp1"/>
+		   
+      </node>
+</resources>
