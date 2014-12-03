@@ -13,7 +13,6 @@ def com_resource_detector():
     try:
         rd = ResourceDetector("virtualisation")
         rd.do_action()
-
     except Exception as e:
         logger.error("com_resource_detector failure: %s" % (e,))
 
@@ -22,7 +21,6 @@ def sdn_resource_detector():
     try:
         rd = ResourceDetector("sdn_networking")
         rd.do_action()
-
     except Exception as e:
         logger.error("sdn_resource_detector failure: %s" % (e,))
 
@@ -31,7 +29,6 @@ def se_resource_detector():
     try:
         rd = ResourceDetector("stitching_entity")
         rd.do_action()
-
     except Exception as e:
         logger.error("se_resource_detector failure: %s" % (e,))
 
@@ -40,19 +37,24 @@ def tn_resource_detector():
     try:
         rd = ResourceDetector("transport_network")
         rd.do_action()
-
     except Exception as e:
         logger.error("sdn_resource_detector failure: %s" % (e,))
 
 
 # monitoring scheduled jobs
-def phy_monitoring():
+def physical_monitoring():
     try:
         mm = MonitoringManager()
-        mm.physical_info()
-
+        mm.physical_topology()
     except Exception as e:
-        logger.error("phy_monitoring failure: %s" % (e,))
+        logger.error("physical_monitoring failure: %s" % (e,))
+
+def slice_monitoring():
+    try:
+        mm = MonitoringManager()
+        mm.slice_topology()
+    except Exception as e:
+        logger.error("slice_monitoring failure: %s" % (e,))
 
 
 # automatic release the slice resources for the end-time expiration
