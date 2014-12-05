@@ -1,0 +1,9 @@
+{
+  "name" : "Geni3RSpecs Manager for [COM,SDN,TN,SE]-RM",
+  "author" : "Roberto Monno",
+  "author-email" : "r.monno@nextworks.it",
+  "version" : 0.1,
+  "implements" : ["geni3RSpecsManager"],
+  "loads-after" : [],
+  "requires" : []
+}

@@ -1,0 +1,12 @@
+argparse
+pymongo
+Flask-PyMongo
+python-dateutil
+lxml
+blinker
+flup
+Flask-XML-RPC
+unittest2
+networkx
+apscheduler
+requests

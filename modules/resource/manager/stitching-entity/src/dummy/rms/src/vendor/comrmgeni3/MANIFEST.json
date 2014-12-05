@@ -1,0 +1,10 @@
+{
+  "name" : "COM RM (Simulator) delegate for GENI AM API v3",
+  "author" : "Roberto Monno",
+  "author-email" : "r.monno@nextworks.it",
+  "version" : 0.1,
+  "implements" : [],
+  "loads-after" : ["geniv3handler", "geniv3delegatebase", "geniv3exceptions",
+                   "xmlrpc", "config"],
+  "requires" : []
+}
