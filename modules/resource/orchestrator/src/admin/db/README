@@ -1,0 +1,24 @@
+#
+# Commands for manage.py (and samples)
+#
+
+
+# Dump data
+$ python manage.py dump
+
+(RO) RoutingTable has 2 rows
+{u'am_version': 2, u'_id': ObjectId('536761f906e5c030fc4a1be6'), u'protocol': u'https', u'am_type': u'sfa', u'endpoint': u'xmlrpc/sfa/', u'user': u'', u'address': u'i2cat.fp7-ofelia.eu', u'password': u'', u'type': u'virtualisation', u'port': u'8445'}
+{u'am_version': 2, u'_id': ObjectId('5367623e06e5c03102dda3a5'), u'protocol': u'https', u'am_type': u'sfa', u'endpoint': u'xmlrpc/sfa/', u'user': u'', u'address': u'i2cat.fp7-ofelia.eu', u'password': u'', u'type': u'sdn_networking', u'port': u'8443'}
+
+
+# Delete entry
+$ python manage.py delete_route_entry -t "virtualisation" -a "i2cat.fp7-ofelia.eu"
+
+(RO) RoutingTable delete row: {'type': 'virtualisation', 'address': 'i2cat.fp7-ofelia.eu'}
+
+
+# Add entry
+$ python manage.py add_route_entry -t "virtualisation" --protocol "https" -a "i2cat.fp7-ofelia.eu" -p 8445 --endpoint "xmlrpc/geni/3/" --am_type "geni" --am_version "3" --user "" --password "
+
+(RO) RoutingTable insert row: 5450cfb006e5c0382fb8e32e
+
