@@ -1,10 +1,21 @@
+import sys
+import os
+
+
+if __name__ == '__main__':
+    # Adding path to utilities
+    path = os.path.abspath(sys.argv[0])
+    ro_index = path.find('orchestrator')
+    utility_path = path[:ro_index] + 'utilities'
+    if utility_path not in [os.path.abspath(x) for x in sys.path]:
+        sys.path.insert(0, utility_path)
+
+
 from delegate.geni.v3.delegate_v3 import GENIv3Delegate
 from handler.geni.v3.handler_v3 import GENIv3Handler
 from scheduler.ro_scheduler import ROSchedulerService
 from server.flask.flaskserver import FlaskServer
 from server.flask.flaskxmlrpc import FlaskXMLRPC
-
-import sys
 
 
 def main(argv=None):

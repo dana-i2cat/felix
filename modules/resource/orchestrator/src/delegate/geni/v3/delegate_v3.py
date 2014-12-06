@@ -6,25 +6,21 @@ from delegate.geni.v3.rm_adaptor import AdaptorFactory
 from delegate.geni.v3 import rm_adaptor
 from scheduler.jobs import slice_expiration
 from scheduler.ro_scheduler import ROSchedulerService
-from delegate.geni.v3.rspecs.commons import validate
-from delegate.geni.v3.rspecs.commons_of import Match
-from delegate.geni.v3.rspecs.commons_tn import Node, Interface
-from delegate.geni.v3.rspecs.commons_se import SELink
-from delegate.geni.v3.rspecs.crm.manifest_parser import CRMv3ManifestParser
-from delegate.geni.v3.rspecs.crm.request_formatter import CRMv3RequestFormatter
-from delegate.geni.v3.rspecs.openflow.request_formatter import\
-    OFv3RequestFormatter
-from delegate.geni.v3.rspecs.ro.advertisement_formatter import\
-    ROAdvertisementFormatter
-from delegate.geni.v3.rspecs.ro.manifest_formatter import ROManifestFormatter
-from delegate.geni.v3.rspecs.ro.request_parser import RORequestParser
-from delegate.geni.v3.rspecs.openflow.manifest_parser import OFv3ManifestParser
-from delegate.geni.v3.rspecs.serm.manifest_parser import SERMv3ManifestParser
-from delegate.geni.v3.rspecs.serm.request_formatter import\
-    SERMv3RequestFormatter
-from delegate.geni.v3.rspecs.tnrm.manifest_parser import TNRMv3ManifestParser
-from delegate.geni.v3.rspecs.tnrm.request_formatter import\
-    TNRMv3RequestFormatter
+from rspecs.commons import validate
+from rspecs.commons_of import Match
+from rspecs.commons_tn import Node, Interface
+from rspecs.commons_se import SELink
+from rspecs.crm.manifest_parser import CRMv3ManifestParser
+from rspecs.crm.request_formatter import CRMv3RequestFormatter
+from rspecs.openflow.request_formatter import OFv3RequestFormatter
+from rspecs.ro.advertisement_formatter import ROAdvertisementFormatter
+from rspecs.ro.manifest_formatter import ROManifestFormatter
+from rspecs.ro.request_parser import RORequestParser
+from rspecs.openflow.manifest_parser import OFv3ManifestParser
+from rspecs.serm.manifest_parser import SERMv3ManifestParser
+from rspecs.serm.request_formatter import SERMv3RequestFormatter
+from rspecs.tnrm.manifest_parser import TNRMv3ManifestParser
+from rspecs.tnrm.request_formatter import TNRMv3RequestFormatter
 from handler.geni.v3 import exceptions as geni_ex
 
 import core
@@ -70,7 +66,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def list_resources(self, client_cert, credentials, geni_available):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        from lxml import etree
+        # from lxml import etree
         client_urn, client_uuid, client_email =\
             self.auth(client_cert, credentials, None, ("listslices",))
 
@@ -198,7 +194,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         print "\n\n\n\n\n------------------req_rspec >>> ", req_rspec
         self.__validate_rspec(req_rspec.get_rspec())
 
-        print "\n\n\n\n\n------------------after validating CRM request!!!!!!!!-------------------"
+        print "\n\n\n\n\n--------after validating CRM request!!!!!!!!---------"
         ro_manifest, ro_slivers, ro_db_slivers = ROManifestFormatter(), [], []
         print "\n\n\n\n\n------------------ro_manifest >>> ", ro_manifest
         print "\n\n\n\n\n------------------ro_slivers >>> ", ro_slivers
@@ -221,7 +217,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             # XXX What to do with com_slivers for the XML manifest?
             # It should be kept for the "geni_slivers" list
 #            for m in com_m_info:
-#                for s in com_slivers:                        
+#                for s in com_slivers:
 #                    ro_manifest.com_sliver(s)
 
             for s in slivers:
@@ -579,7 +575,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         for k, v in route.iteritems():
             (m, ss) = self.__send_request_rspec(
                 k, v, slice_urn, credentials, slice_expiration)
-            logger.debug("\n\n\n\n\n\n\ndelegate > manifest: %s\n\n\n\n\n\n\n" % str(m))
+            logger.debug("\n\n\n\n\ndelegate > manifest: %s\n\n\n\n" % str(m))
             manifest = CRMv3ManifestParser(from_string=m)
             logger.debug("CRMv3ManifestParser=%s" % (manifest,))
 

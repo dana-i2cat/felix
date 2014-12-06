@@ -1,17 +1,13 @@
 from delegate.geni.v3.db_manager import db_sync_manager
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
 
-from delegate.geni.v3.rspecs.crm.advertisement_parser\
-    import CRMv3AdvertisementParser
-from delegate.geni.v3.rspecs.openflow.advertisement_parser\
-    import OFv3AdvertisementParser
-from delegate.geni.v3.rspecs.serm.advertisement_parser\
-    import SERMv3AdvertisementParser
-from delegate.geni.v3.rspecs.tnrm.advertisement_parser\
-    import TNRMv3AdvertisementParser
+from rspecs.crm.advertisement_parser import CRMv3AdvertisementParser
+from rspecs.openflow.advertisement_parser import OFv3AdvertisementParser
+from rspecs.serm.advertisement_parser import SERMv3AdvertisementParser
+from rspecs.tnrm.advertisement_parser import TNRMv3AdvertisementParser
 
 import core
-import delegate.geni.v3.rspecs.commons as Commons
+import rspecs.commons as Commons
 
 logger = core.log.getLogger("resource-detector")
 
@@ -76,7 +72,7 @@ class ResourceDetector(object):
     def __db(self, action, routingKey, data):
         try:
             try:
-                # Methods must be implemented with the EXACT name as the action...
+                # Methods must be implemented with the EXACT name as the action
                 method = getattr(db_sync_manager, action)
             except:
                 self.error("Unmanaged action type (%s)!" % (action,))

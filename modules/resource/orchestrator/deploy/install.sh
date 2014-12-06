@@ -27,7 +27,9 @@ db_content=$(python $dbmanage_path/manage.py dump | wc -l)
 db_lines_to_show=$(($db_content-4))
 if [[ $(python $dbmanage_path/manage.py dump | tail -$db_lines_to_show) == "" ]]; then
   echo "Filling database..."
-  $dbmanage_path/dummy_install.sh
+  cd $dbmanage_path
+  ./dummy_install.sh
+  cd - >/dev/null
   echo "Filling database... Done"
 fi
 
