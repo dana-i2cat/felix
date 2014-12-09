@@ -2,12 +2,8 @@ import os
 import sys
 
 # Add RO source root to syspath (relative to main.py)
-#sys.path.append("../../../delegate/geni/v3/") # geni/v3 folder
-#sys.path.append("../../../") # src folder
-
-RO_SRC = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../../../../../src/"))
+RO_SRC = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../../../../../../utilities/"))
 sys.path.append(RO_SRC) # src folder
-#sys.path.append(os.path.normpath(os.path.join(RO_SRC, "delegate/geni/v3/"))) # delegate folder
 
 from amsoil.core import serviceinterface
 from rspecs.commons_com import Node as COMNode, Link as COMLink
