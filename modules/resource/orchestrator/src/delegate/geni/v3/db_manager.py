@@ -11,48 +11,71 @@ class DBManager(object):
 
     def __init__(self):
         self.__mutex = threading.Lock()
+        #self.__felix_ro = pymongo.MongoClient().felix_ro
 
-    # (felix_ro) RoutingTable
-    def get_configured_peers(self):
-        table = pymongo.MongoClient().felix_ro.RoutingTable
-        try:
-            self.__mutex.acquire()
-            return table.find()
-        finally:
-            self.__mutex.release()
+    def __check_return_rows(self, rows, custom_table, filter_params={}):
+        if rows is None:
+            raise Exception("%s -- could not find entry with params=%s!" % 
+                            (custom_table.full_name, filter_params))
+        return rows
 
-    def get_configured_peer(self, key):
-        table = pymongo.MongoClient().felix_ro.RoutingTable
-        try:
-            self.__mutex.acquire()
-            row = table.find_one({"_id": key})
-            if row is None:
-                raise Exception("RoutingEntry %s not found into RO-DB!" % key)
-            return row
-        finally:
-            self.__mutex.release()
-
-    def update_am_info(self, object_id, am_type, am_version):
-        table = pymongo.MongoClient().felix_ro.RoutingTable
-        try:
-            self.__mutex.acquire()
-            table.update({"_id": object_id},
-                         {"$set": {"am_type": am_type,
-                                   "am_version": am_version}})
-        finally:
-            self.__mutex.release()
-
-    # (felix_ro) GeneralInfoTable
-    def get_domain_id(self):
-        table = pymongo.MongoClient().felix_ro.GeneralInfoTable
+    def __get_one(self, custom_table, filter_params={}):
+        table = custom_table
         try:
             self.__mutex.acquire()
             row = table.find_one()
-            if row is None:
-                raise Exception("GeneralInfoEntry not found into RO-DB!")
-            return row.get("domain")
+            return self.__check_return_row(row, custom_table, filter_params)
         finally:
             self.__mutex.release()
+
+    def __get_all(self, custom_table, filter_params={}):
+        table = custom_table
+        try:
+            self.__mutex.acquire()
+            rows = table.find()
+            return self.__check_return_rows(rows, custom_table, filter_params)
+        finally:
+            self.__mutex.release()
+
+    def __set_update(self, custom_table, object_id, fields_dict={}):
+        table = custom_table
+        try:
+            self.__mutex.acquire()
+            table.update({"_id": object_id},
+                         {"$set": fields_dict})
+        finally:
+            self.__mutex.release()
+
+
+    # (felix_ro) RoutingTable
+    def get_configured_peers(self):
+        """
+        Collection that stores peers (either RMs or ROs)
+        """
+        table = pymongo.MongoClient().felix_ro.RoutingTable
+        return self.__get_all(table)
+
+    def get_configured_peer(self, key):
+        table = pymongo.MongoClient().felix_ro.RoutingTable
+        filter_params = {"_id": key}
+        return self.__get_one(table, filter_params)
+
+    # TODO Consider making this more flexible by passing a dictionary with any parameter
+    def update_peer_info(self, object_id, am_type, am_version):
+        table = pymongo.MongoClient().felix_ro.RoutingTable
+        fields_dict = {"am_type": am_type,
+                        "am_version": am_version}
+        self.__set_update(table, object_id, fields_dict)
+
+    def set_peer_urn(self, object_id, domain_urn):
+        table = pymongo.MongoClient().felix_ro.RoutingTable
+        fields_dict = {"domain_urn": domain_urn}
+        self.__set_update(table, object_id, fields_dict)
+
+    def get_domain_urn(self, filter_params):
+        table = pymongo.MongoClient().felix_ro.RoutingTable
+        return self.__get_one(table, filter_params).get("domain_urn")
+
 
     # (felix_ro) SliceTable
     def store_slice_info(self, urn, slivers):
@@ -134,22 +157,12 @@ class DBManager(object):
 
     def get_com_nodes(self):
         table = pymongo.MongoClient().felix_ro.COMNodeTable
-        try:
-            self.__mutex.acquire()
-            return table.find()
-        finally:
-            self.__mutex.release()
+        return self.__get_all(table)
 
     def get_com_node_routing_key(self, cid):
         table = pymongo.MongoClient().felix_ro.COMNodeTable
-        try:
-            self.__mutex.acquire()
-            row = table.find_one({"component_id": cid})
-            if row is None:
-                raise Exception("CompId %s not found in RO-COMNode-DB!" % cid)
-            return row.get("routing_key")
-        finally:
-            self.__mutex.release()
+        filter_params = {"component_id": cid}
+        return self.__get_one(table, filter_params).get("routing_key")
 
     # (felix_ro) COMLinkTable
     # TODO Ensure correctness
@@ -174,11 +187,7 @@ class DBManager(object):
 
     def get_com_links(self):
         table = pymongo.MongoClient().felix_ro.COMLinkTable
-        try:
-            self.__mutex.acquire()
-            return table.find()
-        finally:
-            self.__mutex.release()
+        return self.__get_all(table)
 
     # (felix_ro) OFDatapathTable
     def store_sdn_datapaths(self, routingKey, values):
@@ -205,25 +214,15 @@ class DBManager(object):
 
     def get_sdn_datapaths(self):
         table = pymongo.MongoClient().felix_ro.OFDatapathTable
-        try:
-            self.__mutex.acquire()
-            return table.find()
-        finally:
-            self.__mutex.release()
+        return self.__get_all(table)
 
     def get_sdn_datapath_routing_key(self, dpid):
         table = pymongo.MongoClient().felix_ro.OFDatapathTable
-        try:
-            self.__mutex.acquire()
-            row = table.find_one({
+        filter_params = {
                 "component_id": dpid.get("component_id"),
                 "component_manager_id": dpid.get("component_manager_id"),
-                "dpid": dpid.get("dpid")})
-            if row is None:
-                raise Exception("Datapath %s not found into RO-DB!" % dpid)
-            return row.get("routing_key")
-        finally:
-            self.__mutex.release()
+                "dpid": dpid.get("dpid")}
+        return self.__get_one(table, filter_params).get("routing_key")
 
     # (felix_ro) OFLinkTable
     def store_sdn_links(self, routingKey, values):
@@ -284,17 +283,11 @@ class DBManager(object):
 
     def get_se_node_info(self, routingKey):
         table = pymongo.MongoClient().felix_ro.SENodeTable
-        try:
-            self.__mutex.acquire()
-            row = table.find_one({'routing_key': routingKey})
-            if row is not None:
-                return {
-                    'component_id': row.get('component_id'),
-                    'component_manager_id': row.get('component_manager_id')}
-
-            return None
-        finally:
-            self.__mutex.release()
+        filter_params = {'routing_key': routingKey}
+        row = self.__get_one(table, filter_params)
+        # Row has some value if passed this point
+        return {'component_id': row.get('component_id'),
+                'component_manager_id': row.get('component_manager_id')}
 
     # (felix_ro) SELinkTable
     def store_se_links(self, routingKey, values):
@@ -372,22 +365,12 @@ class DBManager(object):
 
     def get_tn_nodes(self):
         table = pymongo.MongoClient().felix_ro.TNNodeTable
-        try:
-            self.__mutex.acquire()
-            return table.find()
-        finally:
-            self.__mutex.release()
+        return self.__get_all(table)
 
     def get_tn_node_routing_key(self, cid):
         table = pymongo.MongoClient().felix_ro.TNNodeTable
-        try:
-            self.__mutex.acquire()
-            row = table.find_one({"component_id": cid})
-            if row is None:
-                raise Exception("CompId %s not found into RO-TNNode-DB!" % cid)
-            return row.get("routing_key")
-        finally:
-            self.__mutex.release()
+        filter_params = {"component_id": cid}
+        return self.__get_one(table, filter_params).get("routing_key")
 
     # (felix_ro) TNLinkTable
     def store_tn_links(self, routingKey, values):
@@ -412,11 +395,7 @@ class DBManager(object):
 
     def get_tn_links(self):
         table = pymongo.MongoClient().felix_ro.TNLinkTable
-        try:
-            self.__mutex.acquire()
-            return table.find()
-        finally:
-            self.__mutex.release()
+        return self.__get_all(table)
 
     def get_tn_link_routing_key(self, cid, cmid, ifrefs):
         try:
