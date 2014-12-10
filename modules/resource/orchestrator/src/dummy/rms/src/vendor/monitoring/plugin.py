@@ -15,4 +15,4 @@ def setup():
     handler = pm.getService("geniv3handler")
     delegate = MonitoringDelegate()
     handler.setDelegate(delegate)
-    xmlrpc.registerXMLRPC("monitoring_geni_v3", handler, "/geni/3")
+    xmlrpc.registerXMLRPC("monitoring_geni_v3", handler, "/monitoring-system/topology/")

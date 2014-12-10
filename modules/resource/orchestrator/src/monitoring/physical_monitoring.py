@@ -1,4 +1,3 @@
-from core.config import ConfParser
 from delegate.geni.v3.db_manager import db_sync_manager
 from lxml import etree
 

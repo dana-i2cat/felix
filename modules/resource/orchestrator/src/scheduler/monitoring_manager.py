@@ -24,8 +24,8 @@ class MonitoringManager(ResourceDetector):
         self.endpoint = self.monitoring_section.get("endpoint")
         self.monitoring_system = {"protocol": self.protocol,
                                     "address": self.address,
-                                    "address": self.address,
-                                    "address": self.address
+                                    "port": self.port,
+                                    "endpoint": self.endpoint,
                                 }
 
     def physical_topology(self):
@@ -42,11 +42,12 @@ class MonitoringManager(ResourceDetector):
             self.info("url=%s" % (url,))
             self.info("data=%s" % (xml_data,))
 
+            # TODO Either disable certificates at MS dummy RM or include those here
             reply = requests.post(url=url,
                                  headers={"Content-Type": "application/xml"},
                                  data=xml_data).text
             self.info("Reply=%s" % (reply,))
 
         except Exception as e:
-            self.error("Exception: %s" % (e,))
+            self.error("Could not connect to %s. Exception: %s" % (url, e,))
 
