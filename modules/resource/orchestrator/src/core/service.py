@@ -11,13 +11,16 @@ class Service(threading.Thread):
 
     @abstractmethod
     def do_action(self):
-        """ Implement this method that is called every step."""
+        """
+        Implement this method that is called every step.
+        """
         pass
 
     def __init__(self, name, interval):
         super(Service, self).__init__(name=name)
         self.__mutex = threading.Lock()
         self.__stop = threading.Event()
+        # Interval/Frequency (in seconds)
         self.__interval = interval
         self.name = name
         self.daemon = True

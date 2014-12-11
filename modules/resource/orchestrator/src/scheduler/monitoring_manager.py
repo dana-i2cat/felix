@@ -1,6 +1,6 @@
 from core.config import ConfParser
 from monitoring.physical_monitoring import PhysicalMonitoring
-#from monitoring.slice_monitoring import SliceMonitoring
+from monitoring.slice_monitoring import SliceMonitoring
 from resource_detector import ResourceDetector
 
 import core
@@ -30,6 +30,10 @@ class MonitoringManager(ResourceDetector):
 
     def physical_topology(self):
         topology = PhysicalMonitoring().get_topology()
+        return self.__send(topology)
+
+    def slice_topology(self):
+        topology = SliceMonitoring().get_topology()
         return self.__send(topology)
 
     def __send(self, xml_data, peer=None):

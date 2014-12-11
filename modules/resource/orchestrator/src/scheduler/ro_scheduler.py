@@ -1,4 +1,5 @@
 from apscheduler.schedulers.background import BackgroundScheduler
+from core.config import ConfParser
 from core.service import Service
 from datetime import datetime, timedelta
 from jobs import com_resource_detector, sdn_resource_detector,\
@@ -12,7 +13,19 @@ ro_scheduler = None
 
 
 class ROSchedulerService(Service):
-    def __init__(self, interval=30):
+    
+    def __init__(self, interval=None):
+        """
+        Constructor of the service.
+        
+        @param interval Frequency of the scheduler (in seconds).
+                        If not present, it is read from ro.conf, 'scheduler' section
+        """
+        if not interval:
+            config = ConfParser("ro.conf")
+            scheduler_section = config.get("scheduler")
+            interval = int(scheduler_section.get("frequency"))
+        
         global ro_scheduler
         ro_scheduler = BackgroundScheduler()
         ro_scheduler.add_jobstore("mongodb", database="felix_ro",
@@ -58,7 +71,7 @@ class ROSchedulerService(Service):
         self.__add_oneshot(21, se_resource_detector, "oneshot_se_rd")
         self.__add_oneshot(31, tn_resource_detector, "oneshot_tn_rd")
         self.__add_oneshot(41, physical_monitoring, "oneshot_physical_monitoring")
-        #self.__add_oneshot(51, slice_monitoring, "oneshot_slice_monitoring")
+        self.__add_oneshot(51, slice_monitoring, "oneshot_slice_monitoring")
 
     def __add_cron(self, func_, id_, hour_, min_, sec_):
         try:
@@ -73,4 +86,4 @@ class ROSchedulerService(Service):
         self.__add_cron(se_resource_detector, "cron_se_rd", 0, 21, 0)
         self.__add_cron(tn_resource_detector, "cron_tn_rd", 0, 31, 0)
         self.__add_cron(physical_monitoring, "cron_physical_monitoring", 0, 41, 0)
-        #self.__add_cron(slice_monitoring, "cron_slice_monitoring", 0, 51, 0)
+        self.__add_cron(slice_monitoring, "cron_slice_monitoring", 0, 51, 0)
