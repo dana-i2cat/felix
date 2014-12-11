@@ -138,8 +138,8 @@ def detail(request, slice_id):
     user_profile = UserProfile.get_or_create_profile(request.user)
     user_urn = user_profile.urn
     user_cert = user_profile.certificate
-    creds = get_slice_credentials(slice.project.urn, slice.urn, user_urn, user_cert)
-    print_debug_message(str(creds))
+    #creds = get_slice_credentials(slice.project.urn, slice.urn, user_urn, user_cert)
+    #print_debug_message(str(creds))
 
     template_list_computation = []
     template_list_network = []
