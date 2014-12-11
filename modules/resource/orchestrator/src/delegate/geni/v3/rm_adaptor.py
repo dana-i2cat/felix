@@ -1,5 +1,5 @@
+from db.db_manager import db_sync_manager
 from delegate.geni.v3 import exceptions
-from delegate.geni.v3.db_manager import db_sync_manager
 from lxml import etree
 from models.c_resource_table import CResourceTable
 
@@ -26,7 +26,7 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
     def get_am_info(uri, id):
         client = SFAClient(uri)
         (type, version) = client.get_version()
-        db_sync_manager.update_am_info(id, type, version)
+        db_sync_manager.update_peer_info(id, type, version)
         return (type, version)
 
     @staticmethod

@@ -1,6 +1,6 @@
 from dateutil import parser as dateparser
 from delegate.geni.v3.base import GENIv3DelegateBase
-from delegate.geni.v3.db_manager import db_sync_manager
+from db.db_manager import db_sync_manager
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
 # Following import cannot be ordered properly
 from delegate.geni.v3 import rm_adaptor
@@ -66,7 +66,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def list_resources(self, client_cert, credentials, geni_available):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        # from lxml import etree
         client_urn, client_uuid, client_email =\
             self.auth(client_cert, credentials, None, ("listslices",))
 
@@ -77,6 +76,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
         sl = "http://www.geni.net/resources/rspec/3/ad.xsd"
         rspec = ROAdvertisementFormatter(schema_location=sl)
 
+        # TODO Retrieve resource URN (e.g. from the first retrieved)
+        #      Get authority URN from it
+        #      Associate authority URN with peer IP, and update table
         try:
             logger.debug("COM resources: nodes")
             for n in db_sync_manager.get_com_nodes():

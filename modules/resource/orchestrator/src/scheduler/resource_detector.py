@@ -1,4 +1,4 @@
-from delegate.geni.v3.db_manager import db_sync_manager
+from db.db_manager import db_sync_manager
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
 
 from rspecs.crm.advertisement_parser import CRMv3AdvertisementParser
