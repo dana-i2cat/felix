@@ -43,7 +43,9 @@ class MonitoringManager(threading.Thread):
                         (self.address, self.port,))
             try:
                 bottle.run(server="paste", host=self.address,
-                           port=self.port, debug=self.debug)
+                           port=self.port)
+                           # "debug" flag not available at Bottle < 0.11
+                           #port=self.port, debug=self.debug)
 
             except Exception as e:
                 logger.error("Exception: %s" % (e,))
