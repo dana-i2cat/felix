@@ -637,7 +637,7 @@ def topology_list():
            
     except Exception:
         logger.exception('GET topology list error.')
-        return HTTPResponse(status=500, body="GET topology list error.")
+        return HTTPResponse("GET topology list error.", status=500)
 
     finally:
         #close DB connection.
@@ -672,7 +672,7 @@ def physical_topology_get():
 
     except Exception:
         logger.exception('GET physical topology error.')
-        return HTTPResponse(status=500, body="GET physical topology error.")
+        return HTTPResponse("GET physical topology error.", status=500)
 
     finally:
         #close DB connection.
@@ -710,7 +710,7 @@ def slice_topology_get( slice_id="default_slice_id" ):
     
     except Exception:
         logger.exception('GET slice topology error.')
-        return HTTPResponse(status=500, body="GET slice topology error.")
+        return HTTPResponse("GET slice topology error.", status=500)
 
     finally:
         #close DB connection.
@@ -730,12 +730,12 @@ def topology_post():
             param_string += row
         if not param_string:
             logger.warn('no message.')
-            return HTTPResponse(status=400, body="POST topology error.(request body is empty.)")
+            return HTTPResponse("POST topology error.(request body is empty.)", status=400)
 
         # parse xml to dictionary.
         topol_dict_list = parse_topology_xml(param_string)
         if not topol_dict_list:
-            return HTTPResponse(status=400, body="POST topology error.(parse topology xml error.)")
+            return HTTPResponse("POST topology error.(parse topology xml error.)", status=400)
         logger.debug(topol_dict_list) 
         
         for topol_dict in topol_dict_list:
@@ -769,6 +769,6 @@ def topology_post():
                 
     except Exception:
         logger.exception('POST topology error.')
-        return HTTPResponse(status=500, body="POST topology error.")
+        return HTTPResponse("POST topology error.", status=500)
 
     return

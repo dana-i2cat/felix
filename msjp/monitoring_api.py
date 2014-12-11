@@ -54,14 +54,14 @@ if __name__ == '__main__':
                                     ,config.db_port,config.db_user,config.db_pass,config.debug_flg)
 
     # run.
-    if config.debug_flg == 1 :
+    if config.debug_flg == 1:
         logger.setLevel(logging.DEBUG)
         logger.info('(debug mode)' + start_msg)
-        outlog_confvalue(logger)
-        run(host=config.rest_host, port=config.rest_port, debug=True)
-    else :
+    else:
         logger.setLevel(logging.INFO)
         logger.info(start_msg)
-        outlog_confvalue(logger)
-        run(host=config.rest_host, port=config.rest_port, debug=False)
+    outlog_confvalue(logger)
+    # "debug" flag not available at Bottle < 0.11
+    run(host=config.rest_host, port=config.rest_port)
+    #run(host=config.rest_host, port=config.rest_port, debug=config.debug_flg)
         
