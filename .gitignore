@@ -39,6 +39,9 @@ secret_key.py
 gcf-x509.*/
 expedient/src/python/expedient/clearinghouse/gcf-x509-user.crt/*
 expedient/src/python/expedient/clearinghouse/gcf-x509-trusted.crt/*
+expedient/src/static/expedient/clearinghouse/media/css
+expedient/src/static/expedient/clearinghouse/media/js
+expedient/src/static/expedient/clearinghouse/media/img
 *.db
 build/
 localsettings.py
