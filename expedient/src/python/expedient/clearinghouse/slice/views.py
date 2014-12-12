@@ -21,6 +21,9 @@ logger = logging.getLogger("SliceViews")
 import uuid
 from expedient.clearinghouse.slice.utils import parseFVexception
 from expedient.clearinghouse.urls import PLUGIN_LOADER, TOPOLOGY_GENERATOR
+from expedient.clearinghouse.fapi.cbas import *
+from expedient.clearinghouse.defaultsettings.cbas import *
+from expedient.clearinghouse.users.models import UserProfile
 
 TEMPLATE_PATH = "expedient/clearinghouse/slice"
 
@@ -29,14 +32,26 @@ def create(request, proj_id):
     project = get_object_or_404(Project, id=proj_id)
     
     must_have_permission(request.user, project, "can_create_slices")
-    
+
+    #<UT>
+    user_profile = UserProfile.get_or_create_profile(request.user)
+    user_urn = user_profile.urn
+    user_cert = user_profile.certificate
+
     def pre_save(instance, created):
         instance.project = project
         instance.owner = request.user
-	#Generate UUID: fixes caching problem on model default value
-	instance.uuid = uuid.uuid4()
-	instance.save()
-        
+        #Generate UUID: fixes caching problem on model default value
+        instance.uuid = uuid.uuid4()
+        #<UT>
+        instance.urn = 'n/a'
+        #import pdb; pdb.set_trace()
+        if ENABLE_CBAS:
+            slice_urn = create_slice(owner_urn=user_urn, owner_certificate=user_cert, slice_name=instance.name,
+                                  slice_desc=instance.description, slice_project_urn=str(project.urn))
+            if slice_urn:
+                instance.urn = slice_urn
+        instance.save()
         instance.reserved = False
     
     #use to give the can_delete_slices over the slice to the creator and the owners of the project 
@@ -119,6 +134,12 @@ def detail(request, slice_id):
 
     must_have_permission(request.user, slice.project, "can_view_project")    
     resource_list = [rsc.as_leaf_class() for rsc in slice.resource_set.all()]
+
+    user_profile = UserProfile.get_or_create_profile(request.user)
+    user_urn = user_profile.urn
+    user_cert = user_profile.certificate
+    #creds = get_slice_credentials(slice.project.urn, slice.urn, user_urn, user_cert)
+    #print_debug_message(str(creds))
 
     template_list_computation = []
     template_list_network = []

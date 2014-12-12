@@ -1,0 +1,150 @@
+<?xml version="1.0"?>
+<signed-credential xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.planet-lab.org/resources/sfa/credential.xsd" xsi:schemaLocation="http://www.planet-lab.org/resources/sfa/ext/policy/1 http://www.planet-lab.org/resources/sfa/ext/policy/1/policy.xsd"><credential xml:id="ref0"><type>privilege</type><serial>8</serial><owner_gid>-----BEGIN CERTIFICATE-----
+MIICQDCCAamgAwIBAgIBEjANBgkqhkiG9w0BAQQFADAkMSIwIAYDVQQDExljYmFz
+LmVpY3QuZGUuYXV0aG9yaXR5Lm1hMB4XDTE0MTEyMTE0MDAzMloXDTE5MTEyMDE0
+MDAzMlowSTEhMB8GCSqGSIb3DQEJARYSZXhwZWRpZW50QGZlbGl4LmV1MSQwIgYD
+VQQDExtjYmFzLmVpY3QuZGUudXNlci5leHBlZGllbnQwgZ8wDQYJKoZIhvcNAQEB
+BQADgY0AMIGJAoGBAMJNEofTTH/BboQ0kCNzFTM7yEacefH4e/bFtaBokaKBUpEG
+3Bl40ndu/HnSQGWAFKkt01FHJZkK2RZJK8vYNm8n2Xr4vn62FDXsk0KMkUesDYgB
+VE3Wfb1nnmjMEh5eDoZvV/NO5JLYrw7Gjmq7J43OlCeBRWhWuoUfYX11mH+5AgMB
+AAGjXTBbMAwGA1UdEwEB/wQCMAAwSwYDVR0RBEQwQoYsdXJuOnB1YmxpY2lkOklE
+TitjYmFzLmVpY3QuZGUrdXNlcitleHBlZGllbnSBEmV4cGVkaWVudEBmZWxpeC5l
+dTANBgkqhkiG9w0BAQQFAAOBgQBKO4WYmZO6qRrtCJBwceEOeE/tCTSh4k8xtnxe
+4e2nxyHdHxdud8Ltpso898SzChqo4Hq+Wxut1cudqNuNXplMqaXswvkyPmRVGtMi
+HUeMJYM4PhULJ7OlCO1byd4QwkwOvSYKpZZ5pgb5wxyjT5ZZTN7YnR/SPYlkGhbH
+qfnnDg==
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIICCDCCAXGgAwIBAgIBDTANBgkqhkiG9w0BAQQFADAkMSIwIAYDVQQDExljYmFz
+LmVpY3QuZGUuYXV0aG9yaXR5LmNhMB4XDTE0MTEyMTE0MDAzMloXDTE5MTEyMDE0
+MDAzMlowJDEiMCAGA1UEAxMZY2Jhcy5laWN0LmRlLmF1dGhvcml0eS5tYTCBnzAN
+BgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAwwePpmliiFGao74XEUOVO7AtQCWioW3f
+7J8wTbKakH8mJWeMFtq/AmETI7N65py13c8KqKuLhuvJXzmyg/fpTETUvyfOPETz
+ozC0i6qF780xSd9remvfdO00wWeP4PdcGEO9vo4sUVrFIMbVVkSM4B5xDrwwZeET
+wJBmcriqAFkCAwEAAaNKMEgwDwYDVR0TAQH/BAUwAwEB/zA1BgNVHREELjAship1
+cm46cHVibGljaWQ6SUROK2NiYXMuZWljdC5kZSthdXRob3JpdHkrbWEwDQYJKoZI
+hvcNAQEEBQADgYEAoBaBWD0Z27rZ5gVVGK5UMJaQy6VML+8+hTSHyb6EJ427P6NX
+jU15xoIguFCpBpfh4ywMwK6nPn9C6/9/t9YsD2MHNvZVujMlxHj6To67BDmCaFnT
+eBrampizkUQ5uuF+YK8raWNGZaqAp639ahudPpthSmBpwuDqThgEHZLihHI=
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIICCDCCAXGgAwIBAgIBCzANBgkqhkiG9w0BAQQFADAkMSIwIAYDVQQDExljYmFz
+LmVpY3QuZGUuYXV0aG9yaXR5LmNhMB4XDTE0MTEyMTE0MDAzMloXDTE5MTEyMDE0
+MDAzMlowJDEiMCAGA1UEAxMZY2Jhcy5laWN0LmRlLmF1dGhvcml0eS5jYTCBnzAN
+BgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA0WStb8UIJnoB2kwpNJEPdFS6vl3Aa13Y
+xrYUX2SPz17IJto10s8+E+obIKf1ZuhIBWz41I1EyNnoDcGU3PT8YST0+/XbMUVa
+j4boK9huk1KU113r6ZlAfwr7EeR20h+9Pq8a5o7dP2vvJW8IquJrrqp9Lq4Rp0yD
+qyYLTDgkmXECAwEAAaNKMEgwDwYDVR0TAQH/BAUwAwEB/zA1BgNVHREELjAship1
+cm46cHVibGljaWQ6SUROK2NiYXMuZWljdC5kZSthdXRob3JpdHkrY2EwDQYJKoZI
+hvcNAQEEBQADgYEAMEnxsD2JD3GDQi59J1EyFFxup21sw54mmtuS17GAr/meweZY
+7YR83Xrb1qKA/MiVGWr2XE9G09KNH34cB0trsYVKs7zqCWBrC7bbRpfv/hFao/a4
+0J9K54f/7UwNRPtPFCedRXCITy61yPD2kXKszcsk8u2JtMo4DLfZB7ExcYQ=
+-----END CERTIFICATE-----
+</owner_gid><owner_urn>urn:publicid:IDN+cbas.eict.de+user+expedient</owner_urn><target_gid>-----BEGIN CERTIFICATE-----
+MIICQDCCAamgAwIBAgIBEjANBgkqhkiG9w0BAQQFADAkMSIwIAYDVQQDExljYmFz
+LmVpY3QuZGUuYXV0aG9yaXR5Lm1hMB4XDTE0MTEyMTE0MDAzMloXDTE5MTEyMDE0
+MDAzMlowSTEhMB8GCSqGSIb3DQEJARYSZXhwZWRpZW50QGZlbGl4LmV1MSQwIgYD
+VQQDExtjYmFzLmVpY3QuZGUudXNlci5leHBlZGllbnQwgZ8wDQYJKoZIhvcNAQEB
+BQADgY0AMIGJAoGBAMJNEofTTH/BboQ0kCNzFTM7yEacefH4e/bFtaBokaKBUpEG
+3Bl40ndu/HnSQGWAFKkt01FHJZkK2RZJK8vYNm8n2Xr4vn62FDXsk0KMkUesDYgB
+VE3Wfb1nnmjMEh5eDoZvV/NO5JLYrw7Gjmq7J43OlCeBRWhWuoUfYX11mH+5AgMB
+AAGjXTBbMAwGA1UdEwEB/wQCMAAwSwYDVR0RBEQwQoYsdXJuOnB1YmxpY2lkOklE
+TitjYmFzLmVpY3QuZGUrdXNlcitleHBlZGllbnSBEmV4cGVkaWVudEBmZWxpeC5l
+dTANBgkqhkiG9w0BAQQFAAOBgQBKO4WYmZO6qRrtCJBwceEOeE/tCTSh4k8xtnxe
+4e2nxyHdHxdud8Ltpso898SzChqo4Hq+Wxut1cudqNuNXplMqaXswvkyPmRVGtMi
+HUeMJYM4PhULJ7OlCO1byd4QwkwOvSYKpZZ5pgb5wxyjT5ZZTN7YnR/SPYlkGhbH
+qfnnDg==
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIICCDCCAXGgAwIBAgIBDTANBgkqhkiG9w0BAQQFADAkMSIwIAYDVQQDExljYmFz
+LmVpY3QuZGUuYXV0aG9yaXR5LmNhMB4XDTE0MTEyMTE0MDAzMloXDTE5MTEyMDE0
+MDAzMlowJDEiMCAGA1UEAxMZY2Jhcy5laWN0LmRlLmF1dGhvcml0eS5tYTCBnzAN
+BgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAwwePpmliiFGao74XEUOVO7AtQCWioW3f
+7J8wTbKakH8mJWeMFtq/AmETI7N65py13c8KqKuLhuvJXzmyg/fpTETUvyfOPETz
+ozC0i6qF780xSd9remvfdO00wWeP4PdcGEO9vo4sUVrFIMbVVkSM4B5xDrwwZeET
+wJBmcriqAFkCAwEAAaNKMEgwDwYDVR0TAQH/BAUwAwEB/zA1BgNVHREELjAship1
+cm46cHVibGljaWQ6SUROK2NiYXMuZWljdC5kZSthdXRob3JpdHkrbWEwDQYJKoZI
+hvcNAQEEBQADgYEAoBaBWD0Z27rZ5gVVGK5UMJaQy6VML+8+hTSHyb6EJ427P6NX
+jU15xoIguFCpBpfh4ywMwK6nPn9C6/9/t9YsD2MHNvZVujMlxHj6To67BDmCaFnT
+eBrampizkUQ5uuF+YK8raWNGZaqAp639ahudPpthSmBpwuDqThgEHZLihHI=
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIICCDCCAXGgAwIBAgIBCzANBgkqhkiG9w0BAQQFADAkMSIwIAYDVQQDExljYmFz
+LmVpY3QuZGUuYXV0aG9yaXR5LmNhMB4XDTE0MTEyMTE0MDAzMloXDTE5MTEyMDE0
+MDAzMlowJDEiMCAGA1UEAxMZY2Jhcy5laWN0LmRlLmF1dGhvcml0eS5jYTCBnzAN
+BgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA0WStb8UIJnoB2kwpNJEPdFS6vl3Aa13Y
+xrYUX2SPz17IJto10s8+E+obIKf1ZuhIBWz41I1EyNnoDcGU3PT8YST0+/XbMUVa
+j4boK9huk1KU113r6ZlAfwr7EeR20h+9Pq8a5o7dP2vvJW8IquJrrqp9Lq4Rp0yD
+qyYLTDgkmXECAwEAAaNKMEgwDwYDVR0TAQH/BAUwAwEB/zA1BgNVHREELjAship1
+cm46cHVibGljaWQ6SUROK2NiYXMuZWljdC5kZSthdXRob3JpdHkrY2EwDQYJKoZI
+hvcNAQEEBQADgYEAMEnxsD2JD3GDQi59J1EyFFxup21sw54mmtuS17GAr/meweZY
+7YR83Xrb1qKA/MiVGWr2XE9G09KNH34cB0trsYVKs7zqCWBrC7bbRpfv/hFao/a4
+0J9K54f/7UwNRPtPFCedRXCITy61yPD2kXKszcsk8u2JtMo4DLfZB7ExcYQ=
+-----END CERTIFICATE-----
+</target_gid><target_urn>urn:publicid:IDN+cbas.eict.de+user+expedient</target_urn><uuid/><expires>2015-03-01T14:00:32</expires><privileges><privilege><name>GLOBAL_MEMBERS_VIEW</name><can_delegate>true</can_delegate></privilege><privilege><name>GLOBAL_MEMBERS_WILDCARDS</name><can_delegate>true</can_delegate></privilege><privilege><name>GLOBAL_PROJECTS_MONITOR</name><can_delegate>true</can_delegate></privilege><privilege><name>GLOBAL_PROJECTS_VIEW</name><can_delegate>true</can_delegate></privilege><privilege><name>GLOBAL_PROJECTS_WILDCARDS</name><can_delegate>true</can_delegate></privilege><privilege><name>MEMBER_REGISTER</name><can_delegate>true</can_delegate></privilege><privilege><name>SERVICE_REMOVE</name><can_delegate>true</can_delegate></privilege><privilege><name>SERVICE_VIEW</name><can_delegate>true</can_delegate></privilege><privilege><name>MEMBER_REMOVE_REGISTRATION</name><can_delegate>true</can_delegate></privilege><privilege><name>SERVICE_REGISTER</name><can_delegate>true</can_delegate></privilege></privileges></credential><signatures><Signature xmlns="http://www.w3.org/2000/09/xmldsig#" xml:id="Sig_ref0">
+  <SignedInfo>
+    <CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+    <SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+    <Reference URI="#ref0">
+      <Transforms>
+        <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+      </Transforms>
+      <DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+      <DigestValue>nBA/gJTrY1iHU1qUTI2Dejz2wpE=</DigestValue>
+    </Reference>
+  </SignedInfo>
+  <SignatureValue>p2L11G35ClSmZMtkOTMoYhCtfUtiUWOy0fqkeET/4llxqrs5BsYEpPa76vlgSq5N
+Iig20kultcEVoBVwFvyMyGF1jZeqTd7m7847IVRSA5o4ODuMTd5PMs9K9F0RozRp
+Ih1MsBj4VtC0pL0qEuv01PjfujBy8lAXNimHPMAasvQ=</SignatureValue>
+  <KeyInfo>
+    <X509Data>
+      
+      
+      
+    <X509Certificate>MIICCDCCAXGgAwIBAgIBDTANBgkqhkiG9w0BAQQFADAkMSIwIAYDVQQDExljYmFz
+LmVpY3QuZGUuYXV0aG9yaXR5LmNhMB4XDTE0MTEyMTE0MDAzMloXDTE5MTEyMDE0
+MDAzMlowJDEiMCAGA1UEAxMZY2Jhcy5laWN0LmRlLmF1dGhvcml0eS5tYTCBnzAN
+BgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAwwePpmliiFGao74XEUOVO7AtQCWioW3f
+7J8wTbKakH8mJWeMFtq/AmETI7N65py13c8KqKuLhuvJXzmyg/fpTETUvyfOPETz
+ozC0i6qF780xSd9remvfdO00wWeP4PdcGEO9vo4sUVrFIMbVVkSM4B5xDrwwZeET
+wJBmcriqAFkCAwEAAaNKMEgwDwYDVR0TAQH/BAUwAwEB/zA1BgNVHREELjAship1
+cm46cHVibGljaWQ6SUROK2NiYXMuZWljdC5kZSthdXRob3JpdHkrbWEwDQYJKoZI
+hvcNAQEEBQADgYEAoBaBWD0Z27rZ5gVVGK5UMJaQy6VML+8+hTSHyb6EJ427P6NX
+jU15xoIguFCpBpfh4ywMwK6nPn9C6/9/t9YsD2MHNvZVujMlxHj6To67BDmCaFnT
+eBrampizkUQ5uuF+YK8raWNGZaqAp639ahudPpthSmBpwuDqThgEHZLihHI=</X509Certificate>
+<X509SubjectName>CN=cbas.eict.de.authority.ma</X509SubjectName>
+<X509IssuerSerial>
+<X509IssuerName>CN=cbas.eict.de.authority.ca</X509IssuerName>
+<X509SerialNumber>13</X509SerialNumber>
+</X509IssuerSerial>
+<X509Certificate>MIICCDCCAXGgAwIBAgIBCzANBgkqhkiG9w0BAQQFADAkMSIwIAYDVQQDExljYmFz
+LmVpY3QuZGUuYXV0aG9yaXR5LmNhMB4XDTE0MTEyMTE0MDAzMloXDTE5MTEyMDE0
+MDAzMlowJDEiMCAGA1UEAxMZY2Jhcy5laWN0LmRlLmF1dGhvcml0eS5jYTCBnzAN
+BgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA0WStb8UIJnoB2kwpNJEPdFS6vl3Aa13Y
+xrYUX2SPz17IJto10s8+E+obIKf1ZuhIBWz41I1EyNnoDcGU3PT8YST0+/XbMUVa
+j4boK9huk1KU113r6ZlAfwr7EeR20h+9Pq8a5o7dP2vvJW8IquJrrqp9Lq4Rp0yD
+qyYLTDgkmXECAwEAAaNKMEgwDwYDVR0TAQH/BAUwAwEB/zA1BgNVHREELjAship1
+cm46cHVibGljaWQ6SUROK2NiYXMuZWljdC5kZSthdXRob3JpdHkrY2EwDQYJKoZI
+hvcNAQEEBQADgYEAMEnxsD2JD3GDQi59J1EyFFxup21sw54mmtuS17GAr/meweZY
+7YR83Xrb1qKA/MiVGWr2XE9G09KNH34cB0trsYVKs7zqCWBrC7bbRpfv/hFao/a4
+0J9K54f/7UwNRPtPFCedRXCITy61yPD2kXKszcsk8u2JtMo4DLfZB7ExcYQ=</X509Certificate>
+<X509SubjectName>CN=cbas.eict.de.authority.ca</X509SubjectName>
+<X509IssuerSerial>
+<X509IssuerName>CN=cbas.eict.de.authority.ca</X509IssuerName>
+<X509SerialNumber>11</X509SerialNumber>
+</X509IssuerSerial>
+</X509Data>
+    <KeyValue>
+<RSAKeyValue>
+<Modulus>
+wwePpmliiFGao74XEUOVO7AtQCWioW3f7J8wTbKakH8mJWeMFtq/AmETI7N65py1
+3c8KqKuLhuvJXzmyg/fpTETUvyfOPETzozC0i6qF780xSd9remvfdO00wWeP4Pdc
+GEO9vo4sUVrFIMbVVkSM4B5xDrwwZeETwJBmcriqAFk=
+</Modulus>
+<Exponent>
+AQAB
+</Exponent>
+</RSAKeyValue>
+</KeyValue>
+  </KeyInfo>
+</Signature></signatures></signed-credential>

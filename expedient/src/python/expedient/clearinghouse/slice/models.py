@@ -18,7 +18,7 @@ from expedient.common.timer.models import Job
 #from expedient.common.timer.exceptions import JobAlreadyScheduled
 from expedient.common.utils.modelfields import LimitedDateTimeField
 from expedient.common.middleware import threadlocals
-from expedient.common.utils.validators import asciiValidator, descriptionLightValidator
+from expedient.common.utils.validators import asciiValidator, descriptionLightValidator, sliceNameValidator
 from expedient.clearinghouse.slice.utils import *
 
 logger = logging.getLogger("slice.models")
@@ -50,7 +50,8 @@ class Slice(models.Model):
     @type aggregates: C{QuerySet} of L{Aggregate}s
     '''
     
-    name = models.CharField(max_length=200, unique=True, validators=[asciiValidator])
+    #name = models.CharField(max_length=200, unique=True, validators=[asciiValidator])
+    name = models.CharField(max_length=200, unique=True, validators=[sliceNameValidator])
     description = models.TextField(validators=[descriptionLightValidator])
     project = models.ForeignKey(Project)
     owner = models.ForeignKey(User, related_name="owned_slices")
@@ -65,7 +66,9 @@ class Slice(models.Model):
             " now." % settings.MAX_SLICE_LIFE,
         max_date=_get_slice_max_date,
    )
-    
+    #<UT>
+    urn = models.CharField(max_length=200, default="")
+
     def __unicode__(self):
         return u"Slice '%s' in project '%s'" % (self.name, self.project.name)
     

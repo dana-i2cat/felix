@@ -139,6 +139,23 @@ def read_cert_from_file(cert_fname):
     cert.decode()
     return cert
 
+def read_cert_from_string(cert_str):
+    """Read a GCF certificate from a string.
+
+    Read the certificate from a string and put it into a C{sfa.trust.gid.GID}
+    object. The returned certificate is already decoded.
+
+    @param cert_str: The string to read the cert from
+    @type cert_str: C{str}
+    @return: The certificate stored in the string at C{cert_str}
+    @rtype: C{sfa.trust.gid.GID}
+    """
+
+    cert = GID(string=cert_str)
+    cert.decode()
+    return cert
+
+
 def describe_ui_plugin(slice):
     """Describes the UI plugin according to L{expedient.clearinghouse.defaultsettings.expedient.UI_PLUGINS}."""
     return ("GCF RSpec Plugin",

@@ -17,6 +17,7 @@ class ProjectCreateForm(forms.ModelForm):
     """
     class Meta:
         model = Project
+        exclude = ["urn"]
 
 class AddMemberForm(forms.Form):
     """Form to add a member to a project

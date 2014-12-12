@@ -13,11 +13,14 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
 from django.views.generic import simple
 from expedient.clearinghouse.geni.utils import get_user_cert_fname, get_user_urn,\
-    get_user_key_fname, create_x509_cert, read_cert_from_file
+    get_user_key_fname, create_x509_cert, read_cert_from_file, read_cert_from_string
 from django.http import HttpResponseRedirect, HttpResponse
 from expedient.common.messaging.models import DatedMessage
-from expedient.clearinghouse.geni.forms import UploadCertForm
+from expedient.clearinghouse.geni.forms import UploadCertForm, UploadKeyForm
 from expedient.clearinghouse.slice.models import Slice
+from expedient.clearinghouse.users.models import UserProfile
+from expedient.clearinghouse.fapi.cbas import *
+from expedient.clearinghouse.defaultsettings.cbas import *
 
 logger = logging.getLogger("geni.views")
 
@@ -103,6 +106,10 @@ def user_cert_manage(request, user_id):
     """
     
     user = get_object_or_404(User, pk=user_id)
+    user_profile = UserProfile.get_or_create_profile(request.user)
+    user_cert = user_profile.certificate
+    private_ssh_key_exists = len(user_profile.private_ssh_key) > 0
+
     
     must_have_permission(request.user, user, "can_change_user_cert")
     
@@ -111,7 +118,7 @@ def user_cert_manage(request, user_id):
         cert = None
         
     else:
-        cert = read_cert_from_file(cert_fname)
+        cert = read_cert_from_string(user_cert)
     
     return simple.direct_to_template(
         request,
@@ -119,8 +126,33 @@ def user_cert_manage(request, user_id):
         extra_context={
             "curr_user": user,
             "cert": cert,
+            "private_ssh_key_exists" : private_ssh_key_exists,
         },
     )
+
+# def user_cert_key_offer(request, user_id):
+#     """Allow the user to download/regenerate/upload a GCF certificate.
+#
+#     @param request: the request object
+#     @param user_id: the id of the user whose certificate we are managing.
+#     """
+#
+#     user = get_object_or_404(User, pk=user_id)
+#     user_profile = UserProfile.get_or_create_profile(request.user)
+#     user_cert = user_profile.certificate
+#     private_ssh_key_exists = len(user_profile.private_ssh_key) > 0
+#
+#
+#     must_have_permission(request.user, user, "can_change_user_cert")
+#
+#     cert_fname = get_user_cert_fname(user)
+#     if not os.access(cert_fname, os.F_OK):
+#         cert = None
+#
+#     else:
+#         cert = read_cert_from_string(user_cert)
+#
+#     return HttpResponseRedirect(reverse(user_cert_manage, args=[user.id]))
 
 def user_cert_generate(request, user_id):
     """Create a new user certificate after confirmation.
@@ -132,17 +164,34 @@ def user_cert_generate(request, user_id):
     user = get_object_or_404(User, pk=user_id)
     
     must_have_permission(request.user, user, "can_change_user_cert")
-    
-    cert_fname = get_user_cert_fname(user)
-    key_fname = get_user_key_fname(user)
-    urn = get_user_urn(user.username)
+    user_profile = UserProfile.get_or_create_profile(request.user)
+    user_urn = user_profile.urn
+
 
     if request.method == "POST":
-        create_x509_cert(urn, cert_fname, key_fname)
-        DatedMessage.objects.post_message_to_user(
-            "GCF Certificate for user %s successfully created." % user.username,
-            user=request.user, msg_type=DatedMessage.TYPE_SUCCESS)
-        return HttpResponseRedirect(reverse(user_cert_manage, args=[user.id]))
+        #create_x509_cert(urn, cert_fname, key_fname)
+        retValues = regenerate_member_creds(user_urn)
+        if retValues:
+            cert, cert_key, creds = retValues[0:]
+            user_profile.certificate = cert
+            user_profile.certificate_key = cert_key
+            user_profile.credentials = creds
+            user_profile.save()
+            DatedMessage.objects.post_message_to_user(
+                "Certificate for user %s successfully created." % user.username,
+                user=request.user, msg_type=DatedMessage.TYPE_SUCCESS)
+            return simple.direct_to_template(
+                    request,
+                    template= TEMPLATE_PATH + "/user_new_keys_download.html",
+                    extra_context={
+                        "curr_user": user,
+                    },
+                )
+        else:
+            DatedMessage.objects.post_message_to_user(
+                "Certificate for user %s could not be created." % user.username,
+                user=request.user, msg_type=DatedMessage.TYPE_ERROR)
+            return HttpResponseRedirect(reverse(user_cert_manage, args=[user.id]))
     
     return simple.direct_to_template(
         request,
@@ -151,17 +200,58 @@ def user_cert_generate(request, user_id):
             "curr_user": user,
         },
     )
-    
+
+def user_ssh_keys_generate(request, user_id):
+    """Create a new user certificate after confirmation.
+
+    @param request: the request object
+    @param user_id: the id of the user whose certificate we are generating.
+    """
+
+    user = get_object_or_404(User, pk=user_id)
+
+    must_have_permission(request.user, user, "can_change_user_cert")
+    user_profile = UserProfile.get_or_create_profile(request.user)
+    user_urn = user_profile.urn
+    user_cert = user_profile.certificate
+    user_creds = user_profile.credentials
+    pub_key, priv_key = regenerate_ssh_keys(user_urn, str(request.user), user_cert, user_creds)
+    if pub_key and priv_key:
+        user_profile.public_ssh_key = pub_key
+        user_profile.private_ssh_key = priv_key
+        user_profile.save()
+        DatedMessage.objects.post_message_to_user(
+            "SSH key pair for user %s successfully created." % user.username,
+            user=request.user, msg_type=DatedMessage.TYPE_SUCCESS)
+        return simple.direct_to_template(
+            request,
+            template= TEMPLATE_PATH + "/user_new_ssh_key_download.html",
+            extra_context={
+                "curr_user": user,
+            },
+        )
+    else:
+        DatedMessage.objects.post_message_to_user(
+            "Could not update ssh keys for user '%s'" % str(user.username),
+            user=request.user, msg_type=DatedMessage.TYPE_ERROR)
+        return HttpResponseRedirect(
+            reverse("gcf_cert_manage", args=[user_id])
+        )
+
+
+
 def user_cert_download(request, user_id):
     """Download a GCF certificate."""
     
     user = get_object_or_404(User, pk=user_id)
     try:
-        must_have_permission(request.user, user, "can_download_certs")
-        cert_fname = get_user_cert_fname(user)
-        response = HttpResponse(open(cert_fname,'r').read(),
+        # must_have_permission(request.user, user, "can_download_certs")
+        user_profile = UserProfile.get_or_create_profile(request.user)
+        user_cert = user_profile.certificate
+
+        response = HttpResponse(user_cert,
                             mimetype='application/force-download')
-        response['Content-Disposition'] = 'attachment; filename=%s' % cert_fname
+        response['Content-Disposition'] = 'attachment; filename=%s_cert.pem' % user.username
         return response
     except:
         DatedMessage.objects.post_message_to_user(
@@ -171,16 +261,40 @@ def user_cert_download(request, user_id):
             reverse("gcf_cert_manage", args=[user_id])
         )
 
+# def user_cert_download(request, user_id):
+#     """Download a GCF certificate."""
+#
+#     user = get_object_or_404(User, pk=user_id)
+#     try:
+#         must_have_permission(request.user, user, "can_download_certs")
+#         cert_fname = get_user_cert_fname(user)
+#         response = HttpResponse(open(cert_fname,'r').read(),
+#                             mimetype='application/force-download')
+#         response['Content-Disposition'] = 'attachment; filename=%s' % cert_fname
+#         return response
+#     except:
+#         DatedMessage.objects.post_message_to_user(
+#             "Could not retrieve certificate for user '%s'" % str(user.username),
+#             user=request.user, msg_type=DatedMessage.TYPE_ERROR)
+#         return HttpResponseRedirect(
+#             reverse("gcf_cert_manage", args=[user_id])
+#         )
+
 def user_key_download(request, user_id):
     """Download a GCF key."""
-    
+
     user = get_object_or_404(User, pk=user_id)
     try:
-        must_have_permission(request.user, user, "can_download_certs")
-        key_fname = get_user_key_fname(user)
-        response = HttpResponse(open(key_fname,'r').read(),
+        user_profile = UserProfile.get_or_create_profile(request.user)
+        user_cert_key = user_profile.certificate_key
+        user_profile.certificate_key = ''
+        user_profile.save()
+
+        # must_have_permission(request.user, user, "can_download_certs")
+
+        response = HttpResponse(user_cert_key,
                             mimetype='application/force-download')
-        response['Content-Disposition'] = 'attachment; filename=%s' % key_fname
+        response['Content-Disposition'] = 'attachment; filename=%s_cert.key' % user.username
         return response
     except:
         DatedMessage.objects.post_message_to_user(
@@ -189,7 +303,103 @@ def user_key_download(request, user_id):
         return HttpResponseRedirect(
             reverse("gcf_cert_manage", args=[user_id])
         )
-            
+
+# def user_key_download(request, user_id):
+#     """Download a GCF key."""
+#
+#     user = get_object_or_404(User, pk=user_id)
+#     try:
+#         must_have_permission(request.user, user, "can_download_certs")
+#         key_fname = get_user_key_fname(user)
+#         response = HttpResponse(open(key_fname,'r').read(),
+#                             mimetype='application/force-download')
+#         response['Content-Disposition'] = 'attachment; filename=%s' % key_fname
+#         return response
+#     except:
+#         DatedMessage.objects.post_message_to_user(
+#             "Could not retrieve key for user '%s'" % str(user.username),
+#             user=request.user, msg_type=DatedMessage.TYPE_ERROR)
+#         return HttpResponseRedirect(
+#             reverse("gcf_cert_manage", args=[user_id])
+#         )
+
+#<UT>
+def user_public_ssh_key_download(request, user_id):
+    """Download a public SSH key."""
+
+    user = get_object_or_404(User, pk=user_id)
+    try:
+        user_profile = UserProfile.get_or_create_profile(request.user)
+        user_pub_ssh_key = user_profile.public_ssh_key
+
+        # must_have_permission(request.user, user, "can_download_certs")
+
+        response = HttpResponse(user_pub_ssh_key,
+                            mimetype='application/force-download')
+        response['Content-Disposition'] = 'attachment; filename=%s_ssh_key.pub' % user.username
+        return response
+    except:
+        DatedMessage.objects.post_message_to_user(
+            "Could not retrieve ssh key for user '%s'" % str(user.username),
+            user=request.user, msg_type=DatedMessage.TYPE_ERROR)
+        return HttpResponseRedirect(
+            reverse("gcf_cert_manage", args=[user_id])
+        )
+#<UT>
+def user_private_ssh_key_download(request, user_id):
+    """Download a public SSH key."""
+
+    user = get_object_or_404(User, pk=user_id)
+    try:
+        user_profile = UserProfile.get_or_create_profile(request.user)
+        user_priv_ssh_key = user_profile.private_ssh_key
+        user_profile.private_ssh_key = ''
+        user_profile.save()
+
+        # must_have_permission(request.user, user, "can_download_certs")
+
+        response = HttpResponse(user_priv_ssh_key,
+                            mimetype='application/force-download')
+        response['Content-Disposition'] = 'attachment; filename=%s_ssh_key' % user.username
+        return response
+    except:
+        DatedMessage.objects.post_message_to_user(
+            "Could not retrieve ssh key for user '%s'" % str(user.username),
+            user=request.user, msg_type=DatedMessage.TYPE_ERROR)
+        return HttpResponseRedirect(
+            reverse("gcf_cert_manage", args=[user_id])
+        )
+#<UT>
+def user_key_upload(request, user_id):
+    """Upload a public ssh key"""
+
+    user = get_object_or_404(User, pk=user_id)
+
+    #must_have_permission(request.user, user, "can_change_user_cert")
+
+    if request.method == "POST":
+        form = UploadKeyForm(data=request.POST, files=request.FILES)
+        if form.is_valid():
+            form.save(user)
+            DatedMessage.objects.post_message_to_user(
+                "Successfully uploaded public SSH key for user %s." % str(user.username),
+                user=request.user, msg_type=DatedMessage.TYPE_SUCCESS)
+            return HttpResponseRedirect(
+                reverse("gcf_cert_manage", args=[user_id])
+            )
+    else:
+        form = UploadKeyForm()
+
+    return simple.direct_to_template(
+        request,
+        template= TEMPLATE_PATH + "/user_key_upload.html",
+        extra_context={
+            "curr_user": user,
+            "form": form,
+        }
+    )
+
+
 def user_cert_upload(request, user_id):
     """Upload a key and certificate"""
     

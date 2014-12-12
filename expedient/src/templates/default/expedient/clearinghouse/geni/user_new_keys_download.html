@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Download User Private Keys{% endblock title %}
+
+{% block content %}
+<div class="main">
+	<h1>Download certificate key for {{ curr_user.username }}</h1>
+	<h2>Your certificate has been generated successfully. Your private key is available for ONE time download only. Keep it safe as this key cannot be recovered if lost.</h2>
+    <input type="button" id="download_key" value="Download certificate key" onclick="document.location='{% url gcf_key_download curr_user.pk %}'"/>
+	<input type="button" id="download_cert" value="Download certificate" onclick="document.location='{% url gcf_cert_download curr_user.pk %}'"/>
+
+    <div style="margin-top: 1em !important; ">
+        <input type="button" id="go_back" value="Back" onclick="document.location='{% url gcf_cert_manage curr_user.pk %}'">
+    </div>
+
+</div>
+<style>
+    .hidden-div {
+        display:none
+    }
+</style>
+<script type="text/javascript">
+    var button = document.getElementById('download_key')
+    button.addEventListener('click',hide,false);
+
+    function hide() {
+        //this.style.display = 'none';
+        this.disabled = true;
+        this.style="color: grey"
+    }
+</script>
+{% endblock content %}

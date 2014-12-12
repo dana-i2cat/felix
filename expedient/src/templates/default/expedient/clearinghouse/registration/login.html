@@ -9,17 +9,28 @@
 
 <div class="login">
 	<form class="form" method="post" action=".">{% csrf_token %}
-		{{ form.as_p }}
+        <div id="showhide"><p><em>You may also use username & password based login mechanism: </em> <button id="button" onclick="showhide()">Show</button> </p></div>
+        <div id="cert_login">
+            <p><label for="id_cert_file">Certificate:</label> <input type="file" id="id_cert_file" name="files[]"  /><input type="hidden" id="id_cert" name="cert" value=""></p>
+            <p><label for="id_key_file">Private Key:</label> <input type="file" id="id_key_file" name="files[]"  /><input type="hidden" id="id_key" name="key" value=""></p>
+        </div>
+        <div id="pswd_login" style="display:none">
+            <p><label for="id_username">Username:</label> <input id="id_username" type="text" name="username" maxlength="30" /></p>
+            <p><label for="id_password">Password:</label> <input id="id_password" type="password" name="password" maxlength="4096" /></p>
+        </div>
+
 		<div>
-			<input type="submit" class="centered" value="Log in" />
+			<input type="submit" class="centered" value="Log in" onClick="computeSignature(this.form)"/>
 		</div>
 		<input type="hidden" name="next" value="{{ next }}" />
+
+
 	</form>
 </div>
 
 <table class="centered" style="margin-top: 1em !important;">
 	<tr>
-	   <td>{% trans "Forgot your password" %}?</td>
+	   <td>{% trans "Forgot your credential" %}?</td>
 	   <td><a href="{% url my_password_reset %}">{% trans "Reset it" %}</a>!</td>
 	</tr>
 	{% if allowLocalRegistration == 1 %}
@@ -29,4 +40,67 @@
 	 </tr>
 	{%endif%}
 </table>
+<script src="/static/media/default/js/jsrsasign-latest-all-min.js"></script>
+<SCRIPT LANGUAGE="JavaScript">
+function computeSignature (form) {
+
+  var prvKeyPEM = form.id_key.value;
+  form.id_key.value = '' //To avoid key uploading in case any exception occurs in sign computation
+  var data = form.csrfmiddlewaretoken.value;
+  var rsa =  KEYUTIL.getKeyFromPlainPrivatePKCS8PEM(prvKeyPEM)
+  var hSig = rsa.signString(data, 'sha512');
+  form.id_key.value = hSig;
+  form.submit();
+}
+
+  function handleCertFileSelect(evt) {
+    var files = evt.target.files; // FileList object
+    var file = files[0];
+    var reader = new FileReader();
+    reader.onload = function(event) {
+        document.getElementById('id_cert').value = event.target.result;
+        };
+
+    reader.onerror = function(event) {
+        alert("File could not be read! Code " + event.target.error.code);
+        };
+
+    reader.readAsText(file);
+  }
+
+  function handleKeyFileSelect(evt) {
+    var files = evt.target.files; // FileList object
+    var file = files[0];
+
+    var reader = new FileReader();
+    reader.onload = function(event) {
+        document.getElementById('id_key').value = event.target.result;
+        };
+
+    reader.onerror = function(event) {
+        alert("File could not be read! Code " + event.target.error.code);
+        };
+
+    reader.readAsText(file);
+  }
+
+  document.getElementById('id_key_file').addEventListener('change', handleKeyFileSelect, false);
+  document.getElementById('id_cert_file').addEventListener('change', handleCertFileSelect, false);
+
+    function showhide() {
+        var div_pswd = document.getElementById( "pswd_login" );
+        var div_cert = document.getElementById( "cert_login" );
+        var showhide = document.getElementById( "showhide" );
+        if ( div_pswd.style.display !== "none" ) {
+            div_pswd.style.display = "none";
+            div_cert.style.display = "block";
+            showhide.innerHTML = '<p><em>You may also use username & password based login mechanism: </em> <button id="button" onclick="showhide()">Show</button> </p>';
+        } else {
+            div_pswd.style.display = "block";
+            div_cert.style.display = "none";
+            showhide.innerHTML = showhide.innerHTML = '<p><em>You may also use certificate based login mechanism: </em> <button id="button" onclick="showhide()">Show</button> </p>';
+        }
+    }
+</SCRIPT>
 {% endblock %}
+

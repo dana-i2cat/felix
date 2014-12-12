@@ -19,6 +19,13 @@ class UserProfile(models.Model):
 
     user                   = models.ForeignKey(User, unique=True)
     affiliation            = models.CharField(max_length=100, default="")
+    #<UT>
+    credentials            = models.TextField(max_length=10000, default="")
+    certificate = models.TextField(max_length=10000, default="")
+    certificate_key = models.TextField(max_length=1000, default="")
+    urn = models.CharField(max_length=200, default="")
+    public_ssh_key = models.TextField(max_length=1000, default="")
+    private_ssh_key = models.TextField(max_length=1000, default="")
 
     def __unicode__(self):
         try:

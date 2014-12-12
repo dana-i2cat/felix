@@ -137,5 +137,26 @@
         <input type="button" value="Create"
         onclick="document.location='{% url project_create %}'"/>
     </div>
+
+	<h2 style="margin-top: 1em !important; text-align: left;">Backend ClearingHouse</h2>
+	<div class="slice_list">
+		<div class="table_div">
+			<table class="fulltable" id="cbas_table">
+				<tr class="head">
+		            <th class="name">Name</th>
+		            <th class="name">IP address</th>
+		            <th class="Port">Port</th>
+					<th class="status">Active</th>
+				</tr>
+				<tr class="body">
+					<td class="name">{{ CBAS_NAME }}</td>
+					<td class="name">{{ CBAS_IP_ADDR }}</td>
+					<td class="name">{{ CBAS_PORT }}</td>
+					<td class="status">{% if CBAS_STATUS %}<img src="{% url img_media 'active.png' %}">{% else %}<img src="{% url img_media 'inactive.png' %}">{% endif %}</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+
 </div>
 {% endblock content %}
