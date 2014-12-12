@@ -1,0 +1,1010 @@
+<topology_list>
+  <topology last_update_time="1418399806" name="urn_of_domain" type="physical">
+    <node id="urn:publicid:IDN+ocf:i2cat:vtam+node+Rodoreda" type="server">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+ocf:i2cat:vtam+node+Rodoreda+interface+eth1"/>
+      <interface id="urn:publicid:IDN+ocf:i2cat:vtam+node+Rodoreda+interface+eth2"/>
+    </node>
+    <node id="urn:publicid:IDN+ocf:i2cat:vtam+node+March" type="server">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+ocf:i2cat:vtam+node+March+interface+eth1"/>
+      <interface id="urn:publicid:IDN+ocf:i2cat:vtam+node+March+interface+eth2"/>
+    </node>
+    <node id="urn:publicid:IDN+ocf:i2cat:vtam+node+Verdaguer" type="server">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+ocf:i2cat:vtam+node+Verdaguer+interface+eth1"/>
+      <interface id="urn:publicid:IDN+ocf:i2cat:vtam+node+Verdaguer+interface+eth2"/>
+    </node>
+    <link type="lan">
+      <interface_ref client_id="urn:publicid:IDN+ocf:i2cat:vtam:Rodoreda+interface+eth1"/>
+      <interface_ref client_id="urn:publicid:IDN+ocf:ofam+datapath+00:10:00:00:00:00:00:03"/>
+    </link>
+    <link type="lan">
+      <interface_ref client_id="urn:publicid:IDN+ocf:i2cat:vtam:Rodoreda+interface+eth2"/>
+      <interface_ref client_id="urn:publicid:IDN+ocf:ofam+datapath+00:10:00:00:00:00:00:05"/>
+    </link>
+    <link type="lan">
+      <interface_ref client_id="urn:publicid:IDN+ocf:i2cat:vtam:March+interface+eth1"/>
+      <interface_ref client_id="urn:publicid:IDN+ocf:ofam+datapath+00:10:00:00:00:00:00:04"/>
+    </link>
+    <link type="lan">
+      <interface_ref client_id="urn:publicid:IDN+ocf:i2cat:vtam:March+interface+eth2"/>
+      <interface_ref client_id="urn:publicid:IDN+ocf:ofam+datapath+00:10:00:00:00:00:00:05"/>
+    </link>
+    <link type="lan">
+      <interface_ref client_id="urn:publicid:IDN+ocf:i2cat:vtam:Verdaguer+interface+eth1"/>
+      <interface_ref client_id="urn:publicid:IDN+ocf:ofam+datapath+00:10:00:00:00:00:00:01"/>
+    </link>
+    <link type="lan">
+      <interface_ref client_id="urn:publicid:IDN+ocf:i2cat:vtam:Verdaguer+interface+eth2"/>
+      <interface_ref client_id="urn:publicid:IDN+ocf:ofam+datapath+00:10:00:00:00:00:00:02"/>
+    </link>
+    <node id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05" type="switch">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_1">
+        <port num="1"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_2">
+        <port num="2"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_3">
+        <port num="3"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_4">
+        <port num="4"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_5">
+        <port num="5"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_6">
+        <port num="6"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_7">
+        <port num="7"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_8">
+        <port num="8"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_9">
+        <port num="9"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_10">
+        <port num="10"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_11">
+        <port num="11"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_12">
+        <port num="12"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_13">
+        <port num="13"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_14">
+        <port num="14"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_15">
+        <port num="15"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_16">
+        <port num="16"/>
+      </interface>
+    </node>
+    <node id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03" type="switch">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_1">
+        <port num="1"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_2">
+        <port num="2"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_3">
+        <port num="3"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_4">
+        <port num="4"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_5">
+        <port num="5"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_6">
+        <port num="6"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_7">
+        <port num="7"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_8">
+        <port num="8"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_9">
+        <port num="9"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_10">
+        <port num="10"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_11">
+        <port num="11"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_12">
+        <port num="12"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_13">
+        <port num="13"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_14">
+        <port num="14"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_15">
+        <port num="15"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_16">
+        <port num="16"/>
+      </interface>
+    </node>
+    <node id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04" type="switch">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_1">
+        <port num="1"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_2">
+        <port num="2"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_3">
+        <port num="3"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_4">
+        <port num="4"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_5">
+        <port num="5"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_6">
+        <port num="6"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_7">
+        <port num="7"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_8">
+        <port num="8"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_9">
+        <port num="9"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_10">
+        <port num="10"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_11">
+        <port num="11"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_12">
+        <port num="12"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_13">
+        <port num="13"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_14">
+        <port num="14"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_15">
+        <port num="15"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_16">
+        <port num="16"/>
+      </interface>
+    </node>
+    <node id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01" type="switch">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_1">
+        <port num="1"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_2">
+        <port num="2"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_3">
+        <port num="3"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_4">
+        <port num="4"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_5">
+        <port num="5"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_6">
+        <port num="6"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_7">
+        <port num="7"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_8">
+        <port num="8"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_9">
+        <port num="9"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_10">
+        <port num="10"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_11">
+        <port num="11"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_12">
+        <port num="12"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_13">
+        <port num="13"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_14">
+        <port num="14"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_15">
+        <port num="15"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_16">
+        <port num="16"/>
+      </interface>
+    </node>
+    <node id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02" type="switch">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_1">
+        <port num="1"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_2">
+        <port num="2"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_3">
+        <port num="3"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_4">
+        <port num="4"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_5">
+        <port num="5"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_6">
+        <port num="6"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_7">
+        <port num="7"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_8">
+        <port num="8"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_9">
+        <port num="9"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_10">
+        <port num="10"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_11">
+        <port num="11"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_12">
+        <port num="12"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_13">
+        <port num="13"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_14">
+        <port num="14"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_15">
+        <port num="15"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_16">
+        <port num="16"/>
+      </interface>
+    </node>
+  </topology>
+  <topology last_update_time="1418399806" name="urn_of_domain" type="physical">
+    <node id="urn:publicid:IDN+ocf:i2cat:vtam+node+Rodoreda" type="server">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+ocf:i2cat:vtam+node+Rodoreda+interface+eth1"/>
+      <interface id="urn:publicid:IDN+ocf:i2cat:vtam+node+Rodoreda+interface+eth2"/>
+    </node>
+    <node id="urn:publicid:IDN+ocf:i2cat:vtam+node+March" type="server">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+ocf:i2cat:vtam+node+March+interface+eth1"/>
+      <interface id="urn:publicid:IDN+ocf:i2cat:vtam+node+March+interface+eth2"/>
+    </node>
+    <node id="urn:publicid:IDN+ocf:i2cat:vtam+node+Verdaguer" type="server">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+ocf:i2cat:vtam+node+Verdaguer+interface+eth1"/>
+      <interface id="urn:publicid:IDN+ocf:i2cat:vtam+node+Verdaguer+interface+eth2"/>
+    </node>
+    <link type="lan">
+      <interface_ref client_id="urn:publicid:IDN+ocf:i2cat:vtam:Rodoreda+interface+eth1"/>
+      <interface_ref client_id="urn:publicid:IDN+ocf:ofam+datapath+00:10:00:00:00:00:00:03"/>
+    </link>
+    <link type="lan">
+      <interface_ref client_id="urn:publicid:IDN+ocf:i2cat:vtam:Rodoreda+interface+eth2"/>
+      <interface_ref client_id="urn:publicid:IDN+ocf:ofam+datapath+00:10:00:00:00:00:00:05"/>
+    </link>
+    <link type="lan">
+      <interface_ref client_id="urn:publicid:IDN+ocf:i2cat:vtam:March+interface+eth1"/>
+      <interface_ref client_id="urn:publicid:IDN+ocf:ofam+datapath+00:10:00:00:00:00:00:04"/>
+    </link>
+    <link type="lan">
+      <interface_ref client_id="urn:publicid:IDN+ocf:i2cat:vtam:March+interface+eth2"/>
+      <interface_ref client_id="urn:publicid:IDN+ocf:ofam+datapath+00:10:00:00:00:00:00:05"/>
+    </link>
+    <link type="lan">
+      <interface_ref client_id="urn:publicid:IDN+ocf:i2cat:vtam:Verdaguer+interface+eth1"/>
+      <interface_ref client_id="urn:publicid:IDN+ocf:ofam+datapath+00:10:00:00:00:00:00:01"/>
+    </link>
+    <link type="lan">
+      <interface_ref client_id="urn:publicid:IDN+ocf:i2cat:vtam:Verdaguer+interface+eth2"/>
+      <interface_ref client_id="urn:publicid:IDN+ocf:ofam+datapath+00:10:00:00:00:00:00:02"/>
+    </link>
+    <node id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05" type="switch">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_1">
+        <port num="1"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_2">
+        <port num="2"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_3">
+        <port num="3"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_4">
+        <port num="4"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_5">
+        <port num="5"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_6">
+        <port num="6"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_7">
+        <port num="7"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_8">
+        <port num="8"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_9">
+        <port num="9"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_10">
+        <port num="10"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_11">
+        <port num="11"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_12">
+        <port num="12"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_13">
+        <port num="13"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_14">
+        <port num="14"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_15">
+        <port num="15"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_16">
+        <port num="16"/>
+      </interface>
+    </node>
+    <node id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03" type="switch">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_1">
+        <port num="1"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_2">
+        <port num="2"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_3">
+        <port num="3"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_4">
+        <port num="4"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_5">
+        <port num="5"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_6">
+        <port num="6"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_7">
+        <port num="7"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_8">
+        <port num="8"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_9">
+        <port num="9"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_10">
+        <port num="10"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_11">
+        <port num="11"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_12">
+        <port num="12"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_13">
+        <port num="13"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_14">
+        <port num="14"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_15">
+        <port num="15"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_16">
+        <port num="16"/>
+      </interface>
+    </node>
+    <node id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04" type="switch">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_1">
+        <port num="1"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_2">
+        <port num="2"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_3">
+        <port num="3"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_4">
+        <port num="4"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_5">
+        <port num="5"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_6">
+        <port num="6"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_7">
+        <port num="7"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_8">
+        <port num="8"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_9">
+        <port num="9"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_10">
+        <port num="10"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_11">
+        <port num="11"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_12">
+        <port num="12"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_13">
+        <port num="13"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_14">
+        <port num="14"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_15">
+        <port num="15"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_16">
+        <port num="16"/>
+      </interface>
+    </node>
+    <node id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01" type="switch">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_1">
+        <port num="1"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_2">
+        <port num="2"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_3">
+        <port num="3"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_4">
+        <port num="4"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_5">
+        <port num="5"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_6">
+        <port num="6"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_7">
+        <port num="7"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_8">
+        <port num="8"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_9">
+        <port num="9"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_10">
+        <port num="10"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_11">
+        <port num="11"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_12">
+        <port num="12"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_13">
+        <port num="13"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_14">
+        <port num="14"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_15">
+        <port num="15"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_16">
+        <port num="16"/>
+      </interface>
+    </node>
+    <node id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02" type="switch">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_1">
+        <port num="1"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_2">
+        <port num="2"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_3">
+        <port num="3"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_4">
+        <port num="4"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_5">
+        <port num="5"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_6">
+        <port num="6"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_7">
+        <port num="7"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_8">
+        <port num="8"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_9">
+        <port num="9"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_10">
+        <port num="10"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_11">
+        <port num="11"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_12">
+        <port num="12"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_13">
+        <port num="13"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_14">
+        <port num="14"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_15">
+        <port num="15"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_16">
+        <port num="16"/>
+      </interface>
+    </node>
+  </topology>
+  <topology last_update_time="1418399806" name="urn_of_domain" type="physical">
+    <node id="urn:publicid:IDN+ocf:i2cat:vtam+node+Rodoreda" type="server">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+ocf:i2cat:vtam+node+Rodoreda+interface+eth1"/>
+      <interface id="urn:publicid:IDN+ocf:i2cat:vtam+node+Rodoreda+interface+eth2"/>
+    </node>
+    <node id="urn:publicid:IDN+ocf:i2cat:vtam+node+March" type="server">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+ocf:i2cat:vtam+node+March+interface+eth1"/>
+      <interface id="urn:publicid:IDN+ocf:i2cat:vtam+node+March+interface+eth2"/>
+    </node>
+    <node id="urn:publicid:IDN+ocf:i2cat:vtam+node+Verdaguer" type="server">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+ocf:i2cat:vtam+node+Verdaguer+interface+eth1"/>
+      <interface id="urn:publicid:IDN+ocf:i2cat:vtam+node+Verdaguer+interface+eth2"/>
+    </node>
+    <link type="lan">
+      <interface_ref client_id="urn:publicid:IDN+ocf:i2cat:vtam:Rodoreda+interface+eth1"/>
+      <interface_ref client_id="urn:publicid:IDN+ocf:ofam+datapath+00:10:00:00:00:00:00:03"/>
+    </link>
+    <link type="lan">
+      <interface_ref client_id="urn:publicid:IDN+ocf:i2cat:vtam:Rodoreda+interface+eth2"/>
+      <interface_ref client_id="urn:publicid:IDN+ocf:ofam+datapath+00:10:00:00:00:00:00:05"/>
+    </link>
+    <link type="lan">
+      <interface_ref client_id="urn:publicid:IDN+ocf:i2cat:vtam:March+interface+eth1"/>
+      <interface_ref client_id="urn:publicid:IDN+ocf:ofam+datapath+00:10:00:00:00:00:00:04"/>
+    </link>
+    <link type="lan">
+      <interface_ref client_id="urn:publicid:IDN+ocf:i2cat:vtam:March+interface+eth2"/>
+      <interface_ref client_id="urn:publicid:IDN+ocf:ofam+datapath+00:10:00:00:00:00:00:05"/>
+    </link>
+    <link type="lan">
+      <interface_ref client_id="urn:publicid:IDN+ocf:i2cat:vtam:Verdaguer+interface+eth1"/>
+      <interface_ref client_id="urn:publicid:IDN+ocf:ofam+datapath+00:10:00:00:00:00:00:01"/>
+    </link>
+    <link type="lan">
+      <interface_ref client_id="urn:publicid:IDN+ocf:i2cat:vtam:Verdaguer+interface+eth2"/>
+      <interface_ref client_id="urn:publicid:IDN+ocf:ofam+datapath+00:10:00:00:00:00:00:02"/>
+    </link>
+    <node id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05" type="switch">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_1">
+        <port num="1"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_2">
+        <port num="2"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_3">
+        <port num="3"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_4">
+        <port num="4"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_5">
+        <port num="5"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_6">
+        <port num="6"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_7">
+        <port num="7"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_8">
+        <port num="8"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_9">
+        <port num="9"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_10">
+        <port num="10"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_11">
+        <port num="11"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_12">
+        <port num="12"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_13">
+        <port num="13"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_14">
+        <port num="14"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_15">
+        <port num="15"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:05_16">
+        <port num="16"/>
+      </interface>
+    </node>
+    <node id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03" type="switch">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_1">
+        <port num="1"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_2">
+        <port num="2"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_3">
+        <port num="3"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_4">
+        <port num="4"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_5">
+        <port num="5"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_6">
+        <port num="6"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_7">
+        <port num="7"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_8">
+        <port num="8"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_9">
+        <port num="9"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_10">
+        <port num="10"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_11">
+        <port num="11"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_12">
+        <port num="12"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_13">
+        <port num="13"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_14">
+        <port num="14"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_15">
+        <port num="15"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:03_16">
+        <port num="16"/>
+      </interface>
+    </node>
+    <node id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04" type="switch">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_1">
+        <port num="1"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_2">
+        <port num="2"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_3">
+        <port num="3"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_4">
+        <port num="4"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_5">
+        <port num="5"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_6">
+        <port num="6"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_7">
+        <port num="7"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_8">
+        <port num="8"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_9">
+        <port num="9"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_10">
+        <port num="10"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_11">
+        <port num="11"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_12">
+        <port num="12"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_13">
+        <port num="13"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_14">
+        <port num="14"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_15">
+        <port num="15"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:04_16">
+        <port num="16"/>
+      </interface>
+    </node>
+    <node id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01" type="switch">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_1">
+        <port num="1"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_2">
+        <port num="2"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_3">
+        <port num="3"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_4">
+        <port num="4"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_5">
+        <port num="5"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_6">
+        <port num="6"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_7">
+        <port num="7"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_8">
+        <port num="8"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_9">
+        <port num="9"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_10">
+        <port num="10"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_11">
+        <port num="11"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_12">
+        <port num="12"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_13">
+        <port num="13"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_14">
+        <port num="14"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_15">
+        <port num="15"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01_16">
+        <port num="16"/>
+      </interface>
+    </node>
+    <node id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02" type="switch">
+      <management type="snmp">
+        <address>102.168.2.1</address>
+        <port>161</port>
+        <auth_id>public</auth_id>
+        <auth_pass/>
+      </management>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_1">
+        <port num="1"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_2">
+        <port num="2"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_3">
+        <port num="3"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_4">
+        <port num="4"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_5">
+        <port num="5"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_6">
+        <port num="6"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_7">
+        <port num="7"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_8">
+        <port num="8"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_9">
+        <port num="9"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_10">
+        <port num="10"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_11">
+        <port num="11"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_12">
+        <port num="12"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_13">
+        <port num="13"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_14">
+        <port num="14"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_15">
+        <port num="15"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02_16">
+        <port num="16"/>
+      </interface>
+    </node>
+  </topology>
+</topology_list>

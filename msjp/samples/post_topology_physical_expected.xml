@@ -1,0 +1,68 @@
+<topology_list>
+  <topology last_update_time="1412670730" type="physical" name="urn:publicid:IDN+ocf:i2cat">
+
+    <!-- server id == node id -->
+    <node id="urn:publicid:IDN+ocf:i2cat:vtam:Verdaguer" type="server">
+      <management type="vm">
+        <auth_user/>
+        <auth_password/>
+      </management>
+      <!-- interface id == interface id -->
+      <interface id="urn:publicid:IDN+ocf:i2cat:vtam:Verdaguer+interface+eth1"/>
+    </node>
+
+    <!-- switch id == node_id -->
+    <node id="urn:publicid:IDN+openflow:ocf:i2cat:ofam+datapath+00:10:00:00:00:00:00:02" type="switch">
+      <management type="snmp">
+        <snmp_addr>192.168.1.1</snmp_addr>
+        <snmp_port>161</snmp_port>
+        <snmp_community>public</snmp_community>
+      </management>
+      <!-- interface_id == interface id -->
+      <interface id="urn:publicid:IDN+openflow:ocf:i2cat:ofam+datapath+00:10:00:00:00:00:00:02_12">
+          <!-- port number == port num -->
+          <port num="12"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:ocf:i2cat:ofam+datapath+00:10:00:00:00:00:00:02_10">
+          <!-- port number == port num -->
+          <port num="10"/>
+      </interface>
+    </node>
+
+    <!-- Server: { 1st interface_ref: source interface, 2nd interface_ref: destination interface } -->
+    <link type="lan">
+      <interface_ref client_id="urn:publicid:IDN+ocf:i2cat:vtam:Verdaguer+interface+eth1"/>
+      <interface_ref client_id="urn:publicid:IDN+openflow:ocf:i2cat:ofam+datapath+00:10:00:00:00:00:00:02_12"/>
+    </link>
+  </topology>
+
+  <topology last_update_time="1412670731" type="physical" name="urn:publicid:IDN+ocf:jgnx">
+    <node id="urn:publicid:IDN+openflow:ocf:jgnx:ofam+datapath+00:00:00:00:00:00:00:01" type="switch">
+      <interface id="urn:publicid:IDN+openflow:ocf:jgnx:ofam+datapath+00:00:00:00:00:00:00:01_6">
+          <port num="6"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:ocf:jgnx:ofam+datapath+00:00:00:00:00:00:00:01_13">
+          <port num="13"/>
+      </interface>
+    </node>
+    <node id="urn:publicid:IDN+ocf:jgnx:vtam:server1" type="server">
+      <interface id="urn:publicid:IDN+ocf:jgnx:vtam:server1+eth1"/>
+    </node>
+    <link type="lan">
+      <interface_ref client_id="urn:publicid:IDN+ocf:jgnx:vtam:server1+eth1"/>
+      <interface_ref client_id="urn:publicid:IDN+openflow:ocf:jgnx:ofam+datapath+00:00:00:00:00:00:00:01_13"/>
+    </link>
+    <node id="urn:publicid:IDN+openflow:ocf:jgnx:ofam+datapath+00:00:00:00:00:00:00:03" type="switch">
+      <interface id="urn:publicid:IDN+openflow:ocf:jgnx:ofam+datapath+00:00:00:00:00:00:00:03_11">
+          <port num="11"/>
+      </interface>
+      <interface id="urn:publicid:IDN+openflow:ocf:jgnx:ofam+datapath+00:00:00:00:00:00:00:03_1">
+          <port num="1"/>
+      </interface>
+    </node>
+    <link type="lan">
+      <interface_ref client_id="urn:publicid:IDN+openflow:ocf:jgnx:ofam+datapath+00:00:00:00:00:00:00:01_6"/>
+      <interface_ref client_id="urn:publicid:IDN+openflow:ocf:jgnx:ofam+datapath+00:00:00:00:00:00:00:03_11"/>
+    </link>
+  </topology>
+</topology_list>

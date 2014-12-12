@@ -1,67 +1,80 @@
-[Prerequisite]
-user:
-mon_user(administrator privileges.[can be sudo])
-// you can also run as root if you feel like it.
+Monitoring Prototype
+====================
 
-install directory:
-/home/mon_user
+Prerequisites
+-------------
 
-git repository:
-/opt/felix
+User:
+Any (e.g. `mon_user` with administrator privileges, or root, etc)
 
+Install directory:
+Any (e.g. `/home/mon_user`)
 
-[install]
-1)install module.
-$ cp -r /opt/felix/msjp /home/mon_user/
-
-2)install library.
-$ sudo aptitude install -y python apache2 mysql-server python-mysqldb python-elixir curl python-pip python-bottle
-$ sudo pip install xmltodict
-$ sudo pip install requests
-$ sudo easy_install apscheduler
-
-3)create database.
-$ mysql -u root < /home/mon_user/monitoring/schema/monTopologyDB.sql
+GIT repository:
+ANy (e.g. `/opt/felix`)
 
 
-[configuration]
-configuration file:
-/home/mon_user/monitoring/conf/mon_api.conf
-----------------------------------------------
+Installing
+----------
+
+1. Install module
+  * $ cp -r /opt/felix/msjp /home/mon_user/
+1. Install library
+  * $ sudo aptitude install -y python apache2 mysql-server python-mysqldb python-elixir curl python-pip python-bottle
+    * # python-bottle needs SQLAlchemy==0.7.8 (e.g. pip install SQLAlchemy==0.7.8 or apt-get install python-sqlalchemy==0.7.8-1)
+  * $ sudo pip install xmltodict
+  * $ sudo pip install requests
+  * $ sudo easy_install apscheduler
+1. Create database.
+  * $ mysql -u root < /home/mon_user/monitoring/schema/monTopologyDB.sql
+
+
+Configuring
+-----------
+
+Configuration file: `/home/mon_user/monitoring/conf/mon_api.conf`
+
+```
 [REST]
 rest_host=0.0.0.0
-rest_port=8080
+rest_port=8449
 
 [DATABASE]
 db_addr=127.0.0.1
 db_port=3306
 db_user=root
-db_pass=
+db_pass=<fill_with_yours>
 
 [UTILITY]
 #debug=0
 debug=1
-----------------------------------------------
+```
 
 
-[run]
-$ /home/mon_user/monitoring/monitoring_api.py
+Running
+-------
 
-[stop]
-Ctrl+[c]
+Running:
+`$ python /home/mon_user/monitoring/monitoring_api.py`
+
+Stopping:
+`Ctrl+[c]`
 
 
-[log file]
-$ /home/mon_user/monitoring/log/monitoring_api.log
+Log file:
+`$ tail -f /home/mon_user/monitoring/log/monitoring_api.log`
 
 
-[How to use]
-*** POST topology ***
-$ curl -X POST -d @post_topology_physical.xml http://127.0.0.1:8080/monitoring-system/topology
+How to use
+----------
+
+'''POST topology'''
+
+`$ curl -X POST -d @post_topology_physical.xml http://127.0.0.1:8449/monitoring-system/topology`
 
 e.g.
-$ cat post_topology_physical.xml
----------------------------------------------------------------------------------------------------------
+`$ cat post_topology_physical.xml`
+```
 <topology_list>
   <topology last_update_time="1412670730" type="physical" name="urn:publicid:IDN+ocf:i2cat">
 
@@ -130,14 +143,13 @@ $ cat post_topology_physical.xml
     </link>
   </topology>
 </topology_list>
----------------------------------------------------------------------------------------------------------
+```
 
+'''GET topology'''
+`$ curl -X GET http://127.0.0.1:8080/monitoring-system/topology/physical`
 
-*** GET topology ***
-$ curl -X GET http://127.0.0.1:8080/monitoring-system/topology/physical
-
-e.g. response topology xml.
----------------------------------------------------------------------------------------------------------
+e.g. response topology xml
+```
 <?xml version="1.0" ?>
 <topology_list>
   <topology last_update_time="1412670730" name="urn:publicid:IDN+ocf:i2cat" type="physical">
@@ -181,6 +193,4 @@ e.g. response topology xml.
     </node>
   </topology>
 </topology_list>
----------------------------------------------------------------------------------------------------------
-
-
+```
