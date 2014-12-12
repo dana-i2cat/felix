@@ -1,6 +1,7 @@
 [Prerequisite]
 user:
 mon_user(administrator privileges.[can be sudo])
+// you can also run as root if you feel like it.
 
 install directory:
 /home/mon_user
@@ -14,7 +15,7 @@ git repository:
 $ cp -r /opt/felix/msjp /home/mon_user/
 
 2)install library.
-$ sudo aptitude install -y python apache2 mysql-server python-mysqldb python-elixir curl python-pip
+$ sudo aptitude install -y python apache2 mysql-server python-mysqldb python-elixir curl python-pip python-bottle
 $ sudo pip install xmltodict
 $ sudo pip install requests
 $ sudo easy_install apscheduler
@@ -128,6 +129,7 @@ $ cat post_topology_physical.xml
       <interface_ref client_id="urn:publicid:IDN+openflow:ocf:jgnx:ofam+datapath+00:00:00:00:00:00:00:03_11"/>
     </link>
   </topology>
+</topology_list>
 ---------------------------------------------------------------------------------------------------------
 
 
