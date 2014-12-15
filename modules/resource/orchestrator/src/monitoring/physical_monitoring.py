@@ -60,6 +60,7 @@ class PhysicalMonitoring():
     def __add_general_info(self):
         topo = ET.SubElement(self.topology_list, "topology")
         # Milliseconds in UTC format
+        # TODO Save last update time on the physical topology (ListResources to RMs)
         topo.attrib["last_update_time"] = self.__get_timestamp()
         topo.attrib["type"] = "physical"
         # TODO Retrieve from config OR from slice!
@@ -70,11 +71,7 @@ class PhysicalMonitoring():
 
     def __add_generic_node(self, parent_tag, node, node_type):
         n = ET.SubElement(parent_tag, "node") 
-        # TODO Fill node ID as appropriate (check if URN is correct, etc)
-        if node_type == "server":
-            n.attrib["id"] = node.get("component_id")
-        elif node_type == "switch":
-            n.attrib["id"] = node.get("dpid")
+        n.attrib["id"] = node.get("component_id")
         n.attrib["type"] = node_type
         # Generate management section for node
         n = self.__add_management_section(n)
@@ -82,6 +79,7 @@ class PhysicalMonitoring():
 
     def __add_management_section(self, parent_node):
         management = ET.SubElement(parent_node, "management")
+        # TODO Set management information for resources in another table/collection
         # TODO Query database for management information per resource
         # TODO Fill with retrieved information as needed
         # TODO Identify and update must/optional tags/attributes
@@ -101,7 +99,10 @@ class PhysicalMonitoring():
     def __add_generic_link(self, link):
         logger.debug("com-links=%s" % (link,))
         l = ET.SubElement(self.topology, "link")
-        l.attrib["type"] = link.get("link_type", "lan")
+        # NOTE that this cannot be empty
+        l.attrib["type"] = link.get("link_type", "")
+        if not l.attrib["type"]:
+            l.attrib["type"] = "lan"
         # TODO Change structure of data
         links = link.get("links")
         for link_i in links:
@@ -128,8 +129,8 @@ class PhysicalMonitoring():
             logger.debug("com-node-interfaces=%s" % node.get("interfaces"))
             for iface in node.get("interfaces"):
                 interface = ET.SubElement(n, "interface")
-                # TODO Parse attribute "component_id" to be the expected one
-                interface.attrib["id"] = "%s+eth+%s" % (n.attrib["id"], iface)
+                # NOTE this is extending the "interface" URN
+                interface.attrib["id"] = "%s+interface+%s" % (n.attrib["id"], iface)
 
         # 2. Links
         # TODO Filter links by network/domain
