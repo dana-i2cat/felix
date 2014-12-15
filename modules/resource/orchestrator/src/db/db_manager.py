@@ -1,4 +1,3 @@
-#from handler.geni.v3.extensions.sfa.util import xrn
 from extensions.sfa.util import xrn
 
 import core

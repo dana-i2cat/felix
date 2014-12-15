@@ -42,13 +42,13 @@ except:
 
 from xml.parsers.expat import ExpatError
 
-from handler.geni.v3.extensions.sfa.util.faults import CredentialNotVerifiable, ChildRightsNotSubsetOfParent
-from handler.geni.v3.extensions.sfa.util.sfalogging import logger
-from handler.geni.v3.extensions.sfa.util.sfatime import utcparse
-from handler.geni.v3.extensions.sfa.trust.credential_legacy import CredentialLegacy
-from handler.geni.v3.extensions.sfa.trust.rights import Right, Rights, determine_rights
-from handler.geni.v3.extensions.sfa.trust.gid import GID
-from handler.geni.v3.extensions.sfa.util.xrn import urn_to_hrn, hrn_authfor_hrn
+from extensions.sfa.util.faults import CredentialNotVerifiable, ChildRightsNotSubsetOfParent
+from extensions.sfa.util.sfalogging import logger
+from extensions.sfa.util.sfatime import utcparse
+from extensions.sfa.util.xrn import urn_to_hrn, hrn_authfor_hrn
+from extensions.sfa.trust.credential_legacy import CredentialLegacy
+from extensions.sfa.trust.rights import Right, Rights, determine_rights
+from extensions.sfa.trust.gid import GID
 
 # 2 weeks, in seconds 
 DEFAULT_CREDENTIAL_LIFETIME = 86400 * 31

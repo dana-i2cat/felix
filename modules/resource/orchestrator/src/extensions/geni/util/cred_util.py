@@ -31,10 +31,10 @@ import sys
 import datetime
 import dateutil
 
-import handler.geni.v3.extensions.sfa.trust.credential as cred
-import handler.geni.v3.extensions.sfa.trust.gid as gid
-import handler.geni.v3.extensions.sfa.trust.rights as rights
-from handler.geni.v3.extensions.sfa.util.xrn import hrn_authfor_hrn
+import extensions.sfa.trust.credential as cred
+import extensions.sfa.trust.gid as gid
+import extensions.sfa.trust.rights as rights
+from extensions.sfa.util.xrn import hrn_authfor_hrn
 
 def naiveUTC(dt):
     """Converts dt to a naive datetime in UTC.

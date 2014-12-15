@@ -24,8 +24,9 @@
 URN creation and verification utilities.
 '''
 
+from extensions.sfa.util.xrn import Xrn # for URN_PREFIX
+
 import re
-from handler.geni.v3.extensions.sfa.util.xrn import Xrn # for URN_PREFIX
 
 class URN(object):
     """ 

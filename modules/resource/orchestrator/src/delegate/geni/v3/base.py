@@ -1,7 +1,6 @@
 from core.config import ConfParser
-from handler.geni.v3.extensions.geni.util import cred_util
+from extensions.geni.util import cred_util
 from handler.geni.v3 import exceptions
-from handler.geni.v3 import extensions
 from lxml import etree
 from lxml.builder import ElementMaker
 
@@ -9,6 +8,7 @@ from core import log
 logger=log.getLogger('geniv3delegatebase')
 
 import ast
+import exceptions
 import os
 import urllib2
 

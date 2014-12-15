@@ -1,6 +1,6 @@
+from extensions.sfa.util import xrn
 from rspecs.parser_base import ParserBase
 from rspecs.commons_com import Node, Link
-from handler.geni.v3.extensions.sfa.util import xrn
 from rspecs.commons import DEFAULT_XMLNS
 
 import core

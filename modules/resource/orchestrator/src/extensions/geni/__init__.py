@@ -23,7 +23,7 @@
 
 # from ch import Clearinghouse
 # from am1 import ReferenceAggregateManager, AggregateManagerServer
-from handler.geni.v3.extensions.geni.util.cred_util import *
-from handler.geni.v3.extensions.geni.util.urn_util import *
-from handler.geni.v3.extensions.geni.util.cert_util import *
-from handler.geni.v3.extensions.geni.util.secure_xmlrpc_client import *
+from extensions.geni.util.cred_util import *
+from extensions.geni.util.urn_util import *
+from extensions.geni.util.cert_util import *
+from extensions.geni.util.secure_xmlrpc_client import *

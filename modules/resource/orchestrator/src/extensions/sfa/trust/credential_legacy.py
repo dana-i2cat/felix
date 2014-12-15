@@ -28,11 +28,11 @@
 ##
 
 
-import xmlrpclib
+from extensions.sfa.trust.certificate import Certificate
+from extensions.sfa.trust.gid import GID
+from extensions.sfa.util.faults import MissingDelegateBit, ChildRightsNotSubsetOfParent
 
-from handler.geni.v3.extensions.sfa.util.faults import MissingDelegateBit, ChildRightsNotSubsetOfParent
-from handler.geni.v3.extensions.sfa.trust.certificate import Certificate
-from handler.geni.v3.extensions.sfa.trust.gid import GID
+import xmlrpclib
 
 ##
 # Credential is a tuple:

@@ -4,8 +4,8 @@ import sys
 sys.path.insert(0, "../../../../src")
 
 from core.utils import calls as call_utils
-from handler.geni.v3.extensions.geni.util import cred_util
-from handler.geni.v3.extensions.sfa.trust import gid
+from extensions.geni.util import cred_util
+from extensions.sfa.trust import gid
 
 # Adding path to locate "utils" module within the "test" package
 sys.path.insert(0, "../../..")

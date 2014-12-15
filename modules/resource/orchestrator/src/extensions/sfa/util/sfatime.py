@@ -20,12 +20,12 @@
 # OUT OF OR IN CONNECTION WITH THE WORK OR THE USE OR OTHER DEALINGS
 # IN THE WORK.
 #----------------------------------------------------------------------
+from extensions.sfa.util.sfalogging import logger
 from types import StringTypes
+
 import dateutil.parser
 import datetime
 import time
-
-from handler.geni.v3.extensions.sfa.util.sfalogging import logger
 
 DATEFORMAT = "%Y-%m-%dT%H:%M:%SZ"
 

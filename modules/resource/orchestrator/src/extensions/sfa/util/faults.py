@@ -24,8 +24,8 @@
 # SFA API faults
 #
 
+from extensions.sfa.util.genicode import GENICODE
 import xmlrpclib
-from handler.geni.v3.extensions.sfa.util.genicode import GENICODE
 
 class SfaFault(xmlrpclib.Fault):
     def __init__(self, faultCode, faultString, extra = None):

@@ -21,7 +21,7 @@
 # IN THE WORK.
 #----------------------------------------------------------------------
 
-from handler.geni.v3.extensions.sfa.util.enumeration import Enum
+from extensions.sfa.util.enumeration import Enum
 
 GENICODE = Enum(
     SUCCESS=0,

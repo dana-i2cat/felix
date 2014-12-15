@@ -25,14 +25,13 @@
 # descendant of the certificate class.
 ##
 
+from extensions.sfa.trust.certificate import Certificate
+from extensions.sfa.util.faults import GidInvalidParentHrn, GidParentHrn
+from extensions.sfa.util.sfalogging import logger
+from extensions.sfa.util.xrn import hrn_to_urn, urn_to_hrn, hrn_authfor_hrn
+
 import xmlrpclib
 import uuid
-
-from handler.geni.v3.extensions.sfa.trust.certificate import Certificate
-
-from handler.geni.v3.extensions.sfa.util.faults import GidInvalidParentHrn, GidParentHrn
-from handler.geni.v3.extensions.sfa.util.sfalogging import logger
-from handler.geni.v3.extensions.sfa.util.xrn import hrn_to_urn, urn_to_hrn, hrn_authfor_hrn
 
 ##
 # Create a new uuid. Returns the UUID as a string.

@@ -24,11 +24,11 @@
 Certificate (GID in SFA terms) creation and verification utilities.
 '''
 
-import uuid
+from extensions.geni.util.urn_util import URN
+from extensions.sfa.trust.gid import GID
+from extensions.sfa.trust.certificate import Keypair
 
-from handler.geni.v3.extensions.sfa.trust.gid import GID
-from handler.geni.v3.extensions.sfa.trust.certificate import Keypair
-from handler.geni.v3.extensions.geni.util.urn_util import URN
+import uuid
 
 def create_cert(urn, issuer_key=None, issuer_cert=None, ca=False,
                 public_key=None, lifeDays=1825, email=None, uuidarg=None):

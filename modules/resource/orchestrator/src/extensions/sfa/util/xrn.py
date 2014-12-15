@@ -21,9 +21,9 @@
 # IN THE WORK.
 #----------------------------------------------------------------------
 
-import re
+from extensions.sfa.util.faults import SfaAPIError
 
-from handler.geni.v3.extensions.sfa.util.faults import SfaAPIError
+import re
 
 # for convenience and smoother translation - we should get rid of these functions eventually 
 def get_leaf(hrn): return Xrn(hrn).get_leaf()

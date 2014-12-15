@@ -45,8 +45,8 @@ from OpenSSL import crypto
 import M2Crypto
 from M2Crypto import X509
 
-from handler.geni.v3.extensions.sfa.util.faults import CertExpired, CertMissingParent, CertNotSignedByParent
-from handler.geni.v3.extensions.sfa.util.sfalogging import logger
+from extensions.sfa.util.faults import CertExpired, CertMissingParent, CertNotSignedByParent
+from extensions.sfa.util.sfalogging import logger
 
 glo_passphrase_callback = None
 
