@@ -46,7 +46,7 @@ class CommandMgr(object):
         self.__delete(CommandMgr.TABLES["domain.routing"], "domain.routing")
 
     def delete_ofdatapath_table(self):
-        self.__delete(CommandMgr.TABLES["OFNodeTable"], "OFNodeTable")
+        self.__delete(CommandMgr.TABLES["resource.of.node"], "resource.of.node")
 
     def delete_oflink_table(self):
         self.__delete(CommandMgr.TABLES["resource.of.link"], "resource.of.link")

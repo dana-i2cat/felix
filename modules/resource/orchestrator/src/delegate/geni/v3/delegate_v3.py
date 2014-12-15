@@ -133,7 +133,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.debug("Route=%s" % (route,))
 
         for r, v in route.iteritems():
-            peer = db_sync_manager.get_configured_peer(r)
+            peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") == "sdn_networking":
                 of_m_info, last_slice, of_slivers =\
@@ -326,7 +326,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         etime_str = self.__datetime2str(expiration_time)
         for r, v in route.iteritems():
-            peer = db_sync_manager.get_configured_peer(r)
+            peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") in ["sdn_networking", "transport_network",
                                     "stitching_entity"]:
@@ -371,7 +371,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.debug("Route=%s" % (route,))
 
         for r, v in route.iteritems():
-            peer = db_sync_manager.get_configured_peer(r)
+            peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") in ["sdn_networking", "transport_network",
                                     "stitching_entity"]:
@@ -405,7 +405,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.debug("Route=%s" % (route,))
 
         for r, v in route.iteritems():
-            peer = db_sync_manager.get_configured_peer(r)
+            peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") in ["sdn_networking", "transport_network",
                                     "stitching_entity"]:
@@ -438,7 +438,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.debug("Route=%s" % (route,))
 
         for r, v in route.iteritems():
-            peer = db_sync_manager.get_configured_peer(r)
+            peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") in ["sdn_networking", "transport_network",
                                     "stitching_entity"]:
@@ -511,7 +511,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def __send_request_rspec(self, routing_key, req_rspec, slice_urn,
                              credentials, end_time):
-        peer = db_sync_manager.get_configured_peer(routing_key)
+        peer = db_sync_manager.get_configured_peer_by_routing_key(routing_key)
         logger.debug("Peer=%s" % (peer,))
         adaptor = AdaptorFactory.create_from_db(peer)
         logger.debug("Adaptor=%s" % (adaptor,))
@@ -528,22 +528,22 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def __extract_se_from_sdn(self, groups, matches):
         ret = []
         for m in matches:
-            vlan_id = m.get('packet').get('dl_vlan')
+            vlan_id = m.get("packet").get("dl_vlan")
             if vlan_id is None:
                 continue
 
             dpids = []
-            for mg in m.get('use_groups'):
+            for mg in m.get("use_groups"):
                 for g in groups:
-                    if g.get('name') == mg.get('name'):
-                        for gds in g.get('dpids'):
-                            dpids.append(gds.get('component_id'))
+                    if g.get("name") == mg.get("name"):
+                        for gds in g.get("dpids"):
+                            dpids.append(gds.get("component_id"))
 
-            for mds in m.get('dpids'):
-                dpids.append(mds.get('component_id'))
+            for mds in m.get("dpids"):
+                dpids.append(mds.get("component_id"))
 
             if len(dpids) > 0:
-                ret.append({'vlan': vlan_id, 'dpids': dpids})
+                ret.append({"vlan": vlan_id, "dpids": dpids})
 
         return ret
 
@@ -653,16 +653,16 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def __extract_se_from_tn(self, nodes, links):
         ret, ifref = [], set()
         for l in links:
-            for p in l.get('property'):
-                ifref.add(p.get('source_id'))
-                ifref.add(p.get('dest_id'))
+            for p in l.get("property"):
+                ifref.add(p.get("source_id"))
+                ifref.add(p.get("dest_id"))
 
         for n in nodes:
-            for i in n.get('interfaces'):
-                if i.get('component_id') in ifref:
-                    for v in i.get('vlan'):
-                        ret.append({'vlan': v.get('tag'),
-                                    'interface': i.get('component_id')})
+            for i in n.get("interfaces"):
+                if i.get("component_id") in ifref:
+                    for v in i.get("vlan"):
+                        ret.append({"vlan": v.get("tag"),
+                                    "interface": i.get("component_id")})
 
         return ret
 
@@ -713,43 +713,43 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def __update_se_nodes(self, nodes, values):
         for v in values:
-            if v.get('node') is not None:
-                cid = v.get('node').get('component_id')
-                cmid = v.get('node').get('component_manager_id')
+            if v.get("node") is not None:
+                cid = v.get("node").get("component_id")
+                cmid = v.get("node").get("component_manager_id")
                 if len(nodes) > 0:
                     for i in nodes:
-                        if (i.serialize().get('component_id') != cid) and\
-                           (i.serialize().get('component_manager_id') != cmid):
+                        if (i.serialize().get("component_id") != cid) and\
+                           (i.serialize().get("component_manager_id") != cmid):
                             n = Node(cid, cmid,
-                                     sliver_type_name=v.get('routing_key'))
+                                     sliver_type_name=v.get("routing_key"))
                             nodes.append(n)
                 else:
-                    n = Node(cid, cmid, sliver_type_name=v.get('routing_key'))
+                    n = Node(cid, cmid, sliver_type_name=v.get("routing_key"))
                     nodes.append(n)
 
         for v in values:
-            if v.get('node') is not None:
+            if v.get("node") is not None:
                 for n in nodes:
-                    scid = v.get('node').get('component_id')
-                    scmid = v.get('node').get('component_manager_id')
-                    ncid = n.serialize().get('component_id')
-                    ncmid = n.serialize().get('component_manager_id')
+                    scid = v.get("node").get("component_id")
+                    scmid = v.get("node").get("component_manager_id")
+                    ncid = n.serialize().get("component_id")
+                    ncmid = n.serialize().get("component_manager_id")
                     if (scid == ncid) and (scmid == ncmid):
-                        for i in v.get('internal_ifs'):
-                            intf = Interface(i.get('component_id'))
-                            intf.add_vlan(v.get('vlan'), "")
+                        for i in v.get("internal_ifs"):
+                            intf = Interface(i.get("component_id"))
+                            intf.add_vlan(v.get("vlan"), "")
                             n.add_interface(intf.serialize())
 
     def __create_selink(self, if1, if2, sliver_id):
-        i = if1.rindex(':')
+        i = if1.rindex(":")
         n1, name1 = if1[0:i], if1[i+1:len(if1)]
-        i = if2.rindex(':')
+        i = if2.rindex(":")
         n2, name2 = if2[0:i], if2[i+1:len(if1)]
 
         if n1 != n2:
             raise Exception("SELink: differs node cid (%s,%s)" % (n1, n2))
 
-        cid = n1 + ':' + name1 + '-' + name2
+        cid = n1 + ":" + name1 + "-" + name2
         typee, cm_name = db_sync_manager.get_se_link_info(n1)
 
         l = SELink(cid, typee, cm_name, sliver=sliver_id)
@@ -759,13 +759,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def __update_se_link(self, links, svalues, tvalues):
         for s in svalues:
-            for sintf in s.get('internal_ifs'):
+            for sintf in s.get("internal_ifs"):
                 for t in tvalues:
-                    for tintf in t.get('internal_ifs'):
-                        if s.get('routing_key') == t.get('routing_key'):
-                            l = self.__create_selink(sintf.get('component_id'),
-                                                     tintf.get('component_id'),
-                                                     s.get('routing_key'))
+                    for tintf in t.get("internal_ifs"):
+                        if s.get("routing_key") == t.get("routing_key"):
+                            l = self.__create_selink(sintf.get("component_id"),
+                                                     tintf.get("component_id"),
+                                                     s.get("routing_key"))
                             links.append(l)
 
     def __extract_se_info(self, sdn, tn):
@@ -793,9 +793,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def __manage_se_allocate(self, surn, creds, end, sdn_info, tn_info):
         route = {}
-        self.__update_se_info_route(route, sdn_info, 'dpids')
+        self.__update_se_info_route(route, sdn_info, "dpids")
         logger.debug("SE-SdnInfo(%d)=%s" % (len(sdn_info), sdn_info,))
-        self.__update_se_info_route(route, tn_info, 'interface')
+        self.__update_se_info_route(route, tn_info, "interface")
         logger.debug("SE-TnInfo(%d)=%s" % (len(tn_info), tn_info,))
 
         self.__update_se_route_rspec(route, sdn_info, tn_info)

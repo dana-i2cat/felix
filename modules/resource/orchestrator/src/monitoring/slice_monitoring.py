@@ -60,22 +60,20 @@ class SliceMonitoring():
     def __add_general_info(self):
         topo = ET.SubElement(self.topology_list, "topology")
         # Milliseconds in UTC format
+        # TODO Save last update time on the slice topology (Allocate to RMs)
         topo.attrib["last_update_time"] = self.__get_timestamp()
         topo.attrib["type"] = "slice"
         # TODO Retrieve from config OR from slice!
         # TODO Filter topology based on this!
         topo.attrib["name"] = "urn_of_slice"
+        # TODO Retrieve owner from credentials
         topo.attrib["owner"] = "owner_of_slice"
         # Set topology tag as root node for subsequent operations
         self.topology = topo
 
     def __add_generic_node(self, parent_tag, node, node_type):
         n = ET.SubElement(parent_tag, "node") 
-        # TODO Fill node ID as appropriate (check if URN is correct, etc)
-        if node_type == "server":
-            n.attrib["id"] = node.get("component_id")
-        elif node_type == "switch":
-            n.attrib["id"] = node.get("dpid")
+        n.attrib["id"] = node.get("component_id")
         n.attrib["type"] = node_type
         # Generate management section for node
         n = self.__add_management_section(n)
@@ -83,6 +81,7 @@ class SliceMonitoring():
 
     def __add_management_section(self, parent_node):
         management = ET.SubElement(parent_node, "management")
+        # TODO Set management information for resources in another table/collection
         # TODO Query database for management information per resource
         # TODO Fill with retrieved information as needed
         # TODO Identify and update must/optional tags/attributes
@@ -102,7 +101,10 @@ class SliceMonitoring():
     def __add_generic_link(self, link):
         logger.debug("com-links=%s" % (link,))
         l = ET.SubElement(self.topology, "link")
-        l.attrib["type"] = link.get("link_type", "lan")
+        # NOTE that this cannot be empty
+        l.attrib["type"] = link.get("link_type", "")
+        if not l.attrib["type"]:
+            l.attrib["type"] = "lan"
         # TODO Change structure of data
         links = link.get("links")
         for link_i in links:
@@ -128,7 +130,7 @@ class SliceMonitoring():
             server_info = ET.SubElement(n, "server_info")
             
             # Output VMs per server
-            # FIXME Yet to fill on mongoDB so that this works
+            # FIXME Info yet to place in a mongoDB table so that this works
             logger.debug("com-node-vms=%s" % node.get("vms"))
             for iface in node.get("vms"):
                 interface = ET.SubElement(server_info, "vm_id")
@@ -139,7 +141,7 @@ class SliceMonitoring():
             for iface in node.get("interfaces"):
                 interface = ET.SubElement(n, "interface")
                 # TODO Parse attribute "component_id" to be the expected one
-                interface.attrib["id"] = "%s+eth+%s" % (n.attrib["id"], iface)
+                interface.attrib["id"] = "%s+interface+%s" % (n.attrib["id"], iface)
         
         # 2. Links
         # TODO Filter links by network/domain
