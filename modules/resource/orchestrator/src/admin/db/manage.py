@@ -79,7 +79,7 @@ class RoutingTableCommand(GenericCommand):
     def getTable(self):
         client_ = pymongo.MongoClient()
         felix_ro_ = client_.felix_ro
-        return felix_ro_.RoutingTable
+        return felix_ro_.domain.routing
 
 
 class Dump(RoutingTableCommand):
@@ -93,9 +93,9 @@ class Dump(RoutingTableCommand):
             print "%s" % (row_,)
 
     def execute(self):
-        self.__dump_table(self.getTable(), "RoutingTable")
-        self.__dump_table(pymongo.MongoClient().felix_ro.GeneralInfoTable,
-                          "GeneralInfoTable")
+        self.__dump_table(self.getTable(), "domain.routing")
+#        self.__dump_table(pymongo.MongoClient().felix_ro.GeneralInfoTable,
+#                          "GeneralInfoTable")
 
     def helpMessage(self):
         return "dump" + "\n\tGet a dump of the mongoDB db"
@@ -109,7 +109,7 @@ class DeleteAll(RoutingTableCommand):
         table_ = self.getTable()
         table_.remove()
 
-        print "(RO) RoutingTable delete all rows\n"
+        print "(RO) domain.routing delete all rows\n"
 
     def helpMessage(self):
         return "delete_all" + "\n\tDelete all entries of the mongoDB db"
@@ -140,7 +140,7 @@ class AddRouteEntry(RoutingTableCommand):
                 "am_version": self.am_version_}
 
         row_id_ = table_.insert(row_)
-        print "(RO) RoutingTable insert row: %s\n" % (row_id_,)
+        print "(RO) domain.routing insert row: %s\n" % (row_id_,)
 
     def helpMessage(self):
         return "add_route_entry -t <type> -a <address> -p <port>" +\
@@ -172,43 +172,43 @@ class DelRouteEntry(RoutingTableCommand):
             row_["port"] = self.port_
 
         table_.remove(row_)
-        print "(RO) RoutingTable delete row: %s\n" % (row_,)
+        print "(RO) domain.routing delete row: %s\n" % (row_,)
 
     def helpMessage(self):
         return "delete_route_entry [-t <type>] [-a <address>] [-p <port>]" +\
                "\n\tDelete an entry(/ies)in the mongoDB db"
 
 
-class AddGeneralInfoEntry(GenericCommand):
-    def __init__(self):
-        GenericCommand.__init__(self)
-        self.domain_ = None
-
-    def updateDomain(self, value):
-        self.domain_ = value
-
-    def validate(self):
-        if self.domain_ is None:
-            raise AttributeError("Domain argument is NOT specified!")
-
-    def execute(self):
-        table_ = pymongo.MongoClient().felix_ro.GeneralInfoTable
-
-        row_ = {"domain": self.domain_}
-
-        row_id_ = table_.insert(row_)
-        print "(RO) GeneralInfoTable insert row: %s\n" % (row_id_,)
-
-    def helpMessage(self):
-        return "add_general-info_entry [--domain <id>]" +\
-               "\n\tAdd a general-info entry in the mongoDB db"
+#class AddGeneralInfoEntry(GenericCommand):
+#    def __init__(self):
+#        GenericCommand.__init__(self)
+#        self.domain_ = None
+#
+#    def updateDomain(self, value):
+#        self.domain_ = value
+#
+#    def validate(self):
+#        if self.domain_ is None:
+#            raise AttributeError("Domain argument is NOT specified!")
+#
+#    def execute(self):
+#        table_ = pymongo.MongoClient().felix_ro.GeneralInfoTable
+#
+#        row_ = {"domain": self.domain_}
+#
+#        row_id_ = table_.insert(row_)
+#        print "(RO) GeneralInfoTable insert row: %s\n" % (row_id_,)
+#
+#    def helpMessage(self):
+#        return "add_general-info_entry [--domain <id>]" +\
+#               "\n\tAdd a general-info entry in the mongoDB db"
 
 
 commands = {"dump": Dump(),
             "delete_all": DeleteAll(),
             "add_route_entry": AddRouteEntry(),
-            "delete_route_entry": DelRouteEntry(),
-            "add_general-info_entry": AddGeneralInfoEntry()}
+            "delete_route_entry": DelRouteEntry(),}
+#            "add_general-info_entry": AddGeneralInfoEntry()}
 
 
 class CmdManager:

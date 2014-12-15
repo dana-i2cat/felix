@@ -7,18 +7,19 @@ import pymongo
 
 class CommandMgr(object):
     TABLES = {
-        "RoutingTable": pymongo.MongoClient().felix_ro.RoutingTable,
-        "GeneralInfoTable": pymongo.MongoClient().felix_ro.GeneralInfoTable,
-        "OFDatapathTable": pymongo.MongoClient().felix_ro.OFDatapathTable,
-        "OFLinkTable": pymongo.MongoClient().felix_ro.OFLinkTable,
-        "SELinkTable": pymongo.MongoClient().felix_ro.SELinkTable,
-        "SENodeTable": pymongo.MongoClient().felix_ro.SENodeTable,
-        "ScheduledJobs": pymongo.MongoClient().felix_ro.ScheduledJobs,
-        "SliceTable": pymongo.MongoClient().felix_ro.SliceTable,
-        "TNLinkTable": pymongo.MongoClient().felix_ro.TNLinkTable,
-        "TNNodeTable": pymongo.MongoClient().felix_ro.TNNodeTable,
-        "COMNodeTable": pymongo.MongoClient().felix_ro.COMNodeTable,
-        "COMLinkTable": pymongo.MongoClient().felix_ro.COMLinkTable}
+        "domain.routing": pymongo.MongoClient().felix_ro.domain.routing,
+#        "GeneralInfoTable": pymongo.MongoClient().felix_ro.GeneralInfoTable,
+        "resource.com.node": pymongo.MongoClient().felix_ro.resource.com.node,
+        "resource.com.link": pymongo.MongoClient().felix_ro.resource.com.link,
+        "resource.of.node": pymongo.MongoClient().felix_ro.resource.of.node,
+        "resource.of.link": pymongo.MongoClient().felix_ro.resource.of.link,
+        "resource.se.link": pymongo.MongoClient().felix_ro.resource.se.link,
+        "resource.se.node": pymongo.MongoClient().felix_ro.resource.se.node,
+        "resource.tn.link": pymongo.MongoClient().felix_ro.resource.tn.link,
+        "resource.tn.node": pymongo.MongoClient().felix_ro.resource.tn.node,
+        "topology.slice": pymongo.MongoClient().felix_ro.topology.slice,
+        "scheduler.jobs": pymongo.MongoClient().felix_ro.scheduler.jobs,
+    }
 
     def __select(self, table, name):
         print "\n\n" + "(RO) %s has %d rows\n" % (name, table.count())
@@ -33,22 +34,22 @@ class CommandMgr(object):
         print "\n\nManaged Tables: %s\n\n" % CommandMgr.TABLES.keys()
 
     def select_routing_table(self):
-        self.__select(CommandMgr.TABLES["RoutingTable"], "RoutingTable")
+        self.__select(CommandMgr.TABLES["domain.routing"], "domain.routing")
 
     def select_ofdatapath_table(self):
-        self.__select(CommandMgr.TABLES["OFDatapathTable"], "OFDatapathTable")
+        self.__select(CommandMgr.TABLES["resource.of.node"], "resource.of.node")
 
     def select_oflink_table(self):
-        self.__select(CommandMgr.TABLES["OFLinkTable"], "OFLinkTable")
+        self.__select(CommandMgr.TABLES["resource.of.link"], "resource.of.link")
 
     def delete_routing_table(self):
-        self.__delete(CommandMgr.TABLES["RoutingTable"], "RoutingTable")
+        self.__delete(CommandMgr.TABLES["domain.routing"], "domain.routing")
 
     def delete_ofdatapath_table(self):
         self.__delete(CommandMgr.TABLES["OFNodeTable"], "OFNodeTable")
 
     def delete_oflink_table(self):
-        self.__delete(CommandMgr.TABLES["OFLinkTable"], "OFLinkTable")
+        self.__delete(CommandMgr.TABLES["resource.of.link"], "resource.of.link")
 
     def delete_all_tables(self):
         for table, mongo_table in CommandMgr.TABLES.items():
