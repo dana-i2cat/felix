@@ -14,6 +14,7 @@ class SERMGENI3Delegate(GENIv3DelegateBase):
 
     def __init__(self):
         super(SERMGENI3Delegate, self).__init__()
+        self.RM_URN = "urn:publicid:IDN+stitching:psnc.serm"
         logger.info("SERMGENI3Delegate successfully initialized!")
 
     def enter_method_log(f):
@@ -70,53 +71,53 @@ class SERMGENI3Delegate(GENIv3DelegateBase):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         rspec = rspec_manager.get_SERMv3AdvertisementFormatter()
         # node = domain
-        node = rspec_manager.get_TNNode("urn:publicid:aist-se1",
-                                      "urn:publicid:IDN+AIST+authority+serm",
+        node = rspec_manager.get_TNNode(self.RM_URN,
+                                      self.RM_URN + "+authority+serm",
                                       "false")
         # if-1
-        intf = rspec_manager.get_Interface("urn:publicid:aist-se1:if1")
+        intf = rspec_manager.get_Interface(self.RM_URN + "+interface+if1")
         node.add_interface(intf.serialize())
         # if-2
-        intf = rspec_manager.get_Interface("urn:publicid:aist-se1:if2")
+        intf = rspec_manager.get_Interface(self.RM_URN + "+interface+if2")
         node.add_interface(intf.serialize())
         # if-3
-        intf = rspec_manager.get_Interface("urn:publicid:aist-se1:if3")
+        intf = rspec_manager.get_Interface(self.RM_URN + "+interface+if3")
         node.add_interface(intf.serialize())
         # if-4
-        intf = rspec_manager.get_Interface("urn:publicid:aist-se1:if4")
+        intf = rspec_manager.get_Interface(self.RM_URN + "+interface+if4")
         node.add_interface(intf.serialize())
 
         rspec.node(node.serialize())
 
         # link 1
-        link = self.__create_se_dyn_link("urn:publicid:aist-se1:link",
-                                         "urn:publicid:IDN+NSI+authority+serm",
+        link = self.__create_se_dyn_link(self.RM_URN + "+link+dyn1",
+                                         self.RM_URN "+authority+serm",
                                          "urn:felix+vlan_trans",
                                          "*", "*", "1G")
         rspec.link(link.serialize())
         # link 2
-        link = self.__create_se_stat_link("urn:publicid:aist-se1-dp1",
+        link = self.__create_se_stat_link(self.RM_URN + "+link+se1-dp1",
                                           "urn:felix+static_link",
-                                          "urn:publicid:aist-se1:if1",
+                                          self.RM_URN + "+interface+if1",
                                           "urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:01")
         rspec.link(link.serialize())
         # link 3
-        link = self.__create_se_stat_link("urn:publicid:aist-se1-dp2",
+        link = self.__create_se_stat_link(self.RM_URN + "+link+se1-dp2",
                                           "urn:felix+static_link",
-                                          "urn:publicid:aist-se1:if2",
+                                          self.RM_URN + "+interface+if2",
                                           "urn:publicid:IDN+openflow:i2cat.ofam+datapath+00:10:00:00:00:00:00:02")
         rspec.link(link.serialize())
         # link 4
-        link = self.__create_se_stat_link("urn:publicid:aist-se1-dp3",
+        link = self.__create_se_stat_link(self.RM_URN + "+link+se1-dp3",
                                           "urn:felix+static_link",
-                                          "urn:publicid:aist-se1:if3",
-                                          "urn:publicid:tn:aist:network1+urn:ogf:network:aist:network1:stp1")
+                                          self.RM_URN + "+interface+if3",
+                                          self.RM_URN + "+link+stp1")
         rspec.link(link.serialize())
         # link 5
-        link = self.__create_se_stat_link("urn:publicid:aist-se1-dp4",
+        link = self.__create_se_stat_link(self.RM_URN + "+link+se1-dp4",
                                           "urn:felix:static_link",
-                                          "urn:publicid:aist-se1:if4",
-                                          "urn:publicid:tn-network1:aist-stp2")
+                                          self.RM_URN + "+interface+if4",
+                                          self.RM_URN + "+link+stp2")
         rspec.link(link.serialize())
 
         logger.debug("SEv3AdvertisementFormatter=%s" % (rspec,))

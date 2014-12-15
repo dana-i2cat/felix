@@ -76,9 +76,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
         sl = "http://www.geni.net/resources/rspec/3/ad.xsd"
         rspec = ROAdvertisementFormatter(schema_location=sl)
 
-        # TODO Retrieve resource URN (e.g. from the first retrieved)
-        #      Get authority URN from it
-        #      Associate authority URN with peer IP, and update table
         try:
             logger.debug("COM resources: nodes")
             for n in db_sync_manager.get_com_nodes():

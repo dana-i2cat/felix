@@ -1,6 +1,6 @@
 from db.db_manager import db_sync_manager
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
-
+from extensions.sfa.util import xrn
 from rspecs.crm.advertisement_parser import CRMv3AdvertisementParser
 from rspecs.openflow.advertisement_parser import OFv3AdvertisementParser
 from rspecs.serm.advertisement_parser import SERMv3AdvertisementParser
@@ -57,6 +57,7 @@ class ResourceDetector(object):
             else:
                 self.error("Unknown peer type=%s" % (peer.get("type"),))
             
+            # FIXME This is associating wrong URIs with domains. Debug
             # Retrieve sample node, extract domain URN and store
             try:
                 self.__set_domain_component_id(nodes[0].get("component_id"))
@@ -84,9 +85,15 @@ class ResourceDetector(object):
         """
         Retrieve domain URN from component ID.
         """
+        try:
+            resource_hrn = xrn.urn_to_hrn(resource_cid)[0] # First part of the tuple
+            # XXX Conversion from HRN to URN sometimes translates "." by "\."
+            resource_hrn = resource_hrn.replace("\.",".")
+            resource_auth = xrn.get_authority(resource_hrn)
+            resource_cid = xrn.hrn_to_urn(resource_auth, "authority")
+        except Exception as e:
+            self.error("Malformed URN on resource_detector. Exception: %s" % str(e))
         self.domain_urn = resource_cid or self.domain_urn
-        #  TODO Process component ID to find URN
-        # ...
 
     def __db(self, action, routingKey, data):
         try:
