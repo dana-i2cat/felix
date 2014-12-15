@@ -4,6 +4,7 @@ from monitoring.slice_monitoring import SliceMonitoring
 from resource_detector import ResourceDetector
 
 import core
+import re
 import requests
 
 logger = core.log.getLogger("monitoring-manager")
@@ -41,8 +42,12 @@ class MonitoringManager(ResourceDetector):
             if not peer:
                 peer = self.monitoring_system
 
-            url = "%s://%s:%s/%s" % (peer.get("protocol"), peer.get("address"),
+            url = "%s:%s/%s" % (peer.get("address"),
                                      peer.get("port"), peer.get("endpoint"))
+            # Post-process URL to remove N slashes in a row
+            url = re.sub("/{2,}", "/", url)
+            # And add protocol (with 2 slashes)
+            url = "%s://%s" % (peer.get("protocol"), url)
             self.info("url=%s" % (url,))
             self.info("data=%s" % (xml_data,))
 
