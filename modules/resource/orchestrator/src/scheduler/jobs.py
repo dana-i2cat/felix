@@ -66,7 +66,7 @@ def slice_expiration(urns):
     logger.debug("Route=%s" % (route,))
 
     for r, v in route.iteritems():
-        peer = db_sync_manager.get_configured_peer(r)
+        peer = db_sync_manager.get_configured_peer_by_routing_key(r)
         logger.debug("peer=%s" % (peer,))
         adaptor = AdaptorFactory.create_from_db(peer)
         geni_v3_creds = AdaptorFactory.geni_v3_credentials()

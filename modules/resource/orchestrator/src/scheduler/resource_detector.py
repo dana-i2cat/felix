@@ -21,6 +21,8 @@ class ResourceDetector(object):
         self.peers = [p for p in db_sync_manager.get_configured_peers()
                       if p.get("type") == typee]
         self.typee = typee
+        self.adaptor_uri = ""
+        self.domain_urn = ""
 
     def debug(self, msg):
         logger.debug("(%s) %s" % (self.typee, msg))
@@ -35,17 +37,17 @@ class ResourceDetector(object):
         self.debug("Configured peers=%d" % (len(self.peers)))
         for peer in self.peers:
             self.debug("Peer=%s" % (peer,))
-            result = self.__get_resources(peer)
+            result, self.adaptor_uri = self.__get_resources(peer)
             if result is None:
                 self.error("Result is None!")
                 continue
-            # decode the Adv RSpec now!
+            # Decode the Adv RSpec
             if peer.get("type") == "virtualisation":
                 (nodes, links) = self.__decode_com_rspec(result)
                 self.__store_com_resources(peer.get("_id"), nodes, links)
             elif peer.get("type") == "sdn_networking":
-                (dpids, links) = self.__decode_sdn_rspec(result)
-                self.__store_sdn_resources(peer.get("_id"), dpids, links)
+                (nodes, links) = self.__decode_sdn_rspec(result)
+                self.__store_sdn_resources(peer.get("_id"), nodes, links)
             elif peer.get("type") == "stitching_entity":
                 (nodes, links) = self.__decode_se_rspec(result)
                 self.__store_se_resources(peer.get("_id"), nodes, links)
@@ -54,20 +56,37 @@ class ResourceDetector(object):
                 self.__store_tn_resources(peer.get("_id"), nodes, links)
             else:
                 self.error("Unknown peer type=%s" % (peer.get("type"),))
+            
+            # Retrieve sample node, extract domain URN and store
+            try:
+                self.__set_domain_component_id(nodes[0].get("component_id"))
+                db_sync_manager.store_domain_info(self.adaptor_uri, self.domain_urn)
+            except Exception as e:
+                self.error("Error storing mapping domain_urn:resource_rm. Exception: %s" % e)
 
     def __get_resources(self, peer):
         try:
-            adaptor = AdaptorFactory.create_from_db(peer)
+            # Retrieve the URI for domain:RMs identification purposes
+            adaptor, adaptor_uri = AdaptorFactory.create_from_db(peer)
             self.info("RM-Adaptor=%s" % (adaptor,))
 
             geni_v3_credentials = AdaptorFactory.geni_v3_credentials()
             self.info("Credentials successfully retrieved!")
-            return adaptor.list_resources(geni_v3_credentials, False)
+            resources_returned = adaptor.list_resources(geni_v3_credentials, False)
+            return (resources_returned, adaptor_uri)
 
         except Exception as e:
             self.error("get_resources (%s) exception: %s" % (
                 peer.get("type"), str(e),))
             return None
+
+    def __set_domain_component_id(self, resource_cid):
+        """
+        Retrieve domain URN from component ID.
+        """
+        self.domain_urn = resource_cid or self.domain_urn
+        #  TODO Process component ID to find URN
+        # ...
 
     def __db(self, action, routingKey, data):
         try:

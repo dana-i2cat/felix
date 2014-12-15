@@ -1,7 +1,11 @@
-import pymongo
-import threading
+#from handler.geni.v3.extensions.sfa.util import xrn
+from extensions.sfa.util import xrn
 
 import core
+import pymongo
+import threading
+import urlparse
+
 logger = core.log.getLogger("db-manager")
 
 ##
@@ -16,6 +20,7 @@ logger = core.log.getLogger("db-manager")
 #	resource.se.link
 #	resource.tn.node
 #	resource.tn.link
+#	topology.physical
 #	topology.slice
 #
 
@@ -40,7 +45,7 @@ class DBManager(object):
         try:
             self.__mutex.acquire()
             row = table.find_one()
-            return self.__check_return_row(row, custom_table, filter_params)
+            return self.__check_return_rows(row, custom_table, filter_params)
         finally:
             self.__mutex.release()
 
@@ -71,10 +76,13 @@ class DBManager(object):
         table = pymongo.MongoClient().felix_ro.domain.routing
         return self.__get_all(table)
 
-    def get_configured_peer(self, key):
+    def get_configured_peer(self, filter_params):
         table = pymongo.MongoClient().felix_ro.domain.routing
-        filter_params = {"_id": key}
         return self.__get_one(table, filter_params)
+
+    def get_configured_peer_by_routing_key(self, key):
+        filter_params = {"_id": key}
+        return self.get_configured_peer(filter_params)
 
     # TODO Consider making this more flexible by passing a dictionary with any parameter
     def update_peer_info(self, object_id, am_type, am_version):
@@ -91,6 +99,58 @@ class DBManager(object):
     def get_domain_urn(self, filter_params):
         table = pymongo.MongoClient().felix_ro.domain.routing
         return self.__get_one(table, filter_params).get("domain_urn")
+
+
+    # (felix_ro) domain.info
+    def store_domain_info(self, rm_url, domain_urn):
+        table = pymongo.MongoClient().felix_ro.domain.info
+        
+        ## Search for entry in domain.routing first
+        # Parse URL in order to filtering entry in domain.routing collection
+        rm_url = urlparse.urlparse(rm_url)
+        rm_endpoint = rm_url.path
+        if rm_endpoint[0] == "/":
+            rm_endpoint = rm_endpoint[1:]
+        rm_address, rm_port = rm_url.netloc.split(":")
+        rm_protocol = rm_url.scheme
+        # Prepare "rm_endpoint" for "like" query (as regexp)
+        rm_endpoint = rm_endpoint.replace("/","\/")
+        filter_params = {"protocol": rm_protocol, "address": rm_address, 
+                        "port": rm_port, "endpoint": "/%s/" % rm_endpoint,}
+        peer = self.get_configured_peer(filter_params)
+        # Search in domain.routing for any RM matching the filtering parameters
+        try:
+            self.__mutex.acquire()
+            row = table.find_one({"_ref_peer": peer.get("_id")})
+            print "......... row is None: ", (row is None)
+            if not row:
+                entry = {"domain_urn": domain_urn,
+                         "_ref_peer": peer.get("_id")}
+                print "........................... peer = %s ........................................" % str(peer)
+                print "Storing entry = %s" % entry
+                return table.insert(entry)
+        except:
+            pass
+        finally:
+            self.__mutex.release()
+
+
+    # (felix_ro) topology.physical
+    def store_physical_info(self, urn, domains):
+        table = pymongo.MongoClient().felix_ro.topology.physical
+        try:
+            self.__mutex.acquire()
+            row = table.find_one({"domain_urn": urn})
+            if row is None:
+                entry = {"domain_urn": urn,
+                         "domains": domains}
+                return table.insert(entry)
+            # update the domains list (if needed)
+            self.__update_list("physical-table", table, row, "domains", domains)
+        except:
+            pass
+        finally:
+            self.__mutex.release()
 
 
     # (felix_ro) topology.slice

@@ -58,11 +58,23 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
 
     @staticmethod
     def create_from_db(peer_db):
-        return AdaptorFactory.create(
+        """
+        Create adaptor from information in DB.
+        @return adaptor_object
+        @return adaptor_url (useful for domain identification)
+        """
+        adaptor_endpoint = peer_db.get("endpoint")
+        if peer_db.get("endpoint")[0] == "/":
+            adaptor_endpoint = peer_db.get("endpoint")[1:]
+        
+        adaptor_uri = "%s://%s:%s/%s" % (peer_db.get("protocol"), peer_db.get("address"),
+                                         peer_db.get("port"), adaptor_endpoint)
+        adaptor = AdaptorFactory.create(
             peer_db.get("type"), peer_db.get("protocol"), peer_db.get("user"),
             peer_db.get("password"), peer_db.get("address"),
             peer_db.get("port"), peer_db.get("endpoint"), peer_db.get("_id"),
             peer_db.get("am_type"), peer_db.get("am_version"))
+        return (adaptor, adaptor_uri)
 
     @staticmethod
     def geni_v3_credentials():
@@ -272,7 +284,6 @@ class CRMGeniv2Adaptor(SFAv2Client):
 
     def __filter_list_resources_rspec(self, rspec):
         root = etree.fromstring(rspec.get("value"))
-        # logger.debug("ROOT: %s" % (etree.tostring(root, pretty_print=True),))
         for network in root.iter("network"):
             for node in network.iter("node"):
                 # Follow the schema proposed into the models
