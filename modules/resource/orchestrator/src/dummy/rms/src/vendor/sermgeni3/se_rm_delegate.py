@@ -91,7 +91,7 @@ class SERMGENI3Delegate(GENIv3DelegateBase):
 
         # link 1
         link = self.__create_se_dyn_link(self.RM_URN + "+link+dyn1",
-                                         self.RM_URN "+authority+serm",
+                                         self.RM_URN + "+authority+serm",
                                          "urn:felix+vlan_trans",
                                          "*", "*", "1G")
         rspec.link(link.serialize())

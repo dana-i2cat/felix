@@ -8,6 +8,7 @@ from rspecs.tnrm.advertisement_parser import TNRMv3AdvertisementParser
 
 import core
 import rspecs.commons as Commons
+import time
 
 logger = core.log.getLogger("resource-detector")
 
@@ -56,14 +57,26 @@ class ResourceDetector(object):
                 self.__store_tn_resources(peer.get("_id"), nodes, links)
             else:
                 self.error("Unknown peer type=%s" % (peer.get("type"),))
+
+            ##
+            # Physical Monitoring
+            #
             
-            # FIXME This is associating wrong URIs with domains. Debug
-            # Retrieve sample node, extract domain URN and store
+            # Store mapping <domain URN: adaptor URI> for identification later on
+            # The second is retrieved by examinining its resources
             try:
                 self.__set_domain_component_id(nodes[0].get("component_id"))
                 db_sync_manager.store_domain_info(self.adaptor_uri, self.domain_urn)
+                self.debug("Storing mapping <%s:%s> for domain info" % (self.adaptor_uri, self.domain_urn))
             except Exception as e:
                 self.error("Error storing mapping domain_urn:resource_rm. Exception: %s" % e)
+
+            # Stores last_update_time for the physical topology on a given domain
+            try:
+                last_update_time = self.__get_timestamp()
+                db_sync_manager.store_physical_info(self.domain_urn, last_update_time)
+            except Exception as e:
+                self.error("Error storing last_update_time for physical topology. Exception: %s" % e)
 
     def __get_resources(self, peer):
         try:
@@ -87,13 +100,17 @@ class ResourceDetector(object):
         """
         try:
             resource_hrn = xrn.urn_to_hrn(resource_cid)[0] # First part of the tuple
-            # XXX Conversion from HRN to URN sometimes translates "." by "\."
+            # XXX Conversion from HRN to URN sometimes translates "." by "\.". Corrected here
             resource_hrn = resource_hrn.replace("\.",".")
             resource_auth = xrn.get_authority(resource_hrn)
             resource_cid = xrn.hrn_to_urn(resource_auth, "authority")
         except Exception as e:
             self.error("Malformed URN on resource_detector. Exception: %s" % str(e))
         self.domain_urn = resource_cid or self.domain_urn
+
+    def __get_timestamp(self):
+        # Return integer part as a string
+        return str(int(time.time()))
 
     def __db(self, action, routingKey, data):
         try:

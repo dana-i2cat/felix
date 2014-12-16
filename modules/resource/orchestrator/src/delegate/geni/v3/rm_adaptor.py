@@ -182,7 +182,7 @@ class GENIv3Client(SFAClient):
         # Credentials must be sent in the proper format
         credentials = self.format_credentials(credentials)
         try:
-            params = [slice_urn, credentials, rspec, options, ]
+            params = [slice_urn, credentials, rspec, options,]
             result = self.Allocate(*params)
             logger.info("\n\n\n%s Allocate result=%s\n\n\n" %
                         (self.typee, result,))

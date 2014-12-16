@@ -4,8 +4,6 @@ from monitoring.slice_monitoring import SliceMonitoring
 from resource_detector import ResourceDetector
 
 import core
-import re
-import requests
 
 logger = core.log.getLogger("monitoring-manager")
 
@@ -23,40 +21,15 @@ class MonitoringManager(ResourceDetector):
         self.address = self.monitoring_section.get("address")
         self.port = self.monitoring_section.get("port")
         self.endpoint = self.monitoring_section.get("endpoint")
-        self.monitoring_system = {"protocol": self.protocol,
+        self.monitoring_server = {"protocol": self.protocol,
                                     "address": self.address,
                                     "port": self.port,
                                     "endpoint": self.endpoint,
                                 }
 
     def physical_topology(self):
-        topology = PhysicalMonitoring().get_topology()
-        return self.__send(topology)
+        return PhysicalMonitoring().send_topology(self.monitoring_server)
 
     def slice_topology(self):
-        topology = SliceMonitoring().get_topology()
-        return self.__send(topology)
-
-    def __send(self, xml_data, peer=None):
-        try:
-            if not peer:
-                peer = self.monitoring_system
-
-            url = "%s:%s/%s" % (peer.get("address"),
-                                     peer.get("port"), peer.get("endpoint"))
-            # Post-process URL to remove N slashes in a row
-            url = re.sub("/{2,}", "/", url)
-            # And add protocol (with 2 slashes)
-            url = "%s://%s" % (peer.get("protocol"), url)
-            self.info("url=%s" % (url,))
-            self.info("data=%s" % (xml_data,))
-
-            # TODO Either disable certificates at MS dummy RM or include those here
-            reply = requests.post(url=url,
-                                 headers={"Content-Type": "application/xml"},
-                                 data=xml_data).text
-            self.info("Reply=%s" % (reply,))
-
-        except Exception as e:
-            self.error("Could not connect to %s. Exception: %s" % (url, e,))
+        return SliceMonitoring().send_topology(self.monitoring_server)
 

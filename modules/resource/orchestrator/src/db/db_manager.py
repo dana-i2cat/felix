@@ -2,6 +2,7 @@ from extensions.sfa.util import xrn
 
 import core
 import pymongo
+import re
 import threading
 import urlparse
 
@@ -43,7 +44,7 @@ class DBManager(object):
         table = custom_table
         try:
             self.__mutex.acquire()
-            row = table.find_one()
+            row = table.find_one(filter_params)
             return self.__check_return_rows(row, custom_table, filter_params)
         finally:
             self.__mutex.release()
@@ -52,7 +53,7 @@ class DBManager(object):
         table = custom_table
         try:
             self.__mutex.acquire()
-            rows = table.find()
+            rows = table.find(filter_params)
             return self.__check_return_rows(rows, custom_table, filter_params)
         finally:
             self.__mutex.release()
@@ -83,6 +84,25 @@ class DBManager(object):
         filter_params = {"_id": key}
         return self.get_configured_peer(filter_params)
 
+    def get_configured_peer_by_uri(self, rm_url):
+        # Parse URL in order to filtering entry in domain.routing collection
+        rm_url = urlparse.urlparse(rm_url)
+        rm_endpoint = rm_url.path
+        # Remove internal slashes
+        if rm_endpoint[0] == "/":
+            rm_endpoint = rm_endpoint[1:]
+        if rm_endpoint[-1] == "/":
+            rm_endpoint = rm_endpoint[:-1]
+        rm_address, rm_port = rm_url.netloc.split(":")
+        rm_protocol = rm_url.scheme
+        rm_endpoint_re = self.__get_regexp_for_query(rm_endpoint)
+        # Prepare "rm_endpoint" for "like" query (as regexp)
+        #rm_endpoint = rm_endpoint.replace("/","\/")
+        filter_params = {"protocol": rm_protocol, "address": rm_address,
+                        "port": rm_port, "endpoint": rm_endpoint_re,}
+        peer = self.get_configured_peer(filter_params)
+        return peer
+
     # TODO Consider making this more flexible by passing a dictionary with any parameter
     def update_peer_info(self, object_id, am_type, am_version):
         table = pymongo.MongoClient().felix_ro.domain.routing
@@ -95,61 +115,60 @@ class DBManager(object):
         fields_dict = {"domain_urn": domain_urn}
         self.__set_update(table, object_id, fields_dict)
 
-    def get_domain_urn(self, filter_params):
-        table = pymongo.MongoClient().felix_ro.domain.routing
-        return self.__get_one(table, filter_params).get("domain_urn")
-
 
     # (felix_ro) domain.info
     def store_domain_info(self, rm_url, domain_urn):
         table = pymongo.MongoClient().felix_ro.domain.info
-        
         ## Search for entry in domain.routing first
-        # Parse URL in order to filtering entry in domain.routing collection
-        rm_url = urlparse.urlparse(rm_url)
-        rm_endpoint = rm_url.path
-        if rm_endpoint[0] == "/":
-            rm_endpoint = rm_endpoint[1:]
-        rm_address, rm_port = rm_url.netloc.split(":")
-        rm_protocol = rm_url.scheme
-        # Prepare "rm_endpoint" for "like" query (as regexp)
-        rm_endpoint = rm_endpoint.replace("/","\/")
-        filter_params = {"protocol": rm_protocol, "address": rm_address, 
-                        "port": rm_port, "endpoint": "/%s/" % rm_endpoint,}
-        peer = self.get_configured_peer(filter_params)
+        peer = self.get_configured_peer_by_uri(rm_url)
         # Search in domain.routing for any RM matching the filtering parameters
         try:
             self.__mutex.acquire()
             row = table.find_one({"_ref_peer": peer.get("_id")})
-            print "......... row is None: ", (row is None)
             if not row:
                 entry = {"domain_urn": domain_urn,
                          "_ref_peer": peer.get("_id")}
-                print "........................... peer = %s ........................................" % str(peer)
-                print "Storing entry = %s" % entry
                 return table.insert(entry)
         except:
             pass
         finally:
             self.__mutex.release()
+
+    def get_domain_info(self, filter_params):
+        table = pymongo.MongoClient().felix_ro.domain.info
+        return self.__get_one(table, filter_params)
+
+    def get_domain_urn(self, filter_params):
+        return self.get_domain_info(filter_params).get("domain_urn")
 
 
     # (felix_ro) topology.physical
-    def store_physical_info(self, urn, domains):
+    def store_physical_info(self, domain_urn, last_update):
+        """
+        Keep track of last update time for physical topology within a domain.
+        """
         table = pymongo.MongoClient().felix_ro.topology.physical
+        # Get ID of domain related to physical topology
+        domain = self.get_domain_info({"domain_urn": domain_urn})
         try:
             self.__mutex.acquire()
-            row = table.find_one({"domain_urn": urn})
+            row = table.find_one({"_ref_domain": domain.get("_id")})
             if row is None:
-                entry = {"domain_urn": urn,
-                         "domains": domains}
+                entry = {"last_update": last_update,
+                            "_ref_domain": domain.get("_id"),}
                 return table.insert(entry)
-            # update the domains list (if needed)
-            self.__update_list("physical-table", table, row, "domains", domains)
         except:
             pass
         finally:
             self.__mutex.release()
+
+    def get_physical_info_from_domain(self, domain_id):
+        """
+        Retrieve physical topology information through domain.info's ID.
+        """
+        table = pymongo.MongoClient().felix_ro.topology.physical
+        filter_params = {"_ref_domain": domain_id}
+        return self.__get_one(table, filter_params)
 
 
     # (felix_ro) topology.slice
@@ -230,9 +249,20 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
-    def get_com_nodes(self):
+    def get_com_nodes(self, filter_params={}):
         table = pymongo.MongoClient().felix_ro.resource.com.node
-        return self.__get_all(table)
+        return self.__get_all(table, filter_params)
+
+    def get_com_nodes_by_domain(self, domain_urn):
+        # Domain URN = Domain authority
+        # Remove the bit of the authority, then create a RE that starts this way
+        domain_urn = domain_urn.split("+authority+")[0]
+        domain_urn_re = self.__get_regexp_for_query(domain_urn)
+
+        # Look for all those resources that start with a given URN
+        filter_params = {"component_id": domain_urn_re,}
+        nodes = self.get_com_nodes(filter_params)
+        return nodes
 
     def get_com_node_routing_key(self, cid):
         table = pymongo.MongoClient().felix_ro.resource.com.node
@@ -260,9 +290,20 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
-    def get_com_links(self):
+    def get_com_links(self, filter_params={}):
         table = pymongo.MongoClient().felix_ro.resource.com.link
-        return self.__get_all(table)
+        return self.__get_all(table, filter_params)
+
+    def get_com_links_by_domain(self, domain_urn):
+        # Domain URN = Domain authority
+        # Remove the bit of the authority, then create a RE that starts this way
+        domain_urn = domain_urn.split("+authority+")[0]
+        domain_urn_re = self.__get_regexp_for_query(domain_urn)
+
+        # Look for all those resources that start with a given URN
+        filter_params = {"component_id": domain_urn_re,}
+        links = self.get_com_links(filter_params)
+        return links
 
     # (felix_ro) resource.of.node
     def store_sdn_datapaths(self, routingKey, values):
@@ -287,9 +328,20 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
-    def get_sdn_datapaths(self):
+    def get_sdn_datapaths(self, filter_params={}):
         table = pymongo.MongoClient().felix_ro.resource.of.node
-        return self.__get_all(table)
+        return self.__get_all(table, filter_params)
+
+    def get_sdn_datapaths_by_domain(self, domain_urn):
+        # Domain URN = Domain authority
+        # Remove the bit of the authority, then create a RE that starts this way
+        domain_urn = domain_urn.split("+authority+")[0]
+        domain_urn_re = self.__get_regexp_for_query(domain_urn)
+
+        # Look for all those resources that start with a given URN
+        filter_params = {"component_id": domain_urn_re,}
+        nodes = self.get_sdn_datapaths(filter_params)
+        return nodes
 
     def get_sdn_datapath_routing_key(self, dpid):
         table = pymongo.MongoClient().felix_ro.resource.of.node
@@ -319,12 +371,12 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
-    def get_sdn_links(self):
+    def get_sdn_links(self, filter_params={}):
         table = pymongo.MongoClient().felix_ro.resource.of.link
         (of, fed) = ([], [])
         try:
             self.__mutex.acquire()
-            for row in table.find():
+            for row in table.find(filter_params):
                 if row.get("dpids") is not None:
                     of.append(row)
                 elif row.get("interface_ref_id") is not None:
@@ -332,6 +384,17 @@ class DBManager(object):
             return (of, fed)
         finally:
             self.__mutex.release()
+
+    def get_sdn_links_by_domain(self, domain_urn):
+        # Domain URN = Domain authority
+        # Remove the bit of the authority, then create a RE that starts this way
+        domain_urn = domain_urn.split("+authority+")[0]
+        domain_urn_re = self.__get_regexp_for_query(domain_urn)
+
+        # Look for all those resources that start with a given URN
+        filter_params = {"component_id": domain_urn_re,}
+        links = self.get_sdn_links(filter_params)
+        return links
 
     # (felix_ro) resource.se.node
     def store_se_nodes(self, routingKey, values):
@@ -518,6 +581,14 @@ class DBManager(object):
         modif = {"slivers": slivers}
         table.update({"slice_urn": slice_urn},
                      {"$set": modif})
+
+
+    def __get_regexp_for_query(self, search_term):
+        terms_to_replace = ["+"]
+        for term in terms_to_replace:
+            search_term = search_term.replace(term, "\%s" % term)
+        return re.compile(search_term)
+
 
 # This is the db manager object to be used into other modules
 db_sync_manager = DBManager()
