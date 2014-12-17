@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 import OpenSSL.crypto
 from Crypto.Util import asn1
 from django.conf import settings
+from expedient.clearinghouse.fapi.cbas import verify_certificate
 import binascii
 
 class ScriptsRemoteUserMiddleware(object):
