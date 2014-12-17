@@ -104,7 +104,20 @@ THEME = "default"
 
 
 
-### Section 2: E-mail settings
+### Section 2: ClearingHouse (CBAS)
+#
+# Modify the following to change the settings for the CH
+#
+ENABLE_CBAS = True
+CBAS_DEBUG = False
+CBAS_HOST_IP = "127.0.0.1"
+CBAS_HOST_PORT = 8008
+CBAS_HOST_NAME = "cbas.localhost"
+
+
+
+
+### Section 3: E-mail settings
 #
 # Configure your SMTP parameters.
 #
