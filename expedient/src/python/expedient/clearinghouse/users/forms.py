@@ -92,8 +92,14 @@ class PasswordChangeFormDisabled(PasswordChangeForm):
 
 class LDAPPasswordResetForm(PasswordResetForm):
 
+    # Python 2.6 (original method header)
+    #def save(self, domain_override=None, email_template_name='registration/password_reset_email.html',
+    #         use_https=False, token_generator=default_token_generator):
+
+    # Python 2.6 and 2.7 (extended no. parameters)
     def save(self, domain_override=None, email_template_name='registration/password_reset_email.html',
-             use_https=False, token_generator=default_token_generator):
+             use_https=False, token_generator=default_token_generator, subject_template_name="",
+             request=None, from_email=""):
         """
         Generates a one-use only link for resetting password and sends to the user.
         A minimal exception control is implemented to avoid problems with e-mail.

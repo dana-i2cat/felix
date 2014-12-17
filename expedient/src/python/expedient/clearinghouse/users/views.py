@@ -18,6 +18,8 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth.views import password_reset
 from expedient.clearinghouse.users.forms import LDAPPasswordResetForm
+import smtplib
+
 
 def home(request):
     '''show list of users and form for adding users'''
@@ -153,22 +155,40 @@ def delete(request, user_id):
     )
 
 def register(request):
+    register_exception = None
     try:
-	return registration_views.register(
-	    request,
+        # Python 2.7
+        backend = "registration.backends.default.DefaultBackend"	# Sends e-mail?
+#        backend = "django.contrib.auth.backends.RemoteUserBackend"	# Method "registration_allowed" does not exist
+#        backend = settings.AUTHENTICATION_BACKENDS[0]			# Method "registration_allowed" does not exist
+        return registration_views.register(
+            request, backend,
             form_class=FullRegistrationForm)
+    # Detect exception for unsent e-mail
+    except smtplib.SMTPException as e:
+        register_exception = e
+        print "[ERROR] Exception at 'expedient.clearinghouse.users.views'. User '%s' (%s) may have not been registered as it was not possible to send e-mail. Exception: %s" % (request.POST['username'], request.POST['email'], str(e)
     except Exception as e:
-        print "[ERROR] Exception at 'expedient.clearinghouse.users.views': user '%s' (%s) could not fully register. RegistrationForm module returned: %s" % (request.POST['username'], request.POST['email'], str(e))
+        try:
+            # Python 2.6
+            return registration_views.register(
+	        request,
+                form_class=FullRegistrationForm)
+        except Exception as e:
+            register_exception = e
+            print "[ERROR] Exception at 'expedient.clearinghouse.users.views': user '%s' (%s) could not fully register. RegistrationForm module returned: %s" % (request.POST['username'], request.POST['email'], str(e))
+    # If there was an exception during the registration process, show this on the GUI
+    if register_exception:
         return simple.direct_to_template(
             request,
-            template='registration/registration_incomplete.html',
-            extra_context={
-                'exception': e,
-                'root_email': settings.ROOT_EMAIL,
-                'failed_username': request.POST['username'],
-                'failed_email': request.POST['email'],
-            },
-        )
+            template="registration/registration_incomplete.html",
+                extra_context={
+                    "exception": e,
+                    "root_email": settings.ROOT_EMAIL,
+                    "failed_username": request.POST["username"],
+                    "failed_email": request.POST["email"],
+                },
+            )
 
 def activate(request, activation_key):
     template_name = 'registration/activate.html'
