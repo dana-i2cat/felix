@@ -28,6 +28,7 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 import uuid   
 from django.conf import settings
+from expedient.clearinghouse.fapi.cbas import create_project, add_member_to_project, remove_member_from_project
 from django.contrib.auth.models import User
 import ldap 
 from django.contrib.sites.models import Site
@@ -204,7 +205,9 @@ def create_project_roles(project, user):
     target_func=get_queryset_from_class(Project),
 )
 def create(request):
-    '''Create a new project'''
+    """
+    Create a new project
+    """
 
     user_profile = UserProfile.get_or_create_profile(request.user)
     cert = user_profile.certificate
@@ -215,9 +218,9 @@ def create(request):
         #Generate UUID: fixes caching problem on model default value
         instance.uuid = uuid.uuid4()
         #<UT>
-        instance.urn = 'n/a'
+        instance.urn = "n/a"
         #import pdb; pdb.set_trace()
-        if ENABLE_CBAS:
+        if settings.ENABLE_CBAS:
             project_urn = create_project(certificate=cert, credentials=creds,
                                     project_name=instance.name, project_desc=instance.description)
             if project_urn:
@@ -399,7 +402,9 @@ def remove_aggregate(request, proj_id, agg_id):
     target_func=get_queryset(Project, "proj_id"),
 )
 def add_member(request, proj_id):
-    """Add a member to the project"""
+    """
+    Add a member to the project
+    """
     
     project = get_object_or_404(Project, id=proj_id)
     
@@ -408,7 +413,7 @@ def add_member(request, proj_id):
         if form.is_valid():
             user = User.objects.get(id = request.POST['user'] )
             #<UT>
-            if ENABLE_CBAS:
+            if settings.ENABLE_CBAS:
                 user_to_add = UserProfile.get_or_create_profile(user)
                 op_user = UserProfile.get_or_create_profile(request.user)
                 add_member_to_project(project_urn=project.urn, to_add_user_urn=user_to_add.urn,
@@ -511,14 +516,16 @@ def update_member(request, proj_id, user_id):
     target_func=get_queryset(Project, "proj_id"),
 )
 def remove_member(request, proj_id, user_id):
-    """Kick a member out by stripping his roles"""
+    """
+    Kick a member out by stripping his roles
+    """
     
     project = get_object_or_404(Project, id=proj_id)
     member = get_object_or_404(User, id=user_id)
 
     if request.method == "POST":
         #<UT>
-        if ENABLE_CBAS:
+        if settings.ENABLE_CBAS:
             authz_user = UserProfile.get_or_create_profile(request.user)
             user_to_remove = UserProfile.get_or_create_profile(member)
             remove_member_from_project(project.urn, user_to_remove.urn,

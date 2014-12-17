@@ -19,10 +19,9 @@ import logging
 from expedient.common.permissions.shortcuts import must_have_permission, give_permission_to
 logger = logging.getLogger("SliceViews")
 import uuid
+from expedient.clearinghouse.fapi.cbas import create_slice
 from expedient.clearinghouse.slice.utils import parseFVexception
 from expedient.clearinghouse.urls import PLUGIN_LOADER, TOPOLOGY_GENERATOR
-from expedient.clearinghouse.fapi.cbas import *
-from expedient.clearinghouse.defaultsettings.cbas import *
 from expedient.clearinghouse.users.models import UserProfile
 
 TEMPLATE_PATH = "expedient/clearinghouse/slice"
@@ -46,7 +45,7 @@ def create(request, proj_id):
         #<UT>
         instance.urn = 'n/a'
         #import pdb; pdb.set_trace()
-        if ENABLE_CBAS:
+        if settings.ENABLE_CBAS:
             slice_urn = create_slice(owner_urn=user_urn, owner_certificate=user_cert, slice_name=instance.name,
                                   slice_desc=instance.description, slice_project_urn=str(project.urn))
             if slice_urn:

@@ -5,16 +5,12 @@ from django.contrib import auth
 from django.contrib.auth.models import User
 import OpenSSL.crypto
 from Crypto.Util import asn1
-from expedient.clearinghouse.fapi.cbas import *
-from expedient.clearinghouse.defaultsettings.cbas import *
 from django.conf import settings
 import binascii
 
 class ScriptsRemoteUserMiddleware(object):
 
         def process_request(self, request):
-
-
             if not request.POST.has_key('cert') or not request.POST.has_key('key') or not request.POST.has_key('csrfmiddlewaretoken'):
                 return None
 
@@ -45,14 +41,11 @@ class ScriptsRemoteUserMiddleware(object):
 class ScriptsRemoteUserBackend(object):
 
     def authenticate(self, cert_str, sign_str, token):
-
-        #if not ENABLE_CBAS:
+        #if not settings.ENABLE_CBAS:
         #    return None
         user_urn = self.verify_signature(cert_str, sign_str, token)
-
         if not user_urn:
             return None
-
         username = self.clean_username(user_urn)
 
         if username:
@@ -62,7 +55,7 @@ class ScriptsRemoteUserBackend(object):
         else:
             return None
 
-        user, created = User.objects.get_or_create(username=username, )
+        user, created = User.objects.get_or_create(username=username,)
         if created:
             user.save()
         user.backend = 'mit.ScriptsRemoteUserBackend'
@@ -130,12 +123,10 @@ class ScriptsRemoteUserBackend(object):
             return None
 
     def clean_username(self, username, ):
-
-        if username and username.startswith(CBAS_HOST_NAME+'.user'):
+        if username and username.startswith(settings.CBAS_HOST_NAME+'.user'):
             i = username.rfind("user.")
             if i > 0:
                 return username[i+5:]
-
         return username
 
 

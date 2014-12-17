@@ -19,9 +19,8 @@ from expedient.clearinghouse.project.models import Project
 import uuid
 from expedient.common.utils.mail import send_mail # Wrapper for django.core.mail__send_mail
 from django.conf import settings
+from expedient.clearinghouse.fapi.cbas import create_project
 from expedient.clearinghouse.users.models import UserProfile
-from expedient.clearinghouse.fapi.cbas import *
-from expedient.clearinghouse.defaultsettings.cbas import *
 
 TEMPLATE_PATH = "permissionmgmt"
 
@@ -182,7 +181,7 @@ def confirm_requests(request):
                         project.description = message[3].strip()[23:]
                         project.urn = 'n/a'
                         #import pdb; pdb.set_trace()
-                        if ENABLE_CBAS:
+                        if settings.ENABLE_CBAS:
                             user_profile = UserProfile.get_or_create_profile(req.requesting_user)
                             cert = user_profile.certificate
                             creds = user_profile.credentials
