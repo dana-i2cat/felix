@@ -4,12 +4,14 @@ Created on Jun 30, 2013
 @author: CarolinaFernandez
 """
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect, HttpResponseNotAllowed
 from django.views.generic import simple
 from common.permissions.shortcuts import has_permission, must_have_permission
 from common.utils.plugins.pluginloader import PluginLoader
+from fapi.cbas import is_cbas_server_active
 import re
 import subprocess
 #import logging
@@ -48,17 +50,29 @@ def home(request):
 			pass
 #		except Exception as e:
 #			print "[ERROR] Problem loading plugin administration methods inside administration module. Details: %s" % str(e)
+	extra_context = {
+	                "breadcrumbs": (
+	                        ("Home", reverse("home")),
+	                        ("Administration", reverse("administration_home")),
+	                ),
+	                "plugin_administration_methods": plugin_administration_methods,
+	                "logs_location":LOGS_LOCATION,
+	        }
+	# CBAS-related data
+        try:
+            cbas_variables = ["CBAS_STATUS", "CBAS_NAME", "CBAS_IP_ADDR", "CBAS_PORT"]
+            [ getattr(settings, cbas_var) for cbas_var in cbas_variables ]
+        except:
+            from expedient.clearinghouse.defaultsettings import cbas as settings
+	cbas_context = {"CBAS_STATUS": is_cbas_server_active(),
+	                "CBAS_NAME": settings.CBAS_HOST_NAME,
+	                "CBAS_IP_ADDR": settings.CBAS_HOST_IP,
+	                "CBAS_PORT": settings.CBAS_HOST_PORT}
+        extra_context.update(cbas_context)
 	return simple.direct_to_template(
 		request,
 		template=TEMPLATE_PATH+"/index.html",
-		extra_context={
-			"breadcrumbs": (
-				("Home", reverse("home")),
-				("Administration", reverse("administration_home")),
-			),
-			"plugin_administration_methods": plugin_administration_methods,
-			"logs_location":LOGS_LOCATION,
-		},
+		extra_context=extra_context
 	)
 
 def get_module_log_path(module_name):

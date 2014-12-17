@@ -31,8 +31,6 @@ from django.conf import settings
 from django.contrib.auth.models import User
 import ldap 
 from django.contrib.sites.models import Site
-from expedient.clearinghouse.fapi.cbas import *
-from expedient.clearinghouse.defaultsettings.cbas import *
 from expedient.clearinghouse.users.models import UserProfile
 
 logger = logging.getLogger("project.views")
@@ -70,7 +68,6 @@ def list(request):
         queryset=qs,
         template_name=TEMPLATE_PATH+"/list.html",
         template_object_name="project",
-        extra_context={'CBAS_STATUS': is_cbas_server_active(), 'CBAS_NAME': CBAS_HOST_NAME, 'CBAS_IP_ADDR':CBAS_HOST_IP, 'CBAS_PORT': CBAS_HOST_PORT},
     )
 
 def list_details(request, proj_id):
