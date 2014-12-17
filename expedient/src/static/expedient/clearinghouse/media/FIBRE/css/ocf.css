@@ -1399,3 +1399,17 @@ h2.resources_aggregate {
 	margin: auto !important;
 }
 
+/**
+ * Certificate zone
+**/
+.centered_hidden {
+  margin: auto !important;
+  text-align: center;
+}
+#pswd_login {
+  width: 70%;
+}
+#cert_login {
+  width: 70%;
+}
+
