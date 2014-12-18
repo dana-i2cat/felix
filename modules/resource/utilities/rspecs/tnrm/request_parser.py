@@ -13,7 +13,9 @@ class TNRMv3RequestParser(ParserBase):
             s_ = None
             sliver_ = n.find("{%s}sliver_type" % (self.none))
             if sliver_ is not None:
-                s_ = sliver_.attrib.get("name")
+                # for TNRM request the sliver tag MUST be empty
+                # so this node is NOT a TN resource!
+                continue
 
             n_ = Node(n.attrib.get("client_id"),
                       n.attrib.get("component_manager_id"),

@@ -13,11 +13,11 @@ ro_scheduler = None
 
 
 class ROSchedulerService(Service):
-    
+
     def __init__(self, interval=None):
         """
         Constructor of the service.
-        
+
         @param interval Frequency of the scheduler (in seconds).
                         If not present, it is read from ro.conf, 'scheduler' section
         """
@@ -25,7 +25,7 @@ class ROSchedulerService(Service):
             config = ConfParser("ro.conf")
             scheduler_section = config.get("scheduler")
             interval = int(scheduler_section.get("frequency"))
-        
+
         global ro_scheduler
         ro_scheduler = BackgroundScheduler()
         ro_scheduler.add_jobstore("mongodb", database="felix_ro",

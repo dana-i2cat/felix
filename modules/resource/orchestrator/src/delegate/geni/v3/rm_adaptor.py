@@ -1,7 +1,5 @@
 from db.db_manager import db_sync_manager
 from delegate.geni.v3 import exceptions
-from lxml import etree
-from models.c_resource_table import CResourceTable
 
 import core
 import xmlrpclib
@@ -66,9 +64,11 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
         adaptor_endpoint = peer_db.get("endpoint")
         if peer_db.get("endpoint")[0] == "/":
             adaptor_endpoint = peer_db.get("endpoint")[1:]
-        
-        adaptor_uri = "%s://%s:%s/%s" % (peer_db.get("protocol"), peer_db.get("address"),
-                                         peer_db.get("port"), adaptor_endpoint)
+
+        adaptor_uri = "%s://%s:%s/%s" % (peer_db.get("protocol"),
+                                         peer_db.get("address"),
+                                         peer_db.get("port"),
+                                         adaptor_endpoint)
         adaptor = AdaptorFactory.create(
             peer_db.get("type"), peer_db.get("protocol"), peer_db.get("user"),
             peer_db.get("password"), peer_db.get("address"),
@@ -108,9 +108,6 @@ class SFAClient(AdaptorFactory):
 
         except Exception as e:
             raise exceptions.RPCError("SFA GetVersion failure: %s" % str(e))
-
-    def list_resources(self, credentials, available):
-        raise exceptions.GeneralError("This method should be overridden!")
 
     def __str__(self):
         return "[%s, %s, %s]" %\
@@ -157,9 +154,7 @@ class GENIv3Client(SFAClient):
 
     def format_credentials(self, credentials):
         # Credentials must be sent in the proper format
-        credentials = [{
-                        "geni_value": credentials,
-                        }]
+        credentials = [{"geni_value": credentials, }]
         return credentials
 
     def list_resources(self, credentials, available):
@@ -168,7 +163,7 @@ class GENIv3Client(SFAClient):
         credentials = self.format_credentials(credentials)
         logger.debug("%s Options: %s" % (self.typee, options,))
         try:
-            params = [credentials, options,]
+            params = [credentials, options, ]
             result = self.ListResources(*params)
             return result
 
@@ -182,7 +177,7 @@ class GENIv3Client(SFAClient):
         # Credentials must be sent in the proper format
         credentials = self.format_credentials(credentials)
         try:
-            params = [slice_urn, credentials, rspec, options,]
+            params = [slice_urn, credentials, rspec, options, ]
             result = self.Allocate(*params)
             logger.info("\n\n\n%s Allocate result=%s\n\n\n" %
                         (self.typee, result,))
@@ -281,102 +276,13 @@ class GENIv3Client(SFAClient):
 class CRMGeniv2Adaptor(SFAv2Client):
     def __init__(self, uri):
         SFAv2Client.__init__(self, uri)
-
-    def __filter_list_resources_rspec(self, rspec):
-        root = etree.fromstring(rspec.get("value"))
-        for network in root.iter("network"):
-            for node in network.iter("node"):
-                # Follow the schema proposed into the models
-                entry = CResourceTable()
-                entry.network_name(network.get("name"))
-                entry.node(node.get("component_id"),
-                           node.get("component_manager_id"),
-                           node.get("component_name"),
-                           node.get("exclusive"))
-                entry.hostname(node.findtext("hostname"))
-                entry.name(node.findtext("name"))
-                logger.debug("Entry: %s" % (entry,))
-
-                for service in node.iter("service"):
-                    entry.clear_services()
-                    # Filter on the service type
-                    service_type = service.get("type")
-                    if service_type == "Range":
-                        entry.add_range_service(
-                            service.findtext("type"),
-                            service.findtext("name"),
-                            service.findtext("start_value"),
-                            service.findtext("end_value"))
-                        # Log the Range Entry
-                        logger.debug("Range Entry: %s" % (entry,))
-
-                    elif service_type == "NetworkInterface":
-                        entry.add_netif_service(
-                            service.findtext("from_server_interface_name"),
-                            service.findtext("to_network_interface_id"),
-                            service.findtext("to_network_interface_port"))
-                        # Log the NetworkInterface info
-                        logger.debug("NetworkInterface Entry: %s" % (entry,))
-
-                    if entry.is_reserved():
-                        logger.info("Modify the rspec: delete this service!")
-                        node.remove(service)
-
-                if node.find("service") is None:
-                    logger.info("No more services are available on this node!")
-                    network.remove(node)
-
-        rspec["value"] = etree.tostring(root)
-        # logger.debug("RSPEC: %s" % (rspec,))
-        return rspec
-
-    def list_resources(self, credentials, available):
-        options = self.format_options(available)
-        logger.debug("Options: %s" % (options,))
-        try:
-            # Get the list of computing resources
-            params = [credentials, options, ]
-            rspec = self.ListResources(*params)
-            # if available==True, we should remove the computing
-            # "local reserved" resources (stored in a mongoDB table)
-            if available is True:
-                rspec = self.__filter_list_resources_rspec(rspec)
-
-            return rspec
-
-        except Exception as e:
-            raise exceptions.RPCError("CRMGeniv2 ListResources failure: %s" %
-                                      str(e))
+        raise exceptions.RPCError("CRMGeniv2Adaptor not supported!")
 
 
 class SDNRMGeniv2Adaptor(SFAv2Client):
     def __init__(self, uri):
         SFAv2Client.__init__(self, uri)
-
-    def __decode_list_resources_rspec(self, rspec):
-        logger.error("XXX_TODO_XXX: loop and clear if needed!")
-        return rspec
-
-    def list_resources(self, credentials, available):
-        options = self.format_options(available)
-        logger.debug("Options: %s" % (options,))
-        try:
-            # Get the list of sdn networking resources
-            params = [credentials, options, ]
-            rspec = self.ListResources(*params)
-            i = "\n\n[REMOVE] SDNGENIv2Adaptor ListResources rspec: %s\n\n" %\
-                (str(rspec))
-            logger.debug(i)
-            # if available==True, we should remove the sdn networking
-            # "local reserved" resources (stored in a mongoDB tables)
-            if available is True:
-                rspec = self.__decode_list_resources_rspec(rspec)
-
-            return rspec
-
-        except Exception as e:
-            raise exceptions.RPCError("SDNRMGeniv2 ListResources failure: %s" %
-                                      str(e))
+        raise exceptions.RPCError("SDNRMGeniv2Adaptor not supported!")
 
 
 class CRMGeniv3Adaptor(GENIv3Client):
