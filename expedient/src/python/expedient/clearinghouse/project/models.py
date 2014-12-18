@@ -15,7 +15,7 @@ from django.db import transaction
 import uuid
 import string
 import re
-from expedient.common.utils.validators import asciiValidator, descriptionLightValidator
+from expedient.common.utils.validators import asciiValidator, descriptionLightValidator, projectNameValidator
 
 class ProjectManager(models.Manager):
     """Manager for L{Project} instances.
@@ -74,7 +74,7 @@ class Project(models.Model):
 
     objects = ProjectManager()
     
-    name = models.CharField(max_length=200, unique=True, validators=[asciiValidator])
+    name = models.CharField(max_length=200, unique=True, validators=[projectNameValidator])
     description = models.TextField(validators=[descriptionLightValidator])
     uuid = models.CharField(max_length=200, default = "", unique=True, editable =False)
     #<UT>

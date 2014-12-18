@@ -187,8 +187,8 @@ def confirm_requests(request):
                             creds = user_profile.credentials
                             project_urn = create_project(certificate=cert, credentials=creds,
                                                     project_name=project.name, project_desc=project.description)
-                        if project_urn:
-                            project.urn = project_urn
+                            if project_urn:
+                                project.urn = project_urn
 
                         post_message = "Successfully created project %s" % project.name
                         project.save()

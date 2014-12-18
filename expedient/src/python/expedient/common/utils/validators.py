@@ -20,7 +20,11 @@ TEXT_RE = "^([0-9a-zA-Z\-\_\ \.\!\?\"\'\r\n])+$"
 SLICE_NAME_RE = '^[a-zA-Z0-9][A-Za-z0-9-]{1,19}$'
 
 sliceNameValidator = RegexValidator(re.compile(SLICE_NAME_RE),
-                                u"SLICE_NAME field must be <= 19 characters, must only contain alphanumeric characters or hyphens and those hyphens must not be leading.",
+                                u"SLICE name must be <= 19 characters, must only contain alphanumeric characters or hyphens and those hyphens must not be leading.",
+                                "invalid")
+
+projectNameValidator = RegexValidator(re.compile(SLICE_NAME_RE),
+                                u"Project name must be <= 19 characters, must only contain alphanumeric characters or hyphens and those hyphens must not be leading.",
                                 "invalid")
 
 asciiValidator = RegexValidator(re.compile(ASCII_RE),

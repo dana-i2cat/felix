@@ -167,7 +167,7 @@ def register(request):
     # Detect exception for unsent e-mail
     except smtplib.SMTPException as e:
         register_exception = e
-        print "[ERROR] Exception at 'expedient.clearinghouse.users.views'. User '%s' (%s) may have not been registered as it was not possible to send e-mail. Exception: %s" % (request.POST['username'], request.POST['email'], str(e)
+        print "[ERROR] Exception at 'expedient.clearinghouse.users.views'. User '%s' (%s) may have not been registered as it was not possible to send e-mail. Exception: %s" % (request.POST['username'], request.POST['email'], str(e))
     except Exception as e:
         try:
             # Python 2.6

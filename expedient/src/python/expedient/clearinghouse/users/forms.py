@@ -14,7 +14,6 @@ from django.template import Context, loader
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import int_to_base36
 
-
 class UserProfileForm(forms.ModelForm):
     '''
     A form for editing UserProfiles
@@ -36,6 +35,10 @@ class UserForm(forms.ModelForm):
                    'is_superuser', 'is_staff', 'is_active')
 
 class FullRegistrationForm(RegistrationForm):
+    #username = forms.CharField(max_length=8, validators=[usernameValidator], help_text="Username should begin with a letter and be alphanumeric or underscores; no hyphen or dot")
+    username = forms.RegexField(regex=r'^[a-zA-Z][\w]{1,8}$',
+                                max_length=8,
+                                help_text="Username should begin with a letter and be alphanumeric or underscores; no hyphen or dot")
     first_name = forms.CharField(max_length=40)
     last_name = forms.CharField(max_length=40)
     affiliation = forms.CharField(
