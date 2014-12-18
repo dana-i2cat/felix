@@ -510,8 +510,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
                              credentials, end_time):
         peer = db_sync_manager.get_configured_peer_by_routing_key(routing_key)
         logger.debug("Peer=%s" % (peer,))
-        adaptor = AdaptorFactory.create_from_db(peer)
-        logger.debug("Adaptor=%s" % (adaptor,))
+        adaptor, uri = AdaptorFactory.create_from_db(peer)
+        logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
         return adaptor.allocate(slice_urn, credentials[0]["geni_value"],
                                 "%s" % req_rspec, end_time)
 
