@@ -4,24 +4,24 @@ class seConfigParser:
     def __init__(self):
 
         stream = open("../conf/se-config.yaml", 'r')
-        self.initial_config = yaml.load(stream)
-        self.configured_interfaces = self.initial_config["interfaces"]
+        initial_config = yaml.load(stream)
+        self.configured_interfaces = initial_config["interfaces"]
+        self.component_id_prefix = initial_config["component_id"]
+        self.component_manager_prefix = initial_config["component_manager_id"]
+        self.configured_interfaces = initial_config["interfaces"]
+        self.vlan_trans = initial_config["vlan_trans"]
+        self.qinq = initial_config["qinq"]
+        self.capacity = initial_config["capacity"]
 
-    # for iface in configured_interfaces:
-    #     vlans_on_iface = configured_interfaces[iface]
-    #     for vlan in vlans_on_iface:
-    #         current_vlan = vlan
-    #         current_vlan_status = vlans_on_iface[vlan]
+    def get_port_configuration(self):
+        return self.configured_interfaces
 
     def get_nodes_dict(self):
-        # config = self.config
-        initial_config = self.initial_config
-
-        component_id_prefix = initial_config["component_id"]
-        component_manager_prefix = initial_config["component_manager_id"]
-        configured_interfaces = initial_config["interfaces"]
-        vlan_trans = initial_config["vlan_trans"]
-        qinq = initial_config["qinq"]
+        component_id_prefix = self.component_id_prefix
+        component_manager_prefix = self.component_manager_prefix
+        configured_interfaces = self.configured_interfaces
+        vlan_trans = self.vlan_trans
+        qinq = self.qinq
 
         # Prepare link capability translations
         link_trans_capability = 'urn:felix'
@@ -29,7 +29,6 @@ class seConfigParser:
             link_trans_capability += '+vlan_trans'
         if qinq:
             link_trans_capability += '+QinQ'
-
 
         nodes = [
             {
@@ -40,7 +39,6 @@ class seConfigParser:
                 'sliver_type_name':None
             }
         ]
-
 
         # Prepare nodes
         for iface in configured_interfaces:
@@ -58,17 +56,13 @@ class seConfigParser:
 
         return nodes
 
-
     def get_links_dict(self):
-        # config = self.config
-        initial_config = self.initial_config
-
-        component_id_prefix = initial_config["component_id"]
-        component_manager_prefix = initial_config["component_manager_id"]
-        configured_interfaces = initial_config["interfaces"]
-        vlan_trans = initial_config["vlan_trans"]
-        qinq = initial_config["qinq"]
-        capacity = initial_config["capacity"]
+        component_id_prefix = self.component_id_prefix
+        component_manager_prefix = self.component_manager_prefix
+        configured_interfaces = self.configured_interfaces
+        vlan_trans = self.vlan_trans
+        qinq = self.qinq
+        capacity = self.capacity
 
         # Prepare link capability translations
         link_trans_capability = 'urn:felix'
