@@ -33,6 +33,7 @@ from delegate.geni.v3.rspecs.tnrm.request_formatter import\
 from handler.geni.v3 import exceptions as geni_ex
 
 import core
+import config_parser
 #from apport.fileutils import links_with_shared_library
 
 
@@ -46,27 +47,27 @@ link_additional_info={}
 class GENIv3Delegate(GENIv3DelegateBase):
     """
     """
-    # TODO should also include a changing component, identified by a config key
-    URN_PREFIX = "urn:RO"
 
     def __init__(self):
         super(GENIv3Delegate, self).__init__()
         self._resource_manager = rm_adaptor
+        self.seConfigParser = config_parser.seConfigParser()
+        print "WWWWWWWWWWWW"
 
     def get_request_extensions_mapping(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        return {"resource-orchestrator":
-                "http://example.com/resource-orchestrator"}  # /request.xsd
+        return {"stitching-element":
+                "http://example.com/stitching-element"}  # /request.xsd
 
     def get_manifest_extensions_mapping(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        return {"resource-orchestrator":
-                "http://example.com/resource-orchestrator"}  # /manifest.xsd
+        return {"stitching-element":
+                "http://example.com/stitching-element"}  # /manifest.xsd
 
     def get_ad_extensions_mapping(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        return {"resource-orchestrator":
-                "http://example.com/resource-orchestrator"}  # /ad.xsd
+        return {"stitching-element":
+                "http://example.com/stitching-element"}  # /ad.xsd
 
     def is_single_allocation(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase.
@@ -245,7 +246,10 @@ class GENIv3Delegate(GENIv3DelegateBase):
                         'component_id':'urn:publicid:aist-se1:if1',
                         'vlan':[
 
-                        ]
+                        ],
+                        'se-vlan' : [1, 3, 5],
+                        'se-activated' : True,
+
                     },
                     {
                         'component_id':'urn:publicid:aist-se1:if2',
@@ -270,6 +274,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 'sliver_type_name':None
             }
         ]
+
+        links = self.seConfigParser.get_links_dict()
+        nodes = self.seConfigParser.get_nodes_dict()
 
         try:
 
@@ -361,12 +368,12 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 "geni_slivers": se_slivers}
 
     def allocate(self, slice_urn, client_cert, credentials,
-                 rspec, end_time=None):
+                 rspec, end_time):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         logger.debug("allocate: authenticate the user...")
+        print "WWWWWWW: ", end_time
         client_urn, client_uuid, client_email =\
             self.auth(client_cert, credentials, slice_urn, ("createsliver",))
-
         logger.info("Client urn=%s, uuid=%s, email=%s" % (
             client_urn, client_uuid, client_email,))
         logger.info("slice_urn=%s, end_time=%s, rspec=%s" % (
@@ -458,6 +465,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         print "test link for slice_urn", test_links_db[slice_urn][1]['iface']
         #test_links_db[slice_urn].append(link_additional_info)
         logger.debug("SE-Sliver(%d)=%s" % (len(se_slivers), se_slivers,))
+
         print "struktura link  ",test_links_db
         #link_additional_info={}
         
@@ -465,6 +473,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         #id_ = db_sync_manager.store_slice_info(slice_urn, se_db_slivers)
         #logger.info("allocate successfully completed: %s", id_)
         #self.__schedule_slice_release(end_time, se_db_slivers)
+
         return ("%s" % se_manifest, se_slivers)
 
 

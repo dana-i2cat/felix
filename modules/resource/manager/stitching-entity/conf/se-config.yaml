@@ -1,0 +1,24 @@
+component_id: urn:publicid:aist-se1
+component_manager_id: urn:publicid:IDN+AIST+authority+serm
+
+vlan_trans: true
+qinq: false
+capacity: 1G
+
+
+interfaces:
+ eth1:
+    1000 : true
+    2000 : true
+    3000 : true
+
+ eth2:
+    1000 : true
+    2000 : true
+    3000 : true
+
+ eth3:
+    dp2 : urn:publicid:aist-sdn1:if2
+
+ eth4:
+    dp1 : urn:publicid:aist-sdn1:if1
