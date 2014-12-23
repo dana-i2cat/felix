@@ -1,11 +1,12 @@
 import yaml
 
-class seConfigParser:
+class seConfigurator:
     def __init__(self):
 
         stream = open("../conf/se-config.yaml", 'r')
         initial_config = yaml.load(stream)
         self.configured_interfaces = initial_config["interfaces"]
+        print self.configured_interfaces
         self.component_id_prefix = initial_config["component_id"]
         self.component_manager_prefix = initial_config["component_manager_id"]
         self.configured_interfaces = initial_config["interfaces"]
@@ -13,10 +14,19 @@ class seConfigParser:
         self.qinq = initial_config["qinq"]
         self.capacity = initial_config["capacity"]
 
-    def get_port_configuration(self):
+    def get_ports_configuration(self):
         return self.configured_interfaces
 
-    def get_nodes_dict(self):
+    def set_ports_configuration(self, config):
+        self.configured_interfaces = config
+
+    def get_concrete_port_status(self, port):
+        return self.configured_interfaces[port]
+
+    def set_concrete_port_status(self, port, vlan, status):
+        self.configured_interfaces[port][vlan] = status
+
+    def get_nodes_dict_for_rspec(self):
         component_id_prefix = self.component_id_prefix
         component_manager_prefix = self.component_manager_prefix
         configured_interfaces = self.configured_interfaces
@@ -56,7 +66,7 @@ class seConfigParser:
 
         return nodes
 
-    def get_links_dict(self):
+    def get_links_dict_for_rspec(self):
         component_id_prefix = self.component_id_prefix
         component_manager_prefix = self.component_manager_prefix
         configured_interfaces = self.configured_interfaces

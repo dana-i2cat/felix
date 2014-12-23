@@ -33,7 +33,7 @@ from delegate.geni.v3.rspecs.tnrm.request_formatter import\
 from handler.geni.v3 import exceptions as geni_ex
 
 import core
-import config_parser
+import se_configurator as SEConfigurator
 #from apport.fileutils import links_with_shared_library
 
 
@@ -51,7 +51,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def __init__(self):
         super(GENIv3Delegate, self).__init__()
         self._resource_manager = rm_adaptor
-        self.seConfigParser = config_parser.seConfigParser()
+        self.SEConfig = SEConfigurator.seConfigurator()
         print "WWWWWWWWWWWW"
 
     def get_request_extensions_mapping(self):
@@ -82,7 +82,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def list_resources(self, client_cert, credentials, geni_available):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        from lxml import etree
         client_urn, client_uuid, client_email =\
             self.auth(client_cert, credentials, None, ("listslices",))
 
@@ -93,190 +92,16 @@ class GENIv3Delegate(GENIv3DelegateBase):
         sl = "http://www.geni.net/resources/rspec/3/ad.xsd"
         print "listresources invoked"
         rspec = SERMv3AdvertisementFormatter(schema_location=sl)
-#         rspec22 = """<?xml version="1.1" encoding="UTF-8"?>
-# <rspec type="advertisement"
-#        xmlns="http://www.geni.net/resources/rspec/3"
-#        xmlns:sharedvlan="http://www.geni.net/resources/rspec/ext/shared-vlan/1"
-#        xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
-#        xs:schemaLocation="http://www.geni.net/resources/rspec/3/ad.xsd
-#             http://www.geni.net/resources/rspec/ext/shared-vlan/1/ad.xsd">
 
-#     <node component_id="urn:publicid:aist-se1"
-#           component_manager_id="urn:publicid:IDN+AIST+authority+serm"
-#           exclusive="false">
-#         <interface component_id="urn:publicid:aist-se1:if1"/>
-#         <interface component_id="urn:publicid:aist-se1:if2"/>
-#         <interface component_id="urn:publicid:aist-se1:if3"/>
-#         <interface component_id="urn:publicid:aist-se1:if4"/>
-#     </node>
-#     <link component_id="urn:publicid:aist-se1:link">
-#         <component_manager name="urn:publicid:IDN+NSI+authority+serm"/>
-#         <!-- if QinQ is also true, "urn:felix+QinQ+vlan_trans"(random order) -->
-#         <link_type name="urn:felix+vlan_trans"/>
-#         <interface_ref component_id="*"/>
-#         <interface_ref component_id="*"/>
-#         <property source_id="*" dest_id="*" capacity="1G"/>
-#     </link>
-#     <link component_id="urn:publicid:aist-se1-dp1">
-#         <link_type name="urn:felix+static_link"/>
-#         <interface_ref component_id="urn:publicid:aist-se1:if1"/>
-#         <interface_ref component_id="urn:publicid:aist-sdn1:if1"/>
-#     </link>
-#     <link component_id="urn:publicid:aist-se1-dp2">
-#         <link_type name="urn:felix+static_link"/>
-#         <interface_ref component_id="urn:publicid:aist-se1:if2"/>
-#         <interface_ref component_id="urn:publicid:aist-sdn2:if1"/>
-#     </link>
-#     <link component_id="urn:publicid:aist-se1-dp3">
-#         <link_type name="urn:felix+static_link"/>
-#         <interface_ref component_id="urn:publicid:aist-se1:if3"/>
-#         <interface_ref component_id="urn:publicid:tn-network1:aist-stp1"/>
-#     </link>
-#     <link component_id="urn:publicid:aist-se1-dp4">
-#         <link_type name="urn:felix:static_link"/>
-#         <interface_ref component_id="urn:publicid:aist-se1:if4"/>
-#         <interface_ref component_id="urn:publicid:tn-network1:aist-stp2"/>
-#     </link>
-# </rspec>
-# """
-#         rspec_string = SERMv3AdvertisementParser(from_string=rspec22)
+        # Example port status changing
+        # print "before: ", self.SEConfig.get_ports_configuration()
+        # self.SEConfig.set_concrete_port_status("eth1", 1000, False)
+        # self.SEConfig.set_concrete_port_status("eth1", 2000, False)
+        # # self.SEConfig.set_concrete_port_status("eth1", 3000, False)
+        # print "after: ", self.SEConfig.get_ports_configuration()
 
-        #nodes = [{'node': '123', 'exclusive': None, 'component_id': 'urn:publicid:aist-se1', 'interfaces': [{'component_id': 'urn:publicid:aist-se1:if2', 'vlan': [{'tag': '25', 'name': 'urn:publicid:aist-se1:if2+vlan'}]}, {'component_id': 'urn:publicid:aist-se1:if3', 'vlan': [{'tag': '1983', 'name': 'urn:publicid:aist-se1:if3+vlan'}]}], 'routing_key': None, 'sliver_type_name': None, 'internal_ifs': [], 'component_manager_id': 'urn:publicid:IDN+AIST+authority+serm'}]
-        #nodes = [{'node': None, 'exclusive': 'false', 'component_id': 'urn:publicid:aist-se1', 'interfaces': [{'component_id': 'urn:publicid:aist-se1:if2', 'vlan': [{'tag': '25', 'name': 'urn:publicid:aist-se1:if2+vlan'}]}, {'component_id': 'urn:publicid:aist-se1:if3', 'vlan': [{'tag': '1983', 'name': 'urn:publicid:aist-se1:if3+vlan'}]}], 'routing_key': None, 'sliver_type_name': None, 'internal_ifs': [], 'component_manager_id': 'urn:publicid:IDN+AIST+authority+serm'}]
-        #links = [{'node': None, 'component_id': 'urn:publicid:aist-se1:if2-if3', 'component_manager_name': 'urn:publicid:IDN+AIST+authority+serm', 'routing_key': None, 'vlantag': None, 'sliver_id': None, 'interface_ref': [{'component_id': 'urn:publicid:aist-se1:if2'}, {'component_id': 'urn:publicid:aist-se1:if3'}], 'internal_ifs': [], 'property': [], 'link_type': 'urn:felix+vlan_trans'}]
-
-        #links = [{'component_id': 'urn:publicid:aist-se1:link', 'component_manager_name': 'urn:publicid:IDN+NSI+authority+serm', 'vlantag': None, 'sliver_id': None, 'interface_ref': [{'component_id': '*'}, {'component_id': '*'}], 'property': [{'source_id': '*', 'dest_id': '*', 'capacity': '1G'}], 'link_type': 'urn:felix+vlan_trans'}, {'component_id': 'urn:publicid:aist-se1-dp1', 'component_manager_name': None, 'vlantag': None, 'sliver_id': None, 'interface_ref': [{'component_id': 'urn:publicid:aist-se1:if1'}, {'component_id': 'urn:publicid:aist-sdn1:if1'}], 'property': [], 'link_type': 'urn:felix+static_link'}, {'component_id': 'urn:publicid:aist-se1-dp2', 'component_manager_name': None, 'vlantag': None, 'sliver_id': None, 'interface_ref': [{'component_id': 'urn:publicid:aist-se1:if2'}, {'component_id': 'urn:publicid:aist-sdn2:if1'}], 'property': [], 'link_type': 'urn:felix+static_link'}, {'component_id': 'urn:publicid:aist-se1-dp3', 'component_manager_name': None, 'vlantag': None, 'sliver_id': None, 'interface_ref': [{'component_id': 'urn:publicid:aist-se1:if3'}, {'component_id': 'urn:publicid:tn-network1:aist-stp1'}], 'property': [], 'link_type': 'urn:felix+static_link'}, {'component_id': 'urn:publicid:aist-se1-dp4', 'component_manager_name': None, 'vlantag': None, 'sliver_id': None, 'interface_ref': [{'component_id': 'urn:publicid:aist-se1:if4'}, {'component_id': 'urn:publicid:tn-network1:aist-stp2'}], 'property': [], 'link_type': 'urn:felix:static_link'}]
-        #nodes = [{'component_manager_id': 'urn:publicid:IDN+AIST+authority+serm', 'exclusive': 'false', 'interfaces': [{'component_id': 'urn:publicid:aist-se1:if1', 'vlan': []}, {'component_id': 'urn:publicid:aist-se1:if2', 'vlan': []}, {'component_id': 'urn:publicid:aist-se1:if3', 'vlan': []}, {'component_id': 'urn:publicid:aist-se1:if4', 'vlan': []}], 'component_id': 'urn:publicid:aist-se1', 'sliver_type_name': None}]
-
-
-        # Dummy stitching nodes and links
-        links = [
-            {
-                'component_id':'urn:publicid:aist-se1:link',
-                'component_manager_name':'urn:publicid:IDN+NSI+authority+serm',
-                'interface_ref':[
-                    {
-                        'component_id':'*'
-                    },
-                    {
-                        'component_id':'*'
-                    }
-                ],
-                'property':[
-                    {
-                        'source_id':'*',
-                        'dest_id':'*',
-                        'capacity':'1G'
-                    }
-                ],
-                'link_type':'urn:felix+vlan_trans'
-            },
-            {
-                'component_id':'urn:publicid:aist-se1-dp1',
-                'component_manager_name':None,
-                'interface_ref':[
-                    {
-                        'component_id':'urn:publicid:aist-se1:if1'
-                    },
-                    {
-                        'component_id':'urn:publicid:aist-sdn1:if1'
-                    }
-                ],
-                'property':[
-
-                ],
-                'link_type':'urn:felix+static_link'
-            },
-            {
-                'component_id':'urn:publicid:aist-se1-dp2',
-                'component_manager_name':None,
-                'interface_ref':[
-                    {
-                        'component_id':'urn:publicid:aist-se1:if2'
-                    },
-                    {
-                        'component_id':'urn:publicid:aist-sdn2:if1'
-                    }
-                ],
-                'property':[
-
-                ],
-                'link_type':'urn:felix+static_link'
-            },
-            {
-                'component_id':'urn:publicid:aist-se1-dp3',
-                'component_manager_name':None,
-                'interface_ref':[
-                    {
-                        'component_id':'urn:publicid:aist-se1:if3'
-                    },
-                    {
-                        'component_id':'urn:publicid:tn-network1:aist-stp1'
-                    }
-                ],
-                'property':[
-
-                ],
-                'link_type':'urn:felix+static_link'
-            },
-            {
-                'component_id':'urn:publicid:aist-se1-dp4',
-                'component_manager_name':None,
-                'interface_ref':[
-                    {
-                        'component_id':'urn:publicid:aist-se1:if4'
-                    },
-                    {
-                        'component_id':'urn:publicid:tn-network1:aist-stp2'
-                    }
-                ],
-                'property':[
-
-                ],
-                'link_type':'urn:felix:static_link'
-            }
-        ]
-
-        nodes = [
-            {
-                'component_manager_id':'urn:publicid:IDN+AIST+authority+serm',
-                'exclusive':'false',
-                'interfaces':[
-                    {
-                        'component_id':'urn:publicid:aist-se1:if1',
-                        'vlan':[
-
-                        ],
-                        'se-vlan' : [1, 3, 5],
-                        'se-activated' : True,
-
-                    },
-                    {
-                        'component_id':'urn:publicid:aist-se1:if2',
-                        'vlan':[
-
-                        ]
-                    },
-                    {
-                        'component_id':'urn:publicid:aist-se1:if3',
-                        'vlan':[
-
-                        ]
-                    },
-                    {
-                        'component_id':'urn:publicid:aist-se1:if4',
-                        'vlan':[
-
-                        ]
-                    }
-                ],
-                'component_id':'urn:publicid:aist-se1',
-                'sliver_type_name':None
-            }
-        ]
-
-        links = self.seConfigParser.get_links_dict()
-        nodes = self.seConfigParser.get_nodes_dict()
+        links = self.SEConfig.get_links_dict_for_rspec()
+        nodes = self.SEConfig.get_nodes_dict_for_rspec()
 
         try:
 
