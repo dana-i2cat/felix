@@ -34,6 +34,7 @@ from handler.geni.v3 import exceptions as geni_ex
 
 import core
 import se_configurator as SEConfigurator
+from se_slices import seSlicesWithSlivers
 #from apport.fileutils import links_with_shared_library
 
 
@@ -52,6 +53,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         super(GENIv3Delegate, self).__init__()
         self._resource_manager = rm_adaptor
         self.SEConfig = SEConfigurator.seConfigurator()
+        self.SESlices = seSlicesWithSlivers()
         print "WWWWWWWWWWWW"
 
     def get_request_extensions_mapping(self):
@@ -193,12 +195,12 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 "geni_slivers": se_slivers}
 
     def allocate(self, slice_urn, client_cert, credentials,
-                 rspec, end_time):
+                 rspec, end_time=None):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         logger.debug("allocate: authenticate the user...")
-        print "WWWWWWW: ", end_time
         client_urn, client_uuid, client_email =\
             self.auth(client_cert, credentials, slice_urn, ("createsliver",))
+
         logger.info("Client urn=%s, uuid=%s, email=%s" % (
             client_urn, client_uuid, client_email,))
         logger.info("slice_urn=%s, end_time=%s, rspec=%s" % (
@@ -212,93 +214,30 @@ class GENIv3Delegate(GENIv3DelegateBase):
         se_manifest, se_slivers, se_db_slivers = SERMv3ManifestFormatter(), [], []
         print "\n\n\n\n\n------------------se_manifest >>> ", se_manifest
         print "\n\n\n\n\n------------------se_slivers >>> ", se_slivers
-        print "\n\n\n\n\n------------------se_db_slivers >>> ", se_db_slivers
-        #print "\n\n\n\n\n------------------req_rspec2 >>> ", req_rspec2
         
         links = req_rspec.links()
         nodes = req_rspec.nodes()
-#         print links
-#         print nodes
-#         if (len(links) > 0) or (len(nodes) > 0):
-#             
-#             logger.debug("Found a SE-links segment (%d): %s" %
-#                          (len(links), links,))
-           
-        #(se_manifest, se_slivers, se_db_slivers)  = self.__manage_se_allocate2(slice_urn, credentials, end_time,nodes, links)
-#             logger.debug( "se_s=%s, db_s=%s" %
-#                          (se_slivers, se_db_slivers))
-#             print "se sliver" , se_slivers
-#             for n in nodes:
-#                 se_manifest.node(n)
-#             for l in links:
-#                 #print "test l", l
-#                 se_manifest.link(l)
-# 
-#             se_slivers.extend(se_slivers)
-#             se_db_slivers.extend(se_db_slivers)
-        #se_manifest.append({"nodes": nodes, "links": links})
-        print "manifest  ", se_manifest
-        print "nodes ", nodes
-        print "links", links
+        #print "manifest  ", se_manifest
+        #print "nodes ", nodes
+        #print "links", links
+        self.SESlices._create_manifest_from_req_n_and_l(se_manifest, nodes,links)
         logger.debug("SE-ManifestFormatter=%s" % (se_manifest,))
-        s={}
-        for n in nodes:
-            se_manifest.node(n)
-        for l in links:
-            se_manifest.link(l)
             
-            #print l
-            s["geni_sliver_urn"] = l["component_id"]
-            s["geni_expires"] = end_time
-            s["geni_allocation_status"]= self.ALLOCATION_STATE_ALLOCATED
-            
-        se_slivers.append(s)
-        #print 's',s
-        #print 'se_sliver',se_slivers
-        #print slice_urn
+                 
+        s =  self.SESlices._allocate_ports_in_slice(nodes) 
+        print "seslice ports ",s
         
-        for n in nodes:
-            for e in n['interfaces']:
-                 #print 'iface ',e['component_id']
-                 for vlan in e['vlan']:
-                     #print 'iface ',e['component_id']
-                     #print '    vlan tag ',vlan['tag']
-                     if link_additional_info.get('iface') == None:
-                        link_additional_info['iface']=e['vlan']
-                     else:
-                        temp = link_additional_info['iface']
-                        link_additional_info['iface'] = temp + e['vlan']
-                     #print str(e['vlan'])
-                     
-        print "link additional   ", link_additional_info
-        
-        test222 = [{'tag': '25', 'name': 'urn:publicid:aist-se1:if2+vlan'}, {'tag': '1983', 'name': 'urn:publicid:aist-se1:if6+vlan'}]
-
-        
-        for s in test222:
-            print 'dsdsdsds ',s
-        
-        for e in link_additional_info['iface']:
-            print "e   ",e
-            match= [s for s in test222 ]#if cmp(e,s)]
-            if cmp(e,match[0])==0:
-                print "jest"
-       
-              
-     
-        test_links_db[slice_urn]=list(se_slivers) +[link_additional_info]
-        print "test link for slice_urn", test_links_db[slice_urn][1]['iface']
-        #test_links_db[slice_urn].append(link_additional_info)
-        logger.debug("SE-Sliver(%d)=%s" % (len(se_slivers), se_slivers,))
-
-        print "struktura link  ",test_links_db
+        logger.debug("requested SE-Sliver(%d)=%s" % (len(se_slivers), se_slivers,))
         #link_additional_info={}
         
-        #print "struktura link  ",test_links_db            
+        print "check link db before operation :", self.SESlices.get_link_db(slice_urn)
+        self.SESlices.set_link_db(slice_urn, end_time,links, nodes)
+        print "check link db after operation", self.SESlices.get_link_db()
+        
+        se_slivers.append(self.SESlices.get_link_db(slice_urn))
         #id_ = db_sync_manager.store_slice_info(slice_urn, se_db_slivers)
-        #logger.info("allocate successfully completed: %s", id_)
+        logger.info("allocate successfully completed: %s", slice_urn)
         #self.__schedule_slice_release(end_time, se_db_slivers)
-
         return ("%s" % se_manifest, se_slivers)
 
 
