@@ -52,7 +52,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def __init__(self):
         super(GENIv3Delegate, self).__init__()
         self._resource_manager = rm_adaptor
-        self.SEConfig = SEConfigurator.seConfigurator()
+        self.SEResources = SEConfigurator.seConfigurator()
         self.SESlices = seSlicesWithSlivers()
         print "WWWWWWWWWWWW"
 
@@ -96,14 +96,14 @@ class GENIv3Delegate(GENIv3DelegateBase):
         rspec = SERMv3AdvertisementFormatter(schema_location=sl)
 
         # Example port status changing
-        # print "before: ", self.SEConfig.get_ports_configuration()
-        # self.SEConfig.set_concrete_port_status("eth1", 1000, False)
-        # self.SEConfig.set_concrete_port_status("eth1", 2000, False)
-        # # self.SEConfig.set_concrete_port_status("eth1", 3000, False)
-        # print "after: ", self.SEConfig.get_ports_configuration()
+        # print "before: ", self.SEResources.get_ports_configuration()
+        # self.SEResources.set_concrete_port_status("eth1", 1000, False)
+        # self.SEResources.set_concrete_port_status("eth1", 2000, False)
+        # # self.SEResources.set_concrete_port_status("eth1", 3000, False)
+        # print "after: ", self.SEResources.get_ports_configuration()
 
-        links = self.SEConfig.get_links_dict_for_rspec()
-        nodes = self.SEConfig.get_nodes_dict_for_rspec()
+        links = self.SEResources.get_links_dict_for_rspec()
+        nodes = self.SEResources.get_nodes_dict_for_rspec()
 
         try:
 
@@ -217,28 +217,40 @@ class GENIv3Delegate(GENIv3DelegateBase):
         
         links = req_rspec.links()
         nodes = req_rspec.nodes()
-        #print "manifest  ", se_manifest
-        #print "nodes ", nodes
-        #print "links", links
-        self.SESlices._create_manifest_from_req_n_and_l(se_manifest, nodes,links)
-        logger.debug("SE-ManifestFormatter=%s" % (se_manifest,))
+
+        # check if the requested resources (ports, vlans) are available
+        reservation_ports = self.SESlices._allocate_ports_in_slice(nodes)
+        availability_result = self.SEResources.check_available_resources(reservation_ports['ports'])
+
+        if availability_result != False:
+
+            print "Ports take part: " , reservation_ports
+
+            #print "manifest  ", se_manifest
+            #print "nodes ", nodes
+            #print "links", links
+            self.SESlices._create_manifest_from_req_n_and_l(se_manifest, nodes,links)
+            logger.debug("SE-ManifestFormatter=%s" % (se_manifest,))
+                
+                     
+            s =  self.SESlices._allocate_ports_in_slice(nodes) 
+            print "seslice ports ",s
             
-                 
-        s =  self.SESlices._allocate_ports_in_slice(nodes) 
-        print "seslice ports ",s
-        
-        logger.debug("requested SE-Sliver(%d)=%s" % (len(se_slivers), se_slivers,))
-        #link_additional_info={}
-        
-        print "check link db before operation :", self.SESlices.get_link_db(slice_urn)
-        self.SESlices.set_link_db(slice_urn, end_time,links, nodes)
-        print "check link db after operation", self.SESlices.get_link_db()
-        
-        se_slivers.append(self.SESlices.get_link_db(slice_urn))
-        #id_ = db_sync_manager.store_slice_info(slice_urn, se_db_slivers)
-        logger.info("allocate successfully completed: %s", slice_urn)
-        #self.__schedule_slice_release(end_time, se_db_slivers)
-        return ("%s" % se_manifest, se_slivers)
+            logger.debug("requested SE-Sliver(%d)=%s" % (len(se_slivers), se_slivers,))
+            #link_additional_info={}
+            
+            print "check link db before operation :", self.SESlices.get_link_db(slice_urn)
+            self.SESlices.set_link_db(slice_urn, end_time,links, nodes)
+            print "check link db after operation", self.SESlices.get_link_db()
+            
+            se_slivers.append(self.SESlices.get_link_db(slice_urn))
+            #id_ = db_sync_manager.store_slice_info(slice_urn, se_db_slivers)
+            logger.info("allocate successfully completed: %s", slice_urn)
+            #self.__schedule_slice_release(end_time, se_db_slivers)
+            return ("%s" % se_manifest, se_slivers)
+
+        else:
+            raise geni_ex.GENIv3GeneralError("Allocation Failed. Requested resources are not available.")
 
 
     def renew(self, urns, client_cert, credentials, expiration_time,

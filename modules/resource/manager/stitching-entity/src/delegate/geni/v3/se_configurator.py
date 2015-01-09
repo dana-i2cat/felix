@@ -26,6 +26,25 @@ class seConfigurator:
     def set_concrete_port_status(self, port, vlan, status):
         self.configured_interfaces[port][vlan] = status
 
+    def check_available_resources(self, resources):
+        for resource in resources:
+            print resource
+            try:
+                r_splited = resource['port'].rsplit(":", 1)
+                vlan = resource['vlan']
+                component_id = r_splited[0]
+                port = r_splited[1]
+                vlans_result = self.get_concrete_port_status(port)
+                result = vlans_result[int(vlan)] # rspec contains vlan as string value
+                if result is False:
+                    return False
+            except KeyError:
+                return False
+        return True
+
+
+        return False #False for testing
+
     def get_nodes_dict_for_rspec(self):
         component_id_prefix = self.component_id_prefix
         component_manager_prefix = self.component_manager_prefix

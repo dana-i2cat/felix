@@ -64,19 +64,12 @@ class seSlicesWithSlivers(object):
             se_manifest.link(l)
             
     def _allocate_ports_in_slice(self, nodes):
-        ports_take_part_info={}
+        ports_take_part_info={'ports':[]}
         for n in nodes:
             for e in n['interfaces']:
-                #print 'iface ', e['component_id']
                 for vlan in e['vlan']:
-                #print 'iface ',e['component_id']
-                #print '    vlan tag ',vlan['tag']
-                    if ports_take_part_info.get('ports') == None:
-                        ports_take_part_info['ports'] = e['vlan']
-                    else:
-                        temp = ports_take_part_info['ports']
-                        ports_take_part_info['ports'] = temp + e['vlan']
-        
-        #print str(e['vlan'])
+                    current_vlan = vlan['tag']
+                    current_port = e['component_id']
+                    ports_take_part_info['ports'].append({'port' : current_port, 'vlan' : current_vlan})
         return ports_take_part_info
         
