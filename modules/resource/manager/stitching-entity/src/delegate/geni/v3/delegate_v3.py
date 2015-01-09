@@ -54,7 +54,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
         self._resource_manager = rm_adaptor
         self.SEResources = SEConfigurator.seConfigurator()
         self.SESlices = seSlicesWithSlivers()
-        print "WWWWWWWWWWWW"
 
     def get_request_extensions_mapping(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
@@ -94,13 +93,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
         sl = "http://www.geni.net/resources/rspec/3/ad.xsd"
         print "listresources invoked"
         rspec = SERMv3AdvertisementFormatter(schema_location=sl)
-
-        # Example port status changing
-        # print "before: ", self.SEResources.get_ports_configuration()
-        # self.SEResources.set_concrete_port_status("eth1", 1000, False)
-        # self.SEResources.set_concrete_port_status("eth1", 2000, False)
-        # # self.SEResources.set_concrete_port_status("eth1", 3000, False)
-        # print "after: ", self.SEResources.get_ports_configuration()
 
         links = self.SEResources.get_links_dict_for_rspec()
         nodes = self.SEResources.get_nodes_dict_for_rspec()
@@ -225,6 +217,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
         if availability_result != False:
 
             print "Ports take part: " , reservation_ports
+
+            # Mark resources as reserved
+            self.SEResources.set_resource_reservation(reservation_ports['ports'])
 
             #print "manifest  ", se_manifest
             #print "nodes ", nodes

@@ -6,7 +6,6 @@ class seConfigurator:
         stream = open("../conf/se-config.yaml", 'r')
         initial_config = yaml.load(stream)
         self.configured_interfaces = initial_config["interfaces"]
-        print self.configured_interfaces
         self.component_id_prefix = initial_config["component_id"]
         self.component_manager_prefix = initial_config["component_manager_id"]
         self.configured_interfaces = initial_config["interfaces"]
@@ -28,7 +27,6 @@ class seConfigurator:
 
     def check_available_resources(self, resources):
         for resource in resources:
-            print resource
             try:
                 r_splited = resource['port'].rsplit(":", 1)
                 vlan = resource['vlan']
@@ -36,14 +34,19 @@ class seConfigurator:
                 port = r_splited[1]
                 vlans_result = self.get_concrete_port_status(port)
                 result = vlans_result[int(vlan)] # rspec contains vlan as string value
-                if result is False:
+                if (result is False) or (component_id != self.component_id_prefix):
                     return False
             except KeyError:
                 return False
         return True
 
+    def set_resource_reservation(self, resources):
+        for resource in resources:
+            r_splited = resource['port'].rsplit(":", 1)
+            vlan = resource['vlan']
+            port = r_splited[1]
+            self.set_concrete_port_status(port, int(vlan), False)
 
-        return False #False for testing
 
     def get_nodes_dict_for_rspec(self):
         component_id_prefix = self.component_id_prefix
