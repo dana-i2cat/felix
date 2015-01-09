@@ -8,20 +8,20 @@
 
     <node client_id="urn:publicid:aist-se1"
           component_manager_id="urn:publicid:IDN+AIST+authority+serm">
-        <interface client_id="urn:publicid:aist-se1:if2">
-            <sharedvlan:link_shared_vlan name="urn:publicid:aist-se1:if2+vlan"
-                                         vlantag="26"/>
+        <interface client_id="urn:publicid:aist-se1:eth1">
+            <sharedvlan:link_shared_vlan name="urn:publicid:aist-se1:eth1+vlan"
+                                         vlantag="1000"/>
         </interface>
-        <interface client_id="urn:publicid:aist-se1:if3">
-            <sharedvlan:link_shared_vlan name="urn:publicid:aist-se1:if3+vlan"
-                                         vlantag="1984"/>
+        <interface client_id="urn:publicid:aist-se1:eth2">
+            <sharedvlan:link_shared_vlan name="urn:publicid:aist-se1:eth2+vlan"
+                                         vlantag="1000"/>
         </interface>
     </node>
 
-    <link client_id="urn:publicid:aist-se1:if2-if3">
+    <link client_id="urn:publicid:aist-se1:eth1-eth2">
         <component_manager name="urn:publicid:IDN+AIST+authority+serm"/>
         <link_type name="urn:felix+vlan_trans"/>
-        <interface_ref client_id="urn:publicid:aist-se1:if2"/>
-        <interface_ref client_id="urn:publicid:aist-se1:if3"/>
+        <interface_ref client_id="urn:publicid:aist-se1:eth1"/>
+        <interface_ref client_id="urn:publicid:aist-se1:eth2"/>
     </link>
 </rspec>
