@@ -1,17 +1,25 @@
 import yaml
+from delegate.geni.v3.db_manager_se import db_sync_manager
 
 class seConfigurator:
     def __init__(self):
 
+        # read from config file
         stream = open("../conf/se-config.yaml", 'r')
         initial_config = yaml.load(stream)
         self.configured_interfaces = initial_config["interfaces"]
+
+        # Push port status from configuration file into SE-db
+        # TODO: Add other rspec parameters to db
+        db_sync_manager.update_resources(self.configured_interfaces, fromConfigFile=True)
+
         self.component_id_prefix = initial_config["component_id"]
         self.component_manager_prefix = initial_config["component_manager_id"]
         self.configured_interfaces = initial_config["interfaces"]
         self.vlan_trans = initial_config["vlan_trans"]
         self.qinq = initial_config["qinq"]
         self.capacity = initial_config["capacity"]
+
 
     def get_ports_configuration(self):
         return self.configured_interfaces
@@ -26,6 +34,10 @@ class seConfigurator:
         self.configured_interfaces[port][vlan] = status
 
     def check_available_resources(self, resources):
+
+        # get data from db - TODO: refactor into function
+        self.configured_interfaces = db_sync_manager.get_resources()
+
         for resource in resources:
             try:
                 r_splited = resource['port'].rsplit(":", 1)
@@ -33,7 +45,7 @@ class seConfigurator:
                 component_id = r_splited[0]
                 port = r_splited[1]
                 vlans_result = self.get_concrete_port_status(port)
-                result = vlans_result[int(vlan)] # rspec contains vlan as string value
+                result = vlans_result[vlan]
                 if (result is False) or (component_id != self.component_id_prefix):
                     return False
             except KeyError:
@@ -45,12 +57,19 @@ class seConfigurator:
             r_splited = resource['port'].rsplit(":", 1)
             vlan = resource['vlan']
             port = r_splited[1]
-            self.set_concrete_port_status(port, int(vlan), False)
+            self.set_concrete_port_status(port, vlan, False)
+            
+        # Update the SE-db
+        db_sync_manager.update_resources(self.configured_interfaces)
 
 
     def get_nodes_dict_for_rspec(self):
         component_id_prefix = self.component_id_prefix
         component_manager_prefix = self.component_manager_prefix
+
+        # get data from db - TODO: refactor into function
+        self.configured_interfaces = db_sync_manager.get_resources()
+
         configured_interfaces = self.configured_interfaces
         vlan_trans = self.vlan_trans
         qinq = self.qinq
@@ -91,6 +110,10 @@ class seConfigurator:
     def get_links_dict_for_rspec(self):
         component_id_prefix = self.component_id_prefix
         component_manager_prefix = self.component_manager_prefix
+
+        # get data from db - TODO: refactor into function
+        self.configured_interfaces = db_sync_manager.get_resources()
+
         configured_interfaces = self.configured_interfaces
         vlan_trans = self.vlan_trans
         qinq = self.qinq

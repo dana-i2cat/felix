@@ -7,16 +7,16 @@ capacity: 1G
 
 
 interfaces:
- eth1:
-    1000 : true
+    eth1:
+        1000 : true
 
- eth2:
-    1000 : true
-    2000 : true
-    3000 : true
+    eth2:
+        1000 : true
+        2000 : true
+        3000 : true
 
- eth3:
-    dp2 : urn:publicid:aist-sdn1:if2
+    eth3:
+        dp2 : urn:publicid:aist-sdn1:if2
 
- eth4:
-    dp1 : urn:publicid:aist-sdn1:if1
+    eth4:
+        dp1 : urn:publicid:aist-sdn1:if1
