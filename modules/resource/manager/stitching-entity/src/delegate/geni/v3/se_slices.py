@@ -5,8 +5,8 @@ class seSlicesWithSlivers(object):
     "Sliver element for se"
     def __init__(self):
         
-        self.__nodes = []
-        self.__links = []
+        self.__nodes = {}
+        self.__links = {}
         self.__slivers = {}
         self.__end_time = ''
         self.__se_manifest =''
@@ -16,17 +16,27 @@ class seSlicesWithSlivers(object):
         print "end time in slice", end_time
         end3 = repr(end_time)
         self._links_db[slice_urn] = self._create_sliver_from_req_n_and_l(end_time, links, nodes)
-        
+
+        # Temporary solution
+        print "$$$$$$$$$$$$$$$44"
+        print nodes
+        print links
+        print slice_urn
+        self.__nodes[slice_urn] = nodes
+        self.__links[slice_urn] = links
+
+
     def get_link_db(self, slice_urn=None):
         
         if slice_urn:
             try:
-                
-                return self._links_db[slice_urn] 
-            
+                links_db = self._links_db[slice_urn]
+                nodes = self.__nodes[slice_urn]
+                links = self.__links[slice_urn]
+                return links_db, nodes, links
             except :
                 return {}
-        return self._links_db 
+                
     
     def _create_sliver_from_req_n_and_l( self, end_time, links, nodes):
         s_temp={}
