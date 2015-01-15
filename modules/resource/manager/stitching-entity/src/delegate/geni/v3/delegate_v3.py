@@ -275,9 +275,10 @@ class GENIv3Delegate(GENIv3DelegateBase):
             urns, best_effort, end_time, geni_users,))
         raise geni_ex.GENIv3GeneralError("Not implemented yet!")
 
-    def status(self, urns, client_cert, credentials):
+    def status(self, urns, client_cert, credentials):                   ### FIX the response
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        se_slivers, last_slice , slice_urn = [], "", ""
+        # se_slivers, last_slice , slice_urn = [], "", ""
+        result = []
 
         for urn in urns:
             logger.debug("status: authenticate the user for %s" % (urn))
@@ -286,7 +287,20 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
             logger.info("Client urn=%s, uuid=%s, email=%s" % (
                 client_urn, client_uuid, client_email,))
-            slice_urn = urn
+            # slice_urn = urn
+
+
+            links_db, nodes, links = self.SESlices.get_link_db(urn)
+
+            result.append( 
+                            {   
+                                "geni_sliver_urn": urn,# links_db['geni_sliver_urn'][0].keys(),
+                                "geni_expires": links_db['geni_expires'],
+                                "geni_allocation_status": links_db["geni_allocation_status"],
+                                "geni_operational_status" : "Not yet implemented"
+                            }
+                        )
+
         #route = db_sync_manager.get_slice_routing_keys(urns)
         #logger.debug("Route=%s" % (route,))
 
@@ -299,11 +313,16 @@ class GENIv3Delegate(GENIv3DelegateBase):
 # 
 #                 logger.debug("slivers=%s, urn=%s" % (slivers, lastslice))
 #                 ro_slivers.extend(slivers)
-        se_sliver = test_links_db[slice_urn]
+        # se_sliver = test_links_db[slice_urn]
 #         for s in ro_slivers:
 #             s["geni_expires"] = self.__str2datetime(s["geni_expires"])
 #         logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
-        return last_slice, se_slivers
+
+        slice_urn = urns
+        slivers = { "geni_urn": urns,
+                    "geni_slivers": result}
+
+        return slice_urn, slivers
 
     def perform_operational_action(self, urns, client_cert, credentials,
                                    action, best_effort):
@@ -340,9 +359,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
         return ro_slivers
 
-    def delete(self, urns, client_cert, credentials, best_effort):
+    def delete(self, urns, client_cert, credentials, best_effort):     ### FIX the response
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        ro_slivers = []
+        result = []
 
         for urn in urns:
             logger.debug("delete: authenticate the user for %s" % (urn))
@@ -352,34 +371,50 @@ class GENIv3Delegate(GENIv3DelegateBase):
             logger.info("Client urn=%s, uuid=%s, email=%s" % (
                 client_urn, client_uuid, client_email,))
 
+            links_db, nodes, links = self.SESlices.get_link_db(urn)
+            reservation_ports = self.SESlices._allocate_ports_in_slice(nodes)
 
+            result.append( 
+                {   
+                    "geni_sliver_urn": urn,# links_db['geni_sliver_urn'][0].keys(),
+                    "geni_expires": links_db['geni_expires'],
+                    "geni_allocation_status": links_db["geni_allocation_status"],
+                    "geni_operational_status" : "Not yet implemented"
+                }
+            )
 
+            # Mark resources as free
+            self.SEResources.free_resource_reservation(reservation_ports['ports'])
 
-        logger.info("best_effort=%s" % (best_effort,))
+            # Remove reservation
+            self.SESlices.remove_link_db(urn)
 
-        route = db_sync_manager.get_slice_routing_keys(urns)
-        logger.debug("Route=%s" % (route,))
+        # logger.info("best_effort=%s" % (best_effort,))
 
-        for r, v in route.iteritems():
-            peer = db_sync_manager.get_configured_peer(r)
-            logger.debug("peer=%s" % (peer,))
-            if peer.get("type") in ["sdn_networking", "transport_network",
-                                    "stitching_entity"]:
-                slivers = self.__manage_delete(
-                    peer, v, credentials, best_effort)
+        # route = db_sync_manager.get_slice_routing_keys(urns)
+        # logger.debug("Route=%s" % (route,))
 
-                logger.debug("slivers=%s" % (slivers,))
-                ro_slivers.extend(slivers)
+        # for r, v in route.iteritems():
+        #     peer = db_sync_manager.get_configured_peer(r)
+        #     logger.debug("peer=%s" % (peer,))
+        #     if peer.get("type") in ["sdn_networking", "transport_network",
+        #                             "stitching_entity"]:
+        #         slivers = self.__manage_delete(
+        #             peer, v, credentials, best_effort)
 
-        db_urns = []
-        for s in ro_slivers:
-            s["geni_expires"] = self.__str2datetime(s["geni_expires"])
-            db_urns.append(s.get("geni_sliver_urn"))
-        logger.debug("RO-Slivers(%d)=%s, DB-URNs(%d)=%s" %
-                     (len(ro_slivers), ro_slivers, len(db_urns), db_urns))
+        #         logger.debug("slivers=%s" % (slivers,))
+        #         ro_slivers.extend(slivers)
 
-        db_sync_manager.delete_slice_urns(db_urns)
-        return ro_slivers
+        # db_urns = []
+        # for s in ro_slivers:
+        #     s["geni_expires"] = self.__str2datetime(s["geni_expires"])
+        #     db_urns.append(s.get("geni_sliver_urn"))
+        # logger.debug("RO-Slivers(%d)=%s, DB-URNs(%d)=%s" %
+        #              (len(ro_slivers), ro_slivers, len(db_urns), db_urns))
+
+        # db_sync_manager.delete_slice_urns(db_urns)
+
+        return result
 
     def shutdown(self, slice_urn, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""

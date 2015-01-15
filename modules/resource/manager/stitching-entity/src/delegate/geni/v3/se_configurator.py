@@ -62,6 +62,16 @@ class seConfigurator:
         # Update the SE-db
         db_sync_manager.update_resources(self.configured_interfaces)
 
+    def free_resource_reservation(self, resources):
+        for resource in resources:
+            r_splited = resource['port'].rsplit(":", 1)
+            vlan = resource['vlan']
+            port = r_splited[1]
+            self.set_concrete_port_status(port, vlan, True)
+            
+        # Update the SE-db
+        db_sync_manager.update_resources(self.configured_interfaces)
+
 
     def get_nodes_dict_for_rspec(self):
         component_id_prefix = self.component_id_prefix

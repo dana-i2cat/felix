@@ -14,16 +14,18 @@ class seSlicesWithSlivers(object):
         
     def set_link_db(self, slice_urn, end_time,links, nodes):
         print "end time in slice", end_time
-        end3 = repr(end_time)
         self._links_db[slice_urn] = self._create_sliver_from_req_n_and_l(end_time, links, nodes)
 
-        # Temporary solution
-        print "$$$$$$$$$$$$$$$44"
         print nodes
         print links
         print slice_urn
         self.__nodes[slice_urn] = nodes
         self.__links[slice_urn] = links
+
+    def remove_link_db(self, slice_urn):
+        del self._links_db[slice_urn]
+        del self.__nodes[slice_urn]
+        del self.__links[slice_urn]
 
 
     def get_link_db(self, slice_urn=None):
