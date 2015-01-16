@@ -20,9 +20,9 @@ when the pluginmanager loads.
 import logging, logging.handlers
 import os
 
-log_name = "resource-orchestrator"
+log_name = "stitching-entity"
 root_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../log/"))
-log_file = os.path.join(root_path, "resource-orchestrator.log")
+log_file = os.path.join(root_path, "stitching-entity.log")
 log_format = "%(asctime)s [%(levelname)s] - %(message)s"
 log_level = logging.DEBUG
 
