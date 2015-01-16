@@ -135,7 +135,7 @@ do_stop() {
         # Ubuntu
         #PIDS=`ps xaww | grep "$PROCESS_TYPE" | grep "$EXEC" | grep -v "grep" | cut -d " " -f2`
         # Debian 7
-        PIDS=`ps xaww | grep "$PROCESS_TYPE" | grep "$EXEC" | grep -v "grep" | cut -d " " -f1`
+        PIDS=`ps xaww | grep "$PROCESS_TYPE" | grep "$EXEC" | grep -v "grep" | cut -d " " -f2`
         # XXX: Several processes are being initialised! Take care of them.
         for PID in "${PIDS##*:}"; do
             kill -QUIT $PID
