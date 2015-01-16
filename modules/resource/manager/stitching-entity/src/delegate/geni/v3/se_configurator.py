@@ -1,11 +1,16 @@
-import yaml
 from delegate.geni.v3.db_manager_se import db_sync_manager
+
+import os
+import yaml
 
 class seConfigurator:
     def __init__(self):
 
         # read from config file
-        stream = open("../conf/se-config.yaml", 'r')
+        #stream = open("../conf/se-config.yaml", 'r')
+        current_path = os.path.dirname(os.path.abspath( __file__ ))
+        conf_file_path = os.path.join(current_path, "../../../../conf/se-config.yaml")
+        stream = open(conf_file_path, "r")
         initial_config = yaml.load(stream)
         self.configured_interfaces = initial_config["interfaces"]
 
