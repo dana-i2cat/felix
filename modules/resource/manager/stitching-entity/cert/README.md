@@ -5,8 +5,8 @@ Certificates folder
   * Run `./copy_alice_credentials.sh` in this folder.
   * When not present, please run `gen-certs.py` from your GCF source folder.
 
-1. Place your CH certificate within the `trusted` folder.
-  * Run `./copy_server_certificate.sh` in this folder (valid for GENI clearinghouse).
+1. Generate the certificate for your server.
+  * Run `./generate_server_key.sh` in this folder.
 
-1. Place the CH certificate in the appropriate place of each Resource Manager.
-  * Copy the certificate under `trusted` into their `trusted_roots` folder.
+1. Place your GENI CH certificate within the `trusted` folder.
+  * Run `./copy_server_certificate.sh` in this folder. It will copy the certificate under the `trusted` folder.
