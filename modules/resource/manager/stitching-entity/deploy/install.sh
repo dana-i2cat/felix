@@ -4,7 +4,7 @@ echo "Installing Stitching Entity Resource Manager..."
 
 clean=${clean:-'no'}
 ip=${ip:-'127.0.0.1'}
-# Installing RO dependencies
+# Installing SERM dependencies
 ./install_dependencies.sh
 
 # Link init script to /etc/init.d

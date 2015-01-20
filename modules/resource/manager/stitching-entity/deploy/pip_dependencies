@@ -1,0 +1,15 @@
+python-dateutil
+pyyaml
+pyopenssl
+m2crypto
+lxml
+pymongo
+apscheduler
+requests
+flask
+flask-pymongo
+blinker
+flup
+argparse
+Flask-XML-RPC
+networkx
