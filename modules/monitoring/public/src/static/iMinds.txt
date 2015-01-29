@@ -1,0 +1,9 @@
+The iMinds island consists of one NEC IP8800/S3640 switch and an Open vSwitch VPN hub
+connecting to EICT island and other OFELIA testbeds. The Emulab deployments provide
+physical machines that can be reserved as computing resources. Virtual Wall 2 currently 
+has 2x1Gbit/s links to G&eacute;ant, linking to PSNC and i2CAT islands.
+<ul>
+<li><b>pcgen1</b>: 2&times; Dual core AMD Opteron 2212 (2Ghz) CPU, 8GB RAM, 4&times; 80GB HD, 4&ndash;6&times; GbE NIC</li>
+<li><b>pcgen2</b>: 2&times; Quad core Intel E5520 (2.2Ghz) CPU, 12GB RAM, 1&times; 160GB HD, 2&ndash;4&times; GbE NIC</li>
+<li><b>pcgen3</b>: 2&times; Hexacore Intel E5645 (2.4Ghz) CPU, 24GB RAM, 1&times; 250GB HD, 1&ndash;5&times; GbE NIC</li>
+</ul>

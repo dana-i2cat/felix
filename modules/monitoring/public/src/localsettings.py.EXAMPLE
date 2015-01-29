@@ -1,3 +1,5 @@
+PORT = 8080
+INTERVAL = 120  #seconds
 ISLANDS = { 
 	'iMinds' : {
 		'sdn' : {
@@ -7,7 +9,7 @@ ISLANDS = {
 			'switches' : [ {
 				'manu' : "NEC",
 				'name' : "HUB",
-				'model' : "IP8800/S3640-48T2XW",
+				'model' : "IP8800/S3640-48T2xW-LW",
 				'dpid' : "01:00:00:00:00:00:00:01",
 				},{
 				'manu' : "Linux",
@@ -30,7 +32,17 @@ ISLANDS = {
 			  ['01:00:00:00:00:00:00:ff', 1, '01:00:00:00:00:00:00:01', 46],
 			  ['01:00:00:00:00:00:00:01', 46, '01:00:00:00:00:00:00:ff', 1]				
 			]
-		}
+		},
+		'flsemulab' : [ {
+			'url': "https://flsmonitor.fed4fire.eu/api/index.php/result?last=&testbed=vwall1&testdefinitionname=listResources&format=PrettyJson",
+			'name' : "Virtual Wall 1",
+			'machines': "90x pcgen1 + 100x pcgen2"
+			},{
+			'url': "https://flsmonitor.fed4fire.eu/api/index.php/result?last=&testbed=vwall2&testdefinitionname=listResources&format=PrettyJson",
+			'name' : "Virtual Wall 2",
+			'machines' : "100x pcgen3 + 6x pcgen1"
+			}			
+		]
 	},
 	'i2CAT' : {
 		'vt' :  {

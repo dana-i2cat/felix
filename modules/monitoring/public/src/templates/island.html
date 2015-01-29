@@ -1,10 +1,11 @@
-$def with (island, sdndescription, crdescription, linkstatus, time)
-
+$def with (island, islanddescription, sdndescription, crdescription, linkstatus, emulabdescription, time)
+<!DOCTYPE html>
 <html>
 <head>
 <style>
-body {background:white, text-color:black}
-table {border-collapse: collapse}
+div, p, li, td {font: inherit; font-size: 100%} 
+body {background:white; text-color:black; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:20px;}
+table {border-collapse: collapse; width: 90%}
 th, td {border:1px solid black}
 tr.alt {background:lavender}
 th {background:lightgray}
@@ -17,6 +18,9 @@ td.resourcedown {background:red}
 <p>
 <img src="/static/$(island).png" width="90%" class="topology" />
 </p>
+<p>
+$:islanddescription
+</p>
 <h2>Infrastructure</h2>
 <p>
 $:sdndescription
@@ -24,7 +28,9 @@ $:sdndescription
 <p>
 $:crdescription
 </p>
-
+<p>
+$:emulabdescription
+</p>
 <h2>Connectivity</h2>
 <p>
 $:linkstatus

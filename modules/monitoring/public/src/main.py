@@ -1,13 +1,11 @@
 #!/usr/bin/python
 '''
 @author: bpuype
-
-copyright 2014-2015 FP7 FELIX, iMinds
-
 '''
 
 from settings import *
 from vtrm import *
+from flsemulab import *
 
 import xmlrpclib
 import web
@@ -66,6 +64,13 @@ class OFRM:
 	def get_switches():
 		return self.proxy.get_switches()
 
+def describe_island(island):
+	try:
+		file = open("static/"+island+".txt")
+		return file.read()
+	except:
+		return "" 
+	
 def describe_switches(island):
 	
 	output = '<table class="switches"><tr><th colspan="4">Inventory of OpenFlow switches in the testbed</th></tr>\n'
@@ -100,6 +105,8 @@ def describe_servers(island):
 	alt = False
 
 	vtservers = list(db.select('vtservers', where='island=$island', vars={'island': island}))
+	if len(vtservers) == 0:
+		return "" 
 
 	for server in vtservers:		
 		if alt:
@@ -122,6 +129,37 @@ def describe_servers(island):
 	
 		output += '</tr>\n'
 		alt = not alt
+	output += '</table>'
+	return output
+
+def describe_emulabs(island):
+	output = '<table class="emulabs"><tr><th colspan="2">Inventory of Emulab deployments testbed</th></tr>\n'
+	output += '<tr><th>Name</th><th>Machines</th><th>Status</th></tr>\n'
+
+	alt = False
+
+	emulabs = list(db.select('flsemulab', where='island=$island', vars={'island': island}))
+	if len(emulabs) == 0:
+		return ""
+
+	for emulab in emulabs:
+		if alt:
+			output += '<tr class="alt">\n'
+		else:
+			output += '<tr>\n'
+		output += '<td>' + emulab['name'] + '</td>\n'
+		output += '<td>' + emulab['machines'] + '</td>\n'
+		count = emulab['count']
+		if count >= 0:
+			css_class="resourceup"
+			html_status=str(count)+' available'
+		else:
+			css_class="resourcedown"
+			html_status="down"
+		output += '<td class="'+css_class+'">' + html_status + '</td>\n'
+		output += '</tr>\n'
+		alt = not alt
+		
 	output += '</table>'
 	return output
 
@@ -185,7 +223,7 @@ class get_island:
 	def GET(self, island):
 		global switches
 		if island in ISLANDS.keys(): 
-			return render.island(island=island, sdndescription=describe_switches(island), crdescription=describe_servers(island), linkstatus=describe_links(island), time=updatetime(island) )
+			return render.island(island=island, islanddescription=describe_island(island), sdndescription=describe_switches(island), crdescription=describe_servers(island), linkstatus=describe_links(island), emulabdescription=describe_emulabs(island), time=updatetime(island) )
 		else:
 			return web.notfound()
 
@@ -277,6 +315,7 @@ def main():
 		db.query('''DROP TABLE switches''' )
 		db.query('''DROP TABLE links''' )
 		db.query('''DROP TABLE vtservers''' )
+		db.query('''DROP TABLE flsemulab''' )
 	except: 
 		pass
 	
@@ -316,6 +355,14 @@ def main():
           RAM VARCHAR(16),
 	  type VARCHAR(16) NOT NULL,
 	  status INTEGER)''')
+
+	#create temporary table for flsemulab
+	db.query('''CREATE TABLE flsemulab (
+	  id INTEGER NOT NULL PRIMARY KEY,
+	  island VARCHAR(32) NOT NULL,
+	  name VARCHAR(32) NOT NULL,
+	  machines VARCHAR(32) NOT NULL,
+	  count INTEGER)''')
 	
 	#create temporary table for interfaces (switch-server)
 	#db.query('''CREATE TABLE interfaces (
@@ -329,8 +376,24 @@ def main():
 
 	ofrm={}
 	vtrm={}
+	fls={}
 	for key in ISLANDS:
 		db.insert('islands', name=key, updatetime=int(time.time()) )
+
+		# fls monitor
+		if 'flsemulab' in ISLANDS[key].keys():
+			flsemulab = ISLANDS[key]['flsemulab']
+
+			fls[key] = {}
+			for emulab in flsemulab:
+				name = emulab['name']
+				machines = emulab['machines']
+
+				# create url fetchers
+				fls[key][name] = FLSEMULAB(url = emulab['url'])
+
+				# create db entries
+				db.insert('flsemulab', island=key, name=name, machines=machines, count=-1)
 
 		# vt resources
 		if 'vt' in ISLANDS[key].keys():
@@ -381,11 +444,16 @@ def main():
 
 	vtthread = VTThread(vtrm, db)
 	vtthread.start()
+
+	flsthread = FLSThread(fls, db)
+	flsthread.start()
 	
-	moniapp.run()
+	#moniapp.run()
+	web.httpserver.runsimple(moniapp.wsgifunc(), ("0.0.0.0", PORT))
 
 	ofthread.shutdown()
 	vtthread.shutdown()
+	flsthread.shutdown()
 
 if __name__ == "__main__":
 	main()
