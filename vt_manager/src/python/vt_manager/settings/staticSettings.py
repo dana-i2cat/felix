@@ -45,6 +45,9 @@ DEBUG = True
 #SRC_DIR = "/opt/ofelia/vt_manager/src"
 #SRC_DIR = join(os.getenv("OCF_PATH"), "vt_manager/src")
 SRC_DIR = join(dirname(__file__), "../../../")
+AM_LIB_LOCATION = SRC_DIR + "../../core/lib/am/"
+sys.path.append(AM_LIB_LOCATION)
+sys.path.append(SRC_DIR + "../../core/lib/")
 
 #
 # Database default parameters.
@@ -210,6 +213,7 @@ SITE_LOCKDOWN_EXCEPTIONS = (
     r'^/css/.*',
     r'^/static/media/.*',
     r'^/xmlrpc/sfa/?$',
+    r'^/xmlrpc/geni/3/?$',
 )
 
 #
