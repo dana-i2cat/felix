@@ -561,7 +561,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def __manage_com_allocate(self, slice_urn, credentials,
                               slice_expiration, slivers, parser):
-        # FIXME This is not working
         route = {}
         self.__update_com_route(route, slivers)
         logger.debug("Slivers=%s" % (slivers,))
