@@ -1,0 +1,38 @@
+$def with (island, sdndescription, crdescription, linkstatus, time)
+
+<html>
+<head>
+<style>
+body {background:white, text-color:black}
+table {border-collapse: collapse}
+th, td {border:1px solid black}
+tr.alt {background:lavender}
+th {background:lightgray}
+td.resourceup {background:lime}
+td.resourcedown {background:red}
+.linkarrow {border: none; background:white}
+</style>
+<title>$island - monitoring</title>
+<body>
+<p>
+<img src="/static/$(island).png" width="90%" class="topology" />
+</p>
+<h2>Infrastructure</h2>
+<p>
+$:sdndescription
+</p>
+<p>
+$:crdescription
+</p>
+
+<h2>Connectivity</h2>
+<p>
+$:linkstatus
+</p>
+
+<p>last updated $time <span id="localtime" /></p>
+<script>
+document.getElementById("localtime").innerHTML = "("+new Date("$time").toTimeString()+")";
+</script>
+</body>
+</html>
