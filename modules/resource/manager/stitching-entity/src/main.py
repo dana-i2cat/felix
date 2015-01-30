@@ -1,10 +1,12 @@
 import sys
 
 from delegate.geni.v3.delegate_v3 import GENIv3Delegate
-from delegate.geni.v3.scheduler.ro_scheduler import ROSchedulerService
+from delegate.geni.v3.se_scheduler import SESchedulerService
 from handler.geni.v3.handler_v3 import GENIv3Handler
 from server.flask.flaskserver import FlaskServer
 from server.flask.flaskxmlrpc import FlaskXMLRPC
+import logging
+logging.basicConfig()
 
 
 def main(argv=None):
@@ -15,16 +17,23 @@ def main(argv=None):
         # Create and register the RPC server
         flaskserver = FlaskServer()
         xmlrpc = FlaskXMLRPC(flaskserver)
+        
+        se_scheduler = SESchedulerService()
+        se_scheduler.start()
+        
         # GENIv3
         geni_v3_handler = GENIv3Handler()
         geni_v3_delegate = GENIv3Delegate()
         geni_v3_handler.setDelegate(geni_v3_delegate)
-        xmlrpc.registerXMLRPC("geni3_ro", geni_v3_handler, "/xmlrpc/geni/3/")
+        xmlrpc.registerXMLRPC("geni3_se", geni_v3_handler, "/xmlrpc/geni/3/")
         # Services/Workers to add
         # Topology update
-        #geni_v3_scheduler = ROSchedulerService()
+        print "^^^^^^^^^^"
+        
+        print "$$$$$$$$"
         # Run server starting the services
         flaskserver.runServer()
+        print "********"
     except KeyboardInterrupt:
         return True
     except Exception as e:
@@ -33,7 +42,7 @@ def main(argv=None):
     finally:
         pass
         # Stop the services
-        #geni_v3_scheduler.stop()
+        se_scheduler.stop()
     return True
 
 
