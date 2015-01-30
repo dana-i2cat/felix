@@ -58,14 +58,24 @@ logger = core.log.getLogger("geniv3delegate")
 test_links_db = {}
 link_additional_info={}
 
-def se_job_release_resources(time):
-    print('Release! This was scheduled at %s .' % (time))
-    #print TODO
+def se_job_release_resources(time, ports, slice_urn):
+
+    SEResources = SEConfigurator.seConfigurator()
+    SESlices = seSlicesWithSlivers()
+
+    print('Release! This was scheduled at %s Resources: %s Slice URN: %s' % (time, ports, slice_urn))
+
+    # Mark resources as free
+    SEResources.free_resource_reservation(ports)
+
+    # Remove reservation - TODO
+    # SESlices.remove_link_db(slice_urn)
 
 class GENIv3Delegate(GENIv3DelegateBase):
     """
     """
 
+    
     def __init__(self):
         super(GENIv3Delegate, self).__init__()
         # self._resource_manager = rm_adaptor
@@ -210,8 +220,14 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
             # Mark resources as reserved
             self.SEResources.set_resource_reservation(reservation_ports['ports'])
+            alarm_time = end_time
             #SESchedulerService.get_scheduler().add_job( SEConfigurator.set_resource_reservation(), "date", run_date=end_time, args=reservation_ports['ports'])
-            SESchedulerService.get_scheduler().add_job(se_job_release_resources, "date", run_date=self.alarm_time, args=[datetime.now()])
+            SESchedulerService.get_scheduler().add_job( se_job_release_resources,
+                                                        "date",
+                                                        run_date=alarm_time,
+                                                        args=[datetime.now(),
+                                                        reservation_ports['ports'],
+                                                        slice_urn])
             #print "manifest  ", se_manifest
             #print "nodes ", nodes
             #print "links", links
