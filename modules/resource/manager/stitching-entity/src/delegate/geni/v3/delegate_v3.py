@@ -11,6 +11,9 @@ import core
 import se_configurator as SEConfigurator
 from se_slices import seSlicesWithSlivers
 
+from plugins import ryu_rest_of as se_provision
+
+
 # TODO: Delete if no error occurs
 #from delegate.geni.v3.db_manager import db_sync_manager
 # from delegate.geni.v3.rm_adaptor import AdaptorFactory
@@ -56,6 +59,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         # self._resource_manager = rm_adaptor
         self.SEResources = SEConfigurator.seConfigurator()
         self.SESlices = seSlicesWithSlivers()
+        se_provision.addSwitchingRule()
 
     def get_request_extensions_mapping(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
