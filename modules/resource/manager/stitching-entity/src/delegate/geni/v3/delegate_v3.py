@@ -18,7 +18,7 @@ import core
 import se_configurator as SEConfigurator
 from se_slices import seSlicesWithSlivers
 
-from plugins import ryu_rest_of as se_provision
+import ryu_rest_of as se_provision
 
 
 # TODO: Delete if no error occurs
