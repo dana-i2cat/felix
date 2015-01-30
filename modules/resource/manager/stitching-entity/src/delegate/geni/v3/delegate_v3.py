@@ -1,10 +1,17 @@
 from dateutil import parser as dateparser
 from delegate.geni.v3.base import GENIv3DelegateBase
+
+from se_scheduler import SESchedulerService
 from delegate.geni.v3.rspecs.commons import validate
 from delegate.geni.v3.rspecs.serm.advertisement_formatter import\
     SERMv3AdvertisementFormatter
+from delegate.geni.v3.rspecs.serm.advertisement_parser import\
+    SERMv3AdvertisementParser
+
 from delegate.geni.v3.rspecs.serm.manifest_formatter import SERMv3ManifestFormatter
 from delegate.geni.v3.rspecs.serm.request_parser import SERMv3RequestParser
+from delegate.geni.v3.rspecs.serm.request_formatter import\
+    SERMv3RequestFormatter
 from handler.geni.v3 import exceptions as geni_ex
 
 import core
@@ -39,13 +46,18 @@ from se_slices import seSlicesWithSlivers
 #     TNRMv3RequestFormatter
 
 #from apport.fileutils import links_with_shared_library
-
+from datetime import datetime, timedelta
+from delegate.geni.v3.se_scheduler import SESchedulerService
 
 
 logger = core.log.getLogger("geniv3delegate")
 
 test_links_db = {}
 link_additional_info={}
+
+def se_job_release_resources(time):
+    print('Release! This was scheduled at %s .' % (time))
+    #print TODO
 
 class GENIv3Delegate(GENIv3DelegateBase):
     """
@@ -194,7 +206,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
             # Mark resources as reserved
             self.SEResources.set_resource_reservation(reservation_ports['ports'])
-
+            #SESchedulerService.get_scheduler().add_job( SEConfigurator.set_resource_reservation(), "date", run_date=end_time, args=reservation_ports['ports'])
+            SESchedulerService.get_scheduler().add_job(se_job_release_resources, "date", run_date=self.alarm_time, args=[datetime.now()])
             #print "manifest  ", se_manifest
             #print "nodes ", nodes
             #print "links", links
