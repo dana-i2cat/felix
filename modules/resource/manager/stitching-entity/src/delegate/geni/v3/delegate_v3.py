@@ -81,7 +81,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         # self._resource_manager = rm_adaptor
         self.SEResources = SEConfigurator.seConfigurator()
         self.SESlices = seSlicesWithSlivers()
-        se_provision.addSwitchingRule()
+        
 
     def get_request_extensions_mapping(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
@@ -302,6 +302,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
         client_urn, client_uuid, client_email =\
             self.auth(client_cert, credentials, urns, ("renewsliver",))
 
+        # TODO: Add response
+        se_provision.addSwitchingRule()
+
         logger.info("Client urn=%s, uuid=%s, email=%s" % (
             client_urn, client_uuid, client_email,))
         logger.info("urns=%s, best_effort=%s, end_time=%s, geni_users=%s" % (
@@ -406,6 +409,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
             links_db, nodes, links = self.SESlices.get_link_db(urn)
             reservation_ports = self.SESlices._allocate_ports_in_slice(nodes)
+
+            se_provision.deleteSwitchingRule()
 
             result.append( 
                 {   
