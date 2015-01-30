@@ -19,7 +19,7 @@ def main(argv=None):
         xmlrpc = FlaskXMLRPC(flaskserver)
         
         se_scheduler = SESchedulerService()
-        se_scheduler.start()
+        #se_scheduler.start()
         
         # GENIv3
         geni_v3_handler = GENIv3Handler()
