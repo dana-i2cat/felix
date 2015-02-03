@@ -58,6 +58,8 @@ logger = core.log.getLogger("geniv3delegate")
 test_links_db = {}
 link_additional_info={}
 
+RFC3339_FORMAT_STRING = "%Y-%m-%d %H:%M:%S.%fZ"
+
 def se_job_release_resources(time, ports, slice_urn):
 
     SEResources = SEConfigurator.seConfigurator()
@@ -252,6 +254,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             #id_ = db_sync_manager.store_slice_info(slice_urn, se_db_slivers)
             logger.info("allocate successfully completed: %s", slice_urn)
             #self.__schedule_slice_release(end_time, se_db_slivers)
+            print "WWWWWWWWWW: %s", se_slivers
             return ("%s" % se_manifest, se_slivers)
 
         else:
@@ -311,9 +314,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
             urns, best_effort, end_time, geni_users,))
         raise geni_ex.GENIv3GeneralError("Not implemented yet!")
 
-    def status(self, urns, client_cert, credentials):                   ### FIX the response
+    def status(self, urns, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        # se_slivers, last_slice , slice_urn = [], "", ""
+        slice_urn = urns[0]
         result = []
 
         for urn in urns:
@@ -323,42 +326,22 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
             logger.info("Client urn=%s, uuid=%s, email=%s" % (
                 client_urn, client_uuid, client_email,))
-            # slice_urn = urn
-
 
             links_db, nodes, links = self.SESlices.get_link_db(urn)
 
+            expires_date = datetime.strptime(links_db['geni_expires'], RFC3339_FORMAT_STRING)
+
             result.append( 
                             {   
-                                "geni_sliver_urn": urn,# links_db['geni_sliver_urn'][0].keys(),
-                                "geni_expires": links_db['geni_expires'],
+                                "geni_sliver_urn": urn,
+                                "geni_expires": expires_date,
                                 "geni_allocation_status": links_db["geni_allocation_status"],
-                                "geni_operational_status" : "Not yet implemented"
+                                "geni_operational_status" : "Ready"
                             }
                         )
 
-        #route = db_sync_manager.get_slice_routing_keys(urns)
-        #logger.debug("Route=%s" % (route,))
 
-#         for r, v in route.iteritems():
-#             peer = db_sync_manager.get_configured_peer(r)
-#             logger.debug("peer=%s" % (peer,))
-#             if peer.get("type") in ["sdn_networking", "transport_network",
-#                                     "stitching_entity"]:
-#                 lastslice, slivers = self.__manage_status(peer, v, credentials)
-# 
-#                 logger.debug("slivers=%s, urn=%s" % (slivers, lastslice))
-#                 ro_slivers.extend(slivers)
-        # se_sliver = test_links_db[slice_urn]
-#         for s in ro_slivers:
-#             s["geni_expires"] = self.__str2datetime(s["geni_expires"])
-#         logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
-
-        slice_urn = urns
-        slivers = { "geni_urn": urns,
-                    "geni_slivers": result}
-
-        return slice_urn, slivers
+        return slice_urn, result
 
     def perform_operational_action(self, urns, client_cert, credentials,
                                    action, best_effort):
@@ -410,12 +393,15 @@ class GENIv3Delegate(GENIv3DelegateBase):
             links_db, nodes, links = self.SESlices.get_link_db(urn)
             reservation_ports = self.SESlices._allocate_ports_in_slice(nodes)
 
+            expires_date = datetime.strptime(links_db['geni_expires'], RFC3339_FORMAT_STRING)
+
+            # TODO: FIX delete from SE
             se_provision.deleteSwitchingRule()
 
             result.append( 
                 {   
                     "geni_sliver_urn": urn,# links_db['geni_sliver_urn'][0].keys(),
-                    "geni_expires": links_db['geni_expires'],
+                    "geni_expires": expires_date,
                     "geni_allocation_status": links_db["geni_allocation_status"],
                     "geni_operational_status" : "Not yet implemented"
                 }
