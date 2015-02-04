@@ -302,17 +302,33 @@ class GENIv3Delegate(GENIv3DelegateBase):
         """Documentation see [geniv3rpc] GENIv3DelegateBase.
         {geni_users} is not relevant here."""
         logger.debug("provision: authenticate the user...")
-        client_urn, client_uuid, client_email =\
-            self.auth(client_cert, credentials, urns, ("renewsliver",))
 
-        # TODO: Add response
+        se_manifest, se_slivers, last_slice = SERMv3ManifestFormatter(), [], ""
+
+        for urn in urns:
+            client_urn, client_uuid, client_email =\
+                self.auth(client_cert, credentials, urn, ("renewsliver",))
+
+            logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                client_urn, client_uuid, client_email,))
+            logger.info("urn=%s, best_effort=%s, end_time=%s, geni_users=%s" % (
+                urn, best_effort, end_time, geni_users,))
+
+            links_db, nodes, links = self.SESlices.get_link_db(urn)
+            self.SESlices._create_manifest_from_req_n_and_l(se_manifest, nodes,links)
+
         se_provision.addSwitchingRule()
 
-        logger.info("Client urn=%s, uuid=%s, email=%s" % (
-            client_urn, client_uuid, client_email,))
-        logger.info("urns=%s, best_effort=%s, end_time=%s, geni_users=%s" % (
-            urns, best_effort, end_time, geni_users,))
-        raise geni_ex.GENIv3GeneralError("Not implemented yet!")
+        slivers = [{'geni_sliver_urn' : urns[0],
+                    "geni_allocation_status"  : "geni_allocated",
+                    "geni_operational_status" : "geni_ready",
+                    "geni_expires"         : end_time
+                    }
+                ]
+
+        rspec = {"geni_rspec": "%s" % se_manifest}
+
+        return rspec, slivers
 
     def status(self, urns, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
