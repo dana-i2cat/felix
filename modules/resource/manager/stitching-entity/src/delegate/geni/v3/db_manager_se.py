@@ -49,6 +49,45 @@ class DBManager(object):
         return resources["status"]
 
     # (felix_se) Slices
+    
+    def set_slices(self,sliceurn,resources):
+        table = pymongo.MongoClient().felix_se.SliceResources
+        print "nodes"
+        print "links"
+        print resources
+        try:
+            print "jestem w set" 
+            self.__mutex.acquire()
+            table.update({"sliceurn":sliceurn},{"sliceurn":sliceurn, "resources": resources},upsert= True)
+            print "po set "
+        finally:
+            self.__mutex.release()
+    
+    def get_slices(self,sliceurn):
+        table = pymongo.MongoClient().felix_se.SliceResources
+        
+        try:
+            self.__mutex.acquire()
+            row = table.find_one({"sliceurn":sliceurn})
+            
+            if row is None:
+                raise Exception("SESliceResources not found into SE-DB!")
+           
+            resources = row
+            
+        finally:
+            self.__mutex.release()
+        return resources["resources"]
+            
+    def remove_slices(self,sliceurn):
+        table = pymongo.MongoClient().felix_se.SliceResources
+        
+        try:
+            self.__mutex.acquire()
+            table.remove({"sliceurn":sliceurn})
+            
+        finally:
+            self.__mutex.release()
     # TODO: Add Slices reservation data model into db
 
 

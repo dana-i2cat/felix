@@ -1,4 +1,4 @@
-
+from delegate.geni.v3.db_manager_se import db_sync_manager
 import base
 
 class seSlicesWithSlivers(object):
@@ -16,25 +16,33 @@ class seSlicesWithSlivers(object):
         print "end time in slice", end_time
         self._links_db[slice_urn] = self._create_sliver_from_req_n_and_l(end_time, links, nodes)
 
-        print nodes
-        print links
-        print slice_urn
-        self.__nodes[slice_urn] = nodes
-        self.__links[slice_urn] = links
-
+        #print nodes
+        #print links
+        #print slice_urn
+        #self.__nodes[slice_urn] = nodes
+        #self.__links[slice_urn] = links
+        db_sync_manager.set_slices(slice_urn,{"nodes":nodes,"links":links,"slivers":self._links_db[slice_urn]})
+    
     def remove_link_db(self, slice_urn):
-        del self._links_db[slice_urn]
-        del self.__nodes[slice_urn]
-        del self.__links[slice_urn]
-
+        #del self._links_db[slice_urn]
+        #del self.__nodes[slice_urn]
+        #del self.__links[slice_urn]
+        db_sync_manager.remove_slices(slice_urn)
 
     def get_link_db(self, slice_urn=None):
         
         if slice_urn:
             try:
-                links_db = self._links_db[slice_urn]
-                nodes = self.__nodes[slice_urn]
-                links = self.__links[slice_urn]
+                
+                #links_db1 = self._links_db[slice_urn]
+                #nodes1 = self.__nodes[slice_urn]
+                #links1 = self.__links[slice_urn]
+                slice_resources=db_sync_manager.get_slices(slice_urn)
+                
+                links_db = slice_resources["slivers"]
+                nodes = slice_resources["nodes"]
+                links = slice_resources["links"]
+                
                 return links_db, nodes, links
             except :
                 return {}
