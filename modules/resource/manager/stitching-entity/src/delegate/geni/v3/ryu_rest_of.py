@@ -1,9 +1,11 @@
 import requests
+import json
 
 def addSwitchingRule():
     print "start"
+    headers = {'content-type': 'application/json'}
     payload = {
-                "dpid":110533270894679,
+                "dpid":0000000000000001,
                 "cookie":1,
                 "cookie_mask":1,
                 "table_id":0,
@@ -13,7 +15,7 @@ def addSwitchingRule():
                 "flags":1,  
                  "match": {
                              "dl_vlan":333,
-                             "in_port":12
+                             "in_port":1
                           }, 
                  "actions":[
                                  {
@@ -22,17 +24,21 @@ def addSwitchingRule():
                                 },
                                  {
                                      "type":"OUTPUT",
-                                     "port":13
+                                     "port":2
                                 }
                              ]
                 }
-    r = requests.post("http://127.0.0.1:8080/stats/flowentry/add", data=payload)
+    r = requests.post("http://127.0.0.1:8080/stats/flowentry/add", data=json.dumps(payload), headers=headers)
     print r.status_code
+    print r.headers
+    print r.__dict__
 
 def deleteSwitchingRule():
     print "start"
+    headers = {'content-type': 'application/json'}
+
     payload = {
-                "dpid":110533270894679,
+                "dpid":0000000000000001,
                 "cookie":1,
                 "cookie_mask":1,
                 "table_id":0,
@@ -42,7 +48,7 @@ def deleteSwitchingRule():
                 "flags":1,  
                  "match": {
                              "dl_vlan":333,
-                             "in_port":12
+                             "in_port":1
                           }, 
                  "actions":[
                                  {
@@ -51,11 +57,11 @@ def deleteSwitchingRule():
                                 },
                                  {
                                      "type":"OUTPUT",
-                                     "port":13
+                                     "port":2
                                 }
                              ]
                 }
-    r = requests.post("http://127.0.0.1:8080/stats/flowentry/delete", data=payload)
+    r = requests.post("http://127.0.0.1:8080/stats/flowentry/delete", data=json.dumps(payload), headers=headers)
     print r.status_code
 
 if __name__ == '__main__':
