@@ -27,7 +27,10 @@ def get_modules():
     unallowed_folders = [".git", "deploy", "doc", "modules"]
     ocf_modules = sorted(os.walk(ocf_path).next()[1])
     for unallowed_folder in unallowed_folders:
-        ocf_modules.remove(unallowed_folder)
+        try:
+            ocf_modules.remove(unallowed_folder)
+        except ValueError:
+            pass
     return ocf_modules
 
 def get_installed_modules():
