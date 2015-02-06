@@ -303,7 +303,20 @@ class GENIv3Delegate(GENIv3DelegateBase):
         {geni_users} is not relevant here."""
         logger.debug("provision: authenticate the user...")
 
-        # TODO: Add response
+        se_manifest, se_slivers, last_slice = SERMv3ManifestFormatter(), [], ""
+
+        for urn in urns:
+            client_urn, client_uuid, client_email =\
+                self.auth(client_cert, credentials, urn, ("renewsliver",))
+
+            logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                client_urn, client_uuid, client_email,))
+            logger.info("urn=%s, best_effort=%s, end_time=%s, geni_users=%s" % (
+                urn, best_effort, end_time, geni_users,))
+
+            links_db, nodes, links = self.SESlices.get_link_db(urn)
+            self.SESlices._create_manifest_from_req_n_and_l(se_manifest, nodes,links)
+
         se_provision.addSwitchingRule()
 
         slivers = [{'geni_sliver_urn' : urns[0],
@@ -396,9 +409,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
             links_db, nodes, links = self.SESlices.get_link_db(urn)
             reservation_ports = self.SESlices._allocate_ports_in_slice(nodes)
 
-            expires_date = datetime.strptime(links_db['geni_expires'], RFC3339_FORMAT_STRING)
+            # expires_date = datetime.strptime(links_db['geni_expires'], RFC3339_FORMAT_STRING)
+            expires_date = links_db['geni_expires']
 
-            # TODO: FIX delete from SE
             se_provision.deleteSwitchingRule()
 
             result.append( 
