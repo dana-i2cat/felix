@@ -871,7 +871,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
         return (manifests, slivers, db_slivers)
 
     def __manage_sdn_describe(self, peer, urns, creds):
-        adaptor = AdaptorFactory.create_from_db(peer)
+        adaptor, uri = AdaptorFactory.create_from_db(peer)
+        logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
         m, urn, ss = adaptor.describe(urns, creds[0]["geni_value"])
 
         manifest = OFv3ManifestParser(from_string=m)
@@ -884,7 +885,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
         return (sliver, urn, ss)
 
     def __manage_tn_describe(self, peer, urns, creds):
-        adaptor = AdaptorFactory.create_from_db(peer)
+        adaptor, uri = AdaptorFactory.create_from_db(peer)
+        logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
         m, urn, ss = adaptor.describe(urns, creds[0]["geni_value"])
 
         manifest = TNRMv3ManifestParser(from_string=m)
@@ -899,7 +901,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
         return ({"nodes": nodes, "links": links}, urn, ss)
 
     def __manage_se_describe(self, peer, urns, creds):
-        adaptor = AdaptorFactory.create_from_db(peer)
+        adaptor, uri = AdaptorFactory.create_from_db(peer)
+        logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
         m, urn, ss = adaptor.describe(urns, creds[0]["geni_value"])
 
         manifest = SERMv3ManifestParser(from_string=m)
@@ -914,20 +917,24 @@ class GENIv3Delegate(GENIv3DelegateBase):
         return ({"nodes": nodes, "links": links}, urn, ss)
 
     def __manage_status(self, peer, urns, creds):
-        adaptor = AdaptorFactory.create_from_db(peer)
+        adaptor, uri = AdaptorFactory.create_from_db(peer)
+        logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
         return adaptor.status(urns, creds[0]["geni_value"])
 
     def __manage_renew(self, peer, urns, creds, etime, beffort):
-        adaptor = AdaptorFactory.create_from_db(peer)
+        adaptor, uri = AdaptorFactory.create_from_db(peer)
+        logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
         return adaptor.renew(urns, creds[0]["geni_value"], etime, beffort)
 
     def __manage_operational_action(self, peer, urns, creds, action, beffort):
-        adaptor = AdaptorFactory.create_from_db(peer)
+        adaptor, uri = AdaptorFactory.create_from_db(peer)
+        logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
         return adaptor.perform_operational_action(
             urns, creds[0]["geni_value"], action, beffort)
 
     def __manage_delete(self, peer, urns, creds, beffort):
-        adaptor = AdaptorFactory.create_from_db(peer)
+        adaptor, uri = AdaptorFactory.create_from_db(peer)
+        logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
         return adaptor.delete(urns, creds[0]["geni_value"], beffort)
 
     def __manage_tn_provision(self, peer, urns, creds,
