@@ -326,7 +326,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") in ["sdn_networking", "transport_network",
-                                    "stitching_entity"]:
+                                    "stitching_entity", "virtualisation"]:
                 slivers = self.__manage_renew(
                     peer, v, credentials, etime_str, best_effort)
 
@@ -425,7 +425,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") in ["sdn_networking", "transport_network",
-                                    "stitching_entity"]:
+                                    "stitching_entity", "virtualisation"]:
                 lastslice, slivers = self.__manage_status(peer, v, credentials)
 
                 logger.debug("slivers=%s, urn=%s" % (slivers, lastslice))
@@ -459,7 +459,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") in ["sdn_networking", "transport_network",
-                                    "stitching_entity"]:
+                                    "stitching_entity", "virtualisation"]:
                 slivers = self.__manage_operational_action(
                     peer, v, credentials, action, best_effort)
 
@@ -492,7 +492,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") in ["sdn_networking", "transport_network",
-                                    "stitching_entity"]:
+                                    "stitching_entity", "virtualisation"]:
                 slivers = self.__manage_delete(
                     peer, v, credentials, best_effort)
 
