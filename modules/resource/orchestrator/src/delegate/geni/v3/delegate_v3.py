@@ -269,7 +269,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         # SE resources
         if (se_sdn_info is not None) and (len(se_sdn_info) > 0) and\
-           (se_sdn_info is not None) and (len(se_tn_info) > 0):
+           (se_tn_info is not None) and (len(se_tn_info) > 0):
             logger.debug("Found a SE-sdn segment (%d): %s" %
                          (len(se_sdn_info), se_sdn_info,))
             logger.debug("Found a SE-tn segment (%d): %s" %
@@ -342,15 +342,69 @@ class GENIv3Delegate(GENIv3DelegateBase):
                   geni_users):
         """Documentation see [geniv3rpc] GENIv3DelegateBase.
         {geni_users} is not relevant here."""
-        logger.debug("provision: authenticate the user...")
-        client_urn, client_uuid, client_email =\
-            self.auth(client_cert, credentials, urns, ("renewsliver",))
+        ro_manifest, ro_slivers = ROManifestFormatter(), []
 
-        logger.info("Client urn=%s, uuid=%s, email=%s" % (
-            client_urn, client_uuid, client_email,))
-        logger.info("urns=%s, best_effort=%s, end_time=%s, geni_users=%s" % (
-            urns, best_effort, end_time, geni_users,))
-        raise geni_ex.GENIv3GeneralError("Not implemented yet!")
+        for urn in urns:
+            logger.debug("provision: authenticate the user for %s" % (urn))
+            client_urn, client_uuid, client_email =\
+                self.auth(client_cert, credentials, urn, ("createsliver",))
+
+            logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                client_urn, client_uuid, client_email,))
+
+        route = db_sync_manager.get_slice_routing_keys(urns)
+        logger.debug("Route=%s" % (route,))
+
+        for r, v in route.iteritems():
+            peer = db_sync_manager.get_configured_peer_by_routing_key(r)
+            logger.debug("peer=%s" % (peer,))
+            if peer.get("type") == "virtualisation":
+                com_m_info, com_slivers = self.__manage_com_provision(
+                    peer, v, credentials, best_effort, end_time, geni_users)
+
+                logger.debug("com_m=%s, com_s=%s" % (com_m_info, com_slivers,))
+                # XXX_FIXME: update the ro-manifest with the C resources
+                ro_slivers.extend(com_slivers)
+
+            elif peer.get("type") == "sdn_networking":
+                of_m_info, of_slivers = self.__manage_sdn_provision(
+                    peer, v, credentials, best_effort, end_time, geni_users)
+
+                logger.debug("of_m=%s, of_s=%s" % (of_m_info, of_slivers,))
+                if of_m_info is not None:
+                    ro_manifest.of_sliver(of_m_info.get("description"),
+                                          of_m_info.get("ref"),
+                                          of_m_info.get("email"))
+                ro_slivers.extend(of_slivers)
+
+            elif peer.get("type") == "transport_network":
+                tn_m_info, tn_slivers = self.__manage_tn_provision(
+                    peer, v, credentials, best_effort, end_time, geni_users)
+
+                logger.debug("tn_m=%s, tn_s=%s" % (tn_m_info, tn_slivers,))
+                for n in tn_m_info.get("nodes"):
+                    ro_manifest.tn_node(n)
+                for l in tn_m_info.get("links"):
+                    ro_manifest.tn_link(l)
+
+                ro_slivers.extend(tn_slivers)
+
+            elif peer.get("type") == "stitching_entity":
+                se_m_info, se_slivers = self.__manage_se_provision(
+                    peer, v, credentials, best_effort, end_time, geni_users)
+
+                logger.debug("se_m=%s, se_s=%s" % (se_m_info, se_slivers,))
+                for n in se_m_info.get("nodes"):
+                    ro_manifest.se_node(n)
+                for l in se_m_info.get("links"):
+                    ro_manifest.se_link(l)
+
+                ro_slivers.extend(se_slivers)
+
+        logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
+        logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
+
+        return ("%s" % ro_manifest, ro_slivers)
 
     def status(self, urns, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
@@ -875,6 +929,91 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def __manage_delete(self, peer, urns, creds, beffort):
         adaptor = AdaptorFactory.create_from_db(peer)
         return adaptor.delete(urns, creds[0]["geni_value"], beffort)
+
+    def __manage_tn_provision(self, peer, urns, creds,
+                              beffort, etime, gusers):
+        adaptor, uri = AdaptorFactory.create_from_db(peer)
+        logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
+        try:
+            m, urn = adaptor.provision(urns, creds[0]["geni_value"],
+                                       beffort, etime, gusers)
+            manifest = TNRMv3ManifestParser(from_string=m)
+            logger.debug("TNRMv3ManifestParser=%s" % (manifest,))
+            self.__validate_rspec(manifest.get_rspec())
+
+            nodes = manifest.nodes()
+            logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
+            links = manifest.links()
+            logger.info("Links(%d)=%s" % (len(links), links,))
+
+            return ({"nodes": nodes, "links": links}, urn)
+        except Exception as e:
+            # It is possible that TNRM does not implement this method!
+            logger.error("manage_tn_provision exception: %s", e)
+            return ({"nodes": [], "links": []}, [])
+
+    def __manage_sdn_provision(self, peer, urns, creds,
+                               beffort, etime, gusers):
+        adaptor, uri = AdaptorFactory.create_from_db(peer)
+        logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
+        try:
+            m, urn = adaptor.provision(urns, creds[0]["geni_value"],
+                                       beffort, etime, gusers)
+            manifest = OFv3ManifestParser(from_string=m)
+            logger.debug("OFv3ManifestParser=%s" % (manifest,))
+            # self.__validate_rspec(manifest.get_rspec())
+
+            sliver = manifest.sliver()
+            logger.info("Sliver=%s" % (sliver,))
+
+            return (sliver, urn)
+        except Exception as e:
+            # It is possible that SDNRM does not implement this method!
+            logger.error("manage_sdn_provision exception: %s", e)
+            return (None, [])
+
+    def __manage_com_provision(self, peer, urns, creds,
+                               beffort, etime, gusers):
+        adaptor, uri = AdaptorFactory.create_from_db(peer)
+        logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
+        try:
+            m, urn = adaptor.provision(urns, creds[0]["geni_value"],
+                                       beffort, etime, gusers)
+            manifest = CRMv3ManifestParser(from_string=m)
+            logger.debug("CRMv3ManifestParser=%s" % (manifest,))
+            self.__validate_rspec(manifest.get_rspec())
+
+            sliver = manifest.sliver()
+            logger.info("Sliver=%s" % (sliver,))
+
+            return (sliver, urn)
+        except Exception as e:
+            # It is possible that CRM does not implement this method!
+            logger.error("manage_com_provision exception: %s", e)
+            return (None, [])
+
+    def _manage_se_provision(self, peer, urns, creds,
+                             beffort, etime, gusers):
+        adaptor, uri = AdaptorFactory.create_from_db(peer)
+        logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
+        try:
+            m, urn = adaptor.provision(urns, creds[0]["geni_value"],
+                                       beffort, etime, gusers)
+            manifest = SERMv3ManifestParser(from_string=m)
+            logger.debug("SERMv3ManifestParser=%s" % (manifest,))
+            self.__validate_rspec(manifest.get_rspec())
+
+            nodes = manifest.nodes()
+            logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
+            links = manifest.links()
+            logger.info("Links(%d)=%s" % (len(links), links,))
+
+            return ({"nodes": nodes, "links": links}, urn)
+        except Exception as e:
+            return ({"nodes": [], "links": []}, [])
+            # It is possible that SERM does not implement this method!
+            logger.error("manage_se_provision exception: %s", e)
+            return ({"nodes": [], "links": []}, [])
 
     def __validate_rspec(self, generic_rspec):
         (result, error) = validate(generic_rspec)

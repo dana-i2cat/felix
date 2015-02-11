@@ -272,6 +272,24 @@ class GENIv3Client(SFAClient):
             err = "%s Delete failure: %s" % (self.typee, str(e))
             raise exceptions.RPCError(err)
 
+    def provision(self, urns, credentials, best_effort, end_time, geni_users):
+        options = self.format_options(best_effort=best_effort,
+                                      end_time=end_time)
+        logger.debug("%s Options: %s" % (self.typee, options,))
+        # Credentials must be sent in the proper format
+        credentials = self.format_credentials(credentials)
+        try:
+            params = [urns, credentials, options, ]
+            result = self.Provision(*params)
+            logger.info("\n\n\n%s Provision result=%s\n\n\n" %
+                        (self.typee, result,))
+            return (result.get("value").get("geni_rspec"),
+                    result.get("value").get("geni_slivers"))
+
+        except Exception as e:
+            err = "%s Provision failure: %s" % (self.typee, str(e))
+            raise exceptions.RPCError(err)
+
 
 class CRMGeniv2Adaptor(SFAv2Client):
     def __init__(self, uri):
