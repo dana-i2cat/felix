@@ -170,6 +170,15 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
                 ro_slivers.extend(se_slivers)
 
+            elif peer.get("type") == "virtualisation":
+                com_m_info, last_slice, com_slivers =\
+                    self.__manage_com_describe(peer, v, credentials)
+
+                logger.debug("com_m=%s, com_s=%s, urn=%s" %
+                             (com_m_info, com_slivers, last_slice))
+                # XXX_FIXME: update the ro-manifest with the C resources
+                ro_slivers.extend(com_slivers)
+
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
         logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
 
@@ -915,6 +924,20 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.info("Links(%d)=%s" % (len(links), links,))
 
         return ({"nodes": nodes, "links": links}, urn, ss)
+
+    def __manage_com_describe(self, peer, urns, creds):
+        adaptor, uri = AdaptorFactory.create_from_db(peer)
+        logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
+        m, urn, ss = adaptor.describe(urns, creds[0]["geni_value"])
+
+        manifest = CRMv3ManifestParser(from_string=m)
+        logger.debug("CRMv3ManifestParser=%s" % (manifest,))
+        # self.__validate_rspec(manifest.get_rspec())
+
+        sliver = manifest.sliver()
+        logger.info("Sliver=%s" % (sliver,))
+
+        return (sliver, urn, ss)
 
     def __manage_status(self, peer, urns, creds):
         adaptor, uri = AdaptorFactory.create_from_db(peer)
