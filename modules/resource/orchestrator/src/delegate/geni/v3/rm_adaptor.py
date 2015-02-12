@@ -42,7 +42,7 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
                 return CRMGeniv2Adaptor(uri)
             elif type == "sdn_networking":
                 return SDNRMGeniv2Adaptor(uri)
-        elif am_type in ["geni", ] and int(am_version) == 3:
+        elif am_type in ["geni", "GENI",] and int(am_version) == 3:
             if type == "virtualisation":
                 return CRMGeniv3Adaptor(uri)
             elif type == "sdn_networking":
@@ -165,6 +165,8 @@ class GENIv3Client(SFAClient):
         try:
             params = [credentials, options, ]
             result = self.ListResources(*params)
+            logger.info("\n\n\n%s ListResources result=%s\n\n\n" %
+                        (self.typee, result,))
             return result
 
         except Exception as e:
