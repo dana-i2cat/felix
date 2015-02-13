@@ -79,6 +79,9 @@
 						</li>
 					{% endif %}
 					<li>
+						<a href="{% url m_slice_list %}">Monitoring</a>
+					</li>
+					<li>
 						<a href={%if ldapUser %}"{{ ofregURL }}"{% else %}"{% url users_my_detail %}"{% endif %} alt="Account settings">Account</a>
 					</li>
 					<li>

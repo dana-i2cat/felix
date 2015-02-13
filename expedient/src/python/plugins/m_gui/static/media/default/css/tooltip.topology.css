@@ -1,0 +1,113 @@
+#tt {
+ position:absolute;
+ display:block;
+ //background:url(images/tt_left.gif) top left no-repeat;
+ }
+#tttop {
+ display:block;
+ height:5px;
+ margin-left:5px;
+ //background:url(images/tt_top.gif) top right no-repeat;
+ overflow:hidden;
+ }
+
+
+#ttcont {
+ 	background-color:#111111;
+	border:0px;
+	padding:10px 10px;
+	height:250px;
+	overflow:auto;
+	width:230px;
+	color:#fff;
+	text-align:left;
+	font-size:10px;
+	/* outline radius for mozilla/firefox only */
+	-moz-box-shadow:0 0 10px #000;
+	-webkit-box-shadow:0 0 2px #000;
+	-moz-border-radius: 15px 15px 15px 0px;
+    	-webkit-border-radius: 15px 15px 15px 0px;
+     	border-radius:  10px 10px 10px 4px;
+	opacity:0.85;
+	/* IE 8 */
+  	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=85)";
+  	/* IE 5-7 */
+  	filter: alpha(opacity=85);
+	/* Netscape */
+  	-moz-opacity: 0.85;
+  	/* Safari 1.x */
+  	-khtml-opacity: 0.85;
+
+
+
+}
+#ttbot {
+display:block;
+height:5px;
+margin-left:5px;
+//background:url(images/tt_bottom.gif) top right no-repeat;
+overflow:hidden;
+}
+
+#ttcont table{
+  margin-top: 0.2em;
+  margin-bottom: 1em;
+  border-collapse: collapse;
+  border: solid 1px #999;
+  font-size: 100%;
+}
+
+#ttcont table caption {
+  margin-top: 1em;
+  text-align: left;
+}
+
+#ttcont table th,
+#ttcont table td {
+  border: solid 1px #999;
+  padding: 4px 6px;
+}
+
+#ttcont table th {
+  background: #E6E6E6;
+  text-align: center;
+  white-space: nowrap;
+  color: #666;
+}
+
+#grid{
+	position: relative;
+	padding-top: 18px;
+	width: 167px;
+}
+#grid_data_sdn{
+	overflow: auto;
+	height: 95px;
+}
+#grid_data_cp{
+	overflow: auto;
+}
+
+#grid table {
+	border-spacing: 0px;
+	border-collapse: collapse !important;
+	margin: 0px 0px;
+	padding: 0px;
+	font-size: 9px;
+}
+
+#grid table thead tr {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+}
+
+#grid table thead tr th{
+  background: #E6E6E6;
+	padding: 3px 6px;
+}
+
+#grid table tbody tr td{
+  border: solid 1px #999;
+	padding: 3px 6px;
+}

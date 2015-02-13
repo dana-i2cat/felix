@@ -1,0 +1,24 @@
+.link {
+  stroke: #ccc;
+  stroke-width:1px;
+}
+.node {
+  stroke-width:2px;
+}
+.link_popup {
+  stroke-width:10px;
+  opacity:1.0;
+}
+.line {
+  stroke: #7e9fc0;
+  stroke-width:1px;
+}
+.relation {
+  stroke: #ccc;
+  stroke-width:1px;
+  stroke-dasharray:5,2
+}
+.node text {
+  pointer-events: none;
+  font: 10px sans-serif;
+}

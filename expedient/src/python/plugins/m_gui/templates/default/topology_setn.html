@@ -1,0 +1,651 @@
+<h2>Topology</h2>
+
+<link rel="stylesheet" href="/m_gui/static/media/default/static/media/default/css/tooltip.topology.css">
+<link rel="stylesheet" href="/m_gui/static/media/default/static/media/default/css/topology.css">
+<script src="/m_gui/static/media/default/static/media/default/js/tooltip.topology.js"></script>
+<script src="/m_gui/static/media/default/static/media/default/js/d3.v2.min.js"></script>
+<script src="/m_gui/static/media/default/static/media/default/js/topology.util.js"></script>
+<script src="/m_gui/static/media/default/static/media/default/js/topology.layer.js"></script>
+
+{#Render#}
+<div id="topologyContainer" class="expandable">
+  <div id="selected_node_info">
+    Tip: Move cursor over the icons to get extra information...
+  </div>
+  {%if not d3_nodes %}
+  {% endif %}
+  <div id="target">
+  </div>
+  <div id="topology_options_menu">
+    
+  <a href="javascript: regroup()">
+    <img alt="Group" title="Group" src="{% url img_media 'groupin.png' %}" style="height:16px;text-align:middle" />
+  </a>
+  &nbsp;
+  <a id="link_zoom_in" href="javascript: zoomIn(0.25)">
+    <img alt="Zoom in" title="Zoom in" src="{% url img_media 'zoomin.png' %}" style="height:16px;text-align:middle" />
+  </a>
+  &nbsp;
+  <a id="link_zoom_out" href="javascript: zoomOut(0.25)">
+    <img alt="Zoom out" title="Zoom out"src="{% url img_media 'zoomout.png' %}" style="height:16px;" />
+  </a>
+  &nbsp;
+  <a id="link_zoom_out" href="javascript: zoomReset()">
+    <img alt="Zoom reset" title="Zoom reset" src="{% url img_media 'zoom.png' %}" style="height:16px;" />
+  </a>
+  &nbsp;
+</div>
+</div>
+
+<!--
+<script>
+    var nIslands = {{ n_islands }};
+    //FIXME: problematic because of "'" (&#38;)
+    //var d3_nodes = {{ d3_nodes }};
+</script>
+<script src="{% url js_media 'topology.js' %}"></script>
+-->
+<script>
+/* d3 data */
+//var nIslands = {{ n_islands }},
+var nIslands = {{ n_islands }},
+    nNetworks = nIslands + 2,
+    pad = 5,
+    width_container = parseInt($("#topologyContainer").css("width")), /* Obtain width from container */
+    width = width_container,
+    height = 400,
+    height_layer = height/2,	/* 2 layer display */
+    sliceId = "{{ sliceid }}",
+	delibrach = 10;
+
+if (nIslands > 3)	/* Island number to be displayed on one screen 3 */
+    width += (Math.floor(width_container / 3) * (nIslands - 3));
+
+//Islands area generation
+var nx = nIslands,
+    ny = 1,			/* 1 line only */
+    foci = []
+
+//layer object generation
+var param;
+param = {layername: "slice", networks: 1, height: height_layer, width: width, 
+         y: 0, foci: foci};
+var layer_slice = new layer_object(param);
+
+param = {layername: "physical", networks: nIslands, height: height_layer, width: width, 
+         y: height_layer, foci: foci, tn: {height: height_layer*.2}};
+var layer_physical = new layer_object(param);
+
+function randomXToY(minVal,maxVal,floatVal)
+{
+  var randVal = minVal+(Math.random()*(maxVal-minVal));
+  return typeof floatVal=='undefined'?Math.round(randVal):randVal.toFixed(floatVal);
+}
+
+function pEllipse(set){
+
+	function getDistance(p){
+                return Math.pow((p[0]-cx),2)/Math.pow(rx,2) + Math.pow((p[1]-cy),2)/Math.pow(ry,2);
+        };
+
+        d = 2;
+
+        try {
+	    cx = (set.x1 + set.x0)/2;
+	    rx = ((set.x1 - set.x0)/2 + (set.y1 - set.y0)/2)/2;
+	    cy = (set.y1 + set.y0)/2;
+	    ry = (set.y1 - set.y0)/2;
+	
+	    while (d>1) {
+        	p = [randomXToY(set.x0, set.x1), randomXToY(set.y0, set.y1) ];
+		d = getDistance(p);	
+	    }
+        } catch(err) {
+            p = [];
+        }
+	return p;
+}
+
+
+/* Code used for calculating groups/islands within frontend */
+/*
+var assigned_groups = [];
+
+function adequate_group(node_aggregate) {
+    var node_group = 0;
+    for(var group in assigned_groups) {
+        // If some other type was assigned the same group, increment group for current type
+        if (node_aggregate == assigned_groups[group].aggregate) {
+            node_group = assigned_groups[group].group;
+        } else {
+            node_group = assigned_groups[assigned_groups.length-1].group+1;
+        }
+    }
+    // List of sublists: [aggregate, group]
+    assigned_groups[node_group] = {group: node_group, aggregate: node_aggregate};
+    return node_group;
+}
+
+function get_group_from_aggregate(aggregate) {
+    obtained_group = -1;
+    for(var group in assigned_groups) {
+        if (assigned_groups[group].aggregate == aggregate) {
+            obtained_group = assigned_groups[group].group;
+        }
+    }
+    return obtained_group;
+}
+*/
+var epoints= [
+                {% for node in slice.nodes %}
+                        points = pEllipse(foci[{{ node.group }}]),
+                {% endfor %}
+                {% for node in physical.nodes %}
+                        points = pEllipse(foci[{{ node.group }}]),
+                {% endfor %}
+        ]
+
+// data definition
+var data_slice = {
+    nodes: [
+        {% for node in slice.nodes %}
+        {
+            nodeValue: "{{ node.id }}", nodeName: "{{ node.name }}", image: "{{ node.image_url }}", color: "",
+            group: {{ node.group }}, location: "{{ node.location }}", locationName: "{{ node.location_name }}", type: "{{ node.type }}",  class: "", 
+            relation: {{ node.relation }}, relation_branch: {{ node.relation_branch }},
+            description: makeDescription({type: "{{ node.type }}", name: "{{ node.name }}", status: "{{ node.status }}", 
+                                          ports: [{%for interface in node.interfaces %}
+                                             { port: {{ interface.port }}, status: "{{ interface.status }}" }
+                                         {% if not forloop.last %},{% endif %}
+                                         {% endfor %}
+                                          ], 
+                                          connections: [{%for connection in node.connections %}
+                                             { port: {{ connection.port }}, name: "{{ connection.name }}", 
+                                               dest: "{{ connection.dest }}", destkind: "{{ connection.destkind }}", 
+                                               destport: {{ connection.destport }} }
+                                         {% if not forloop.last %},{% endif %}
+                                         {% endfor %}
+                                          ], 
+                                          vms: [{%for vm in node.vms %}
+                                             { name: "{{ vm }}" }
+                                         {% if not forloop.last %},{% endif %}
+                                         {% endfor %}
+                                         ]}), 
+            fixed: false, radius: 10, available: "True", status: "{{ node.status }}",
+        }
+        {% if not forloop.last %},{% endif %}
+        {% endfor %}
+        , 
+    ],
+    links: [
+        {% for link in slice.links %}
+            { source: {{ link.source.no }}, target: {{ link.target.no }}, value: "{{ link.value }}", status: "{{ link.status }}" }
+        {% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ],
+    relations: [
+        {% for relation in slice.relations %}
+            { slice: {{ relation.slice }}, physical: {{ relation.physical }}, value: "{{ relation.value }}" }
+        {% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ],
+}
+
+var data = {
+    nodes: [
+        {% for node in physical.nodes %}
+        {
+            nodeValue: "{{ node.id }}", nodeName: "{{ node.name }}", image: "{{ node.image_url }}", color: "",
+            group: {{ node.group }}, location: "{{ node.location }}", locationName: "{{ node.location_name }}", type: "{{ node.type }}", class: "", 
+            description: makeDescription({type: "{{ node.type }}", name: "{{ node.name }}", status: "{{ node.status }}", 
+                                          ports: [{%for interface in node.interfaces %}
+                                             { port: {{ interface.port }}, status: "{{ interface.status }}" }
+                                         {% if not forloop.last %},{% endif %}
+                                         {% endfor %}
+                                          ], 
+                                          connections: [{%for connection in node.connections %}
+                                             { port: {{ connection.port }}, name: "{{ connection.name }}", 
+                                               dest: "{{ connection.dest }}", destkind: "{{ connection.destkind }}", 
+                                               destport: {{ connection.destport }} }
+                                         {% if not forloop.last %},{% endif %}
+                                         {% endfor %}
+                                          ], 
+                                          vms: [{%for vm in node.vms %}
+                                             { name: "{{ vm }}" }
+                                         {% if not forloop.last %},{% endif %}
+                                         {% endfor %}
+                                         ]}), 
+            fixed: false, radius: 10, available: "True", status: "{{ node.status }}",
+        }
+        {% if not forloop.last %},{% endif %}
+        {% endfor %}
+        , 
+        {
+            nodeValue: "se1", nodeName: "se1", image: "/m_gui/static/media/default/static/media/default/img/switch-se.png", color: "",
+            group: 1, location: "urn:publicid:IDN+ocf:jgnx", locationName: "jgnx", type: "switch", class: "se", 
+            description: "SE Switch sample", 
+            fixed: false, radius: 10, available: "True", status: "UP",
+        }
+        , 
+        {
+            nodeValue: "se2", nodeName: "se2", image: "/m_gui/static/media/default/static/media/default/img/switch-se.png", color: "",
+            group: 2, location: "urn:publicid:IDN+ocf:i2cat", locationName: "i2cat", type: "switch", class: "se", 
+            description: "SE Switch sample", 
+            fixed: false, radius: 10, available: "True", status: "UP",
+        }
+        ,
+        {
+            nodeValue: "tn1", nodeName: "tn1", image: "/m_gui/static/media/default/static/media/default/img/tn.png", color: "",
+            group: 3, location: "tn", locationName: "tn", type: "switch", class: "tn", island: 1,
+            description: "tn sample", 
+            fixed: false, radius: 10, available: "True", status: "UP",
+        }
+        , 
+        {
+            nodeValue: "tn2", nodeName: "tn2", image: "/m_gui/static/media/default/static/media/default/img/tn.png", color: "",
+            group: 3, location: "tn", locationName: "tn", type: "switch", class: "tn", island: 2,
+            description: "tn sample", 
+            fixed: false, radius: 10, available: "True", status: "UP",
+        }
+        , 
+    ],
+    links: [
+        {% for link in physical.links %}
+            { source: {{ link.source.no }}, target: {{ link.target.no }}, value: "{{ link.value }}", status: "{{ link.status }}" }
+        {% if not forloop.last %},{% endif %}
+        {% endfor %}
+        ,
+            { source: 8, target: 2, value: "", status: "UP" }
+        ,
+            { source: 9, target: 5, value: "", status: "UP" }
+        ,
+            { source: 8, target: 10, value: "", status: "UP" }
+        ,
+            { source: 9, target: 11, value: "", status: "UP" }
+    ],
+}
+
+// data definition for look and feel
+var datalines = []
+datalines[0] = {x1: 0, y1: height_layer, x2:width, y2:height_layer};
+
+var datatexts = []
+datatexts[0] = {x:0 ,y:0+12 ,value: "Slice:"};
+datatexts[1] = {x:0 ,y:height_layer+12 ,value: "Physical:"};
+
+/* Zooming routines */
+cur_zoom = 1;
+relation_zoom = 1;
+zoom_in_active = false;
+zoom_out_active = false;
+
+function zoomIn(zoom){
+    if(zoom_in_active == false && zoom_out_active == false){
+		$("#link_zoom_in img").css("background-color", "#666");
+		cur_zoom = cur_zoom + zoom;
+		zoom_in_active = true;
+    }
+    else if(zoom_in_active == true){
+		cur_zoom = cur_zoom - zoom;
+		$("#link_zoom_in img").css("background-color", "");
+		$("#target, svg, g").css("cursor", "move");
+		zoom_in_active = false;
+    }
+    else{
+		cur_zoom = cur_zoom + zoom + zoom;
+		$("#link_zoom_out img").css("background-color", "");
+		$("#link_zoom_in img").css("background-color", "#666");
+		zoom_out_active = false;
+		zoom_in_active = true;
+    }
+}
+
+function zoomOut(zoom){
+    if(zoom_out_active == false && zoom_in_active == false){
+		if((cur_zoom - zoom) >0){
+		    $("#link_zoom_out img").css("background-color", "#666");
+	        cur_zoom = cur_zoom - zoom;
+		    zoom_out_active = true;
+	    }
+		else{
+		    $("#target, svg, g").css("cursor", "move");
+		}
+    }	
+    else if(zoom_out_active == true){
+		cur_zoom = cur_zoom + zoom;
+		$("#link_zoom_out img").css("background-color", "");
+		$("#target, svg, g").css("cursor", "move");
+		zoom_out_active = false;
+    }
+
+    else{
+		cur_zoom = cur_zoom - zoom;
+		zoom_out_active = false;
+        $("#link_zoom_in img").css("background-color", "");
+		if((cur_zoom - zoom) > 0){
+		    $("#link_zoom_out img").css("background-color", "#666");
+		    zoom_out_active = true;
+		}
+		else{
+		    $("#target, svg, g").css("cursor", "move");
+		}
+    }
+}
+
+function zoomReset(){
+    cur_zoom = 0.99;
+    posx = 0;
+    posy = 0;
+    return redraw();
+}
+
+
+
+function click(){
+    if (zoom_in_active == true || zoom_out_active == true){
+		var mouseClick = d3.mouse(this);
+		// adjust for multi layer
+		if (mouseClick[1] > height_layer)
+			mouseClick[1] -= height_layer;
+		_x = -mouseClick[0]/2;
+	    _y = -mouseClick[1]/2;
+		if(zoom_out_active == true){
+		    _x = -_x/2;
+		    _y = -_y/2;
+	    }
+		posx += _x;
+		posy += _y;
+		zoom_in_active = false;
+        zoom_out_active = false;
+        return redraw();
+    }
+}
+
+/* Redraw canvas - not bound to zoom behaviour */
+function redraw() {
+//  trans=[(Math.round(width/cur_zoom) - width)/2, (Math.round(height/cur_zoom) - height)/2];
+    trans = [posx, posy];
+	layer_slice.redraw(trans, cur_zoom);
+	layer_physical.redraw(trans, cur_zoom);
+	draw_relation({duration: 500});
+	$("#link_zoom_in img").css("background-color","");
+	$("#link_zoom_out img").css("background-color","");
+	$("#target, svg, g").css("cursor", "move"); 
+}
+
+//Global position of the canvas
+var posx = 0;
+var posy = 0;
+
+/* Translation - bound to drag behavior */
+dragMap = function(d) {
+//No drag while zoom option active
+	if(zoom_in_active == false && zoom_out_active == false){
+		posx += d3.event.dx;
+		posy += d3.event.dy;
+		layer_slice.dragMap(d, posx, posy, cur_zoom);
+		layer_physical.dragMap(d, posx, posy, cur_zoom);
+		draw_relation();
+	}
+}
+
+
+/* Instantiation General parameters*/
+var  padding = 6,
+	color = d3.scale.category10().domain(d3.range(nNetworks)),
+	radius = d3.scale.sqrt().range([0, 12]);
+
+// svg generation
+var svg = d3.select("#target")
+	.on("click", click)
+	.append("svg")
+		.attr("pointer-events", "all")
+		.attr("width", width)
+		.attr("height", height)
+		.datum({x: 0, y: 0})
+		.call(d3.behavior.drag().on("drag", dragMap))
+	.append("svg:g").on("zoom", redraw)
+		.attr("cursor", "move")
+
+function SetNodeColor(nodes)
+{
+	nodes.forEach(function(d) {
+		if (d.status == "DOWN") {
+		    d.color = "#FF0000";
+		}
+		else if (d.available != "False") {
+		    d.color = color(d.group%(nNetworks));
+		} else {
+		    d.color = "#CCC";
+		}
+	});
+};
+
+var relations = data_slice.relations;
+var relation = svg.selectAll(".relation")
+	.data(relations)
+	.enter().append("line")
+		.attr("class", "relation");
+
+function draw_relation(_option)
+{
+	// ignore the zoom during animation
+	var option = (typeof _option === "undefined")?{}:_option;
+	var duration = (typeof option.duration === "undefined")?0:option.duration;
+	var zoom = (typeof option.zoom === "undefined")?true:option.zoom;
+	if (zoom == true)
+		relation_zoom = cur_zoom;
+	var st_width = 1 * relation_zoom;
+
+	relation.transition()
+		.duration(duration)
+		.attr("x1", function(d) { return layer_slice.nodes[d.slice].x * relation_zoom + posx; })
+		.attr("y1", function(d) { return layer_slice.nodes[d.slice].y * relation_zoom + posy; })
+		.attr("x2", function(d) { return layer_physical.nodes[d.physical].x * relation_zoom + posx; })
+		.attr("y2", function(d) { return layer_physical.nodes[d.physical].y * relation_zoom + posy + height_layer; })
+		.style("stroke-width", st_width + "px");
+};
+
+// data setting for layer object
+layer_slice.setdata(data_slice);
+layer_physical.setdata(data);
+
+// Original version (Sergio)
+/*var force = d3.layout.force()
+    .gravity(0)
+    .distance(100)
+    .charge(-500)
+    .friction(0.6)
+    .size([width, height])
+    .nodes(nodes)
+    .links(links)
+    .start();*/
+
+// Modified version (Carolina)
+var force = d3.layout.force()
+    .gravity(1/(2*nIslands))
+//    .distance(200/nIslands)
+    .distance(height_layer*.6)
+    .friction(0.6)
+    .size([width, height_layer*.6])
+    .nodes(data.nodes)
+    .links(data.links)
+    .start();
+
+var EMPTY_ISLAND = "Island with no resources";
+var dataislands = []
+
+// location setting for layer object
+layer_slice.setlocation(dataislands);
+layer_physical.setlocation(dataislands);
+
+// line & text drawing
+var topologyline = svg.selectAll(".line")
+    .data(datalines)
+    .enter()
+    .append("line")
+    .attr("class", "line");
+
+var topologytext = svg.selectAll(".text")
+    .data(datatexts)
+    .enter()
+    .append("text")
+    .attr("class", "text");
+
+topologyline.attr("x1", function(d) { return d.x1; })
+    .attr("y1", function(d) { return d.y1; })
+    .attr("x2", function(d) { return d.x2; })
+    .attr("y2", function(d) { return d.y2; });
+
+topologytext.attr("x", function(d) { return posx; })
+    .attr("y", function(d) { return d.y; })
+    .text(function(d) { return d.value });
+
+// svg generation for layer object
+layer_slice.genarate(svg);
+layer_physical.genarate(svg);
+
+//First ellipse animation on startup
+animate();
+
+//Number of nodes in each Island
+var qNodes = [];
+for(i=0; i<=nIslands; i++){
+   qNodes[i] = getNodesIsland(i);
+}
+
+var grav = 0.008 * nx * ny;
+
+force.on("tick", function(e){
+    var k = grav * e.alpha;
+    var node_groups = {}
+
+    // Adjust K colliding factor
+    $.each(data.nodes, function(i, n){
+        if (node_groups[n.group] == undefined) {
+            node_groups[n.group] = 1;
+        } else {
+            node_groups[n.group] += 1;
+        }
+    });
+
+    data.nodes.forEach(function(o, i){
+		var fact = 1;
+        // Dumb hack: limit expansion through #nodes
+        if (node_groups[o.group] >= 10) {
+            fact = Math.floor(node_groups[o.group]/10);
+        } else {
+            fact = o.group+1;
+        }
+		// Carolina: when there are few nodes, avoid them to stay too far away from the center
+		// AND when there are so many nodes avoid them to stay too near each others 
+	    fact = fact * 8;
+/*
+		if(qNodes[o.group] < 5){
+		    fact = fact * 2;
+		} else {
+		    fact = fact / 2;
+		}
+*/
+        try {
+			// SE/TN/SDN SW
+			if (o.type == "switch")
+			{
+				switch (o.class)
+				{
+				case "":
+				    o.y += k * fact * qNodes[o.group] * ((dataislands[o.group].cy) - o.y);
+				    o.x += k * fact * qNodes[o.group] * ((dataislands[o.group].cx) - o.x);
+					break;
+				case "se":
+				    o.y = height_layer*.7;
+				    o.x += k * fact * qNodes[o.group] * ((dataislands[o.group].cx) - o.x);
+					break;
+				case "tn":
+				    o.y = height_layer*.9;
+				    o.x += k * fact * qNodes[o.island] * ((dataislands[o.island].cx) - o.x);
+					break;
+				}
+			}
+			else
+			{
+			    o.y += k * fact * qNodes[o.group] * ((dataislands[o.group].cy) - o.y);
+			    o.x += k * fact * qNodes[o.group] * ((dataislands[o.group].cx) - o.x);
+			}
+        } catch (err) {
+        }
+    });
+
+	layer_slice.nodes.forEach(function(o, i){
+		o.y = layer_physical.nodes[o.relation].y;
+		o.x = layer_physical.nodes[o.relation].x;
+		if (o.relation_branch > 0)
+		{
+			o.y += (o.radius * 2 * (((o.relation_branch-1) / delibrach)-1));
+			o.x += (o.radius * 2 * (((o.relation_branch-1) % delibrach)-1));
+		}
+	});
+
+	layer_physical.forceon();
+	layer_slice.forceon();
+	draw_relation({zoom: false});
+});
+
+/*
+function redrawNodes(){
+	node.selectAll("circle").style("stroke", function(d){return getNodeCircleStyle(d, "stroke");});
+	link.style("stroke", function(d) {return getLinkStyle(d, "stroke");});
+	link.style("stroke-width", function(d) {return getLinkStyle(d, "stroke-width");});
+}
+*/
+
+function tick(layername) {
+
+	switch (layername)
+	{
+	case "physical":
+	    data_slice.nodes.forEach(function(o, i){
+			if (o.relation_branch == 0)
+			{
+			    o.y = layer_physical.nodes[o.relation].y;
+			    o.x = layer_physical.nodes[o.relation].x;
+			}
+	    });
+		break;
+	case "slice":
+		layer_slice.node.each(layer_slice.collide(.5));
+		data_slice.nodes.forEach(function(o, i){
+			if (o.relation_branch == 0)
+			{
+				layer_physical.nodes[o.relation].y = o.y;
+				layer_physical.nodes[o.relation].x = o.x;
+			}
+		});
+		break;
+	}
+
+	layer_slice.tick();
+	layer_physical.tick();
+	draw_relation();
+};
+
+function animate()
+{
+	layer_physical.animate();
+	layer_slice.animate();
+}
+
+function regroup(){
+	force.resume();
+	animate();
+}
+
+$("#link_zoom_in").click(function(){
+  $("#target, svg, g").css("cursor", "url({%url img_media 'zoomin.png' %}),auto");
+});
+
+$("#link_zoom_out").click(function(){
+  $("#target, svg, g").css("cursor", "url({%url img_media 'zoomout.png' %}),auto" );
+});
+
+</script>
