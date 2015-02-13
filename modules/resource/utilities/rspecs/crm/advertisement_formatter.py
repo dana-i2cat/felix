@@ -42,5 +42,8 @@ class CRMv3AdvertisementFormatter(FormatterBase):
             prop.attrib["dest_id"] = p.get("dest_id")
             prop.attrib["capacity"] = p.get("capacity")
 
+        link_type = etree.SubElement(l, "{%s}link_type" % (self.xmlns))
+        link_type.attrib["name"] = link.get("link_type")
+
     def link(self, link):
         self.add_link(self.rspec, link)

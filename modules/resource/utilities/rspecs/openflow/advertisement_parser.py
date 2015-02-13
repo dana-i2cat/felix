@@ -25,7 +25,7 @@ class OFv3AdvertisementParser(ParserBase):
 
     def links(self):
         links_ = []
-        for l in self.rspec.findall(".//{%s}link" % (self.none)):
+        for l in self.rspec.findall(".//{%s}link" % (self.__of)):
             if l.find(".//{%s}datapath" % (self.__of)) is not None:
                 of_ = Link(l.attrib.get("component_id"))
                 for dpid in l.iterchildren("{%s}datapath" % (self.__of)):
@@ -37,16 +37,16 @@ class OFv3AdvertisementParser(ParserBase):
                 for port in l.iterchildren("{%s}port" % (self.__of)):
                     of_.add_port(port.attrib.get("port_num"))
 
-            elif l.find(".//{%s}interface_ref" % (self.none)) is not None:
+            elif l.find(".//{%s}interface_ref" % (self.__of)) is not None:
                 of_ = FEDLink(l.attrib.get("component_id"))
-                link_type = l.find(".//{%s}link_type" % (self.none))
+                link_type = l.find(".//{%s}link_type" % (self.__of))
                 if link_type is not None:
                     of_.set_link_type(link_type.attrib.get("name"))
-                cmgr = l.find(".//{%s}component_manager" % (self.none))
+                cmgr = l.find(".//{%s}component_manager" % (self.__of))
                 if cmgr is not None:
                     of_.set_component_manager(cmgr.attrib.get("name"))
 
-                for ref in l.iterchildren("{%s}interface_ref" % (self.none)):
+                for ref in l.iterchildren("{%s}interface_ref" % (self.__of)):
                     of_.add_interface_id(ref.attrib.get("component_id"))
             else:
                 self.raise_exception("Unknown link type!")

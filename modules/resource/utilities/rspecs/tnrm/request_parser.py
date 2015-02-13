@@ -8,29 +8,28 @@ class TNRMv3RequestParser(ParserBase):
         self.__sv = self.rspec.nsmap.get('sharedvlan')
 
     def get_nodes(self, rspec):
-        nodes_ = []
+        nodes = []
         for n in rspec.findall(".//{%s}node" % (self.none)):
-            s_ = None
-            sliver_ = n.find("{%s}sliver_type" % (self.none))
-            if sliver_ is not None:
+            exclusive = None
+            sliver = n.find("{%s}sliver_type" % (self.none))
+            if sliver is not None:
                 # for TNRM request the sliver tag MUST be empty
                 # so this node is NOT a TN resource!
                 continue
 
-            n_ = Node(n.attrib.get("client_id"),
+            n = Node(n.attrib.get("client_id"),
                       n.attrib.get("component_manager_id"),
-                      n.attrib.get("exclusive"), s_)
+                      n.attrib.get("exclusive"), exclusive)
 
             for i in n.iterfind("{%s}interface" % (self.none)):
-                i_ = Interface(i.attrib.get("client_id"))
+                interface = Interface(i.attrib.get("client_id"))
                 for sv in i.iterfind("{%s}link_shared_vlan" % (self.__sv)):
-                    i_.add_vlan(sv.attrib.get("vlantag"),
+                    interface.add_vlan(sv.attrib.get("vlantag"),
                                 sv.attrib.get("name"))
-                n_.add_interface(i_.serialize())
+                n.add_interface(interface.serialize())
 
-            nodes_.append(n_.serialize())
-
-        return nodes_
+            nodes.append(n.serialize())
+        return nodes
 
     def nodes(self):
         return self.get_nodes(self.rspec)

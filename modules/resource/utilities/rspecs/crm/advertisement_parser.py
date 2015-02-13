@@ -53,13 +53,16 @@ class CRMv3AdvertisementParser(ParserBase):
         links = []
 
         for l in self.rspec.iterchildren("{%s}link" % self.xmlns):
+            # Create link object
             link = Link(l.attrib.get("component_id"),
                         l.attrib.get("component_name"))
 
             link_type = l.find("{%s}link_type" % (self.xmlns))
-            if link_type:
+            if link_type is not None:
                 link_type = link_type.attrib.get("name")
+                link.add_type(link_type)
 
+            # Fill with properties
             for p in l.iterchildren("{%s}property" % self.xmlns):
                 link.add_link(p.attrib.get("source_id"),
                               p.attrib.get("dest_id"),
