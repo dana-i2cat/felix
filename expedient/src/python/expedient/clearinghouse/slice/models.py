@@ -57,7 +57,7 @@ class Slice(models.Model):
     owner = models.ForeignKey(User, related_name="owned_slices")
     started = models.BooleanField(default=False, editable=False)
     modified = models.BooleanField(default=False, editable=False)
-    uuid = models.CharField(max_length=200, default = "", unique=True, editable =False)
+    uuid = models.CharField(max_length=200, default = "", unique=True, editable=False)
     expiration_date = LimitedDateTimeField(
         default=datetime.now() + timedelta(days=settings.SLICE_DEFAULT_EXPIRATION_TIME),
         help_text="Enter a date and time. The date should be in the"
@@ -67,7 +67,7 @@ class Slice(models.Model):
         max_date=_get_slice_max_date,
    )
     #<UT>
-    urn = models.CharField(max_length=200, default="")
+    urn = models.CharField(max_length=200, default="", unique=True, editable=False)
 
     def __unicode__(self):
         return u"Slice '%s' in project '%s'" % (self.name, self.project.name)

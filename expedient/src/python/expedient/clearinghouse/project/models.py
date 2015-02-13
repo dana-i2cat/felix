@@ -76,9 +76,9 @@ class Project(models.Model):
     
     name = models.CharField(max_length=200, unique=True, validators=[projectNameValidator])
     description = models.TextField(validators=[descriptionLightValidator])
-    uuid = models.CharField(max_length=200, default = "", unique=True, editable =False)
+    uuid = models.CharField(max_length=200, default = "", unique=True, editable=False)
     #<UT>
-    urn = models.CharField(max_length=200, default="")
+    urn = models.CharField(max_length=200, default="", unique=True, editable=False)
 
     '''
     save = permissions_save_override(
