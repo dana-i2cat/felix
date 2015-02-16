@@ -258,7 +258,7 @@ class SDNRMGENI3Delegate(GENIv3DelegateBase):
 
     def __sliver_date_status(self, dpid, etime=None):
         t = datetime.datetime.now() if (etime is None) else etime
-        return {'geni_sliver_urn': dpid.get("id"),
+        return {'geni_sliver_urn': dpid.get("dpid"),
                 'geni_expires': t,
                 'geni_allocation_status': self.ALLOCATION_STATE_ALLOCATED,
                 'geni_operational_status': self.OPERATIONAL_STATE_READY,
