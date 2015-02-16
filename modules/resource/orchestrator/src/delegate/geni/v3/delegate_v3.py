@@ -199,20 +199,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
             slice_urn, end_time, rspec,))
 
         req_rspec = RORequestParser(from_string=rspec)
-        print "\n\n\n\n\n------------------req_rspec >>> ", req_rspec
         self.__validate_rspec(req_rspec.get_rspec())
 
-        print "\n\n\n\n\n--------after validating CRM request!!!!!!!!---------"
         ro_manifest, ro_slivers, ro_db_slivers = ROManifestFormatter(), [], []
-        print "\n\n\n\n\n------------------ro_manifest >>> ", ro_manifest
-        print "\n\n\n\n\n------------------ro_slivers >>> ", ro_slivers
-        print "\n\n\n\n\n------------------ro_db_slivers >>> ", ro_db_slivers
 
         # COM resources
         slivers = req_rspec.com_slivers()
-        print "\n\n\n\n\n------------------slivers >>> ", slivers
         nodes = req_rspec.com_nodes()
-        print "\n\n\n\n\n------------------nodes >>> ", nodes
 
         if slivers:
             logger.debug("Found a COM-slivers segment (%d): %s" %
@@ -232,7 +225,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 ro_manifest.com_sliver(s)
 
             ro_slivers.extend(com_slivers)
-            ro_db_slivers.extend(db_slivers)
+            # insert com-resources into slice table
+            self.__insert_slice_info(
+                "com-resources", slice_urn, db_slivers, ro_db_slivers)
 
         # OF resources
         se_sdn_info = None
@@ -250,7 +245,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                                       m.get("ref"),
                                       m.get("email"))
             ro_slivers.extend(of_slivers)
-            ro_db_slivers.extend(db_slivers)
+            # insert sdn-resources into slice table
+            self.__insert_slice_info(
+                "sdn-resources", slice_urn, db_slivers, ro_db_slivers)
 
         # TN resources
         se_tn_info = None
@@ -274,7 +271,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     ro_manifest.tn_link(l)
 
             ro_slivers.extend(tn_slivers)
-            ro_db_slivers.extend(db_slivers)
+            # insert tn-resources into slice table
+            self.__insert_slice_info(
+                "tn-resources", slice_urn, db_slivers, ro_db_slivers)
 
         # SE resources
         if (se_sdn_info is not None) and (len(se_sdn_info) > 0) and\
@@ -295,7 +294,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     ro_manifest.se_link(l)
 
             ro_slivers.extend(se_slivers)
-            ro_db_slivers.extend(db_slivers)
+            # insert se-resources into slice table
+            self.__insert_slice_info(
+                "se-resources", slice_urn, db_slivers, ro_db_slivers)
 
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
 
@@ -303,11 +304,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             s["geni_expires"] = self.__str2datetime(s["geni_expires"])
         logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
 
-        logger.debug("RO-DB-Slivers(%d)=%s" %
-                     (len(ro_db_slivers), ro_db_slivers,))
-        id_ = db_sync_manager.store_slice_info(slice_urn, ro_db_slivers)
-
-        logger.info("allocate successfully completed: %s", id_)
+        logger.info("allocate successfully completed: %s" % (ro_db_slivers,))
         self.__schedule_slice_release(end_time, ro_db_slivers)
         return ("%s" % ro_manifest, ro_slivers)
 
@@ -878,6 +875,15 @@ class GENIv3Delegate(GENIv3DelegateBase):
             self.__extend_slivers(ss, k, slivers, db_slivers)
 
         return (manifests, slivers, db_slivers)
+
+    def __insert_slice_info(self, rtype, slice_urn, db_slivers, ro_db_slivers):
+        logger.debug("Insert %s slice info: slice_urn=%s, slivers=%s" %
+                     (rtype, slice_urn, db_slivers,))
+        id_ = db_sync_manager.store_slice_info(slice_urn, db_slivers)
+        logger.debug("Stored %s slice info: id=%s" % (rtype, id_,))
+        ro_db_slivers.extend(db_slivers)
+        logger.debug("RO-DB-Slivers(%d): %s" %
+                     (len(ro_db_slivers), ro_db_slivers))
 
     def __manage_sdn_describe(self, peer, urns, creds):
         adaptor, uri = AdaptorFactory.create_from_db(peer)

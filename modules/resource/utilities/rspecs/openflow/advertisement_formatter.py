@@ -37,26 +37,17 @@ class OFv3AdvertisementFormatter(FormatterBase):
         l = etree.SubElement(rspec, "{%s}link" % (self.__of))
         l.attrib["component_id"] = link.get("component_id")
 
-	dpids_ = link.get("dpids")
-	ports_ = link.get("ports")
-	for i in range(len(dpids_)):
-	    dp = etree.SubElement(l, "{%s}datapath" % (self.__of))
-	    dp.attrib["component_id"] = dpids_[i].get("component_id")
-	    dp.attrib["component_manager_id"] = dpids_[i].get("component_manager_id")
-	    dp.attrib["dpid"] = dpids_[i].get("dpid")
+        dpids_ = link.get("dpids")
+        ports_ = link.get("ports")
+        for i in range(len(dpids_)):
+            dp = etree.SubElement(l, "{%s}datapath" % (self.__of))
+            dp.attrib["component_id"] = dpids_[i].get("component_id")
+            dp.attrib["component_manager_id"] =\
+                dpids_[i].get("component_manager_id")
+            dp.attrib["dpid"] = dpids_[i].get("dpid")
 
-	    port = etree.SubElement(l, "{%s}port" % (self.__of))
-	    port.attrib["port_num"] = ports_[i].get("port_num")
-
-        #for d in link.get("dpids"):
-        #    dp = etree.SubElement(l, "{%s}datapath" % (self.__of))
-        #    dp.attrib["component_id"] = d.get("component_id")
-        #    dp.attrib["component_manager_id"] = d.get("component_manager_id")
-        #    dp.attrib["dpid"] = d.get("dpid")
-
-        #for p in link.get("ports"):
-        #    port = etree.SubElement(l, "{%s}port" % (self.__of))
-        #    port.attrib["port_num"] = p.get("port_num")
+            port = etree.SubElement(l, "{%s}port" % (self.__of))
+            port.attrib["port_num"] = ports_[i].get("port_num")
 
     def of_link(self, link):
         self.add_of_link(self.rspec, link)
