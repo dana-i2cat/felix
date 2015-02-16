@@ -183,12 +183,18 @@ class GENIv3Client(SFAClient):
             result = self.Allocate(*params)
             logger.info("\n\n\n%s Allocate result=%s\n\n\n" %
                         (self.typee, result,))
-            return (result.get("value").get("geni_rspec"),
-                    result.get("value").get("geni_slivers"))
+
+            if result.get("output") is not None:
+                err = "Error detected in the server (%s): %s" %\
+                      (self.typee, result.get("output"))
+            else:
+                return (result.get("value").get("geni_rspec"),
+                        result.get("value").get("geni_slivers"))
 
         except Exception as e:
             err = "%s Allocate failure: %s" % (self.typee, str(e))
-            raise exceptions.RPCError(err)
+
+        raise exceptions.RPCError(err)
 
     def describe(self, urns, credentials):
         options = self.format_options()
@@ -200,13 +206,19 @@ class GENIv3Client(SFAClient):
             result = self.Describe(*params)
             logger.info("\n\n\n%s Describe result=%s\n\n\n" %
                         (self.typee, result,))
-            return (result.get("value").get("geni_rspec"),
-                    result.get("value").get("geni_urn"),
-                    result.get("value").get("geni_slivers"))
+
+            if result.get("output") is not None:
+                err = "Error detected in the server (%s): %s" %\
+                      (self.typee, result.get("output"))
+            else:
+                return (result.get("value").get("geni_rspec"),
+                        result.get("value").get("geni_urn"),
+                        result.get("value").get("geni_slivers"))
 
         except Exception as e:
             err = "%s Describe failure: %s" % (self.typee, str(e))
-            raise exceptions.RPCError(err)
+
+        raise exceptions.RPCError(err)
 
     def renew(self, urns, credentials, expiration_time, best_effort):
         options = self.format_options(best_effort=best_effort)
@@ -218,11 +230,17 @@ class GENIv3Client(SFAClient):
             result = self.Renew(*params)
             logger.info("\n\n\n%s Renew result=%s\n\n\n" %
                         (self.typee, result,))
-            return result.get("value")
+
+            if result.get("output") is not None:
+                err = "Error detected in the server (%s): %s" %\
+                      (self.typee, result.get("output"))
+            else:
+                return result.get("value")
 
         except Exception as e:
             err = "%s Renew failure: %s" % (self.typee, str(e))
-            raise exceptions.RPCError(err)
+
+        raise exceptions.RPCError(err)
 
     def status(self, urns, credentials):
         options = self.format_options()
@@ -234,12 +252,18 @@ class GENIv3Client(SFAClient):
             result = self.Status(*params)
             logger.info("\n\n\n%s Status result=%s\n\n\n" %
                         (self.typee, result,))
-            return (result.get("value").get("geni_urn"),
-                    result.get("value").get("geni_slivers"))
+
+            if result.get("output") is not None:
+                err = "Error detected in the server (%s): %s" %\
+                      (self.typee, result.get("output"))
+            else:
+                return (result.get("value").get("geni_urn"),
+                        result.get("value").get("geni_slivers"))
 
         except Exception as e:
             err = "%s Status failure: %s" % (self.typee, str(e))
-            raise exceptions.RPCError(err)
+
+        raise exceptions.RPCError(err)
 
     def perform_operational_action(self, urns, credentials, action,
                                    best_effort):
@@ -252,11 +276,17 @@ class GENIv3Client(SFAClient):
             result = self.PerformOperationalAction(*params)
             logger.info("\n\n\n%s PerformOperationalAction result=%s\n\n\n" %
                         (self.typee, result,))
-            return result.get("value")
+
+            if result.get("output") is not None:
+                err = "Error detected in the server (%s): %s" %\
+                      (self.typee, result.get("output"))
+            else:
+                return result.get("value")
 
         except Exception as e:
             err = "%s PerformOpAction failure: %s" % (self.typee, str(e))
-            raise exceptions.RPCError(err)
+
+        raise exceptions.RPCError(err)
 
     def delete(self, urns, credentials, best_effort):
         options = self.format_options(best_effort=best_effort)
@@ -268,11 +298,17 @@ class GENIv3Client(SFAClient):
             result = self.Delete(*params)
             logger.info("\n\n\n%s Delete result=%s\n\n\n" %
                         (self.typee, result,))
-            return result.get("value")
+
+            if result.get("output") is not None:
+                err = "Error detected in the server (%s): %s" %\
+                      (self.typee, result.get("output"))
+            else:
+                return result.get("value")
 
         except Exception as e:
             err = "%s Delete failure: %s" % (self.typee, str(e))
-            raise exceptions.RPCError(err)
+
+        raise exceptions.RPCError(err)
 
     def provision(self, urns, credentials, best_effort, end_time, geni_users):
         options = self.format_options(best_effort=best_effort,
@@ -285,12 +321,18 @@ class GENIv3Client(SFAClient):
             result = self.Provision(*params)
             logger.info("\n\n\n%s Provision result=%s\n\n\n" %
                         (self.typee, result,))
-            return (result.get("value").get("geni_rspec"),
-                    result.get("value").get("geni_slivers"))
+
+            if result.get("output") is not None:
+                err = "Error detected in the server (%s): %s" %\
+                      (self.typee, result.get("output"))
+            else:
+                return (result.get("value").get("geni_rspec"),
+                        result.get("value").get("geni_slivers"))
 
         except Exception as e:
             err = "%s Provision failure: %s" % (self.typee, str(e))
-            raise exceptions.RPCError(err)
+
+        raise exceptions.RPCError(err)
 
 
 class CRMGeniv2Adaptor(SFAv2Client):
