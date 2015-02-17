@@ -1083,7 +1083,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         try:
             date_form = re.sub(r'[\+|\.].+', "", date)
             formatted_date = datetime.datetime.strptime(
-                date_form.replace("T", " "), "%Y-%m-%d %H:%M:%S")
+                date_form.replace("T", " ").replace("Z",""), "%Y-%m-%d %H:%M:%S")
         except:
             formatted_date = date
 
@@ -1091,8 +1091,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                      (type(formatted_date), formatted_date))
         return formatted_date
     
-    def __datetime2str(self, dt):
-        return dt.strftime("%Y-%m-%d %H:%M:%S.%fZ")
+    def __datetime2str(self, date):
+#        return date.strftime("%Y-%m-%d %H:%M:%S.%fZ")
+        return self.__datetime_to_rfc3339(date)
     
     def __datetime_to_rfc3339(self, date):
         """

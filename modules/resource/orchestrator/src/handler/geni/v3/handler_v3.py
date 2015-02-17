@@ -240,33 +240,46 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         return self._successReturn(result)
 
     # ---- helper methods
-    def _str2datetime(self, strval):
-        """Parses the given date string and converts the timestamp
-        to utc and the date unaware of timezones."""
-        result = dateparser.parse(strval)
-        if result:
-            result = result - result.utcoffset()
-            result = result.replace(tzinfo=None)
-        return result
+    def __str2datetime(self, strval):
+#        logger.info("xxxxx __str2datetime before xxxx %s" % type(strval))
+#        result = dateparser.parse(strval)
+#        if result:
+#            result = result - result.utcoffset()
+#            result = result.replace(tzinfo=None)
+#        logger.info("xxxxx __str2datetime after xxxx %s" % type(strval))
+#        return result
+        logger.debug("Converting string (%s) to datetime object: %s" %
+                     (type(strval), strval))
+        return self.__rfc3339_to_datetime(strval)
 
     def __rfc3339_to_datetime(self, date):
         """
         Returns a datetime object from an input string formatted according to RFC3339.
+        
+        Ref: https://github.com/fp7-ofelia/ocf/blob/ofelia.development/core/
+             lib/am/ambase/src/geni/v3/handler/handler.py#L321-L332
         """
         try:
-            # Removes everything after a "+" or a "."
             date_form = re.sub(r'[\+|\.].+', "", date)
-            formatted_date = datetime.strptime(date_form.replace("T"," "), "%Y-%m-%d %H:%M:%S")
+            formatted_date = datetime.datetime.strptime(
+                date_form.replace("T", " ").replace("Z",""), "%Y-%m-%d %H:%M:%S")
         except:
             formatted_date = date
+
+        logger.debug("Converted datetime object (%s): %s" %
+                     (type(formatted_date), formatted_date))
         return formatted_date
 
-    def _datetime2str(self, dt):
-        return dt.strftime(self.RFC3339_FORMAT_STRING)
+    def _datetime2str(self, date):
+        return date.strftime(self.RFC3339_FORMAT_STRING)
+#        return self.__datetime_to_rfc3339(date)
 
     def __datetime_to_rfc3339(self, date):
         """
         Returns a datetime object that is formatted according to RFC3339.
+        
+        Ref: https://github.com/fp7-ofelia/ocf/blob/ofelia.development/core/
+             lib/am/ambase/src/geni/v3/handler/handler.py#L309-L319
         """
         try:
             # Hint: use "strict_rfc3339" package for validation: strict_rfc3339.validate_rfc3339(...)
@@ -288,7 +301,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
                                  "a python datetime object.")
 
             slhash["geni_expires"] = self._datetime2str(slhash["geni_expires"])
-            logger.info("xxxxx __convertExpiresDate after xxxx %s" % type(slhash["geni_expires"]))
+            logger.info("xxxxx __convertExpiresDate after xxxx %s, type: %s" % (str(slhash["geni_expires"]), type(slhash["geni_expires"])))
 
         return sliver_list
 
