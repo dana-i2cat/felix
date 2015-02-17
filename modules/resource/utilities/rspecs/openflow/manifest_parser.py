@@ -1,4 +1,5 @@
 from rspecs.commons_of import DEFAULT_OPENFLOW
+from rspecs.commons_of import OFSliver
 from rspecs.parser_base import ParserBase
 
 
@@ -9,10 +10,17 @@ class OFv3ManifestParser(ParserBase):
         if self.__of is None:
             self.__of = DEFAULT_OPENFLOW
 
-    def sliver(self):
-        s = self.rspec.find("{%s}sliver" % (self.__of))
-        if s is None:
-            return None
-        return {"description": s.attrib.get("description"),
-                "ref": s.attrib.get("ref"),
-                "email": s.attrib.get("email")}
+    def get_slivers(self, rspec):
+        slivers_ = []
+        for s in rspec.findall(".//{%s}sliver" % (self.__of)):
+            ofsliver = OFSliver(s.attrib.get("description"),
+                                s.attrib.get("email"),
+                                s.attrib.get("status"),
+                                s.attrib.get("urn"))
+
+            slivers_.append(ofsliver.serialize())
+
+        return slivers_
+
+    def slivers(self):
+        return self.get_slivers(self.rspec)

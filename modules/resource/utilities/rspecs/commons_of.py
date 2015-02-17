@@ -80,3 +80,14 @@ class Group(object):
 
     def serialize(self):
         return self.group
+
+
+class OFSliver(object):
+    def __init__(self, description, email, status, urn):
+        self.sliver = {'description': description,
+                       'email': email,
+                       'status': status,
+                       'urn': urn}
+
+    def serialize(self):
+        return self.sliver
