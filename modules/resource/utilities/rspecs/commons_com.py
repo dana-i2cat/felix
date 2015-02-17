@@ -67,7 +67,7 @@ class Link(object):
         return self.__dict__
 
 
-def COMNode(object):
+class COMNode(object):
     def __init__(self, client_id, component_id, component_manager_id,
                  sliver_id):
         self.node = {'client_id': client_id,
