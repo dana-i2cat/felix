@@ -1,5 +1,5 @@
 from rspecs.crm.request_parser import CRMv3RequestParser
-from rspec.commons_com import COMNode
+from rspecs.commons_com import COMNode
 
 
 class CRMv3ManifestParser(CRMv3RequestParser):
