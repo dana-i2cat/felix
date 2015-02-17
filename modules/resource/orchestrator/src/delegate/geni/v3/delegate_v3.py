@@ -675,9 +675,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
             manifest = OFv3ManifestParser(from_string=m)
             logger.debug("OFv3ManifestParser=%s" % (manifest,))
 
-            slivers = manifest.slivers()
-            logger.info("Slivers(%d)=%s" % (len(slivers), slivers,))
-            manifests.append({"slivers": slivers})
+            slivers_ = manifest.slivers()
+            logger.info("Slivers(%d)=%s" % (len(slivers_), slivers_,))
+            manifests.append({"slivers": slivers_})
 
             self.__extend_slivers(ss, k, slivers, db_slivers)
 
@@ -1061,7 +1061,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             raise geni_ex.GENIv3GeneralError("RSpec validation failure: %s" % (
                                              error,))
         logger.info("Validation success!")
-    
+
     def __str2datetime(self, strval):
 #        logger.info("xxxxx __str2datetime before xxxx %s" % type(strval))
 #        result = dateparser.parse(strval)
@@ -1073,11 +1073,11 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.debug("Converting string (%s) to datetime object: %s" %
                      (type(strval), strval))
         return self.__rfc3339_to_datetime(strval)
-    
+
     def __rfc3339_to_datetime(self, date):
         """
         Returns a datetime object from an input string formatted according to RFC3339.
-        
+
         Ref: https://github.com/fp7-ofelia/ocf/blob/ofelia.development/core/
              lib/am/ambase/src/geni/v3/handler/handler.py#L321-L332
         """
@@ -1091,14 +1091,14 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.debug("Converted datetime object (%s): %s" %
                      (type(formatted_date), formatted_date))
         return formatted_date
-    
+
     def __datetime2str(self, dt):
         return dt.strftime("%Y-%m-%d %H:%M:%S.%fZ")
-    
+
     def __datetime_to_rfc3339(self, date):
         """
         Returns a datetime object that is formatted according to RFC3339.
-        
+
         Ref: https://github.com/fp7-ofelia/ocf/blob/ofelia.development/core/
              lib/am/ambase/src/geni/v3/handler/handler.py#L309-L319
         """
