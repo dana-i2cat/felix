@@ -1,4 +1,5 @@
 from dateutil import parser as dateparser
+from datetime import datetime
 from delegate.geni.v3.base import GENIv3DelegateBase
 from db.db_manager import db_sync_manager
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
@@ -24,6 +25,8 @@ from rspecs.tnrm.request_formatter import TNRMv3RequestFormatter
 from handler.geni.v3 import exceptions as geni_ex
 
 import core
+import re
+import zlib
 
 logger = core.log.getLogger("geniv3delegate")
 
@@ -1057,17 +1060,43 @@ class GENIv3Delegate(GENIv3DelegateBase):
             raise geni_ex.GENIv3GeneralError("RSpec validation failure: %s" % (
                                              error,))
         logger.info("Validation success!")
-
-    def __datetime2str(self, dt):
-        return dt.strftime("%Y-%m-%d %H:%M:%S.%fZ")
-
+    
     def __str2datetime(self, strval):
+        logger.info("xxxxx __str2datetime before xxxx %s" % type(strval))
         result = dateparser.parse(strval)
         if result:
             result = result - result.utcoffset()
             result = result.replace(tzinfo=None)
+        logger.info("xxxxx __str2datetime after xxxx %s" % type(strval))
         return result
-
+    
+    def __rfc3339_to_datetime(self, date):
+        """
+        Returns a datetime object from an input string formatted according to RFC3339.
+        """
+        try:
+            # Removes everything after a "+" or a "."
+            date_form = re.sub(r'[\+|\.].+', "", date)
+            formatted_date = datetime.strptime(date_form.replace("T"," "), "%Y-%m-%d %H:%M:%S")
+        except:
+            formatted_date = date
+        return formatted_date
+    
+    def __datetime2str(self, dt):
+        return dt.strftime("%Y-%m-%d %H:%M:%S.%fZ")
+    
+    def __datetime_to_rfc3339(self, date):
+        """
+        Returns a datetime object that is formatted according to RFC3339.
+        """
+        try:
+            # Hint: use "strict_rfc3339" package for validation: strict_rfc3339.validate_rfc3339(...)
+            # May also be computed as date.replace(...).isoformat("T")
+            formatted_date = date.replace(tzinfo=dateutil.tz.tzutc()).strftime("%Y-%m-%d %H:%M:%S").replace(" ", "T")+"Z"
+        except:
+            formatted_date = date
+        return formatted_date
+    
     def __translate_action(self, geni_action):
         if geni_action == self.OPERATIONAL_ACTION_STOP:
             return "stopslice"
