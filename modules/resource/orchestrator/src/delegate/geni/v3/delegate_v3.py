@@ -223,9 +223,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 for n in m.get("nodes"):
                     ro_manifest.com_node(n)
 
-            for s in slivers:
-                ro_manifest.com_sliver(s)
-
             ro_slivers.extend(com_slivers)
             # insert com-resources into slice table
             self.__insert_slice_info(
