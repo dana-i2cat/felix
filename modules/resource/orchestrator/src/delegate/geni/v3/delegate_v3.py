@@ -1,4 +1,5 @@
-from dateutil import parser as dateparser
+import datetime
+import re
 from delegate.geni.v3.base import GENIv3DelegateBase
 from db.db_manager import db_sync_manager
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
@@ -1062,11 +1063,25 @@ class GENIv3Delegate(GENIv3DelegateBase):
         return dt.strftime("%Y-%m-%d %H:%M:%S.%fZ")
 
     def __str2datetime(self, strval):
-        result = dateparser.parse(strval)
-        if result:
-            result = result - result.utcoffset()
-            result = result.replace(tzinfo=None)
-        return result
+        logger.debug("Converting string (%s) to datetime object: %s" %
+                     (type(strval), strval))
+        return self.__rfc3339_to_datetime(strval)
+
+    def __rfc3339_to_datetime(self, date):
+        """
+        Ref: https://github.com/fp7-ofelia/ocf/blob/ofelia.development/core/
+             lib/am/ambase/src/geni/v3/handler/handler.py#L309-L332
+        """
+        try:
+            date_form = re.sub(r'[\+|\.].+', "", date)
+            formatted_date = datetime.datetime.strptime(
+                date_form.replace("T", " "), "%Y-%m-%d %H:%M:%S")
+        except:
+            formatted_date = date
+
+        logger.debug("Converted datetime object (%s): %s" %
+                     (type(formatted_date), formatted_date))
+        return formatted_date
 
     def __translate_action(self, geni_action):
         if geni_action == self.OPERATIONAL_ACTION_STOP:
