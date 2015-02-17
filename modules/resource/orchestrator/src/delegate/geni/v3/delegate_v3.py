@@ -381,10 +381,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     peer, v, credentials, best_effort, end_time, geni_users)
 
                 logger.debug("of_m=%s, of_s=%s" % (of_m_info, of_slivers,))
-                if of_m_info is not None:
-                    ro_manifest.of_sliver(of_m_info.get("description"),
-                                          of_m_info.get("ref"),
-                                          of_m_info.get("email"))
+                for s in of_m_info.get("slivers"):
+                    ro_manifest.of_sliver(s)
+
                 ro_slivers.extend(of_slivers)
 
             elif peer.get("type") == "transport_network":
