@@ -6,7 +6,7 @@ from rspecs.formatter_base import FormatterBase
 from rspecs.crm.manifest_formatter import CRMv3ManifestFormatter
 from rspecs.tnrm.manifest_formatter import TNRMv3ManifestFormatter
 from rspecs.serm.manifest_formatter import SERMv3ManifestFormatter
-from lxml import etree
+from rspecs.openflow.manifest_formatter import OFv3ManifestFormatter
 
 DEFAULT_MANIFEST_SCHEMA_LOCATION = DEFAULT_SCHEMA_LOCATION
 DEFAULT_MANIFEST_SCHEMA_LOCATION += DSL_PREFIX + "3/request.xsd "
@@ -21,24 +21,21 @@ class ROManifestFormatter(FormatterBase):
                "sharedvlan": "%s" % (sharedvlan)}
         super(ROManifestFormatter, self).__init__(
             "manifest", schema_location, ns_, xmlns, xs)
-        self.__of = openflow
         self.__com_formatter = CRMv3ManifestFormatter()
         self.__tn_formatter = TNRMv3ManifestFormatter()
         self.__se_formatter = SERMv3ManifestFormatter()
+        self.__of_formatter = OFv3ManifestFormatter()
 
     # COM resources
     def com_sliver(self, n):
         self.__com_formatter.add_sliver(self.rspec, n)
 
+    def com_node(self, n):
+        self.__com_formatter.add_node(self.rspec, n)
+
     # OF resources
-    def of_sliver(self, description=None, ref=None, email=None):
-        s = etree.SubElement(self.rspec, "{%s}sliver" % (self.__of))
-        if description is not None:
-            s.attrib["description"] = description
-        if ref is not None:
-            s.attrib["ref"] = ref
-        if email is not None:
-            s.attrib["email"] = email
+    def of_sliver(self, s):
+        self.__of_formatter.add_sliver(self.rspec, s)
 
     # TN resources
     def tn_node(self, n):
