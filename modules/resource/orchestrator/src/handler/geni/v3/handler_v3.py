@@ -6,7 +6,9 @@ import traceback
 from datetime import datetime
 from dateutil import parser as dateparser
 import base64
+import re
 import zlib
+
 
 # from lxml import etree
 # from lxml.builder import ElementMaker
@@ -169,6 +171,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         geni_end_time = None
         if "geni_end_time" in options:
             geni_end_time = self._str2datetime(options["geni_end_time"])
+#            geni_end_time = self.__rfc3339_to_datetime(options["geni_end_time"])
 
         # TODO check the end_time against the duration of the credential
         try:
@@ -237,9 +240,6 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         return self._successReturn(result)
 
     # ---- helper methods
-    def _datetime2str(self, dt):
-        return dt.strftime(self.RFC3339_FORMAT_STRING)
-
     def _str2datetime(self, strval):
         """Parses the given date string and converts the timestamp
         to utc and the date unaware of timezones."""
@@ -247,20 +247,48 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         if result:
             result = result - result.utcoffset()
             result = result.replace(tzinfo=None)
-
         return result
+
+    def __rfc3339_to_datetime(self, date):
+        """
+        Returns a datetime object from an input string formatted according to RFC3339.
+        """
+        try:
+            # Removes everything after a "+" or a "."
+            date_form = re.sub(r'[\+|\.].+', "", date)
+            formatted_date = datetime.strptime(date_form.replace("T"," "), "%Y-%m-%d %H:%M:%S")
+        except:
+            formatted_date = date
+        return formatted_date
+
+    def _datetime2str(self, dt):
+        return dt.strftime(self.RFC3339_FORMAT_STRING)
+
+    def __datetime_to_rfc3339(self, date):
+        """
+        Returns a datetime object that is formatted according to RFC3339.
+        """
+        try:
+            # Hint: use "strict_rfc3339" package for validation: strict_rfc3339.validate_rfc3339(...)
+            # May also be computed as date.replace(...).isoformat("T")
+            formatted_date = date.replace(tzinfo=dateutil.tz.tzutc()).strftime("%Y-%m-%d %H:%M:%S").replace(" ", "T")+"Z"
+        except:
+            formatted_date = date
+        return formatted_date
 
     def _convertExpiresDate(self, sliver_list):
         for slhash in sliver_list:
             if slhash["geni_expires"] is None:
                 continue
 
+            logger.info("xxxxx __convertExpiresDate before xxxx: %s, type: %s" % (str(slhash["geni_expires"]), str(type(slhash["geni_expires"]))))
             if not isinstance(slhash["geni_expires"], datetime):
                 raise ValueError("Given geni_expires in sliver_list hash " +
                                  "retrieved from delegate's method is not " +
                                  "a python datetime object.")
 
             slhash["geni_expires"] = self._datetime2str(slhash["geni_expires"])
+            logger.info("xxxxx __convertExpiresDate after xxxx %s" % type(slhash["geni_expires"]))
 
         return sliver_list
 

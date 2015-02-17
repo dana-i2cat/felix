@@ -7,7 +7,8 @@ class CRMv3ManifestParser(CRMv3RequestParser):
         super(CRMv3ManifestParser, self).__init__(from_file, from_string)
 
     def get_sliver(self, rspec=None):
-        rspec = rspec or self.rspec
+        if self.rspec is not None:
+            rspec = self.rspec
         sliver_list = []
         slivers = rspec.findall("{%s}node" % (self.xmlns))
         for sliver in slivers:
