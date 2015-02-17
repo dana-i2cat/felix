@@ -1,5 +1,4 @@
 from dateutil import parser as dateparser
-from datetime import datetime
 from delegate.geni.v3.base import GENIv3DelegateBase
 from db.db_manager import db_sync_manager
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
@@ -25,6 +24,7 @@ from rspecs.tnrm.request_formatter import TNRMv3RequestFormatter
 from handler.geni.v3 import exceptions as geni_ex
 
 import core
+import datetime
 import re
 import zlib
 
@@ -1062,24 +1062,33 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.info("Validation success!")
     
     def __str2datetime(self, strval):
-        logger.info("xxxxx __str2datetime before xxxx %s" % type(strval))
-        result = dateparser.parse(strval)
-        if result:
-            result = result - result.utcoffset()
-            result = result.replace(tzinfo=None)
-        logger.info("xxxxx __str2datetime after xxxx %s" % type(strval))
-        return result
+#        logger.info("xxxxx __str2datetime before xxxx %s" % type(strval))
+#        result = dateparser.parse(strval)
+#        if result:
+#            result = result - result.utcoffset()
+#            result = result.replace(tzinfo=None)
+#        logger.info("xxxxx __str2datetime after xxxx %s" % type(strval))
+#        return result
+        logger.debug("Converting string (%s) to datetime object: %s" %
+                     (type(strval), strval))
+        return self.__rfc3339_to_datetime(strval)
     
     def __rfc3339_to_datetime(self, date):
         """
         Returns a datetime object from an input string formatted according to RFC3339.
+        
+        Ref: https://github.com/fp7-ofelia/ocf/blob/ofelia.development/core/
+             lib/am/ambase/src/geni/v3/handler/handler.py#L321-L332
         """
         try:
-            # Removes everything after a "+" or a "."
             date_form = re.sub(r'[\+|\.].+', "", date)
-            formatted_date = datetime.strptime(date_form.replace("T"," "), "%Y-%m-%d %H:%M:%S")
+            formatted_date = datetime.datetime.strptime(
+                date_form.replace("T", " "), "%Y-%m-%d %H:%M:%S")
         except:
             formatted_date = date
+
+        logger.debug("Converted datetime object (%s): %s" %
+                     (type(formatted_date), formatted_date))
         return formatted_date
     
     def __datetime2str(self, dt):
@@ -1088,6 +1097,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def __datetime_to_rfc3339(self, date):
         """
         Returns a datetime object that is formatted according to RFC3339.
+        
+        Ref: https://github.com/fp7-ofelia/ocf/blob/ofelia.development/core/
+             lib/am/ambase/src/geni/v3/handler/handler.py#L309-L319
         """
         try:
             # Hint: use "strict_rfc3339" package for validation: strict_rfc3339.validate_rfc3339(...)
@@ -1096,7 +1108,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         except:
             formatted_date = date
         return formatted_date
-    
+
     def __translate_action(self, geni_action):
         if geni_action == self.OPERATIONAL_ACTION_STOP:
             return "stopslice"
