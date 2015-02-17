@@ -177,7 +177,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
                 logger.debug("com_m=%s, com_s=%s, urn=%s" %
                              (com_m_info, com_slivers, last_slice))
-                # XXX_FIXME: update the ro-manifest with the C resources
+                for n in com_m_info.get("nodes"):
+                    ro_manifest.com_node(n)
+
                 ro_slivers.extend(com_slivers)
 
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
@@ -216,11 +218,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                                            slivers, req_rspec)
             logger.debug("com_m=%s, com_s=%s, com_s=%s" %
                          (com_m_info, com_slivers, db_slivers))
-            # XXX What to do with com_slivers for the XML manifest?
-            # It should be kept for the "geni_slivers" list
-#            for m in com_m_info:
-#                for s in com_slivers:
-#                    ro_manifest.com_sliver(s)
+            for m in com_m_info:
+                for n in m.get("nodes"):
+                    ro_manifest.com_node(n)
 
             for s in slivers:
                 ro_manifest.com_sliver(s)
@@ -370,7 +370,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     peer, v, credentials, best_effort, end_time, geni_users)
 
                 logger.debug("com_m=%s, com_s=%s" % (com_m_info, com_slivers,))
-                # XXX_FIXME: update the ro-manifest with the C resources
+                for n in com_m_info.get("nodes"):
+                    ro_manifest.com_node(n)
+
                 ro_slivers.extend(com_slivers)
 
             elif peer.get("type") == "sdn_networking":
@@ -638,9 +640,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
             manifest = CRMv3ManifestParser(from_string=m)
             logger.debug("CRMv3ManifestParser=%s" % (manifest,))
 
-            sliver = manifest.sliver()
-            logger.info("Sliver=%s" % (sliver,))
-            manifests.append(sliver)
+            nodes = manifest.nodes()
+            logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
+            manifests.append({"nodes": nodes})
 
             self.__extend_slivers(ss, k, slivers, db_slivers)
 
@@ -939,12 +941,12 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         manifest = CRMv3ManifestParser(from_string=m)
         logger.debug("CRMv3ManifestParser=%s" % (manifest,))
-        # self.__validate_rspec(manifest.get_rspec())
+        self.__validate_rspec(manifest.get_rspec())
 
-        sliver = manifest.sliver()
-        logger.info("Sliver=%s" % (sliver,))
+        nodes = manifest.nodes()
+        logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
 
-        return (sliver, urn, ss)
+        return ({"nodes": nodes}, urn, ss)
 
     def __manage_status(self, peer, urns, creds):
         adaptor, uri = AdaptorFactory.create_from_db(peer)
@@ -1020,14 +1022,14 @@ class GENIv3Delegate(GENIv3DelegateBase):
             logger.debug("CRMv3ManifestParser=%s" % (manifest,))
             self.__validate_rspec(manifest.get_rspec())
 
-            sliver = manifest.sliver()
-            logger.info("Sliver=%s" % (sliver,))
+            nodes = manifest.nodes()
+            logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
 
-            return (sliver, urn)
+            return ({"nodes": nodes}, urn)
         except Exception as e:
             # It is possible that CRM does not implement this method!
             logger.error("manage_com_provision exception: %s", e)
-            return (None, [])
+            return ({"nodes": []}, [])
 
     def _manage_se_provision(self, peer, urns, creds,
                              beffort, etime, gusers):

@@ -30,6 +30,9 @@ class ROManifestFormatter(FormatterBase):
     def com_sliver(self, n):
         self.__com_formatter.add_sliver(self.rspec, n)
 
+    def com_node(self, n):
+        self.__com_formatter.add_node(self.rspec, n)
+
     # OF resources
     def of_sliver(self, description=None, ref=None, email=None):
         s = etree.SubElement(self.rspec, "{%s}sliver" % (self.__of))
