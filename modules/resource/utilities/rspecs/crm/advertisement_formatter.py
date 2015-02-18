@@ -2,13 +2,6 @@ from rspecs.commons import DEFAULT_XMLNS, DEFAULT_XS
 from rspecs.formatter_base import FormatterBase
 from lxml import etree
 
-try:
-    import core
-    core.log
-except:
-    from amsoil import core  # Use this notation to avoid import problem
-logger = core.log.getLogger("com-advertisement-formatter")
-
 
 class CRMv3AdvertisementFormatter(FormatterBase):
     def __init__(self, xmlns=DEFAULT_XMLNS, xs=DEFAULT_XS,

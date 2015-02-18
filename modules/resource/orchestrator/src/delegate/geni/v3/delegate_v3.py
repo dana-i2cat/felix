@@ -1111,7 +1111,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
             return "stopslice"
         elif geni_action == self.OPERATIONAL_ACTION_START:
             return "startslice"
-        return "unknown"
+        # we are assuming "startslice" as the default case for permissions
+        return "startslice"
 
     def __schedule_slice_release(self, end_time, slivers):
         scheduler = ROSchedulerService.get_scheduler()

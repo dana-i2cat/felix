@@ -3,9 +3,6 @@ from rspecs.parser_base import ParserBase
 from rspecs.commons_com import Node, Link
 from rspecs.commons import DEFAULT_XMLNS
 
-import core
-logger = core.log.getLogger("com-advertisement-parser")
-
 
 class CRMv3AdvertisementParser(ParserBase):
     def __init__(self, from_file=None, from_string=None):

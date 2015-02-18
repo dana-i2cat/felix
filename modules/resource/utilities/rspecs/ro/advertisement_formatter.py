@@ -11,9 +11,6 @@ DEFAULT_AD_SCHEMA_LOCATION = DEFAULT_SCHEMA_LOCATION
 DEFAULT_AD_SCHEMA_LOCATION += DSL_PREFIX + "3/ad.xsd "
 DEFAULT_AD_SCHEMA_LOCATION += DSL_PREFIX + "ext/openflow/3/of-ad.xsd"
 
-import core
-logger = core.log.getLogger("ro-advertisement-formatter")
-
 
 class ROAdvertisementFormatter(FormatterBase):
     def __init__(self, xmlns=DEFAULT_XMLNS, xs=DEFAULT_XS,
