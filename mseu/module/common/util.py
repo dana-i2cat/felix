@@ -15,6 +15,9 @@ def get_config_param(confInfo,section,item):
     else:
         ret = confInfo.get('DEFAULT', item)
 
+    if ret is None or ret == '':
+        return ret
+
     # trailing "/" is delete.
     ret = ret.rstrip("/")
 

@@ -24,10 +24,14 @@ default_config = {
     'zabbix_uri' : 'http://127.0.0.1/zabbix/api_jsonrpc.php',
     'zabbix_user' : 'admin',
     'zabbix_pass' : 'zabbix',
+    'monitoring_module' : None,
+    'sdn_monitoring_item' : None,
+    'cp_monitoring_item_server' : None,
+    'cp_monitoring_item_vm' : None,
     'log_dir' : os.path.normpath(os.path.join(BASE_DIR, '../../log')),
     'log_file' : 'monitoring_data_collector.log',
-    'aggregate_flg' : '1',
-    'debug_flg' : '0'
+    'aggregate' : '1',
+    'debug' : '0'
 }
 
 # read configuration file.
@@ -59,7 +63,6 @@ module_list=list()
 monitoring_module = util.get_config_param(confInfo,'MONITORING', 'monitoring_module')
 monitoring_module = util.to_listinlist(monitoring_module)
 for item in monitoring_module:
-    print(item)
     if len(item) == 2:
         module_dict=dict()
         module_dict['class-name'] = item[0]

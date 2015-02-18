@@ -24,7 +24,7 @@ default_config = {
     'mon_data_cp_db' : 'monDataCPDB',
     'log_dir' : os.path.normpath(os.path.join(BASE_DIR, '../../log')),
     'log_file' : 'monitoring_api.log',
-    'debug_flg' : '0'
+    'debug' : '0'
 }
 
 # read configuration file.
