@@ -1,4 +1,3 @@
-from dateutil import parser as dateparser
 from delegate.geni.v3.base import GENIv3DelegateBase
 from db.db_manager import db_sync_manager
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
@@ -26,7 +25,7 @@ from handler.geni.v3 import exceptions as geni_ex
 import core
 import datetime
 import re
-import zlib
+import dateutil
 
 logger = core.log.getLogger("geniv3delegate")
 
@@ -958,8 +957,16 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def __manage_operational_action(self, peer, urns, creds, action, beffort):
         adaptor, uri = AdaptorFactory.create_from_db(peer)
         logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
-        return adaptor.perform_operational_action(
-            urns, creds[0]["geni_value"], action, beffort)
+        try:
+            return adaptor.perform_operational_action(
+                urns, creds[0]["geni_value"], action, beffort)
+        except Exception as e:
+            # It is possible that some RMs do not implement particular actions
+            # e.g. "geni_update_users", etc.
+            # http://groups.geni.net/geni/wiki/GAPI_AM_API_V3/
+            #  CommonConcepts#SliverOperationalActions
+            logger.error("manage_operational_action exception: %s", e)
+            return []
 
     def __manage_delete(self, peer, urns, creds, beffort):
         adaptor, uri = AdaptorFactory.create_from_db(peer)
@@ -1059,20 +1066,14 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.info("Validation success!")
 
     def __str2datetime(self, strval):
-#        logger.info("xxxxx __str2datetime before xxxx %s" % type(strval))
-#        result = dateparser.parse(strval)
-#        if result:
-#            result = result - result.utcoffset()
-#            result = result.replace(tzinfo=None)
-#        logger.info("xxxxx __str2datetime after xxxx %s" % type(strval))
-#        return result
         logger.debug("Converting string (%s) to datetime object: %s" %
                      (type(strval), strval))
         return self.__rfc3339_to_datetime(strval)
 
     def __rfc3339_to_datetime(self, date):
         """
-        Returns a datetime object from an input string formatted according to RFC3339.
+        Returns a datetime object from an input string formatted
+        according to RFC3339.
 
         Ref: https://github.com/fp7-ofelia/ocf/blob/ofelia.development/core/
              lib/am/ambase/src/geni/v3/handler/handler.py#L321-L332
@@ -1080,18 +1081,18 @@ class GENIv3Delegate(GENIv3DelegateBase):
         try:
             date_form = re.sub(r'[\+|\.].+', "", date)
             formatted_date = datetime.datetime.strptime(
-                date_form.replace("T", " ").replace("Z",""), "%Y-%m-%d %H:%M:%S")
+                date_form.replace("T", " ").
+                replace("Z", ""), "%Y-%m-%d %H:%M:%S")
         except:
             formatted_date = date
 
         logger.debug("Converted datetime object (%s): %s" %
                      (type(formatted_date), formatted_date))
         return formatted_date
-    
+
     def __datetime2str(self, date):
-#        return date.strftime("%Y-%m-%d %H:%M:%S.%fZ")
         return self.__datetime_to_rfc3339(date)
-    
+
     def __datetime_to_rfc3339(self, date):
         """
         Returns a datetime object that is formatted according to RFC3339.
@@ -1100,23 +1101,22 @@ class GENIv3Delegate(GENIv3DelegateBase):
              lib/am/ambase/src/geni/v3/handler/handler.py#L309-L319
         """
         try:
-            # Hint: use "strict_rfc3339" package for validation: strict_rfc3339.validate_rfc3339(...)
-            # May also be computed as date.replace(...).isoformat("T")
-            formatted_date = date.replace(tzinfo=dateutil.tz.tzutc()).strftime("%Y-%m-%d %H:%M:%S").replace(" ", "T")+"Z"
+            formatted_date = date.replace(tzinfo=dateutil.tz.tzutc()).\
+                strftime("%Y-%m-%d %H:%M:%S").replace(" ", "T")+"Z"
         except:
             formatted_date = date
         return formatted_date
 
     def __translate_action(self, geni_action):
         actions_to_permissions = {
-                                    self.OPERATIONAL_ACTION_START: "startslice",
-                                    self.OPERATIONAL_ACTION_STOP: "stopslice",
-                                    self.OPERATIONAL_ACTION_RESTART: "updateslice",
-                                    self.OPERATIONAL_ACTION_UPDATE_USERS: "updateslice",
-                                    self.OPERATIONAL_ACTION_UPDATING_USERS_CANCEL: "updateslice",
-                                    self.OPERATIONAL_ACTION_CONSOLE_URL: "getsliceresources",
-                                    self.OPERATIONAL_ACTION_SHARELAN: "updateslice",
-                                    self.OPERATIONAL_ACTION_UNSHARELAN: "updateslice",
+            self.OPERATIONAL_ACTION_START: "startslice",
+            self.OPERATIONAL_ACTION_STOP: "stopslice",
+            self.OPERATIONAL_ACTION_RESTART: "updateslice",
+            self.OPERATIONAL_ACTION_UPDATE_USERS: "updateslice",
+            self.OPERATIONAL_ACTION_UPDATING_USERS_CANCEL: "updateslice",
+            self.OPERATIONAL_ACTION_CONSOLE_URL: "getsliceresources",
+            self.OPERATIONAL_ACTION_SHARELAN: "updateslice",
+            self.OPERATIONAL_ACTION_UNSHARELAN: "updateslice",
         }
         # Look for a mapping within the action-permision dictionary.
         # Otherwise return "unknown"
