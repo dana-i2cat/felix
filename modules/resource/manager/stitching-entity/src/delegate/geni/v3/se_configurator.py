@@ -185,6 +185,7 @@ class seConfigurator:
         ]
 
         # Prepare links
+        # TODO: add static and non-static links recognition
         config = self.initial_configured_interfaces
         for interface in config:
             endpoints = config[interface]["remote_endpoints"]
@@ -206,7 +207,7 @@ class seConfigurator:
                             'property':[
 
                             ],
-                            'link_type':'urn:felix+static_link'
+                            'link_type':'urn:felix+' + endpoint["type"]
                         }
                         if configured_interfaces[interface][str(vlan)] == True:
                             links_se.append(new_static_link)
