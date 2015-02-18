@@ -434,9 +434,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") in ["sdn_networking", "transport_network",
                                     "stitching_entity", "virtualisation"]:
-                lastslice, slivers = self.__manage_status(peer, v, credentials)
+                last_slice, slivers = self.__manage_status(peer, v, credentials)
 
-                logger.debug("slivers=%s, urn=%s" % (slivers, lastslice))
+                logger.debug("slivers=%s, urn=%s" % (slivers, last_slice))
                 ro_slivers.extend(slivers)
 
         for s in ro_slivers:
