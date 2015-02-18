@@ -407,6 +407,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 ro_slivers.extend(se_slivers)
 
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
+
+        for s in ro_slivers:
+            s["geni_expires"] = self.__str2datetime(s["geni_expires"])
         logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
 
         return ("%s" % ro_manifest, ro_slivers)
@@ -965,7 +968,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
             # e.g. "geni_update_users", etc.
             # http://groups.geni.net/geni/wiki/GAPI_AM_API_V3/
             #  CommonConcepts#SliverOperationalActions
-            logger.error("manage_operational_action: action=%s, exception: %s", (action, e))
+            logger.error("manage_operational_action: action=%s, exception: %s",
+                         (action, e))
             if action in ["geni_start", "geni_stop", "geni_restart"]:
                 raise e
             return []
