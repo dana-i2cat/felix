@@ -1108,11 +1108,19 @@ class GENIv3Delegate(GENIv3DelegateBase):
         return formatted_date
 
     def __translate_action(self, geni_action):
-        if geni_action == self.OPERATIONAL_ACTION_STOP:
-            return "stopslice"
-        elif geni_action == self.OPERATIONAL_ACTION_START:
-            return "startslice"
-        return "unknown"
+        actions_to_permissions = {
+                                    self.OPERATIONAL_ACTION_START: "startslice",
+                                    self.OPERATIONAL_ACTION_STOP: "stopslice",
+                                    self.OPERATIONAL_ACTION_RESTART: "updateslice",
+                                    self.OPERATIONAL_ACTION_UPDATE_USERS: "updateslice",
+                                    self.OPERATIONAL_ACTION_UPDATING_USERS_CANCEL: "updateslice",
+                                    self.OPERATIONAL_ACTION_CONSOLE_URL: "getsliceresources",
+                                    self.OPERATIONAL_ACTION_SHARELAN: "updateslice",
+                                    self.OPERATIONAL_ACTION_UNSHARELAN: "updateslice",
+        }
+        # Look for a mapping within the action-permision dictionary.
+        # Otherwise return "unknown"
+        return actions_to_permissions.get(geni_action, "unknown")
 
     def __schedule_slice_release(self, end_time, slivers):
         scheduler = ROSchedulerService.get_scheduler()

@@ -55,6 +55,14 @@ class GENIv3DelegateBase(object):
     """Sliver shall become geni_ready again."""
     OPERATIONAL_ACTION_STOP    = 'geni_stop'
     """Sliver shall become geni_notready."""
+    OPERATIONAL_ACTION_UPDATE_USERS    = 'geni_update_users'
+    OPERATIONAL_ACTION_UPDATING_USERS_CANCEL    = 'geni_updating_users_cancel'
+    """
+    Following operational actions not fully implemented.
+    """
+    OPERATIONAL_ACTION_CONSOLE_URL    = 'geni_console_url'
+    OPERATIONAL_ACTION_SHARELAN    = 'geni_sharelan'
+    OPERATIONAL_ACTION_UNSHARELAN    = 'geni_unsharelan'
 
     def __init__(self):
         super(GENIv3DelegateBase, self).__init__()
