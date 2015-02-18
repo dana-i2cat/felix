@@ -9,7 +9,7 @@ from rspecs.serm.manifest_formatter import SERMv3ManifestFormatter
 from rspecs.openflow.manifest_formatter import OFv3ManifestFormatter
 
 DEFAULT_MANIFEST_SCHEMA_LOCATION = DEFAULT_SCHEMA_LOCATION
-DEFAULT_MANIFEST_SCHEMA_LOCATION += DSL_PREFIX + "3/request.xsd "
+DEFAULT_MANIFEST_SCHEMA_LOCATION += DSL_PREFIX + "3/manifest.xsd "
 
 
 class ROManifestFormatter(FormatterBase):
