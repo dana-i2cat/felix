@@ -12,7 +12,9 @@ class seConfigurator:
         conf_file_path = os.path.join(current_path, "../../../../conf/se-config.yaml")
         stream = open(conf_file_path, "r")
         initial_config = yaml.load(stream)
-        self.configured_interfaces = initial_config["interfaces"]
+        # self.configured_interfaces = initial_config["interfaces"]
+        self.configured_interfaces = self.convert_config_into_Resources_datamodel(initial_config["interfaces"])
+        self.initial_configured_interfaces = initial_config["interfaces"]
 
         # Push port status from configuration file into SE-db
         # TODO: Add other rspec parameters to db
@@ -20,11 +22,29 @@ class seConfigurator:
 
         self.component_id_prefix = initial_config["component_id"]
         self.component_manager_prefix = initial_config["component_manager_id"]
-        self.configured_interfaces = initial_config["interfaces"]
         self.vlan_trans = initial_config["vlan_trans"]
         self.qinq = initial_config["qinq"]
         self.capacity = initial_config["capacity"]
 
+    def convert_config_into_Resources_datamodel(self, config):
+        rm_datamodel = {}
+        for interface in config:
+            endpoints = config[interface]["remote_endpoints"]
+            avail_vlans = {}
+            for endpoint in endpoints:
+                for vlan in endpoint["vlans"]:
+                    if isinstance(vlan, int ):
+                        avail_vlans[vlan] = True
+                    else:
+                        try:
+                            v_start, v_end = vlan.split("-")
+                            v_range = range(int(v_start), int(v_end)+1, 1)
+                            for v in v_range:
+                                avail_vlans[v] = True
+                        except:
+                            pass
+            rm_datamodel[interface] = avail_vlans
+        return rm_datamodel
 
     def get_ports_configuration(self):
         return self.configured_interfaces
@@ -165,35 +185,39 @@ class seConfigurator:
         ]
 
         # Prepare links
-        for iface in configured_interfaces:
-            links = configured_interfaces[iface]
-            # Check if links is VLAN or static
-            for link in links:
-                link_type = links[link]
-                if link_type is True:
-                    print "Found VLAN: ", link
-                elif link_type is not True and link_type is not False:
-                    print "Found static link: ", link
-                    remote_endpoint = link_type
-                    print remote_endpoint
+        config = self.initial_configured_interfaces
+        for interface in config:
+            endpoints = config[interface]["remote_endpoints"]
+            avail_vlans = {}
+            for endpoint in endpoints:
+                for vlan in endpoint["vlans"]:
+                    if isinstance(vlan, int ):
+                        new_static_link =  {
+                            'component_id':component_id_prefix + ':' + interface + "+" + endpoint["name"],
+                            'component_manager_name':None,
+                            'interface_ref':[
+                                {
+                                    'component_id': component_id_prefix + ':' + interface
+                                },
+                                {
+                                    'component_id': endpoint["name"]
+                                }
+                            ],
+                            'property':[
 
-                    new_static_link =  {
-                        'component_id':'urn:publicid:aist-se1-' + link,
-                        'component_manager_name':None,
-                        'interface_ref':[
-                            {
-                                'component_id': component_id_prefix + ':' + iface
-                            },
-                            {
-                                'component_id': remote_endpoint
-                            }
-                        ],
-                        'property':[
-
-                        ],
-                        'link_type':'urn:felix+static_link'
-                    }
-
-                    links_se.append(new_static_link)
+                            ],
+                            'link_type':'urn:felix+static_link'
+                        }
+                        if configured_interfaces[interface][str(vlan)] == True:
+                            links_se.append(new_static_link)
+                            break
+                    else:
+                        try:
+                            v_start, v_end = vlan.split("-")
+                            v_range = range(int(v_start), int(v_end)+1, 1)
+                            for v in v_range:
+                                avail_vlans[v] = True
+                        except:
+                            pass
 
         return links_se

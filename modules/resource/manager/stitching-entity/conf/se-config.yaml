@@ -8,15 +8,26 @@ capacity: 1G
 
 interfaces:
     eth1:
-        1000 : true
+        remote_endpoints: 
+            -
+                name: urn:publicid:psnc-nsi:if1
+                type: nsi
+                vlans:
+                    - 1000
+                    - 2000
+                    - 3000-3030
+            -
+                name: urn:publicid:psnc-nsi:if2
+                type: nsi
+                vlans:
+                    - 1000
+                    - 2000
+                    - 3000-3030
 
     eth2:
-        1000 : true
-        2000 : true
-        3000 : true
-
-    eth3:
-        dp2 : urn:publicid:aist-sdn1:if2
-
-    eth4:
-        dp1 : urn:publicid:aist-sdn1:if1
+        remote_endpoints:
+            -
+                name: urn:publicid:psnc-dpid:if2
+                type: static
+                vlans:
+                    - 1000
