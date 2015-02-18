@@ -965,7 +965,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
             # e.g. "geni_update_users", etc.
             # http://groups.geni.net/geni/wiki/GAPI_AM_API_V3/
             #  CommonConcepts#SliverOperationalActions
-            logger.error("manage_operational_action exception: %s", e)
+            logger.error("manage_operational_action: action=%s, exception: %s", (action, e))
+            if action in ["geni_start", "geni_stop", "geni_restart"]:
+                raise e
             return []
 
     def __manage_delete(self, peer, urns, creds, beffort):
