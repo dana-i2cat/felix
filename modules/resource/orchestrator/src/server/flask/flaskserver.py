@@ -96,6 +96,7 @@ class FlaskServer(object):
         self.add_routes()
         debug = self.general_section.get("debug")
         host = self.general_section.get("host")
+        use_reloader = ast.literal_eval(self.general_section.get("use_reloader"))
         app_port = int(self.general_section.get("port"))
         template_folder = self.general_section.get("template_folder")
         cFCGI = ast.literal_eval(self.fcgi_section.get("enabled"))
@@ -136,6 +137,10 @@ class FlaskServer(object):
                 test_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 test_socket.bind((host, app_port))
                 test_socket.close()
-                serving.run_with_reloader(inner, None, 1)
+                # Disable reloader only by explicit config setting
+                if use_reloader == False:
+                    serving.run_simple(host, app_port, self._app, use_reloader=False)
+                else:
+                    serving.run_with_reloader(inner, None, 1)
             finally:
                 self._app._got_first_request = False
