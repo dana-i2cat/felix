@@ -12,19 +12,27 @@ Installing
 
 Managing entries for your RMs
 -----------------------------
-1. ``cd modules/resource/orchestrator/src/admin/db``
-1. You may add, delete or dump entries so that RO can communicate with your RMs:
-  *  Syntax: ``python manage.py [add_route_entry|delete_route_entry|dump] [params]``
-    * Parameters (only for add/delete):
-      * ``$type`` can be one of _virtualisation_, _sdn_networking_, _stitching_entity_ or _transport_network_
-      * ``$host_ip``, ``$host_port`` is the IP and port where the RM is listening
-      * ``$protocol`` is usually _https_ or _http_
-      * ``$am_type``, ``$am_version``, usually set to type _geni_ and version _3_
-      * ``$endpoint`` URI where the API is exposed, e.g. _/xmlrpc/geni/3/_
-      * Others: ``--user``, ``--password`` may be added iff needed to provide BasicAuth
-  *  Adding entry: ``python manage.py add_route_entry -t "$type" -a "$host_ip" -p "$host_port" --protocol "$protocol" --endpoint "$endpoint" --am_type "$am_type" --am_version $am_version``
-  * Removing entry: ``python manage.py delete_route_entry -t "$type" -a "$host_ip" -p "$host_port" --protocol "$protocol" --endpoint "$endpoint" --am_type "$am_type" --am_version $am_version``
-  *  Dumping all entries: ``python manage.py dump``
+The RO keeps a list of RMs. This list is used to steer the experimenter requests and also to peridically update the resources.
+
+The data can be inserted either by the ``manage.py`` script or using the ``configure_rms.sh`` interactive script:
+
+1. Using the interactive script:
+  * ``cd modules/resource/orchestrator/deploy``
+  * ``./configure_rms.sh``
+1. Using directly the admin script:
+  * ``cd modules/resource/orchestrator/src/admin/db``
+  * You may add, delete or dump entries so that RO can communicate with your RMs:
+    *  Syntax: ``python manage.py [add_route_entry|delete_route_entry|dump] [params]``
+      * Parameters (only for add/delete):
+        * ``$type`` can be one of _virtualisation_, _sdn_networking_, _stitching_entity_ or _transport_network_
+        * ``$host_ip``, ``$host_port`` is the IP and port where the RM is listening
+        * ``$protocol`` is usually _https_ or _http_
+        * ``$am_type``, ``$am_version``, usually set to type _geni_ and version _3_
+        * ``$endpoint`` URI where the API is exposed, e.g. _/xmlrpc/geni/3/_
+        * Others: ``--user``, ``--password`` may be added iff needed to provide BasicAuth
+    *  Adding entry: ``python manage.py add_route_entry -t "$type" -a "$host_ip" -p "$host_port" --protocol "$protocol" --endpoint "$endpoint" --am_type "$am_type" --am_version $am_version``
+    * Removing entry: ``python manage.py delete_route_entry -t "$type" -a "$host_ip" -p "$host_port" --protocol "$protocol" --endpoint "$endpoint" --am_type "$am_type" --am_version $am_version``
+    *  Dumping all entries: ``python manage.py dump``
 
 Running
 -------
