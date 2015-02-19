@@ -50,7 +50,7 @@ If everything is working properly you should see something like this:
 INFO:cred-verifier:Will accept credentials signed by any of 1 root certs found in ~/.gcf/trusted_roots: ['~/.gcf/trusted_roots/ch-cert.pem']
 INFO:gcf-ch:Registering AM urn:publicid:IDN+geni:gpo:gcf:am1+authority+am at http://localhost:8001
 INFO:cred-verifier:Adding trusted cert file ch-cert.pem
-INFO:cred-verifier:Combined dir of 1 trusted certs ~/.gcf/trusted_roots into file /root/.gcf/trusted_roots/CATedCACerts.pem for Python SSL support
+INFO:cred-verifier:Combined dir of 1 trusted certs ~/.gcf/trusted_roots into file ~/.gcf/trusted_roots/CATedCACerts.pem for Python SSL support
 INFO:gcf-ch:GENI CH Listening on port 8000...
 ```
 
