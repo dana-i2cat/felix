@@ -15,7 +15,7 @@ interfaces:
                 vlans:
                     - 1000
                     - 2000
-                    - 3000-305
+                    - 3000-3005
             -
                 name: urn:publicid:psnc-nsi:if2
                 type: vlan_trans
