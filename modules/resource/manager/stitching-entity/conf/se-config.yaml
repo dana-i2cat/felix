@@ -15,14 +15,14 @@ interfaces:
                 vlans:
                     - 1000
                     - 2000
-                    - 3000-3030
+                    - 3000-305
             -
                 name: urn:publicid:psnc-nsi:if2
                 type: vlan_trans
                 vlans:
                     - 1000
                     - 2000
-                    - 3000-3030
+                    - 3000-3005
 
     eth2:
         remote_endpoints:

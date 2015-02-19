@@ -185,7 +185,7 @@ class seConfigurator:
         ]
 
         # Prepare links
-        # TODO: add static and non-static links recognition
+        # TODO: add ports with vlan ranges in conf file
         config = self.initial_configured_interfaces
         for interface in config:
             endpoints = config[interface]["remote_endpoints"]
@@ -217,7 +217,25 @@ class seConfigurator:
                             v_start, v_end = vlan.split("-")
                             v_range = range(int(v_start), int(v_end)+1, 1)
                             for v in v_range:
-                                avail_vlans[v] = True
+                                new_static_link =  {
+                                    'component_id':component_id_prefix + ':' + interface + "+" + endpoint["name"],
+                                    'component_manager_name':None,
+                                    'interface_ref':[
+                                        {
+                                            'component_id': component_id_prefix + ':' + interface
+                                        },
+                                        {
+                                            'component_id': endpoint["name"]
+                                        }
+                                    ],
+                                    'property':[
+
+                                    ],
+                                    'link_type':'urn:felix+' + endpoint["type"]
+                                }
+                                if configured_interfaces[interface][str(vlan)] == True:
+                                    links_se.append(new_static_link)
+                                    break
                         except:
                             pass
 
