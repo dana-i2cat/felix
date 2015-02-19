@@ -16,7 +16,7 @@ Managing entries for your RMs
 1. You may add, delete or dump entries so that RO can communicate with your RMs:
   *  Syntax: ``python manage.py [add_route_entry|delete_route_entry|dump] [params]``
     * Parameters (only for add/delete):
-      * ``$type`` can be one of _virtualisation_, "", "" or ""
+      * ``$type`` can be one of _virtualisation_, _sdn_networking_, _stitching_entity_ or _transport_network_
       * ``$host_ip``, ``$host_port`` is the IP and port where the RM is listening
       * ``$protocol`` is usually _https_ or _http_
       * ``$am_type``, ``$am_version``, usually set to type _geni_ and version _3_
