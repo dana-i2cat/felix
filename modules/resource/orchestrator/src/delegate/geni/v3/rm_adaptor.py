@@ -311,6 +311,7 @@ class GENIv3Client(SFAClient):
         raise exceptions.RPCError(err)
 
     def provision(self, urns, credentials, best_effort, end_time, geni_users):
+        # XXX CHECK HOW TO PASS THE "geni_users" OPTION HERE TO EACH RM
         options = self.format_options(best_effort=best_effort,
                                       end_time=end_time)
         logger.debug("%s Options: %s" % (self.typee, options,))

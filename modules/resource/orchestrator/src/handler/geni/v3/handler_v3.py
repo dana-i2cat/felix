@@ -129,7 +129,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         to geni compliant date format."""
         geni_end_time = None
         if "geni_end_time" in options:
-            geni_end_time = self._str2datetime(options["geni_end_time"])
+            geni_end_time = self.__str2datetime(options["geni_end_time"])
 
         # TODO check the end_time against the duration of the credential
         try:
@@ -151,7 +151,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
 
     def Renew(self, urns, credentials, expiration_time_str, options):
         geni_best_effort = self._option(options, "geni_best_effort", ret=True)
-        expiration_time = self._str2datetime(expiration_time_str)
+        expiration_time = self.__str2datetime(expiration_time_str)
         try:
             # delegate
             result = self._delegate.renew(urns, self.requestCertificate(),
@@ -170,7 +170,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         geni_users = self._option(options, "geni_users", ret=[])
         geni_end_time = None
         if "geni_end_time" in options:
-            geni_end_time = self._str2datetime(options["geni_end_time"])
+            geni_end_time = self.__str2datetime(options["geni_end_time"])
 #            geni_end_time = self.__rfc3339_to_datetime(options["geni_end_time"])
 
         # TODO check the end_time against the duration of the credential

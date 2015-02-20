@@ -345,7 +345,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def provision(self, urns, client_cert, credentials, best_effort, end_time,
                   geni_users):
         """Documentation see [geniv3rpc] GENIv3DelegateBase.
-        {geni_users} is not relevant here."""
+        {geni_users} is relevant here."""
         ro_manifest, ro_slivers = ROManifestFormatter(), []
 
         for urn in urns:
