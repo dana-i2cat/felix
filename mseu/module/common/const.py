@@ -49,6 +49,10 @@ XML_TAG_IF_REF          = 'interface_ref'
 XML_TAG_MON_DATA        = 'monitoring-data'
 XML_TAG_PARAM           = 'parameter'
 XML_TAG_VAL             = 'value'
+XML_TAG_MGMT            = 'management'
+XML_TAG_MGMT_ADDRESS    = 'address'
+XML_TAG_MGMT_PORT       = 'port'
+XML_TAG_MGMT_AUTH       = 'auth'
 
 # xml attribute
 XML_ATTR_TYPE           = 'type'
@@ -61,7 +65,7 @@ XML_ATTR_NUM            = 'num'
 XML_ATTR_CLIENT_ID      = 'client_id'
 XML_ATTR_FWD            = 'forward'
 XML_ATTR_TIME_STAMP     = 'timestamp'
-
+XML_ATTR_MGMT_TYPE      = 'type'
 
 # HTTP GET option.
 HTTP_GET_OPT_TYPE        = 'type'
