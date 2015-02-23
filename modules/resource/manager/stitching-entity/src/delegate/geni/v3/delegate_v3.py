@@ -317,7 +317,14 @@ class GENIv3Delegate(GENIv3DelegateBase):
             links_db, nodes, links = self.SESlices.get_link_db(urn)
             self.SESlices._create_manifest_from_req_n_and_l(se_manifest, nodes,links)
 
-        se_provision.addSwitchingRule()
+            reservation_ports = self.SESlices._allocate_ports_in_slice(nodes)["ports"]
+
+            in_port = int(reservation_ports[0]["port"].rsplit(":", 1)[1])
+            out_port = int(reservation_ports[1]["port"].rsplit(":", 1)[1])
+            in_vlan = int(reservation_ports[0]["vlan"])
+            out_vlan = int(reservation_ports[1]["vlan"])
+
+            se_provision.addSwitchingRule(in_port, out_port, in_vlan, out_vlan)
 
         slivers = [{'geni_sliver_urn' : urns[0],
                     "geni_allocation_status"  : "geni_allocated",
@@ -409,10 +416,18 @@ class GENIv3Delegate(GENIv3DelegateBase):
             links_db, nodes, links = self.SESlices.get_link_db(urn)
             reservation_ports = self.SESlices._allocate_ports_in_slice(nodes)
 
+            reservation_ports = self.SESlices._allocate_ports_in_slice(nodes)["ports"]
+
+            in_port = int(reservation_ports[0]["port"].rsplit(":", 1)[1])
+            out_port = int(reservation_ports[1]["port"].rsplit(":", 1)[1])
+            in_vlan = int(reservation_ports[0]["vlan"])
+            out_vlan = int(reservation_ports[1]["vlan"])
+
+            se_provision.deleteSwitchingRule(in_port, out_port, in_vlan, out_vlan)
+
             # expires_date = datetime.strptime(links_db['geni_expires'], RFC3339_FORMAT_STRING)
             expires_date = links_db['geni_expires']
 
-            se_provision.deleteSwitchingRule()
 
             result.append( 
                 {   
@@ -424,7 +439,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             )
 
             # Mark resources as free
-            self.SEResources.free_resource_reservation(reservation_ports['ports'])
+            self.SEResources.free_resource_reservation(reservation_ports)
 
             # Remove reservation
             self.SESlices.remove_link_db(urn)

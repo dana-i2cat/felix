@@ -7,7 +7,7 @@ capacity: 1G
 
 
 interfaces:
-    eth1:
+    "1":
         remote_endpoints: 
             -
                 name: urn:publicid:psnc-nsi:if1
@@ -24,7 +24,7 @@ interfaces:
                     - 2000
                     - 3000-3005
 
-    eth2:
+    "2":
         remote_endpoints:
             -
                 name: urn:publicid:psnc-dpid:if2
