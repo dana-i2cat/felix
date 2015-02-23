@@ -25,9 +25,12 @@ default_config = {
     'zabbix_user' : 'admin',
     'zabbix_pass' : 'zabbix',
     'monitoring_module' : None,
-    'sdn_monitoring_item' : None,
-    'cp_monitoring_item_server' : None,
-    'cp_monitoring_item_vm' : None,
+    'ps_sdn_monitoring_item' : None,
+    'snmp_sdn_monitoring_item' : None,
+    'zabbix_cp_monitoring_item_server' : None,
+    'zabbix_cp_monitoring_item_vm' : None,
+    'snmp_cp_monitoring_item_server' : None,
+    'snmp_cp_monitoring_item_vm' : None,
     'log_dir' : os.path.normpath(os.path.join(BASE_DIR, '../../log')),
     'log_file' : 'monitoring_data_collector.log',
     'aggregate' : '1',
@@ -69,10 +72,11 @@ for item in monitoring_module:
         module_dict['interval'] = item[1]
         module_list.append(module_dict)
 
-sdn_mon_item_list=list()
-sdn_monitoring_item = util.get_config_param(confInfo,'MONITORING', 'sdn_monitoring_item')
-sdn_monitoring_item = util.to_listinlist(sdn_monitoring_item)
-for item in sdn_monitoring_item:
+# perfSonar
+ps_sdn_mon_item_list=list()
+ps_sdn_monitoring_item = util.get_config_param(confInfo,'MONITORING', 'ps_sdn_monitoring_item')
+ps_sdn_monitoring_item = util.to_listinlist(ps_sdn_monitoring_item)
+for item in ps_sdn_monitoring_item:
     if len(item) == 2:
         mon_item_dict=dict()
         mon_item_dict['data-name'] = item[0]
@@ -81,12 +85,13 @@ for item in sdn_monitoring_item:
             print('(Config)aggregate type is invalid.({0})'.format(tmp_item))
             sys.exit(1)
         mon_item_dict['agg-type'] = tmp_item
-        sdn_mon_item_list.append(mon_item_dict)
+        ps_sdn_mon_item_list.append(mon_item_dict)
 
-cp_mon_item_srv_list=list()
-cp_monitoring_item_server = util.get_config_param(confInfo,'MONITORING', 'cp_monitoring_item_server')
-cp_monitoring_item_server = util.to_listinlist(cp_monitoring_item_server)
-for item in cp_monitoring_item_server:
+# Zabbix
+zabbix_cp_mon_item_srv_list=list()
+zabbix_cp_monitoring_item_server = util.get_config_param(confInfo,'MONITORING', 'zabbix_cp_monitoring_item_server')
+zabbix_cp_monitoring_item_server = util.to_listinlist(zabbix_cp_monitoring_item_server)
+for item in zabbix_cp_monitoring_item_server:
     if len(item) == 3:
         mon_item_dict=dict()
         mon_item_dict['data-name'] = item[0]
@@ -96,12 +101,12 @@ for item in cp_monitoring_item_server:
             print('(Config)timestamp type is invalid.({0})'.format(tmp_item))
             sys.exit(1)
         mon_item_dict['ts-type'] = tmp_item
-        cp_mon_item_srv_list.append(mon_item_dict)
+        zabbix_cp_mon_item_srv_list.append(mon_item_dict)
  
-cp_mon_item_vm_list=list()
-cp_monitoring_item_vm = util.get_config_param(confInfo,'MONITORING', 'cp_monitoring_item_vm')
-cp_monitoring_item_vm = util.to_listinlist(cp_monitoring_item_vm)
-for item in cp_monitoring_item_vm:
+zabbix_cp_mon_item_vm_list=list()
+zabbix_cp_monitoring_item_vm = util.get_config_param(confInfo,'MONITORING', 'zabbix_cp_monitoring_item_vm')
+zabbix_cp_monitoring_item_vm = util.to_listinlist(zabbix_cp_monitoring_item_vm)
+for item in zabbix_cp_monitoring_item_vm:
     if len(item) == 3:
         mon_item_dict=dict()
         mon_item_dict['data-name'] = item[0]
@@ -111,7 +116,58 @@ for item in cp_monitoring_item_vm:
             print('(Config)timestamp type is invalid.({0})'.format(tmp_item))
             sys.exit(1)
         mon_item_dict['ts-type'] = tmp_item
-        cp_mon_item_vm_list.append(mon_item_dict)
+        zabbix_cp_mon_item_vm_list.append(mon_item_dict)
+
+# SNMP
+snmp_sdn_mon_item_list = list()
+snmp_sdn_monitoring_item = util.get_config_param(confInfo,'MONITORING', 'snmp_sdn_monitoring_item_vm')
+snmp_sdn_monitoring_item = util.to_listinlist(snmp_sdn_monitoring_item)
+for item in snmp_sdn_monitoring_item:
+    if len(item) == 3:
+        mon_item_dict=dict()
+        mon_item_dict['data-name'] = item[0]
+        mon_item_dict['oid'] = item[1]
+        tmp_item = str(item[2])
+        if not (tmp_item == const.TYPE_AGG_AVG or tmp_item == const.TYPE_AGG_LAST):
+            print('(Config)aggregate type is invalid.({0})'.format(tmp_item))
+            sys.exit(1)
+        mon_item_dict['agg-type'] = tmp_item
+        snmp_sdn_mon_item_list.append(mon_item_dict)
+
+
+snmp_cp_mon_item_srv_list = list()
+snmp_cp_monitoring_item_server = util.get_config_param(confInfo,'MONITORING', 'snmp_sdn_monitoring_item_server')
+snmp_cp_monitoring_item_server = util.to_listinlist(snmp_sdn_monitoring_item_server)
+for item in snmp_sdn_monitoring_item_server:
+    if len(item) == 3:
+        mon_item_dict=dict()
+        mon_item_dict['data-name'] = item[0]
+        mon_item_dict['oid'] = item[1]
+        tmp_item = str(item[2])
+        if not (tmp_item == const.TYPE_TS_REP or tmp_item == const.TYPE_TS_NREP):
+            print('(Config)timestamp type is invalid.({0})'.format(tmp_item))
+            sys.exit(1)
+        mon_item_dict['ts-type'] = tmp_item
+        snmp_sdn_mon_item_server_list.append(mon_item_dict)
+
+
+snmp_cp_mon_item_vm_list = list()
+snmp_cp_monitoring_item_vm = util.get_config_param(confInfo,'MONITORING', 'snmp_sdn_monitoring_item_vm')
+snmp_cp_monitoring_item_vm = util.to_listinlist(snmp_sdn_monitoring_item_vm)
+for item in snmp_sdn_monitoring_item_vm:
+    if len(item) == 3:
+        mon_item_dict=dict()
+        mon_item_dict['data-name'] = item[0]
+        mon_item_dict['oid'] = item[1]
+        tmp_item = str(item[2])
+        if not (tmp_item == const.TYPE_TS_REP or tmp_item == const.TYPE_TS_NREP):
+            print('(Config)timestamp type is invalid.({0})'.format(tmp_item))
+            sys.exit(1)
+        mon_item_dict['ts-type'] = tmp_item
+        snmp_sdn_mon_item_vm_list.append(mon_item_dict)
+
+
+
 
 # [LOG]
 log_dir = util.get_config_param(confInfo,'LOG', 'log_dir')

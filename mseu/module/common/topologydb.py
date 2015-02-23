@@ -23,7 +23,6 @@ class NodeManagement(Entity):
     node = ManyToOne('Node',primaryjoin=lambda: NodeMgmt.idNode == Node.id,
                                foreign_keys=lambda: [NodeMgmt.idNode])
 
-
 class VMMapping(Entity):
     using_options(tablename='M_VM_MAPPING', autoload=True)
     server_node = ManyToOne('Node',primaryjoin=lambda: VMMapping.idServer == Node.id,

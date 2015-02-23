@@ -122,7 +122,7 @@ class MonitoringDataSDN():
                     + " AND timestamp &lt; {0})".format(etime)
 
         mon_item_list = []
-        for mon_item in config.sdn_mon_item_list:
+        for mon_item in config.ps_sdn_mon_item_list:
             mon_item_list.append(mon_item['data-name'])
         if not mon_item_list:
             logger.debug('monitoring-item is not specified.')
@@ -231,7 +231,7 @@ class MonitoringDataSDN():
         # Aggregate(average value or last value)
         agg_val_list = []
         agg_val_dict = dict()
-        for item_dict in config.sdn_mon_item_list:
+        for item_dict in config.ps_sdn_mon_item_list:
             data_name = item_dict['data-name']
             agg_type = item_dict['agg-type']
             logger.debug('data_name={0} agg_type={1}'.format(data_name,agg_type))

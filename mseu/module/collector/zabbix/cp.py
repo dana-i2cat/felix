@@ -49,10 +49,10 @@ class MonitoringDataCP():
         target_item_list = None
         if node_type == const.TYPE_NODE_SRV:
             item_sts = const.ZBX_SRV_STS
-            target_item_list = config.cp_mon_item_srv_list
+            target_item_list = config.zabbix_cp_mon_item_srv_list
         elif node_type == const.TYPE_NODE_VM:
             item_sts = const.ZBX_VM_STS
-            target_item_list = config.cp_mon_item_vm_list
+            target_item_list = config.zabbix_cp_mon_item_vm_list
             
         item_sts = item_sts + '[{0}]'.format(node_name)
         items = zapi.item.get(output=['hostid','lastclock','lastvalue']
