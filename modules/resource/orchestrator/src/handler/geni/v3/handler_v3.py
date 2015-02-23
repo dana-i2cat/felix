@@ -167,7 +167,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
 
     def Provision(self, urns, credentials, options):
         geni_best_effort = self._option(options, "geni_best_effort", ret=True)
-        geni_users = self._option(options, "geni_users", ret=[])
+        geni_users = options.get("geni_users", [])
         geni_end_time = None
         if "geni_end_time" in options:
             geni_end_time = self.__str2datetime(options["geni_end_time"])

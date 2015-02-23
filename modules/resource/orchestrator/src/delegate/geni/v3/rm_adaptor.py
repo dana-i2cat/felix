@@ -139,7 +139,7 @@ class GENIv3Client(SFAClient):
         logger.info("GENIv3Client %s created." % (self.typee,))
 
     def format_options(self, available=None, compress=None, end_time=None,
-                       best_effort=None):
+                       best_effort=None, users=[]):
         options = {"geni_rspec_version": {"type": "geni",
                                           "version": 3, }}
         if available:
@@ -150,6 +150,8 @@ class GENIv3Client(SFAClient):
             options["end_time"] = end_time
         if best_effort:
             options["geni_best_effort"] = best_effort
+        if users:
+            options["geni_users"] = users
         return options
 
     def format_credentials(self, credentials):
@@ -311,14 +313,14 @@ class GENIv3Client(SFAClient):
         raise exceptions.RPCError(err)
 
     def provision(self, urns, credentials, best_effort, end_time, geni_users):
-        # XXX CHECK HOW TO PASS THE "geni_users" OPTION HERE TO EACH RM
         options = self.format_options(best_effort=best_effort,
-                                      end_time=end_time)
+                                      end_time=end_time,
+                                      users=geni_users)
         logger.debug("%s Options: %s" % (self.typee, options,))
         # Credentials must be sent in the proper format
         credentials = self.format_credentials(credentials)
         try:
-            params = [urns, credentials, options, ]
+            params = [urns, credentials, options,]
             result = self.Provision(*params)
             logger.info("\n\n\n%s Provision result=%s\n\n\n" %
                         (self.typee, result,))
