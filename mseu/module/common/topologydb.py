@@ -18,6 +18,12 @@ class NodeInfo(Entity):
     node = ManyToOne('Node',primaryjoin=lambda: NodeInfo.idNode == Node.id,
                                foreign_keys=lambda: [NodeInfo.idNode])
 
+class NodeManagement(Entity):
+    using_options(tablename='M_NODE_MGMT', autoload=True)
+    node = ManyToOne('Node',primaryjoin=lambda: NodeMgmt.idNode == Node.id,
+                               foreign_keys=lambda: [NodeMgmt.idNode])
+
+
 class VMMapping(Entity):
     using_options(tablename='M_VM_MAPPING', autoload=True)
     server_node = ManyToOne('Node',primaryjoin=lambda: VMMapping.idServer == Node.id,
@@ -76,6 +82,9 @@ def get_all_vm(nw=None):
     else:
         return Node.query.filter(Node.network_name == nw.network_name)\
                             .filter(Node.type == const.TYPE_NODE_VM).all()
+
+def get_all_mgmt(node):
+    return NodeManagement.query.filter(NodeManagement.idNode == node.id).all()
 
 def get_all_if(node):
     return InterFace.query.filter(InterFace.idNode == node.id).all()

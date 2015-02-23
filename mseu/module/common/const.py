@@ -28,6 +28,7 @@ TYPE_AGG_AVG            = '0'
 TYPE_AGG_LAST           = '1'
 TYPE_TS_REP             = '0'
 TYPE_TS_NREP            = '1'
+TYPE_MGMT_SNMP          = 'snmp'
 
 # slice status
 SLICE_STS_PROV = 'geni_provisioned'

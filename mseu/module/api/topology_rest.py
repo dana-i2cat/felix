@@ -67,6 +67,27 @@ def parse_node_xml(xd_root):
         node_dict[const.XML_ATTR_ID] = node_id
         node_dict[const.XML_ATTR_TYPE] = node_type
 
+	#get management type and details
+        mgmt_dict = dict()
+        if node.has_key(const.XML_TAG_MGMT):
+            mgmt_list = util.to_array(node[const.XML_TAG_MGMT])
+            if len(mgmt_list) > 1:
+                logger.warn('more than one management definition. (node id={0})'.format(node_id))
+            mgmt = mgmt_list[1]
+            if mgmt.has_key(const.XML_TAG_MGMT_TYPE):
+                mgmt_dict[const.XML_TAG_MGMT_TYPE] = mgmt[const.XML_TAG_MGMT_TYPE)
+            else
+                logger.warn('management definition has no type. (node id={0})'.format(node_id))
+            if mgmt.has_key(const.XML_TAG_MGMT_ADDRESS):
+                mgmt_dict[const.XML_TAG_MGMT_ADDRESS] = mgmt[const.XML_TAG_MGMT_ADDRESS)
+            if mgmt.has_key(const.XML_TAG_MGMT_PORT):
+                mgmt_dict[const.XML_TAG_MGMT_PORT] = mgmt[const.XML_TAG_MGMT_PORT]
+            if mgmt.has_key(const.XML_TAG_MGMT_AUTH):
+                mgmt_dict[const.XML_TAG_MGMT_AUTH] = mgmt[const.XML_TAG_MGMT_AUTH]
+
+        #add management
+        node_dict[const.XML_TAG_MGMT] = mgmt_dict
+
         #add interface dictionary list.
         if_dict_list = []
         node_dict[const.XML_TAG_IF] = if_dict_list
@@ -364,6 +385,35 @@ def insert_node(node_list,db_nw,crrent_node=None):
                                 )
             session.commit()
 
+        ### insert management details
+        mgmt = []
+        if node.has_key(const.XML_TAG_MGMT):
+            mgmt = node[const.XML_TAG_MGMT].first()
+            db_mgmt = NodeManagement.query.filter(NodeManagement.idNode == db_node.id)
+            if db_mgmt:
+                logger.debug('management for node({0}) already exists.'.format(node[const.XML_ATTR_ID]))
+                continue
+            if not mgmt.has_key(const.XML_TAG_TYPE):
+                logger.debug('management for node({0}) has no type.'.format(node[const.XML_ATTR_ID]))
+            else
+                mgmt_type = mgmt[const.XML_TAG_TYPE]
+                mgmt_address = None
+                mgmt_port = None
+                mgmt_auth = None
+                if mgmt.has_key(const.XML_ATTR_MGMT_ADDRESS):
+                    mgmt_address = mgmt[const.XML_ATTR_MGMT_ADDRESS]
+                if mgmt.has_key(const.XML_ATTR_MGMT_PORT):
+                    mgmt_port = mgmt[const.XML_ATTR_MGMT_PORT]
+                if mgmt.has_key(const.XML_ATTR_MGMT_AUTH):
+                    mgmt_auth = mgmt[const.XML_ATTR_MGMT_AUTH]
+            
+                db_mgmt = NodeManagement(idNode=db_node.id
+                                   ,type=mgmt_type
+                                   ,address=mgmt_address
+                                   ,port=mgmt_port
+                                   ,auth=mgmt_auth )
+                session.commit()
+
         ### insert interface
         if_list = []
         if node.has_key(const.XML_TAG_IF):
@@ -373,7 +423,7 @@ def insert_node(node_list,db_nw,crrent_node=None):
             db_if = InterFace.query.filter(InterFace.idNode == db_node.id) \
                                     .filter(InterFace.if_name == interface[const.XML_ATTR_ID]).first()
             if db_if:
-                logger.debug('interface({0}) is Already existence.'.format(db_if.if_name))
+                logger.debug('interface({0}) already exists.'.format(db_if.if_name))
                 continue
 
             port_num = None
@@ -568,6 +618,10 @@ def del_topol(topol_dict,md_flg=False):
         
         #get all node in topology.
         for node in Node.query.filter(Node.network_name == topol_dict[const.XML_ATTR_NAME]).all():
+            #get all management details in node (should be only one)
+            for mgmt in NodeManagement.query.filter(NodeManagement.idNode == node.id).all():
+                ### delete management details
+                mgmt.delete()
             #get all interface in node.
             for interface in InterFace.query.filter(InterFace.idNode == node.id).all():
                 #get search all of the links that interface is involved.

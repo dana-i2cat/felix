@@ -76,8 +76,8 @@ CREATE TABLE IF NOT EXISTS `M_NODE_MGMT` (
   `idNode` int(11) NOT NULL,
   `vkey` varchar(255) NOT NULL,
   `type` varchar(10) NOT NULL,
-  `address` varchar(48) NOT NULL,
-  `port` varchar(8) NOT NULL,
+  `address` varchar(48),
+  `port` varchar(8),
   `auth` varchar(255),
   `dbUpdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`idNode`,`vkey`)
