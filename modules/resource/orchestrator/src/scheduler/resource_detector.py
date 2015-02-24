@@ -82,6 +82,10 @@ class ResourceDetector(object):
         try:
             # Retrieve the URI for domain:RMs identification purposes
             adaptor, adaptor_uri = AdaptorFactory.create_from_db(peer)
+            # HACK to modify the adaptor by removing its default handler 
+            # (XMLRPC's ServerProxy) when none is provided
+            if peer.get("endpoint") == "/":
+                adaptor._ServerProxy__handler = ""
             self.info("RM-Adaptor=%s" % (adaptor,))
 
             geni_v3_credentials = AdaptorFactory.geni_v3_credentials()
@@ -210,8 +214,8 @@ class ResourceDetector(object):
 
     def __decode_tn_rspec(self, result):
         (nodes, links) = (None, None)
-
         rspec = result.get("value", None)
+
         if rspec is None:
             self.error("Unable to get RSpec value from %s" % (result,))
             return (nodes, links)

@@ -38,7 +38,7 @@ def tn_resource_detector():
         rd = ResourceDetector("transport_network")
         rd.do_action()
     except Exception as e:
-        logger.error("sdn_resource_detector failure: %s" % (e,))
+        logger.error("tn_resource_detector failure: %s" % (e,))
 
 
 # monitoring scheduled jobs

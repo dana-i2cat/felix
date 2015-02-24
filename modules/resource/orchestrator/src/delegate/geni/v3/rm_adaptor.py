@@ -7,12 +7,17 @@ import xmlrpclib
 logger = core.log.getLogger("rmadaptor")
 
 
-def format_uri(protocol, user, password, address, port, endpoint):
+def format_uri(protocol, user, password, address, port, endpoint):  
     uri = "%s://" % str(protocol)
     if user and password:
         uri += "%s:%s@" % (str(user), str(password),)
 
-    uri += "%s:%s/%s" % (str(address), str(port), str(endpoint))
+    uri += "%s:%s" % (str(address), str(port))
+    if endpoint:
+        if endpoint[0] == "/":
+            endpoint = endpoint[1:]
+        uri += "/%s" % str(endpoint)
+
     return uri
 
 
@@ -31,18 +36,21 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
     def create(type, protocol, user, password, address, port, endpoint,
                id, am_type, am_version):
         uri = format_uri(protocol, user, password, address, port, endpoint)
+
         if am_type is None or am_version is None:
             logger.debug("We need to update the AM info for this RM...")
             (am_type, am_version) = AdaptorFactory.get_am_info(uri, id)
 
         logger.debug("AM type: %s, version: %s" % (am_type, am_version,))
 
-        if am_type in ["geni", "geni_sfa", "sfa"] and am_version <= 2:
+        accepted_types = ["geni", "GENI", "geni_sfa", "GENI_SFA", "sfa", "SFA"]
+
+        if am_type in accepted_types and int(am_version) <= 2:
             if type == "virtualisation":
                 return CRMGeniv2Adaptor(uri)
             elif type == "sdn_networking":
                 return SDNRMGeniv2Adaptor(uri)
-        elif am_type in ["geni", "GENI", "sfa"] and int(am_version) == 3:
+        elif am_type in accepted_types and int(am_version) == 3:
             if type == "virtualisation":
                 return CRMGeniv3Adaptor(uri)
             elif type == "sdn_networking":
@@ -52,7 +60,7 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
             elif type == "transport_network":
                 return TNRMGeniv3Adaptor(uri)
 
-        raise exceptions.GeneralError("Type not implemented yet!")
+        raise exceptions.GeneralError("Resource Manager type not implemented yet! Details: type=%s,version=%s" % (str(am_type), str(am_version)))
 
     @staticmethod
     def create_from_db(peer_db):
@@ -61,14 +69,18 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
         @return adaptor_object
         @return adaptor_url (useful for domain identification)
         """
-        adaptor_endpoint = peer_db.get("endpoint")
-        if peer_db.get("endpoint")[0] == "/":
-            adaptor_endpoint = peer_db.get("endpoint")[1:]
-
-        adaptor_uri = "%s://%s:%s/%s" % (peer_db.get("protocol"),
+        adaptor_endpoint = peer_db.get("endpoint", "")
+        if adaptor_endpoint:
+            if adaptor_endpoint[0] == "/":
+                adaptor_endpoint = adaptor_endpoint[1:]
+        
+        adaptor_uri = "%s://%s:%s" % (peer_db.get("protocol"),
                                          peer_db.get("address"),
-                                         peer_db.get("port"),
-                                         adaptor_endpoint)
+                                         peer_db.get("port"))
+        
+        if adaptor_endpoint:
+            adaptor_uri += "/%s" % str(adaptor_endpoint)
+        
         adaptor = AdaptorFactory.create(
             peer_db.get("type"), peer_db.get("protocol"), peer_db.get("user"),
             peer_db.get("password"), peer_db.get("address"),
