@@ -116,6 +116,8 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
 
         logger.info("list-resources success!")
         return "%s" % rspec
+#        # XXX DEBUG
+#        return open("vendor/tnrmgeni3/tn_rm_listresources.xml").read()
 
     def __datetime2str(self, dt):
         return dt.strftime('%Y-%m-%d %H:%M:%S.%fZ')

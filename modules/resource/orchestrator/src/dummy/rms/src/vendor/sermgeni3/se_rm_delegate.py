@@ -127,6 +127,8 @@ class SERMGENI3Delegate(GENIv3DelegateBase):
 
         logger.info("list-resources success!")
         return "%s" % rspec
+#        # XXX DEBUG
+#        return open("vendor/sermgeni3/se_rm_listresources.xml").read()
 
     def __datetime2str(self, dt):
         return dt.strftime('%Y-%m-%d %H:%M:%S.%fZ')
