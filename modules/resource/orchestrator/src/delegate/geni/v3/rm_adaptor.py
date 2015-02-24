@@ -42,7 +42,7 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
                 return CRMGeniv2Adaptor(uri)
             elif type == "sdn_networking":
                 return SDNRMGeniv2Adaptor(uri)
-        elif am_type in ["geni", "GENI",] and int(am_version) == 3:
+        elif am_type in ["geni", "GENI", "sfa"] and int(am_version) == 3:
             if type == "virtualisation":
                 return CRMGeniv3Adaptor(uri)
             elif type == "sdn_networking":
