@@ -17,18 +17,18 @@ class TNRMv3RequestParser(ParserBase):
                 # so this node is NOT a TN resource!
                 continue
 
-            n = Node(n.attrib.get("client_id"),
-                      n.attrib.get("component_manager_id"),
-                      n.attrib.get("exclusive"), exclusive)
+            node = Node(n.attrib.get("client_id"),
+                        n.attrib.get("component_manager_id"),
+                        n.attrib.get("exclusive"), exclusive)
 
             for i in n.iterfind("{%s}interface" % (self.none)):
                 interface = Interface(i.attrib.get("client_id"))
                 for sv in i.iterfind("{%s}link_shared_vlan" % (self.__sv)):
                     interface.add_vlan(sv.attrib.get("vlantag"),
                                 sv.attrib.get("name"))
-                n.add_interface(interface.serialize())
+                node.add_interface(interface.serialize())
 
-            nodes.append(n.serialize())
+            nodes.append(node.serialize())
         return nodes
 
     def nodes(self):
