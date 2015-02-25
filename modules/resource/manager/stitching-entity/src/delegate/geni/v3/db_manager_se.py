@@ -29,7 +29,7 @@ class DBManager(object):
                 resources[port] = s_vlans
         try:
             self.__mutex.acquire()
-            table.update({"_id" : "se_rm"}, {"status" : resources})
+            table.update({"_id":"se_rm"},{"$set":{"status":resources}},upsert=True);
         finally:
             self.__mutex.release()
 
@@ -58,7 +58,7 @@ class DBManager(object):
         try:
             print "jestem w set" 
             self.__mutex.acquire()
-            table.update({"sliceurn":sliceurn},{"sliceurn":sliceurn, "resources": resources},upsert= True)
+            table.update({"sliceurn":sliceurn},{"sliceurn":sliceurn, "resources": resources},upsert=True)
             print "po set "
         finally:
             self.__mutex.release()
@@ -88,7 +88,6 @@ class DBManager(object):
             
         finally:
             self.__mutex.release()
-    # TODO: Add Slices reservation data model into db
 
 
 # This is the db manager object to be used into other modules

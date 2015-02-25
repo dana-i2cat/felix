@@ -25,8 +25,8 @@ def addSwitchingRule(in_port, out_port, in_vlan, out_vlan):
                 "cookie":1,
                 "cookie_mask":1,
                 "table_id":0,
-                "idle_timeout":30,
-                "hard_timeout":30,
+                "idle_timeout":0,
+                "hard_timeout":0,
                 "priority":1,
                 "flags":1,  
                  "match": {
@@ -58,8 +58,8 @@ def deleteSwitchingRule(in_port, out_port, in_vlan, out_vlan):
                 "cookie":1,
                 "cookie_mask":1,
                 "table_id":0,
-                "idle_timeout":30,
-                "hard_timeout":30,
+                "idle_timeout":0,
+                "hard_timeout":0,
                 "priority":1,
                 "flags":1,  
                  "match": {
