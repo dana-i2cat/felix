@@ -14,6 +14,8 @@ from delegate.geni.v3.rspecs.serm.request_formatter import\
     SERMv3RequestFormatter
 from handler.geni.v3 import exceptions as geni_ex
 
+from core.config import ConfParser
+import ast
 import core
 import se_configurator as SEConfigurator
 from se_slices import seSlicesWithSlivers
@@ -83,7 +85,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
         # self._resource_manager = rm_adaptor
         self.SEResources = SEConfigurator.seConfigurator()
         self.SESlices = seSlicesWithSlivers()
-        
+        self._verify_users =\
+            ast.literal_eval(ConfParser("geniv3.conf").get("certificates").get("verify_users"))        
 
     def get_request_extensions_mapping(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
@@ -113,11 +116,12 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def list_resources(self, client_cert, credentials, geni_available):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        client_urn, client_uuid, client_email =\
-            self.auth(client_cert, credentials, None, ("listslices",))
+        if self._verify_users:
+            client_urn, client_uuid, client_email =\
+                self.auth(client_cert, credentials, None, ("listslices",))
 
-        logger.info("Client urn=%s, uuid=%s, email=%s" % (
-            client_urn, client_uuid, client_email,))
+            logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                client_urn, client_uuid, client_email,))
         logger.info("geni_available=%s", geni_available)
 
         sl = "http://www.geni.net/resources/rspec/3/ad.xsd"
