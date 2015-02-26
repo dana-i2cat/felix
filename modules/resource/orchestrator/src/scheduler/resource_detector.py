@@ -61,7 +61,7 @@ class ResourceDetector(object):
             ##
             # Physical Monitoring
             #
-            
+
             # Store mapping <domain URN: adaptor URI> for identification later on
             # The second is retrieved by examinining its resources
             try:
@@ -82,7 +82,7 @@ class ResourceDetector(object):
         try:
             # Retrieve the URI for domain:RMs identification purposes
             adaptor, adaptor_uri = AdaptorFactory.create_from_db(peer)
-            # HACK to modify the adaptor by removing its default handler 
+            # HACK to modify the adaptor by removing its default handler
             # (XMLRPC's ServerProxy) when none is provided
             if peer.get("endpoint") == "/":
                 adaptor._ServerProxy__handler = ""
@@ -96,7 +96,7 @@ class ResourceDetector(object):
         except Exception as e:
             self.error("get_resources (%s) exception: %s" % (
                 peer.get("type"), str(e),))
-            return None
+            return None, None
 
     def __set_domain_component_id(self, resource_cid):
         """

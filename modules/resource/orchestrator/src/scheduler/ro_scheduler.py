@@ -4,7 +4,7 @@ from core.service import Service
 from datetime import datetime, timedelta
 from jobs import com_resource_detector, sdn_resource_detector,\
     se_resource_detector, tn_resource_detector, physical_monitoring,\
-    slice_monitoring
+    slice_monitoring, ro_resource_detector
 
 import core
 logger = core.log.getLogger("ro-scheduler")
@@ -14,17 +14,12 @@ ro_scheduler = None
 
 class ROSchedulerService(Service):
 
-    def __init__(self, interval=None):
+    def __init__(self):
         """
         Constructor of the service.
-
-        @param interval Frequency of the scheduler (in seconds).
-                        If not present, it is read from ro.conf, 'scheduler' section
         """
-        if not interval:
-            config = ConfParser("ro.conf")
-            scheduler_section = config.get("scheduler")
-            interval = int(scheduler_section.get("frequency"))
+        self.config = ConfParser("ro.conf").get("scheduler")
+        interval = int(self.config.get("frequency"))
 
         global ro_scheduler
         ro_scheduler = BackgroundScheduler()
@@ -32,9 +27,6 @@ class ROSchedulerService(Service):
                                   collection="scheduler.jobs")
         ro_scheduler.start()
 
-        # NOTE Interval should be retrieved using the ConfParser from
-        # the "resource_detector"."interval" value in the "ro.conf" file
-        # Also, consider to considerably increase the interval
         super(ROSchedulerService, self).__init__(
             "ROSchedulerService", interval)
         self.first_time = True
@@ -66,13 +58,20 @@ class ROSchedulerService(Service):
             logger.warning("oneshot_jobs failure: %s" % (e,))
 
     def __oneshot_jobs(self):
-        self.__add_oneshot(1, com_resource_detector, "oneshot_com_rd")
-        self.__add_oneshot(11, sdn_resource_detector, "oneshot_sdn_rd")
-        self.__add_oneshot(21, se_resource_detector, "oneshot_se_rd")
-        self.__add_oneshot(31, tn_resource_detector, "oneshot_tn_rd")
-        self.__add_oneshot(41, physical_monitoring, "oneshot_physical_monitoring")
-        # XXX Slice topology to be POSTed on demand (Provision, Delete)
-        self.__add_oneshot(51, slice_monitoring, "oneshot_slice_monitoring")
+        self.__add_oneshot(int(self.config.get("oneshot_ro")),
+                           ro_resource_detector, "oneshot_ro_rd")
+        self.__add_oneshot(int(self.config.get("oneshot_com")),
+                           com_resource_detector, "oneshot_com_rd")
+        self.__add_oneshot(int(self.config.get("oneshot_sdn")),
+                           sdn_resource_detector, "oneshot_sdn_rd")
+        self.__add_oneshot(int(self.config.get("oneshot_se")),
+                           se_resource_detector, "oneshot_se_rd")
+        self.__add_oneshot(int(self.config.get("oneshot_tn")),
+                           tn_resource_detector, "oneshot_tn_rd")
+        self.__add_oneshot(int(self.config.get("oneshot_phy-monit")),
+                           physical_monitoring, "oneshot_physical_monitoring")
+        self.__add_oneshot(int(self.config.get("oneshot_slice-monit")),
+                           slice_monitoring, "oneshot_slice_monitoring")
 
     def __add_cron(self, func_, id_, hour_, min_, sec_):
         try:
@@ -82,10 +81,12 @@ class ROSchedulerService(Service):
             logger.warning("cron_jobs failure: %s" % (e,))
 
     def __cron_jobs(self):
-        self.__add_cron(com_resource_detector, "cron_com_rd", 0, 1, 0)
-        self.__add_cron(sdn_resource_detector, "cron_sdn_rd", 0, 11, 0)
-        self.__add_cron(se_resource_detector, "cron_se_rd", 0, 21, 0)
-        self.__add_cron(tn_resource_detector, "cron_tn_rd", 0, 31, 0)
-        self.__add_cron(physical_monitoring, "cron_physical_monitoring", 0, 41, 0)
-        # XXX Slice topology to be POSTed on demand (Provision, Delete)
-        self.__add_cron(slice_monitoring, "cron_slice_monitoring", 0, 51, 0)
+        self.__add_cron(ro_resource_detector, "cron_ro_rd", 0, 1, 0)
+        self.__add_cron(com_resource_detector, "cron_com_rd", 0, 11, 0)
+        self.__add_cron(sdn_resource_detector, "cron_sdn_rd", 0, 21, 0)
+        self.__add_cron(se_resource_detector, "cron_se_rd", 0, 31, 0)
+        self.__add_cron(tn_resource_detector, "cron_tn_rd", 0, 41, 0)
+        self.__add_cron(physical_monitoring, "cron_physical_monitoring",
+                        0, 51, 0)
+        self.__add_cron(slice_monitoring, "cron_slice_monitoring",
+                        1, 1, 0)

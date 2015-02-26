@@ -22,6 +22,7 @@ from rspecs.tnrm.manifest_parser import TNRMv3ManifestParser
 from rspecs.tnrm.request_formatter import TNRMv3RequestFormatter
 from handler.geni.v3 import exceptions as geni_ex
 
+from core.config import ConfParser
 import core
 import datetime
 import re
@@ -39,6 +40,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def __init__(self):
         super(GENIv3Delegate, self).__init__()
         self._resource_manager = rm_adaptor
+        self._verify_users =\
+            ConfParser("ro.conf").get("general").get("verify-users")
 
     def get_request_extensions_mapping(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
@@ -68,11 +71,12 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def list_resources(self, client_cert, credentials, geni_available):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        client_urn, client_uuid, client_email =\
-            self.auth(client_cert, credentials, None, ("listslices",))
+        if self._verify_users == "True":
+            client_urn, client_uuid, client_email =\
+                self.auth(client_cert, credentials, None, ("listslices",))
 
-        logger.info("Client urn=%s, uuid=%s, email=%s" % (
-            client_urn, client_uuid, client_email,))
+            logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                client_urn, client_uuid, client_email,))
         logger.info("geni_available=%s", geni_available)
 
         sl = "http://www.geni.net/resources/rspec/3/ad.xsd"

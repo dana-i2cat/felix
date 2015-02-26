@@ -41,6 +41,14 @@ def tn_resource_detector():
         logger.error("tn_resource_detector failure: %s" % (e,))
 
 
+def ro_resource_detector():
+    try:
+        rd = ResourceDetector("island_ro")
+        rd.do_action()
+    except Exception as e:
+        logger.error("ro_resource_detector failure: %s" % (e,))
+
+
 # monitoring scheduled jobs
 def physical_monitoring():
     try:
@@ -48,6 +56,7 @@ def physical_monitoring():
         mm.physical_topology()
     except Exception as e:
         logger.error("physical_monitoring failure: %s" % (e,))
+
 
 def slice_monitoring():
     try:
