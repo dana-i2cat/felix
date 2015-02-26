@@ -7,7 +7,7 @@ import xmlrpclib
 logger = core.log.getLogger("rmadaptor")
 
 
-def format_uri(protocol, user, password, address, port, endpoint):  
+def format_uri(protocol, user, password, address, port, endpoint):
     uri = "%s://" % str(protocol)
     if user and password:
         uri += "%s:%s@" % (str(user), str(password),)
@@ -59,6 +59,8 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
                 return SERMGeniv3Adaptor(uri)
             elif type == "transport_network":
                 return TNRMGeniv3Adaptor(uri)
+            elif type == "island_ro":
+                return ROGeniv3Adaptor(uri)
 
         raise exceptions.GeneralError("Resource Manager type not implemented yet! Details: type=%s,version=%s" % (str(am_type), str(am_version)))
 
@@ -73,14 +75,14 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
         if adaptor_endpoint:
             if adaptor_endpoint[0] == "/":
                 adaptor_endpoint = adaptor_endpoint[1:]
-        
+
         adaptor_uri = "%s://%s:%s" % (peer_db.get("protocol"),
                                          peer_db.get("address"),
                                          peer_db.get("port"))
-        
+
         if adaptor_endpoint:
             adaptor_uri += "/%s" % str(adaptor_endpoint)
-        
+
         adaptor = AdaptorFactory.create(
             peer_db.get("type"), peer_db.get("protocol"), peer_db.get("user"),
             peer_db.get("password"), peer_db.get("address"),
@@ -168,7 +170,8 @@ class GENIv3Client(SFAClient):
 
     def format_credentials(self, credentials):
         # Credentials must be sent in the proper format
-        credentials = [{"geni_value": credentials, }]
+        credentials = [{"geni_value": credentials,
+                        "geni_type": "geni_sfa", }]
         return credentials
 
     def list_resources(self, credentials, available):
@@ -380,3 +383,8 @@ class SERMGeniv3Adaptor(GENIv3Client):
 class TNRMGeniv3Adaptor(GENIv3Client):
     def __init__(self, uri):
         GENIv3Client.__init__(self, uri, "TNRMGeniv3")
+
+
+class ROGeniv3Adaptor(GENIv3Client):
+    def __init__(self, uri):
+        GENIv3Client.__init__(self, uri, "ROGeniv3")

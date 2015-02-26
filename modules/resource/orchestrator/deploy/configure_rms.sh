@@ -39,13 +39,19 @@ else
     echo "Filling database with config entries..."
     while true; do
         echo
-        echo -n "Choose the RM to configure [c,sdn] (any other to quit): "
+        echo -n "Choose the RM to configure [c,sdn,se,tn,ro] (any other to quit): "
         read x
 
         if [[ x$x == x"c" ]]; then
             config_entry "virtualisation"
         elif [[ x$x == x"sdn" ]]; then
             config_entry "sdn_networking"
+        elif [[ x$x == x"se" ]]; then
+            config_entry "stitching_entity"
+        elif [[ x$x == x"tn" ]]; then
+            config_entry "transport_network"
+        elif [[ x$x == x"ro" ]]; then
+            config_entry "island_ro"
         else
             break
         fi
