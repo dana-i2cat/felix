@@ -75,11 +75,11 @@ def parse_node_xml(xd_root):
                 logger.warn('more than one management definition. (node id={0})'.format(node_id))
             mgmt = mgmt_list[1]
             if mgmt.has_key(const.XML_TAG_MGMT_TYPE):
-                mgmt_dict[const.XML_TAG_MGMT_TYPE] = mgmt[const.XML_TAG_MGMT_TYPE)
-            else
+                mgmt_dict[const.XML_TAG_MGMT_TYPE] = mgmt[const.XML_TAG_MGMT_TYPE]
+            else:
                 logger.warn('management definition has no type. (node id={0})'.format(node_id))
             if mgmt.has_key(const.XML_TAG_MGMT_ADDRESS):
-                mgmt_dict[const.XML_TAG_MGMT_ADDRESS] = mgmt[const.XML_TAG_MGMT_ADDRESS)
+                mgmt_dict[const.XML_TAG_MGMT_ADDRESS] = mgmt[const.XML_TAG_MGMT_ADDRESS]
             if mgmt.has_key(const.XML_TAG_MGMT_PORT):
                 mgmt_dict[const.XML_TAG_MGMT_PORT] = mgmt[const.XML_TAG_MGMT_PORT]
             if mgmt.has_key(const.XML_TAG_MGMT_AUTH):
@@ -395,7 +395,7 @@ def insert_node(node_list,db_nw,crrent_node=None):
                 continue
             if not mgmt.has_key(const.XML_TAG_TYPE):
                 logger.debug('management for node({0}) has no type.'.format(node[const.XML_ATTR_ID]))
-            else
+            else:
                 mgmt_type = mgmt[const.XML_TAG_TYPE]
                 mgmt_address = None
                 mgmt_port = None

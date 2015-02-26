@@ -54,6 +54,7 @@ XML_TAG_MGMT            = 'management'
 XML_TAG_MGMT_ADDRESS    = 'address'
 XML_TAG_MGMT_PORT       = 'port'
 XML_TAG_MGMT_AUTH       = 'auth'
+XML_TAG_MGMT_TYPE       = 'type'
 
 # xml attribute
 XML_ATTR_TYPE           = 'type'

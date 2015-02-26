@@ -20,8 +20,8 @@ class NodeInfo(Entity):
 
 class NodeManagement(Entity):
     using_options(tablename='M_NODE_MGMT', autoload=True)
-    node = ManyToOne('Node',primaryjoin=lambda: NodeMgmt.idNode == Node.id,
-                               foreign_keys=lambda: [NodeMgmt.idNode])
+    node = ManyToOne('Node',primaryjoin=lambda: NodeManagement.idNode == Node.id,
+                               foreign_keys=lambda: [NodeManagement.idNode])
 
 class VMMapping(Entity):
     using_options(tablename='M_VM_MAPPING', autoload=True)
