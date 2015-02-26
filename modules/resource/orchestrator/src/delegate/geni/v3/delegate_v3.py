@@ -41,7 +41,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         super(GENIv3Delegate, self).__init__()
         self._resource_manager = rm_adaptor
         self._verify_users =\
-            ConfParser("ro.conf").get("general").get("verify-users")
+            ConfParser("geniv3.conf").get("certificates").get("verify_users")
 
     def get_request_extensions_mapping(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
