@@ -49,6 +49,9 @@ class FlaskServer(object):
         self.template_folder = self.general_section.get("template_folder")
         self.fcgi_section = self.config.get("fcgi")
         self.certificates_section = self.config.get("certificates")
+        # Verification and certificates
+        self._verify_users =\
+            ast.literal_eval(ConfParser("geniv3.conf").get("certificates").get("verify_users"))
         self._app = Flask(__name__.split(".")[-1], template_folder = self.template_folder)
         self._mongo = PyMongo(self._app)
         # Added in order to be able to execute "before_request" method
@@ -124,9 +127,9 @@ class FlaskServer(object):
                 def inner():
                     server = serving.make_server(host, app_port, self._app, False, 1, ClientCertHTTPRequestHandler, False, 'adhoc')
                     # The following line is the reason why I copied all that code!
-                    #if must_have_client_cert:
+                    if must_have_client_cert:
                         # FIXME: what works with web app does not work with cli. Check this out
-                        #server.ssl_context.set_verify(SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT, lambda a,b,c,d,e: True)
+                        server.ssl_context.set_verify(SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT, lambda a,b,c,d,e: True)
                     # before enter in the loop, start the supplementary services
                     for s in services:
                         s.start()

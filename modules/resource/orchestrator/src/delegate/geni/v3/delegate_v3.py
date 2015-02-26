@@ -23,6 +23,7 @@ from rspecs.tnrm.request_formatter import TNRMv3RequestFormatter
 from handler.geni.v3 import exceptions as geni_ex
 
 from core.config import ConfParser
+import ast
 import core
 import datetime
 import re
@@ -41,7 +42,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         super(GENIv3Delegate, self).__init__()
         self._resource_manager = rm_adaptor
         self._verify_users =\
-            ConfParser("geniv3.conf").get("certificates").get("verify_users")
+            ast.literal_eval(ConfParser("geniv3.conf").get("certificates").get("verify_users"))
 
     def get_request_extensions_mapping(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
@@ -71,7 +72,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def list_resources(self, client_cert, credentials, geni_available):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        if self._verify_users == "True":
+        if self._verify_users:
             client_urn, client_uuid, client_email =\
                 self.auth(client_cert, credentials, None, ("listslices",))
 
