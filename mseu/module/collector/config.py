@@ -120,7 +120,7 @@ for item in zabbix_cp_monitoring_item_vm:
 
 # SNMP
 snmp_sdn_mon_item_list = list()
-snmp_sdn_monitoring_item = util.get_config_param(confInfo,'MONITORING', 'snmp_sdn_monitoring_item_vm')
+snmp_sdn_monitoring_item = util.get_config_param(confInfo,'MONITORING', 'snmp_sdn_monitoring_item')
 snmp_sdn_monitoring_item = util.to_listinlist(snmp_sdn_monitoring_item)
 for item in snmp_sdn_monitoring_item:
     if len(item) == 3:
@@ -136,9 +136,9 @@ for item in snmp_sdn_monitoring_item:
 
 
 snmp_cp_mon_item_srv_list = list()
-snmp_cp_monitoring_item_server = util.get_config_param(confInfo,'MONITORING', 'snmp_sdn_monitoring_item_server')
-snmp_cp_monitoring_item_server = util.to_listinlist(snmp_sdn_monitoring_item_server)
-for item in snmp_sdn_monitoring_item_server:
+snmp_cp_monitoring_item_server = util.get_config_param(confInfo,'MONITORING', 'snmp_cp_monitoring_item_server')
+snmp_cp_monitoring_item_server = util.to_listinlist(snmp_cp_monitoring_item_server)
+for item in snmp_cp_monitoring_item_server:
     if len(item) == 3:
         mon_item_dict=dict()
         mon_item_dict['data-name'] = item[0]
@@ -148,13 +148,13 @@ for item in snmp_sdn_monitoring_item_server:
             print('(Config)timestamp type is invalid.({0})'.format(tmp_item))
             sys.exit(1)
         mon_item_dict['ts-type'] = tmp_item
-        snmp_sdn_mon_item_server_list.append(mon_item_dict)
+        snmp_cp_mon_item_srv_list.append(mon_item_dict)
 
 
 snmp_cp_mon_item_vm_list = list()
-snmp_cp_monitoring_item_vm = util.get_config_param(confInfo,'MONITORING', 'snmp_sdn_monitoring_item_vm')
-snmp_cp_monitoring_item_vm = util.to_listinlist(snmp_sdn_monitoring_item_vm)
-for item in snmp_sdn_monitoring_item_vm:
+snmp_cp_monitoring_item_vm = util.get_config_param(confInfo,'MONITORING', 'snmp_cp_monitoring_item_vm')
+snmp_cp_monitoring_item_vm = util.to_listinlist(snmp_cp_monitoring_item_vm)
+for item in snmp_cp_monitoring_item_vm:
     if len(item) == 3:
         mon_item_dict=dict()
         mon_item_dict['data-name'] = item[0]
@@ -164,7 +164,7 @@ for item in snmp_sdn_monitoring_item_vm:
             print('(Config)timestamp type is invalid.({0})'.format(tmp_item))
             sys.exit(1)
         mon_item_dict['ts-type'] = tmp_item
-        snmp_sdn_mon_item_vm_list.append(mon_item_dict)
+        snmp_cp_mon_item_vm_list.append(mon_item_dict)
 
 
 

@@ -31,14 +31,14 @@ def outlog_confvalue(logger):
     logger.info('----------[monitoring-module]---------')
     for module in config.module_list:
         logger.info('monitoring-module={0} interval={1}'.format(module['class-name'],module['interval']))       
-    logger.info('----------[sdn-monitoring-item]---------')
-    for mon_item in config.sdn_mon_item_list:
+    logger.info('----------[ps-sdn-monitoring-item]---------')
+    for mon_item in config.ps_sdn_mon_item_list:
         logger.info('monitoring-data-name={0} aggregate-type={1}'.format(mon_item['data-name'],mon_item['agg-type']))       
-    logger.info('----------[cp-monitoring-item(server)]---------')
-    for mon_item in config.cp_mon_item_srv_list:
+    logger.info('----------[zabbix-cp-monitoring-item(server)]---------')
+    for mon_item in config.zabbix_cp_mon_item_srv_list:
         logger.info('monitoring-data-name={0} item-name={1} timestamp-type={2}'.format(mon_item['data-name'],mon_item['item-name'],mon_item['ts-type']))       
-    logger.info('----------[cp-monitoring-item(vm)]---------')
-    for mon_item in config.cp_mon_item_vm_list:
+    logger.info('----------[zabbix-cp-monitoring-item(vm)]---------')
+    for mon_item in config.zabbix_cp_mon_item_vm_list:
         logger.info('monitoring-data-name={0} item-name={1} timestamp-type={2}'.format(mon_item['data-name'],mon_item['item-name'],mon_item['ts-type']))       
     logger.info('-----------------------------')
 
