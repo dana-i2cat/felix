@@ -38,6 +38,10 @@ def main(argv=None):
     rspec = TNRMv3RequestParser("request_rspec_example.xml")
     in_validate(rspec.get_rspec())
 
+    print '=== TNRMv3RequestParser (1) ==='
+    rspec = TNRMv3RequestParser("request_rspec_example_1.xml")
+    in_validate(rspec.get_rspec())
+
     print '=== TNRMv3ManifestParser ==='
     rspec = TNRMv3ManifestParser("manifest_rspec_example.xml")
     in_validate(rspec.get_rspec())
