@@ -75,9 +75,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
         if self._verify_users:
             client_urn, client_uuid, client_email =\
                 self.auth(client_cert, credentials, None, ("listslices",))
-
             logger.info("Client urn=%s, uuid=%s, email=%s" % (
                 client_urn, client_uuid, client_email,))
+
         logger.info("geni_available=%s", geni_available)
 
         sl = "http://www.geni.net/resources/rspec/3/ad.xsd"
@@ -125,13 +125,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         ro_manifest, ro_slivers, last_slice = ROManifestFormatter(), [], ""
 
-        for urn in urns:
-            logger.debug("describe: authenticate the user for %s" % (urn))
-            client_urn, client_uuid, client_email =\
-                self.auth(client_cert, credentials, urn, ("sliverstatus",))
-
-            logger.info("Client urn=%s, uuid=%s, email=%s" % (
-                client_urn, client_uuid, client_email,))
+        if self._verify_users:
+            for urn in urns:
+                logger.debug("describe: authenticate the user for %s" % (urn))
+                client_urn, client_uuid, client_email =\
+                    self.auth(client_cert, credentials, urn, ("sliverstatus",))
+                logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                    client_urn, client_uuid, client_email,))
 
         route = db_sync_manager.get_slice_routing_keys(urns)
         logger.debug("Route=%s" % (route,))
@@ -197,12 +197,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def allocate(self, slice_urn, client_cert, credentials,
                  rspec, end_time=None):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        logger.debug("allocate: authenticate the user...")
-        client_urn, client_uuid, client_email =\
-            self.auth(client_cert, credentials, slice_urn, ("createsliver",))
+        if self._verify_users:
+            logger.debug("allocate: authenticate the user...")
+            client_urn, client_uuid, client_email =\
+                self.auth(client_cert, credentials, slice_urn, ("createsliver",))
+            logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                client_urn, client_uuid, client_email,))
 
-        logger.info("Client urn=%s, uuid=%s, email=%s" % (
-            client_urn, client_uuid, client_email,))
         logger.info("slice_urn=%s, end_time=%s, rspec=%s" % (
             slice_urn, end_time, rspec,))
 
@@ -316,13 +317,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         ro_slivers = []
 
-        for urn in urns:
-            logger.debug("renew: authenticate the user for %s" % (urn))
-            client_urn, client_uuid, client_email =\
-                self.auth(client_cert, credentials, urn, ("renewsliver",))
-
-            logger.info("Client urn=%s, uuid=%s, email=%s" % (
-                client_urn, client_uuid, client_email,))
+        if self._verify_users:
+            for urn in urns:
+                logger.debug("renew: authenticate the user for %s" % (urn))
+                client_urn, client_uuid, client_email =\
+                    self.auth(client_cert, credentials, urn, ("renewsliver",))
+                logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                    client_urn, client_uuid, client_email,))
 
         logger.info("expiration_time=%s, best_effort=%s" % (
             expiration_time, best_effort,))
@@ -353,13 +354,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
         {geni_users} is relevant here."""
         ro_manifest, ro_slivers = ROManifestFormatter(), []
 
-        for urn in urns:
-            logger.debug("provision: authenticate the user for %s" % (urn))
-            client_urn, client_uuid, client_email =\
-                self.auth(client_cert, credentials, urn, ("createsliver",))
-
-            logger.info("Client urn=%s, uuid=%s, email=%s" % (
-                client_urn, client_uuid, client_email,))
+        if self._verify_users:
+            for urn in urns:
+                logger.debug("provision: authenticate the user for %s" % (urn))
+                client_urn, client_uuid, client_email =\
+                    self.auth(client_cert, credentials, urn, ("createsliver",))
+                logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                    client_urn, client_uuid, client_email,))
 
         route = db_sync_manager.get_slice_routing_keys(urns)
         logger.debug("Route=%s" % (route,))
@@ -423,13 +424,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         ro_slivers, last_slice = [], ""
 
-        for urn in urns:
-            logger.debug("status: authenticate the user for %s" % (urn))
-            client_urn, client_uuid, client_email =\
-                self.auth(client_cert, credentials, urn, ("sliverstatus",))
-
-            logger.info("Client urn=%s, uuid=%s, email=%s" % (
-                client_urn, client_uuid, client_email,))
+        if self._verify_users:
+            for urn in urns:
+                logger.debug("status: authenticate the user for %s" % (urn))
+                client_urn, client_uuid, client_email =\
+                    self.auth(client_cert, credentials, urn, ("sliverstatus",))
+                logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                    client_urn, client_uuid, client_email,))
 
         route = db_sync_manager.get_slice_routing_keys(urns)
         logger.debug("Route=%s" % (route,))
@@ -457,13 +458,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.info("action=%s, best_effort=%s, internal_action=%s" %
                     (action, best_effort, internal_action,))
 
-        for urn in urns:
-            logger.debug("poa: authenticate the user for %s" % (urn))
-            client_urn, client_uuid, client_email =\
-                self.auth(client_cert, credentials, urn, (internal_action,))
-
-            logger.info("Client urn=%s, uuid=%s, email=%s" % (
-                client_urn, client_uuid, client_email,))
+        if self._verify_users:
+            for urn in urns:
+                logger.debug("poa: authenticate the user for %s" % (urn))
+                client_urn, client_uuid, client_email =\
+                    self.auth(client_cert, credentials, urn, (internal_action,))
+                logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                    client_urn, client_uuid, client_email,))
 
         route = db_sync_manager.get_slice_routing_keys(urns)
         logger.debug("Route=%s" % (route,))
@@ -488,13 +489,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         ro_slivers = []
 
-        for urn in urns:
-            logger.debug("delete: authenticate the user for %s" % (urn))
-            client_urn, client_uuid, client_email =\
-                self.auth(client_cert, credentials, urn, ("deletesliver",))
-
-            logger.info("Client urn=%s, uuid=%s, email=%s" % (
-                client_urn, client_uuid, client_email,))
+        if self._verify_users:
+            for urn in urns:
+                logger.debug("delete: authenticate the user for %s" % (urn))
+                client_urn, client_uuid, client_email =\
+                    self.auth(client_cert, credentials, urn, ("deletesliver",))
+                logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                    client_urn, client_uuid, client_email,))
 
         logger.info("best_effort=%s" % (best_effort,))
 
@@ -524,12 +525,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def shutdown(self, slice_urn, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        logger.debug("shutdown: authenticate the user...")
-        client_urn, client_uuid, client_email =\
-            self.auth(client_cert, credentials, slice_urn, ("shutdown",))
+        if self._verify_users:
+            logger.debug("shutdown: authenticate the user...")
+            client_urn, client_uuid, client_email =\
+                self.auth(client_cert, credentials, slice_urn, ("shutdown",))
+            logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                client_urn, client_uuid, client_email,))
 
-        logger.info("Client urn=%s, uuid=%s, email=%s" % (
-            client_urn, client_uuid, client_email,))
         logger.info("slice_urn=%s" % (slice_urn,))
         raise geni_ex.GENIv3GeneralError("Not implemented yet!")
 
