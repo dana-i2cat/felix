@@ -2,13 +2,16 @@
 <rspec type="advertisement"
        xmlns="http://www.geni.net/resources/rspec/3"
        xmlns:sharedvlan="http://www.geni.net/resources/rspec/ext/shared-vlan/1"
+       xmlns:protogeni="http://www.protogeni.net/resources/rspec/0.1"
        xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
        xs:schemaLocation="http://www.geni.net/resources/rspec/3/ad.xsd
-            http://www.geni.net/resources/rspec/ext/shared-vlan/1/ad.xsd">
+                          http://www.protogeni.net/resources/rspec/0.1
+                          http://www.protogeni.net/resources/rspec/0.1/ad.xsd
+                          http://www.geni.net/resources/rspec/ext/shared-vlan/1/ad.xsd">
 
     <node component_id="urn:publicid:tn-network1:"
           component_manager_id="urn:publicid:IDN+NSI+authority+tnrm"
-          exclusive="false">
+          exclusive="false" protogeni:component_manager_uuid="felix:tnrm">
         <interface component_id="urn:publicid:tn:aist:network1+urn:ogf:network:aist:network1:stp1">
             <sharedvlan:available name="urn:publicid:tn:aist:network1+urn:ogf:network:aist:network1:stp1+vlan"
                                   description="1980-1989"/>

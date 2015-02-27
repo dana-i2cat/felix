@@ -5,6 +5,7 @@ from rspecs.crm.advertisement_parser import CRMv3AdvertisementParser
 from rspecs.openflow.advertisement_parser import OFv3AdvertisementParser
 from rspecs.serm.advertisement_parser import SERMv3AdvertisementParser
 from rspecs.tnrm.advertisement_parser import TNRMv3AdvertisementParser
+from rspecs.ro.advertisement_parser import ROv3AdvertisementParser
 
 import core
 import rspecs.commons as Commons
@@ -31,6 +32,9 @@ class ResourceDetector(object):
     def info(self, msg):
         logger.info("(%s) %s" % (self.typee, msg))
 
+    def warning(self, msg):
+        logger.warning("(%s) %s" % (self.typee, msg))
+
     def error(self, msg):
         logger.error("(%s) %s" % (self.typee, msg))
 
@@ -55,6 +59,10 @@ class ResourceDetector(object):
             elif peer.get("type") == "transport_network":
                 (nodes, links) = self.__decode_tn_rspec(result)
                 self.__store_tn_resources(peer.get("_id"), nodes, links)
+            elif peer.get("type") == "island_ro":
+                # we need to manage different kind of resorces here,
+                # potentially c,sdn,se,tn in the same RSpec
+                self.__manage_ro_resources(result, peer.get("_id"))
             else:
                 self.error("Unknown peer type=%s" % (peer.get("type"),))
 
@@ -62,21 +70,28 @@ class ResourceDetector(object):
             # Physical Monitoring
             #
 
-            # Store mapping <domain URN: adaptor URI> for identification later on
+            # Store mapping <domain URN: adaptor URI> for identification
+            # later on
             # The second is retrieved by examinining its resources
             try:
                 self.__set_domain_component_id(nodes[0].get("component_id"))
-                db_sync_manager.store_domain_info(self.adaptor_uri, self.domain_urn)
-                self.debug("Storing mapping <%s:%s> for domain info" % (self.adaptor_uri, self.domain_urn))
+                db_sync_manager.store_domain_info(self.adaptor_uri,
+                                                  self.domain_urn)
+                self.debug("Storing mapping <%s:%s> for domain info" %
+                           (self.adaptor_uri, self.domain_urn))
             except Exception as e:
-                self.error("Error storing mapping domain_urn:resource_rm. Exception: %s" % e)
+                self.error("Error storing mapping domain_urn:resource_rm.")
+                self.error("Exception: %s" % e)
 
-            # Stores last_update_time for the physical topology on a given domain
+            # Stores last_update_time for the physical topology
+            # on a given domain
             try:
                 last_update_time = self.__get_timestamp()
-                db_sync_manager.store_physical_info(self.domain_urn, last_update_time)
+                db_sync_manager.store_physical_info(self.domain_urn,
+                                                    last_update_time)
             except Exception as e:
-                self.error("Error storing last_update_time for physical topology. Exception: %s" % e)
+                self.error("Error storing last_update_time for phy-topology.")
+                self.error("Exception: %s" % e)
 
     def __get_resources(self, peer):
         try:
@@ -90,7 +105,8 @@ class ResourceDetector(object):
 
             geni_v3_credentials = AdaptorFactory.geni_v3_credentials()
             self.info("Credentials successfully retrieved!")
-            resources_returned = adaptor.list_resources(geni_v3_credentials, False)
+            resources_returned = adaptor.list_resources(geni_v3_credentials,
+                                                        False)
             return (resources_returned, adaptor_uri)
 
         except Exception as e:
@@ -103,13 +119,16 @@ class ResourceDetector(object):
         Retrieve domain URN from component ID.
         """
         try:
-            resource_hrn = xrn.urn_to_hrn(resource_cid)[0] # First part of the tuple
-            # XXX Conversion from HRN to URN sometimes translates "." by "\.". Corrected here
-            resource_hrn = resource_hrn.replace("\.",".")
+            # First part of the tuple
+            resource_hrn = xrn.urn_to_hrn(resource_cid)[0]
+            # XXX Conversion from HRN to URN sometimes translates
+            # "." by "\.". Corrected here
+            resource_hrn = resource_hrn.replace("\.", ".")
             resource_auth = xrn.get_authority(resource_hrn)
             resource_cid = xrn.hrn_to_urn(resource_auth, "authority")
         except Exception as e:
-            self.error("Malformed URN on resource_detector. Exception: %s" % str(e))
+            self.error("Malformed URN on resource_detector. Exception: %s" %
+                       str(e))
         self.domain_urn = resource_cid or self.domain_urn
 
     def __get_timestamp(self):
@@ -242,7 +261,7 @@ class ResourceDetector(object):
 
     def __store(self, data, name, action, peer):
         if data is None or len(data) == 0:
-            self.error("%s list does not exist or is empty!" % (name,))
+            self.warning("%s list does not exist or is empty!" % (name,))
         else:
             ids = self.__db(action, peer, data)
             self.info("IDs %s=%s" % (name, ids,))
@@ -262,3 +281,47 @@ class ResourceDetector(object):
     def __store_tn_resources(self, peerID, nodes, links):
         self.__store(nodes, "Nodes", "store_tn_nodes", peerID)
         self.__store(links, "Links", "store_tn_links", peerID)
+
+    def __manage_ro_resources(self, result, peerID):
+        rspec = result.get("value", None)
+        if rspec is None:
+            self.error("Unable to get RSpec value from %s" % (result,))
+            return
+
+        try:
+            ro_rspec = ROv3AdvertisementParser(from_string=rspec)
+            self.debug("RORSpec=%s" % (ro_rspec,))
+            # validate
+            (result, error) = Commons.validate(ro_rspec.get_rspec())
+            if not result:
+                self.error("Validation failure: %s" % error)
+                return
+
+            self.info("Validation success!")
+
+            nodes = ro_rspec.com_nodes()
+            self.info("COM Nodes(%d)=%s" % (len(nodes), nodes,))
+            links = ro_rspec.com_links()
+            self.info("COM Links(%d)=%s" % (len(links), links,))
+            self.__store_com_resources(peerID, nodes, links)
+
+            nodes = ro_rspec.sdn_nodes()
+            self.info("SDN Nodes(%d)=%s" % (len(nodes), nodes,))
+            links = ro_rspec.sdn_links()
+            self.info("SDN Links(%d)=%s" % (len(links), links,))
+            self.__store_sdn_resources(peerID, nodes, links)
+
+            nodes = ro_rspec.se_nodes()
+            self.info("SE Nodes(%d)=%s" % (len(nodes), nodes,))
+            links = ro_rspec.se_links()
+            self.info("SE Links(%d)=%s" % (len(links), links,))
+            self.__store_se_resources(peerID, nodes, links)
+
+            nodes = ro_rspec.tn_nodes()
+            self.info("TN Nodes(%d)=%s" % (len(nodes), nodes,))
+            links = ro_rspec.tn_links()
+            self.info("TN Links(%d)=%s" % (len(links), links,))
+            self.__store_tn_resources(peerID, nodes, links)
+
+        except Exception as e:
+            self.error("Exception: %s" % str(e))

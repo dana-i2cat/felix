@@ -4,6 +4,8 @@ DEFAULT_XS = "http://www.w3.org/2001/XMLSchema-instance"
 DSL_PREFIX = "http://www.geni.net/resources/rspec/"
 DEFAULT_SCHEMA_LOCATION = DSL_PREFIX + "3 "
 
+PROTOGENI_PREFIX = "http://www.protogeni.net/resources/rspec/0.1"
+
 
 def validate(ingress_root):
     import urllib2
@@ -24,8 +26,12 @@ def validate(ingress_root):
                                      remove_comments=True)
             doc = etree.parse(contents, parser)
             xmlschema = etree.XMLSchema(doc)
-            if xmlschema.validate(ingress_root):
+            try:
+                xmlschema.assertValid(ingress_root)
                 return (True, "")
+
+            except Exception as e:
+                errors.append(str(e))
 
         except Exception as e:
             errors.append(str(e))
