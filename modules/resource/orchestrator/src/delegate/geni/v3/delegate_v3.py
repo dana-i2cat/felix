@@ -198,6 +198,11 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
         logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
 
+        for s in ro_slivers:
+            # Extra conversion added tp return string
+            s["geni_expires"] = self.__translate_to_rfc3339(s["geni_expires"])
+        logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
+
         return {"geni_rspec": "%s" % ro_manifest,
                 "geni_urn": last_slice,
                 "geni_slivers": ro_slivers}
@@ -1130,6 +1135,12 @@ class GENIv3Delegate(GENIv3DelegateBase):
         except:
             formatted_date = date
         return formatted_date
+
+    def __translate_to_rfc3339(self, date):
+        logger.debug("Converting datime object (%s) to string" % str(date))
+        date = self.__rfc3339_to_datetime(date)
+        date = self.__datetime_to_rfc3339(date)
+        return date
 
     def __translate_action(self, geni_action):
         actions_to_permissions = {
