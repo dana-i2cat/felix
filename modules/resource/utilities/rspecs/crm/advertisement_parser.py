@@ -36,6 +36,8 @@ class CRMv3AdvertisementParser(ParserBase):
 
             # node_id = xrn.urn_to_hrn(n.get("component_id"))[0]
             for link in links:
+                if len(link["links"]) <= 0:
+                    continue
                 # Retrieve source_id of link to find the
                 # interfaces of the current node
                 node_interface = xrn.urn_to_hrn(link["links"][0]["source_id"])

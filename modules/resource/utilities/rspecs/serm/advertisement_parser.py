@@ -6,6 +6,12 @@ from rspecs.commons_se import SELink
 class SERMv3AdvertisementParser(ParserBase):
     def __init__(self, from_file=None, from_string=None):
         super(SERMv3AdvertisementParser, self).__init__(from_file, from_string)
+        self.__proto = self.rspec.nsmap.get('protogeni')
+
+    def __update_protogeni_cm_uuid(self, tag, obj):
+        cmuuid = tag.attrib.get("{%s}component_manager_uuid" % (self.__proto))
+        if cmuuid is not None:
+            obj.add_component_manager_uuid(cmuuid)
 
     def nodes(self):
         nodes_ = []
@@ -18,6 +24,8 @@ class SERMv3AdvertisementParser(ParserBase):
             n_ = Node(n.attrib.get("component_id"),
                       n.attrib.get("component_manager_id"),
                       n.attrib.get("exclusive"), s_)
+
+            self.__update_protogeni_cm_uuid(n, n_)
 
             for i in n.iterfind("{%s}interface" % (self.none)):
                 i_ = Interface(i.attrib.get("component_id"))
@@ -41,6 +49,8 @@ class SERMv3AdvertisementParser(ParserBase):
 
             l_ = SELink(l.attrib.get("component_id"),
                         link_type.attrib.get("name"), c_)
+
+            self.__update_protogeni_cm_uuid(l, l_)
 
             for ref in l.iterchildren("{%s}interface_ref" % (self.none)):
                 l_.add_interface_ref(ref.attrib.get("component_id"))
