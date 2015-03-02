@@ -42,7 +42,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
         super(GENIv3Delegate, self).__init__()
         self._resource_manager = rm_adaptor
         self._verify_users =\
-            ast.literal_eval(ConfParser("geniv3.conf").get("certificates").get("verify_users"))
+            ast.literal_eval(ConfParser("geniv3.conf").get("certificates").
+                             get("verify_users"))
 
     def get_request_extensions_mapping(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
@@ -84,35 +85,42 @@ class GENIv3Delegate(GENIv3DelegateBase):
         rspec = ROAdvertisementFormatter(schema_location=sl)
 
         try:
-            logger.debug("COM resources: nodes")
             for n in db_sync_manager.get_com_nodes():
+                logger.debug("COMresources node=%s" % (n,))
                 rspec.com_node(n)
 
-            logger.debug("OF resources: datapaths")
             for d in db_sync_manager.get_sdn_datapaths():
+                logger.debug("OFresources dpid=%s" % (d,))
                 rspec.datapath(d)
 
-            logger.debug("TN resources: nodes")
             for n in db_sync_manager.get_tn_nodes():
+                logger.debug("TNresources node=%s" % (n,))
                 rspec.tn_node(n)
 
-            logger.debug("COM resources: com-links")
+            for n in db_sync_manager.get_se_nodes():
+                logger.debug("SEresources node=%s" % (n,))
+                rspec.se_node(n)
+
             for l in db_sync_manager.get_com_links():
-                logger.error("COM-LINK=%s" % l)
+                logger.debug("COMresources link=%s" % (l,))
                 rspec.com_link(l)
 
-            logger.debug("OF resources: of-links & fed-links")
             (of_links, fed_links) = db_sync_manager.get_sdn_links()
             for l in of_links:
+                logger.debug("OFresources of-link=%s" % (l,))
                 rspec.of_link(l)
 
             for l in fed_links:
+                logger.debug("OFresources fed-link=%s" % (l,))
                 rspec.fed_link(l)
 
-            logger.debug("TN resources: tn-links")
             for l in db_sync_manager.get_tn_links():
-                logger.error("TN-LINK=%s" % l)
+                logger.debug("TNresources tn-link=%s" % (l,))
                 rspec.tn_link(l)
+
+            for l in db_sync_manager.get_se_links():
+                logger.debug("SEresources se-link=%s" % (l,))
+                rspec.se_link(l)
 
         except Exception as e:
             raise geni_ex.GENIv3GeneralError(str(e))
@@ -205,7 +213,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
         if self._verify_users:
             logger.debug("allocate: authenticate the user...")
             client_urn, client_uuid, client_email =\
-                self.auth(client_cert, credentials, slice_urn, ("createsliver",))
+                self.auth(client_cert, credentials,
+                          slice_urn, ("createsliver",))
             logger.info("Client urn=%s, uuid=%s, email=%s" % (
                 client_urn, client_uuid, client_email,))
 
@@ -445,7 +454,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") in ["sdn_networking", "transport_network",
                                     "stitching_entity", "virtualisation"]:
-                last_slice, slivers = self.__manage_status(peer, v, credentials)
+                last_slice, slivers =\
+                    self.__manage_status(peer, v, credentials)
 
                 logger.debug("slivers=%s, urn=%s" % (slivers, last_slice))
                 ro_slivers.extend(slivers)
@@ -467,7 +477,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
             for urn in urns:
                 logger.debug("poa: authenticate the user for %s" % (urn))
                 client_urn, client_uuid, client_email =\
-                    self.auth(client_cert, credentials, urn, (internal_action,))
+                    self.auth(client_cert, credentials,
+                              urn, (internal_action,))
                 logger.info("Client urn=%s, uuid=%s, email=%s" % (
                     client_urn, client_uuid, client_email,))
 

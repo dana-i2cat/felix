@@ -5,13 +5,18 @@ EMULAB_XMLNS = "http://www.protogeni.net/resources/rspec/ext/emulab/1"
 class Node(object):
     # Node "unavailable" unless the contrary is said
     def __init__(self, component_id, component_manager_id, component_name,
-                 exclusive=None, available=False, interfaces=[]):
+                 exclusive=None, available=False, interfaces=[],
+                 component_manager_uuid=None):
         self.__dict__.update({"component_id": component_id,  # Server / Node
                               "component_manager_id": component_manager_id,
                               "component_name": component_name,
+                              "component_manager_uuid": component_manager_uuid,
                               "exclusive": exclusive,
                               "available": available,
                               "interfaces": interfaces})
+
+    def add_component_manager_uuid(self, cm_uuid):
+        self.component_manager_uuid = cm_uuid
 
     def add_interface(self, interface):
         if interface not in self.interfaces:
@@ -50,11 +55,16 @@ class Sliver(Node):
 
 
 class Link(object):
-    def __init__(self, component_id, component_name, link_type=""):
+    def __init__(self, component_id, component_name, link_type="",
+                 component_manager_uuid=None):
         self.__dict__.update({"component_id": component_id,
                               "component_name": component_name,
+                              "component_manager_uuid": component_manager_uuid,
                               "links": [],
                               "link_type": link_type})
+
+    def add_component_manager_uuid(self, cm_uuid):
+        self.component_manager_uuid = cm_uuid
 
     def add_link(self, source, dest, capacity):
         self.links.append(

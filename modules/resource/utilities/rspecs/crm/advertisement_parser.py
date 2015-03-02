@@ -8,6 +8,12 @@ class CRMv3AdvertisementParser(ParserBase):
     def __init__(self, from_file=None, from_string=None):
         super(CRMv3AdvertisementParser, self).__init__(from_file, from_string)
         self.xmlns = DEFAULT_XMLNS
+        self.__proto = self.rspec.nsmap.get('protogeni')
+
+    def __update_protogeni_cm_uuid(self, tag, obj):
+        cmuuid = tag.attrib.get("{%s}component_manager_uuid" % (self.__proto))
+        if cmuuid is not None:
+            obj.add_component_manager_uuid(cmuuid)
 
     def nodes(self):
         nodes = []
@@ -25,6 +31,8 @@ class CRMv3AdvertisementParser(ParserBase):
                         n.attrib.get("component_manager_id"),
                         n.attrib.get("component_name"),
                         n.attrib.get("exclusive"), available)
+
+            self.__update_protogeni_cm_uuid(n, node)
 
             # node_id = xrn.urn_to_hrn(n.get("component_id"))[0]
             for link in links:
@@ -58,6 +66,8 @@ class CRMv3AdvertisementParser(ParserBase):
             if link_type is not None:
                 link_type = link_type.attrib.get("name")
                 link.add_type(link_type)
+
+            self.__update_protogeni_cm_uuid(l, link)
 
             # Fill with properties
             for p in l.iterchildren("{%s}property" % self.xmlns):

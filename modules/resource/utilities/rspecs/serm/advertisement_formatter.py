@@ -1,19 +1,26 @@
 from rspecs.tnrm.advertisement_formatter import DEFAULT_XS,\
     TNRMv3AdvertisementFormatter, DEFAULT_XMLNS, DEFAULT_SHARED_VLAN,\
     DEFAULT_AD_SCHEMA_LOCATION
+from rspecs.commons import PROTOGENI_PREFIX
 from lxml import etree
 
 
 class SERMv3AdvertisementFormatter(TNRMv3AdvertisementFormatter):
     def __init__(self, xmlns=DEFAULT_XMLNS, xs=DEFAULT_XS,
                  sharedvlan=DEFAULT_SHARED_VLAN,
+                 protogeni=PROTOGENI_PREFIX,
                  schema_location=DEFAULT_AD_SCHEMA_LOCATION):
         super(SERMv3AdvertisementFormatter, self).__init__(
-            xmlns, xs, sharedvlan, schema_location)
+            xmlns, xs, sharedvlan, protogeni, schema_location)
+        self.__proto = protogeni
 
     def add_link(self, rspec, link):
         l = etree.SubElement(rspec, "{%s}link" % (self.xmlns))
         l.attrib["component_id"] = link.get("component_id")
+
+        if link.get("component_manager_uuid") is not None:
+            l.attrib["{%s}component_manager_uuid" % (self.__proto)] =\
+                link.get("component_manager_uuid")
 
         if link.get("component_manager_name") is not None:
             m = etree.SubElement(l, "{%s}component_manager" % (self.xmlns))
