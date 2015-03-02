@@ -1,15 +1,17 @@
 from rspecs.tnrm.advertisement_formatter import DEFAULT_XS,\
     TNRMv3AdvertisementFormatter, DEFAULT_XMLNS, DEFAULT_SHARED_VLAN,\
     DEFAULT_AD_SCHEMA_LOCATION
+from rspecs.commons import PROTOGENI_PREFIX
 from lxml import etree
 
 
 class SERMv3AdvertisementFormatter(TNRMv3AdvertisementFormatter):
     def __init__(self, xmlns=DEFAULT_XMLNS, xs=DEFAULT_XS,
                  sharedvlan=DEFAULT_SHARED_VLAN,
+                 protogeni=PROTOGENI_PREFIX,
                  schema_location=DEFAULT_AD_SCHEMA_LOCATION):
         super(SERMv3AdvertisementFormatter, self).__init__(
-            xmlns, xs, sharedvlan, schema_location)
+            xmlns, xs, sharedvlan, protogeni, schema_location)
 
     def add_link(self, rspec, link):
         l = etree.SubElement(rspec, "{%s}link" % (self.xmlns))
