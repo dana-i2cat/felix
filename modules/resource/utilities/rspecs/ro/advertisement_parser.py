@@ -16,13 +16,17 @@ class ROv3AdvertisementParser(ParserBase):
     # COM resources (nodes & links)
     def com_nodes(self):
         try:
-            return self.__com_parser.nodes()
+            nodes = self.__com_parser.nodes()
+            return [n for n in nodes
+                    if n.get('component_manager_uuid') == "felix:CRM"]
         except:
             return []
 
     def com_links(self):
         try:
-            return self.__com_parser.links()
+            links = self.__com_parser.links()
+            return [l for l in links
+                    if l.get('component_manager_uuid') == "felix:CRM"]
         except:
             return []
 
@@ -42,25 +46,33 @@ class ROv3AdvertisementParser(ParserBase):
     # SE resources (nodes & links)
     def se_nodes(self):
         try:
-            return self.__se_parser.nodes()
+            nodes = self.__se_parser.nodes()
+            return [n for n in nodes
+                    if n.get('component_manager_uuid') == "felix:SERM"]
         except:
             return []
 
     def se_links(self):
         try:
-            return self.__se_parser.links()
+            links = self.__se_parser.links()
+            return [l for l in links
+                    if l.get('component_manager_uuid') == "felix:SERM"]
         except:
             return []
 
     # TN resources (nodes & links)
     def tn_nodes(self):
         try:
-            return self.__tn_parser.nodes()
+            nodes = self.__tn_parser.nodes()
+            return [n for n in nodes
+                    if n.get('component_manager_uuid') == "felix:TNRM"]
         except:
             return []
 
     def tn_links(self):
         try:
-            return self.__tn_parser.links()
+            links = self.__tn_parser.links()
+            return [l for l in links
+                    if l.get('component_manager_uuid') == "felix:TNRM"]
         except:
             return []
