@@ -6,6 +6,7 @@ from rspecs.formatter_base import FormatterBase
 from rspecs.crm.advertisement_formatter import CRMv3AdvertisementFormatter
 from rspecs.openflow.advertisement_formatter import OFv3AdvertisementFormatter
 from rspecs.tnrm.advertisement_formatter import TNRMv3AdvertisementFormatter
+from rspecs.serm.advertisement_formatter import SERMv3AdvertisementFormatter
 
 DEFAULT_AD_SCHEMA_LOCATION = DEFAULT_SCHEMA_LOCATION
 DEFAULT_AD_SCHEMA_LOCATION += DSL_PREFIX + "3/ad.xsd "
@@ -30,6 +31,7 @@ class ROAdvertisementFormatter(FormatterBase):
         self.__crm_formatter = CRMv3AdvertisementFormatter()
         self.__of_formatter = OFv3AdvertisementFormatter()
         self.__tnrm_formatter = TNRMv3AdvertisementFormatter()
+        self.__serm_formatter = SERMv3AdvertisementFormatter()
 
     # COM resources
     def com_node(self, node):
@@ -58,3 +60,12 @@ class ROAdvertisementFormatter(FormatterBase):
     def tn_link(self, link):
         link['component_manager_uuid'] = "felix:TNRM"
         self.__tnrm_formatter.add_link(self.rspec, link)
+
+    # SE resources
+    def se_node(self, node):
+        node['component_manager_uuid'] = "felix:SERM"
+        self.__serm_formatter.add_node(self.rspec, node)
+
+    def se_link(self, link):
+        link['component_manager_uuid'] = "felix:SERM"
+        self.__serm_formatter.add_link(self.rspec, link)
