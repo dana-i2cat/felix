@@ -60,6 +60,13 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
 
     @enter_method_log
     def list_resources(self, client_cert, credentials, geni_available):
+        """Use the advRspec file directly!"""
+        with open("vendor/tnrmgeni3/adv-rspec.xml") as f:
+            rspec = f.read()
+            logger.info("AdvRspec=%s" % (rspec,))
+            return rspec
+
+    def list_resources_old(self, client_cert, credentials, geni_available):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         rspec = rspec_manager.get_TNRMv3AdvertisementFormatter()
         # node = domain
