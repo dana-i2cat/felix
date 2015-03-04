@@ -79,6 +79,13 @@ class SDNRMGENI3Delegate(GENIv3DelegateBase):
 
     @enter_method_log
     def list_resources(self, client_cert, credentials, geni_available):
+        """Use the advRspec file directly!"""
+        with open("vendor/sdnrmgeni3/adv-rspec.xml") as f:
+            rspec = f.read()
+            logger.info("AdvRspec=%s" % (rspec,))
+            return rspec
+
+    def list_resources_old(self, client_cert, credentials, geni_available):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         rspec = rspec_manager.get_OFv3AdvertisementFormatter()
         prefix = "urn:publicid:IDN+openflow:i2cat.ofam+"
@@ -281,7 +288,9 @@ class SDNRMGENI3Delegate(GENIv3DelegateBase):
 
         s = em.sliver(email=sliver.get("email"),
                       description=sliver.get("description"),
-                      ref=ref)
+                      ref=ref,
+                      status="Pending Provisioning",
+                      urn="urn:publicid:IDN+ocf:i2cat:ofam+sliver+sliceNo4")
         mr.append(s)
 
         return mr

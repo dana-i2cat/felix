@@ -60,6 +60,13 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
 
     @enter_method_log
     def list_resources(self, client_cert, credentials, geni_available):
+        """Use the advRspec file directly!"""
+        with open("vendor/tnrmgeni3/adv-rspec.xml") as f:
+            rspec = f.read()
+            logger.info("AdvRspec=%s" % (rspec,))
+            return rspec
+
+    def list_resources_old(self, client_cert, credentials, geni_available):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         rspec = rspec_manager.get_TNRMv3AdvertisementFormatter()
         # node = domain
@@ -174,6 +181,10 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
                 'geni_error': "",
                 'geni_resource_status': "some-details-%s" % cid}
 
+    def __manifest_custom(self):
+        with open("vendor/tnrmgeni3/manifest-rspec.xml") as f:
+            return f.read()
+
     def __manifest(self):
         rspec_ = rspec_manager.get_TNRMv3ManifestFormatter()
 
@@ -234,14 +245,14 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
         logger.info("Links=%s" % links)
 
         slivers = [self.__sliver_date_status(l) for l in links]
-        manifest = self.__manifest()
+        manifest = self.__manifest_custom()
 
         logger.info("Manifest=%s, Slivers=%s" % (manifest, slivers))
-        (result, error) = rspec_manager.call_validate(manifest.get_rspec())
-        if result is not True:
-            logger.error("RSpec validation failure: %s" % (error,))
-        else:
-            logger.info("RSpec validation success!")
+        #(result, error) = rspec_manager.call_validate(manifest)
+        #if result is not True:
+        #    logger.error("RSpec validation failure: %s" % (error,))
+        #else:
+        #    logger.info("RSpec validation success!")
         return ("%s" % manifest, slivers)
 
     @enter_method_log

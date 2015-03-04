@@ -6,7 +6,7 @@ from lxml import etree
 
 DEFAULT_REQ_SCHEMA_LOCATION = DEFAULT_SCHEMA_LOCATION
 DEFAULT_REQ_SCHEMA_LOCATION += DSL_PREFIX + "3/request.xsd "
-DEFAULT_REQ_SCHEMA_LOCATION += DSL_PREFIX + "ext/shared-vlan/1/ad.xsd"
+DEFAULT_REQ_SCHEMA_LOCATION += DSL_PREFIX + "ext/shared-vlan/1/request.xsd"
 
 
 class TNRMv3RequestFormatter(FormatterBase):
