@@ -522,7 +522,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") in ["sdn_networking", "transport_network",
-                                    "stitching_entity", "virtualisation"]:
+                                    "stitching_entity", "virtualisation", 
+                                    "island_ro"]:
                 slivers = self.__manage_delete(
                     peer, v, credentials, best_effort)
 
