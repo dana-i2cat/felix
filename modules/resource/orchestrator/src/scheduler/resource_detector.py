@@ -1,3 +1,4 @@
+from core.peers import AllowedPeers
 from db.db_manager import db_sync_manager
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
 from extensions.sfa.util import xrn
@@ -25,6 +26,7 @@ class ResourceDetector(object):
         self.typee = typee
         self.adaptor_uri = ""
         self.domain_urn = ""
+        self.allowed_peers = AllowedPeers.get_peers()
 
     def debug(self, msg):
         logger.debug("(%s) %s" % (self.typee, msg))
@@ -44,22 +46,22 @@ class ResourceDetector(object):
             self.debug("Peer=%s" % (peer,))
             result, self.adaptor_uri = self.__get_resources(peer)
             if result is None:
-                self.error("Result is None!")
+                self.error("Peer is not returning any resource via ListResources!")
                 continue
             # Decode the Adv RSpec
-            if peer.get("type") == "virtualisation":
+            if peer.get("type") == self.allowed_peers.get("PEER_CRM"):
                 (nodes, links) = self.__decode_com_rspec(result)
                 self.__store_com_resources(peer.get("_id"), nodes, links)
-            elif peer.get("type") == "sdn_networking":
+            elif peer.get("type") == self.allowed_peers.get("PEER_SDNRM"):
                 (nodes, links) = self.__decode_sdn_rspec(result)
                 self.__store_sdn_resources(peer.get("_id"), nodes, links)
-            elif peer.get("type") == "stitching_entity":
+            elif peer.get("type") == self.allowed_peers.get("PEER_SERM"):
                 (nodes, links) = self.__decode_se_rspec(result)
                 self.__store_se_resources(peer.get("_id"), nodes, links)
-            elif peer.get("type") == "transport_network":
+            elif peer.get("type") == self.allowed_peers.get("PEER_TNRM"):
                 (nodes, links) = self.__decode_tn_rspec(result)
                 self.__store_tn_resources(peer.get("_id"), nodes, links)
-            elif peer.get("type") == "island_ro":
+            elif peer.get("type") == self.allowed_peers.get("PEER_RO"):
                 # we need to manage different kind of resorces here,
                 # potentially c,sdn,se,tn in the same RSpec
                 self.__manage_ro_resources(result, peer.get("_id"))
@@ -72,7 +74,7 @@ class ResourceDetector(object):
 
             # Store mapping <domain URN: adaptor URI> for identification
             # later on
-            # The second is retrieved by examinining its resources
+            # The second is retrieved by examinining its resources (valid for RM only)
             try:
                 self.__set_domain_component_id(nodes[0].get("component_id"))
                 db_sync_manager.store_domain_info(self.adaptor_uri,

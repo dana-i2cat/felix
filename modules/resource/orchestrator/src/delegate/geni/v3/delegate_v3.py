@@ -1,3 +1,4 @@
+from core.peers import AllowedPeers
 from delegate.geni.v3.base import GENIv3DelegateBase
 from db.db_manager import db_sync_manager
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
@@ -45,6 +46,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         self._verify_users =\
             ast.literal_eval(ConfParser("geniv3.conf").get("certificates").
                              get("verify_users"))
+        self._allowed_peers = AllowedPeers.get_peers()
 
     def get_request_extensions_mapping(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
@@ -148,7 +150,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         for r, v in route.iteritems():
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
-            if peer.get("type") == "sdn_networking":
+            if peer.get("type") == self._allowed_peers.get("PEER_SDNRM"):
                 of_m_info, last_slice, of_slivers =\
                     self.__manage_sdn_describe(peer, v, credentials)
 
@@ -159,7 +161,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
                 ro_slivers.extend(of_slivers)
 
-            elif peer.get("type") == "transport_network":
+            elif peer.get("type") == self._allowed_peers.get("PEER_TNRM"):
                 tn_m_info, last_slice, tn_slivers =\
                     self.__manage_tn_describe(peer, v, credentials)
 
@@ -172,7 +174,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
                 ro_slivers.extend(tn_slivers)
 
-            elif peer.get("type") == "stitching_entity":
+            elif peer.get("type") == self._allowed_peers.get("PEER_SERM"):
                 se_m_info, last_slice, se_slivers =\
                     self.__manage_se_describe(peer, v, credentials)
 
@@ -185,7 +187,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
                 ro_slivers.extend(se_slivers)
 
-            elif peer.get("type") == "virtualisation":
+            elif peer.get("type") == self._allowed_peers.get("PEER_CRM"):
                 com_m_info, last_slice, com_slivers =\
                     self.__manage_com_describe(peer, v, credentials)
 
@@ -351,8 +353,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         for r, v in route.iteritems():
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
-            if peer.get("type") in ["sdn_networking", "transport_network",
-                                    "stitching_entity", "virtualisation"]:
+            if peer.get("type") in self._allowed_peers.values():
                 slivers = self.__manage_renew(
                     peer, v, credentials, etime_str, best_effort)
 
@@ -384,7 +385,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         for r, v in route.iteritems():
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
-            if peer.get("type") == "virtualisation":
+            if peer.get("type") == self._allowed_peers.get("PEER_CRM"):
                 com_m_info, com_slivers = self.__manage_com_provision(
                     peer, v, credentials, best_effort, end_time, geni_users)
 
@@ -394,7 +395,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
                 ro_slivers.extend(com_slivers)
 
-            elif peer.get("type") == "sdn_networking":
+            elif peer.get("type") == self._allowed_peers.get("PEER_SDNRM"):
                 of_m_info, of_slivers = self.__manage_sdn_provision(
                     peer, v, credentials, best_effort, end_time, geni_users)
 
@@ -404,7 +405,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
                 ro_slivers.extend(of_slivers)
 
-            elif peer.get("type") == "transport_network":
+            elif peer.get("type") == self._allowed_peers.get("PEER_TNRM"):
                 tn_m_info, tn_slivers = self.__manage_tn_provision(
                     peer, v, credentials, best_effort, end_time, geni_users)
 
@@ -416,7 +417,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
                 ro_slivers.extend(tn_slivers)
 
-            elif peer.get("type") == "stitching_entity":
+            elif peer.get("type") == self._allowed_peers.get("PEER_SERM"):
                 se_m_info, se_slivers = self.__manage_se_provision(
                     peer, v, credentials, best_effort, end_time, geni_users)
 
@@ -474,8 +475,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         for r, v in route.iteritems():
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
-            if peer.get("type") in ["sdn_networking", "transport_network",
-                                    "stitching_entity", "virtualisation"]:
+            if peer.get("type") in self._allowed_peers.values():
                 last_slice, slivers =\
                     self.__manage_status(peer, v, credentials)
 
@@ -510,8 +510,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         for r, v in route.iteritems():
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
-            if peer.get("type") in ["sdn_networking", "transport_network",
-                                    "stitching_entity", "virtualisation"]:
+            if peer.get("type") in self._allowed_peers.values():
                 slivers = self.__manage_operational_action(
                     peer, v, credentials, action, best_effort)
 
@@ -543,8 +542,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         for r, v in route.iteritems():
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
-            if peer.get("type") in ["sdn_networking", "transport_network",
-                                    "stitching_entity", "virtualisation"]:
+            if peer.get("type") in self._allowed_peers.values():
                 slivers = self.__manage_delete(
                     peer, v, credentials, best_effort)
 
