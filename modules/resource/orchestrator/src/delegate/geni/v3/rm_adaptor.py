@@ -161,7 +161,7 @@ class GENIv3Client(SFAClient):
         if compress:
             options["geni_compress"] = compress
         if end_time:
-            options["end_time"] = end_time
+            options["geni_end_time"] = end_time
         if best_effort:
             options["geni_best_effort"] = best_effort
         if users:
