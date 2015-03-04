@@ -607,6 +607,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
             db_slivers.append({"geni_sliver_urn": dbs.get("geni_sliver_urn"),
                                "routing_key": routing_key})
 
+    def __create_se_id(self, component_id, port_name):
+        return component_id + ":" + port_name
+
     def __extract_se_from_sdn(self, groups, matches):
         ret = []
         for m in matches:
@@ -619,10 +622,16 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 for g in groups:
                     if g.get("name") == mg.get("name"):
                         for gds in g.get("dpids"):
-                            dpids.append(gds.get("component_id"))
+                            for p in gds.get("ports"):
+                                seid = self.__create_se_id(
+                                    gds.get("component_id"), p.get("name"))
+                                dpids.append(seid)
 
             for mds in m.get("dpids"):
-                dpids.append(mds.get("component_id"))
+                for p in mds.get("ports"):
+                    seid = self.__create_se_id(mds.get("component_id"),
+                                               p.get("name"))
+                    dpids.append(seid)
 
             if len(dpids) > 0:
                 ret.append({"vlan": vlan_id, "dpids": dpids})
@@ -784,13 +793,18 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def __update_se_info_route(self, route, values, key):
         for v in values:
             k, ifs = db_sync_manager.get_se_link_routing_key(v.get(key))
+            if k is None:
+                logger.warning("%s (%s) is unknown for this SERM, remove it!" %
+                               (key, v.get(key),))
+                values.remove(v)
+                continue
+
             v['routing_key'] = k
             v['internal_ifs'] = ifs
             node = db_sync_manager.get_se_node_info(k)
             v['node'] = node
             if (k is not None) and (k not in route):
-                sl = "http://www.geni.net/resources/rspec/3/request.xsd"
-                route[k] = SERMv3RequestFormatter(schema_location=sl)
+                route[k] = SERMv3RequestFormatter()
 
     def __update_se_nodes(self, nodes, values):
         for v in values:
