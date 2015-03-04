@@ -14,6 +14,8 @@ from delegate.geni.v3.rspecs.serm.request_formatter import\
     SERMv3RequestFormatter
 from handler.geni.v3 import exceptions as geni_ex
 
+from core.config import ConfParser
+import ast
 import core
 import se_configurator as SEConfigurator
 from se_slices import seSlicesWithSlivers
@@ -83,7 +85,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
         # self._resource_manager = rm_adaptor
         self.SEResources = SEConfigurator.seConfigurator()
         self.SESlices = seSlicesWithSlivers()
-        
+        self._verify_users =\
+            ast.literal_eval(ConfParser("geniv3.conf").get("certificates").get("verify_users"))        
 
     def get_request_extensions_mapping(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
@@ -113,11 +116,11 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def list_resources(self, client_cert, credentials, geni_available):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        client_urn, client_uuid, client_email =\
-            self.auth(client_cert, credentials, None, ("listslices",))
-
-        logger.info("Client urn=%s, uuid=%s, email=%s" % (
-            client_urn, client_uuid, client_email,))
+        if self._verify_users:
+            client_urn, client_uuid, client_email =\
+                self.auth(client_cert, credentials, None, ("listslices",))
+            logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                client_urn, client_uuid, client_email,))
         logger.info("geni_available=%s", geni_available)
 
         sl = "http://www.geni.net/resources/rspec/3/ad.xsd"
@@ -128,8 +131,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
         nodes = self.SEResources.get_nodes_dict_for_rspec()
 
         try:
-
-
              #links = rspec_string.links()
              print "ALL LINKS: ", links
              #nodes = rspec_string.nodes()
@@ -144,8 +145,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
                  logger.error("SE-NODE=%s" % n)
                  print "node se",n
                  rspec.node(n)
- 
-         
         except Exception as e:
              raise geni_ex.GENIv3GeneralError(str(e))
 
@@ -159,13 +158,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         result = []
 
-        for urn in urns:
-            logger.debug("describe: authenticate the user for %s" % (urn))
-            client_urn, client_uuid, client_email =\
-                self.auth(client_cert, credentials, urn, ("sliverstatus",))
-
-            logger.info("Client urn=%s, uuid=%s, email=%s" % (
-                client_urn, client_uuid, client_email,))
+        if self._verify_users:
+            for urn in urns:
+                logger.debug("describe: authenticate the user for %s" % (urn))
+                client_urn, client_uuid, client_email =\
+                    self.auth(client_cert, credentials, urn, ("sliverstatus",))
+                logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                    client_urn, client_uuid, client_email,))
 
             links_db, nodes, links = self.SESlices.get_link_db(urn)
             self.SESlices._create_manifest_from_req_n_and_l(se_manifest, nodes,links)
@@ -191,12 +190,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def allocate(self, slice_urn, client_cert, credentials,
                  rspec, end_time=None):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        logger.debug("allocate: authenticate the user...")
-        client_urn, client_uuid, client_email =\
-            self.auth(client_cert, credentials, slice_urn, ("createsliver",))
+        if self._verify_users:
+            logger.debug("allocate: authenticate the user...")
+            client_urn, client_uuid, client_email =\
+                self.auth(client_cert, credentials, slice_urn, ("createsliver",))
+            logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                client_urn, client_uuid, client_email,))
 
-        logger.info("Client urn=%s, uuid=%s, email=%s" % (
-            client_urn, client_uuid, client_email,))
         logger.info("slice_urn=%s, end_time=%s, rspec=%s" % (
             slice_urn, end_time, rspec,))
         req_rspec = SERMv3RequestParser(from_string=rspec)
@@ -204,7 +204,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
         print "\n\n\n\n\n------------------req_rspec >>> ", req_rspec
         self.__validate_rspec(req_rspec.get_rspec())
 
-        print "\n\n\n\n\n------------------after validating CRM request!!!!!!!!-------------------"
         se_manifest, se_slivers, se_db_slivers = SERMv3ManifestFormatter(), [], []
         print "\n\n\n\n\n------------------se_manifest >>> ", se_manifest
         print "\n\n\n\n\n------------------se_slivers >>> ", se_slivers
@@ -266,13 +265,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         ro_slivers = []
 
-        for urn in urns:
-            logger.debug("renew: authenticate the user for %s" % (urn))
-            client_urn, client_uuid, client_email =\
-                self.auth(client_cert, credentials, urn, ("renewsliver",))
-
-            logger.info("Client urn=%s, uuid=%s, email=%s" % (
-                client_urn, client_uuid, client_email,))
+        if self._verify_users:
+            for urn in urns:
+                logger.debug("renew: authenticate the user for %s" % (urn))
+                client_urn, client_uuid, client_email =\
+                    self.auth(client_cert, credentials, urn, ("renewsliver",))
+                logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                    client_urn, client_uuid, client_email,))
 
         logger.info("expiration_time=%s, best_effort=%s" % (
             expiration_time, best_effort,))
@@ -301,16 +300,16 @@ class GENIv3Delegate(GENIv3DelegateBase):
                   geni_users):
         """Documentation see [geniv3rpc] GENIv3DelegateBase.
         {geni_users} is not relevant here."""
-        logger.debug("provision: authenticate the user...")
-
         se_manifest, se_slivers, last_slice = SERMv3ManifestFormatter(), [], ""
 
         for urn in urns:
-            client_urn, client_uuid, client_email =\
-                self.auth(client_cert, credentials, urn, ("renewsliver",))
+            if self._verify_users:
+                logger.debug("provision: authenticate the user...")
+                client_urn, client_uuid, client_email =\
+                    self.auth(client_cert, credentials, urn, ("renewsliver",))
+                logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                    client_urn, client_uuid, client_email,))
 
-            logger.info("Client urn=%s, uuid=%s, email=%s" % (
-                client_urn, client_uuid, client_email,))
             logger.info("urn=%s, best_effort=%s, end_time=%s, geni_users=%s" % (
                 urn, best_effort, end_time, geni_users,))
 
@@ -343,12 +342,12 @@ class GENIv3Delegate(GENIv3DelegateBase):
         result = []
 
         for urn in urns:
-            logger.debug("status: authenticate the user for %s" % (urn))
-            client_urn, client_uuid, client_email =\
-                self.auth(client_cert, credentials, urn, ("sliverstatus",))
-
-            logger.info("Client urn=%s, uuid=%s, email=%s" % (
-                client_urn, client_uuid, client_email,))
+            if self._verify_users:
+                logger.debug("status: authenticate the user for %s" % (urn))
+                client_urn, client_uuid, client_email =\
+                    self.auth(client_cert, credentials, urn, ("sliverstatus",))
+                logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                    client_urn, client_uuid, client_email,))
 
             links_db, nodes, links = self.SESlices.get_link_db(urn)
 
@@ -374,13 +373,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.info("action=%s, best_effort=%s, internal_action=%s" %
                     (action, best_effort, internal_action,))
 
-        for urn in urns:
-            logger.debug("poa: authenticate the user for %s" % (urn))
-            client_urn, client_uuid, client_email =\
-                self.auth(client_cert, credentials, urn, (internal_action,))
-
-            logger.info("Client urn=%s, uuid=%s, email=%s" % (
-                client_urn, client_uuid, client_email,))
+        if self._verify_users:
+            for urn in urns:
+                logger.debug("poa: authenticate the user for %s" % (urn))
+                client_urn, client_uuid, client_email =\
+                    self.auth(client_cert, credentials, urn, (internal_action,))
+                logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                    client_urn, client_uuid, client_email,))
 
         route = db_sync_manager.get_slice_routing_keys(urns)
         logger.debug("Route=%s" % (route,))
@@ -406,12 +405,12 @@ class GENIv3Delegate(GENIv3DelegateBase):
         result = []
 
         for urn in urns:
-            logger.debug("delete: authenticate the user for %s" % (urn))
-            client_urn, client_uuid, client_email =\
-                self.auth(client_cert, credentials, urn, ("deletesliver",))
-
-            logger.info("Client urn=%s, uuid=%s, email=%s" % (
-                client_urn, client_uuid, client_email,))
+            if self._verify_users:
+                logger.debug("delete: authenticate the user for %s" % (urn))
+                client_urn, client_uuid, client_email =\
+                    self.auth(client_cert, credentials, urn, ("deletesliver",))
+                logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                    client_urn, client_uuid, client_email,))
 
             links_db, nodes, links = self.SESlices.get_link_db(urn)
             reservation_ports = self.SESlices._allocate_ports_in_slice(nodes)
@@ -473,12 +472,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def shutdown(self, slice_urn, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        logger.debug("shutdown: authenticate the user...")
-        client_urn, client_uuid, client_email =\
-            self.auth(client_cert, credentials, slice_urn, ("shutdown",))
+        if self._verify_users:
+            logger.debug("shutdown: authenticate the user...")
+            client_urn, client_uuid, client_email =\
+                self.auth(client_cert, credentials, slice_urn, ("shutdown",))
+            logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                client_urn, client_uuid, client_email,))
 
-        logger.info("Client urn=%s, uuid=%s, email=%s" % (
-            client_urn, client_uuid, client_email,))
         logger.info("slice_urn=%s" % (slice_urn,))
         raise geni_ex.GENIv3GeneralError("Not implemented yet!")
 
