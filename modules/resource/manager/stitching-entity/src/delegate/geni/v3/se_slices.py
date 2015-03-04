@@ -41,6 +41,8 @@ class seSlicesWithSlivers(object):
                 slice_resources=db_sync_manager.get_slices(slice_urn)
                 
                 links_db = slice_resources["slivers"]
+                # Fix geni_sliver_urn to present just urn
+                links_db["geni_sliver_urn"] = links_db["geni_sliver_urn"][0].keys()[0]
                 nodes = slice_resources["nodes"]
                 links = slice_resources["links"]
                 
