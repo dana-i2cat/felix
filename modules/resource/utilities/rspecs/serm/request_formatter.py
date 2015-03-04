@@ -24,7 +24,7 @@ class SERMv3RequestFormatter(TNRMv3RequestFormatter):
 
         for i in link.get("interface_ref"):
             interface = etree.SubElement(l, "{%s}interface_ref" % (self.xmlns))
-            interface.attrib["component_id"] = i.get("component_id")
+            interface.attrib["client_id"] = i.get("component_id")
 
         for p in link.get("property"):
             prop = etree.SubElement(l, "{%s}property" % (self.xmlns))
