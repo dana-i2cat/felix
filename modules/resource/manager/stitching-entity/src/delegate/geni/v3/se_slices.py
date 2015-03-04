@@ -1,5 +1,6 @@
 from delegate.geni.v3.db_manager_se import db_sync_manager
 import base
+import hashlib
 
 class seSlicesWithSlivers(object):
     "Sliver element for se"
@@ -77,10 +78,20 @@ class seSlicesWithSlivers(object):
         return s_temp
     
     def _create_manifest_from_req_n_and_l(self, se_manifest,nodes,links):
+        vlans = []
         for n in nodes:
+            for vlan in n["interfaces"]:
+                for vlan_tag  in vlan["vlan"]:
+                    vlans.append(vlan_tag["tag"])
             se_manifest.node(n)
-        
+
         for l in links:
+            l['vlantag'] = vlans[0] + "-" + vlans[1]
+            sliver_id_name = l["component_id"] + vlans[0] + vlans[1]
+            m = hashlib.md5()
+            m.update(sliver_id_name)
+            sliver_id = m.hexdigest()
+            l['sliver_id'] = sliver_id
             se_manifest.link(l)
             
     def _allocate_ports_in_slice(self, nodes):
