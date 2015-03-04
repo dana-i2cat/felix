@@ -288,7 +288,9 @@ class SDNRMGENI3Delegate(GENIv3DelegateBase):
 
         s = em.sliver(email=sliver.get("email"),
                       description=sliver.get("description"),
-                      ref=ref)
+                      ref=ref,
+                      status="Pending Provisioning",
+                      urn="urn:publicid:IDN+ocf:i2cat:ofam+sliver+sliceNo4")
         mr.append(s)
 
         return mr

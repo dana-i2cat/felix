@@ -15,5 +15,9 @@
             <sharedvlan:available name="urn:publicid:psnc-nsi:if2+vlan"
                                   description="1779-1799"/>
         </interface>
+        <interface component_id="urn:publicid:i2cat-nsi:if3">
+            <sharedvlan:available name="urn:publicid:i2cat-nsi:if3+vlan"
+                                  description="1779-1799"/>
+        </interface>
     </node>
 </rspec>
