@@ -82,7 +82,9 @@ class GENIv3Handler(xmlrpc.Dispatcher):
              "geni_ad_rspec_versions": ad_rspec_versions,
              "geni_credential_types": credential_types,
              "geni_single_allocation": is_single_allocation,
-             "geni_allocate": allocation_mode})
+             "geni_allocate": allocation_mode,
+#             "felix_domain_urn": "",
+            })
 
     def ListResources(self, credentials, options):
         """Delegates the call and unwraps the needed parameter.

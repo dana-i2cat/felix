@@ -1,3 +1,4 @@
+from core.peers import AllowedPeers
 from db.db_manager import db_sync_manager
 from delegate.geni.v3 import exceptions
 
@@ -44,22 +45,23 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
         logger.debug("AM type: %s, version: %s" % (am_type, am_version,))
 
         accepted_types = ["geni", "GENI", "geni_sfa", "GENI_SFA", "sfa", "SFA"]
+        allowed_peers = AllowedPeers.get_peers()
 
         if am_type in accepted_types and int(am_version) <= 2:
-            if type == "virtualisation":
+            if type == allowed_peers.get("PEER_CRM"):
                 return CRMGeniv2Adaptor(uri)
-            elif type == "sdn_networking":
+            elif type == allowed_peers.get("PEER_SDNRM"):
                 return SDNRMGeniv2Adaptor(uri)
         elif am_type in accepted_types and int(am_version) == 3:
-            if type == "virtualisation":
+            if type == allowed_peers.get("PEER_CRM"):
                 return CRMGeniv3Adaptor(uri)
-            elif type == "sdn_networking":
+            elif type == allowed_peers.get("PEER_SDNRM"):
                 return SDNRMGeniv3Adaptor(uri)
-            elif type == "stitching_entity":
+            elif type == allowed_peers.get("PEER_SERM"):
                 return SERMGeniv3Adaptor(uri)
-            elif type == "transport_network":
+            elif type == allowed_peers.get("PEER_TNRM"):
                 return TNRMGeniv3Adaptor(uri)
-            elif type == "island_ro":
+            elif type == allowed_peers.get("PEER_RO"):
                 return ROGeniv3Adaptor(uri)
 
         raise exceptions.GeneralError("Resource Manager type not implemented yet! Details: type=%s,version=%s" % (str(am_type), str(am_version)))

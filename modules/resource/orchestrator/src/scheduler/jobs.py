@@ -1,3 +1,4 @@
+from core.peers import AllowedPeers
 from db.db_manager import db_sync_manager
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
 from monitoring_manager import MonitoringManager
@@ -6,12 +7,13 @@ from resource_detector import ResourceDetector
 import core
 
 logger = core.log.getLogger("jobs")
+allowed_peers = AllowedPeers.get_peers()
 
 
 # resource detector scheduled jobs
 def com_resource_detector():
     try:
-        rd = ResourceDetector("virtualisation")
+        rd = ResourceDetector(allowed_peers.get("PEER_CRM"))
         rd.do_action()
     except Exception as e:
         logger.error("com_resource_detector failure: %s" % (e,))
@@ -19,7 +21,7 @@ def com_resource_detector():
 
 def sdn_resource_detector():
     try:
-        rd = ResourceDetector("sdn_networking")
+        rd = ResourceDetector(allowed_peers.get("PEER_SDNRM"))
         rd.do_action()
     except Exception as e:
         logger.error("sdn_resource_detector failure: %s" % (e,))
@@ -27,7 +29,7 @@ def sdn_resource_detector():
 
 def se_resource_detector():
     try:
-        rd = ResourceDetector("stitching_entity")
+        rd = ResourceDetector(allowed_peers.get("PEER_SERM"))
         rd.do_action()
     except Exception as e:
         logger.error("se_resource_detector failure: %s" % (e,))
@@ -35,7 +37,7 @@ def se_resource_detector():
 
 def tn_resource_detector():
     try:
-        rd = ResourceDetector("transport_network")
+        rd = ResourceDetector(allowed_peers.get("PEER_TNRM"))
         rd.do_action()
     except Exception as e:
         logger.error("tn_resource_detector failure: %s" % (e,))
@@ -43,7 +45,7 @@ def tn_resource_detector():
 
 def ro_resource_detector():
     try:
-        rd = ResourceDetector("island_ro")
+        rd = ResourceDetector(allowed_peers.get("PEER_RO"))
         rd.do_action()
     except Exception as e:
         logger.error("ro_resource_detector failure: %s" % (e,))
