@@ -1,19 +1,23 @@
 from rspecs.tnrm.manifest_formatter import TNRMv3ManifestFormatter
-from rspecs.commons import DEFAULT_XMLNS, DEFAULT_XS, DSL_PREFIX
+from rspecs.commons import DEFAULT_XMLNS, DEFAULT_XS, DSL_PREFIX,\
+    PROTOGENI_PREFIX
 from rspecs.commons_tn import DEFAULT_SHARED_VLAN
 from lxml import etree
 
 DEFAULT_MANIFEST_SCHEMA_LOCATION = DSL_PREFIX + "3/manifest.xsd "
 DEFAULT_MANIFEST_SCHEMA_LOCATION += DSL_PREFIX +\
     "ext/shared-vlan/1/request.xsd"
+DEFAULT_MANIFEST_SCHEMA_LOCATION += PROTOGENI_PREFIX
+DEFAULT_MANIFEST_SCHEMA_LOCATION += PROTOGENI_PREFIX + "/manifest.xsd "
 
 
 class SERMv3ManifestFormatter(TNRMv3ManifestFormatter):
     def __init__(self, xmlns=DEFAULT_XMLNS, xs=DEFAULT_XS,
                  sharedvlan=DEFAULT_SHARED_VLAN,
+                 protogeni=PROTOGENI_PREFIX,
                  schema_location=DEFAULT_MANIFEST_SCHEMA_LOCATION):
         super(SERMv3ManifestFormatter, self).__init__(
-            xmlns, xs, sharedvlan, schema_location)
+            xmlns, xs, sharedvlan, protogeni, schema_location)
 
     def add_link(self, rspec, l):
         link_ = etree.SubElement(rspec, "{%s}link" % (self.xmlns))
@@ -24,6 +28,10 @@ class SERMv3ManifestFormatter(TNRMv3ManifestFormatter):
 
         if l.get("vlantag") is not None:
             link_.attrib["vlantag"] = l.get("vlantag")
+
+        if l.get("component_manager_uuid") is not None:
+            link_.attrib["{%s}component_manager_uuid" % (self.__proto)] =\
+                l.get("component_manager_uuid")
 
         mgr_ = etree.SubElement(link_, "{%s}component_manager" % (self.xmlns))
         mgr_.attrib["name"] = l.get("component_manager_name")

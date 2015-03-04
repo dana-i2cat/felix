@@ -14,6 +14,7 @@ from rspecs.crm.request_formatter import CRMv3RequestFormatter
 from rspecs.openflow.request_formatter import OFv3RequestFormatter
 from rspecs.ro.advertisement_formatter import ROAdvertisementFormatter
 from rspecs.ro.manifest_formatter import ROManifestFormatter
+from rspecs.ro.manifest_parser import ROManifestParser
 from rspecs.ro.request_parser import RORequestParser
 from rspecs.openflow.manifest_parser import OFv3ManifestParser
 from rspecs.serm.manifest_parser import SERMv3ManifestParser
@@ -317,6 +318,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 "se-resources", slice_urn, db_slivers, ro_db_slivers)
 
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
+        self.__validate_rspec(ro_manifest.get_rspec())
 
         for s in ro_slivers:
             s["geni_expires"] = self.__str2datetime(s["geni_expires"])
@@ -425,6 +427,26 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     ro_manifest.se_link(l)
 
                 ro_slivers.extend(se_slivers)
+
+            elif peer.get("type") == "island_ro":
+                ro_m_info, ro_slivers = self.__manage_ro_provision(
+                    peer, v, credentials, best_effort, end_time, geni_users)
+
+                logger.debug("ro_m=%s, ro_s=%s" % (ro_m_info, ro_slivers,))
+                for n in ro_m_info.get("com_nodes"):
+                    ro_manifest.com_node(n)
+                for s in ro_m_info.get("sdn_slivers"):
+                    ro_manifest.of_sliver(s)
+                for n in ro_m_info.get("tn_nodes"):
+                    ro_manifest.tn_node(n)
+                for l in ro_m_info.get("tn_links"):
+                    ro_manifest.tn_link(l)
+                for n in ro_m_info.get("se_nodes"):
+                    ro_manifest.se_node(n)
+                for l in ro_m_info.get("se_links"):
+                    ro_manifest.se_link(l)
+
+                ro_slivers.extend(ro_slivers)
 
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
 
@@ -1078,8 +1100,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
             logger.error("manage_com_provision exception: %s", e)
             return ({"nodes": []}, [])
 
-    def _manage_se_provision(self, peer, urns, creds,
-                             beffort, etime, gusers):
+    def __manage_se_provision(self, peer, urns, creds,
+                              beffort, etime, gusers):
         adaptor, uri = AdaptorFactory.create_from_db(peer)
         logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
         try:
@@ -1096,10 +1118,53 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
             return ({"nodes": nodes, "links": links}, urn)
         except Exception as e:
-            return ({"nodes": [], "links": []}, [])
             # It is possible that SERM does not implement this method!
             logger.error("manage_se_provision exception: %s", e)
             return ({"nodes": [], "links": []}, [])
+
+    def __manage_ro_provision(self, peer, urns, creds, beffort, etime, gusers):
+        adaptor, uri = AdaptorFactory.create_from_db(peer)
+        logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
+
+        ret = {"com_nodes": [], "sdn_slivers": [],
+               "tn_nodes": [], "tn_links": [],
+               "se_nodes": [], "se_links": []}
+        try:
+            m, urn = adaptor.provision(urns, creds[0]["geni_value"],
+                                       beffort, etime, gusers)
+            manifest = ROManifestParser(from_string=m)
+            logger.debug("ROManifestParser=%s" % (manifest,))
+            self.__validate_rspec(manifest.get_rspec())
+
+            ret["com_nodes"] = manifest.com_nodes()
+            logger.info("COMNodes(%d)=%s" %
+                        (len(ret["com_nodes"]), ret["com_nodes"],))
+
+            ret["sdn_slivers"] = manifest.sdn_slivers()
+            logger.info("SDNSlivers(%d)=%s" %
+                        (len(ret["sdn_slivers"]), ret["sdn_slivers"],))
+
+            ret["tn_nodes"] = manifest.tn_nodes()
+            logger.info("TNNodes(%d)=%s" %
+                        (len(ret["tn_nodes"]), ret["tn_nodes"],))
+
+            ret["tn_links"] = manifest.tn_links()
+            logger.info("TNLinks(%d)=%s" %
+                        (len(ret["tn_links"]), ret["tn_links"],))
+
+            ret["se_nodes"] = manifest.se_nodes()
+            logger.info("SENodes(%d)=%s" %
+                        (len(ret["se_nodes"]), ret["se_nodes"],))
+
+            ret["se_links"] = manifest.se_links()
+            logger.info("SELinks(%d)=%s" %
+                        (len(ret["se_links"]), ret["se_links"],))
+
+            return (ret, urn)
+        except Exception as e:
+            # It is possible that RO does not implement this method!
+            logger.error("manage_se_provision exception: %s", e)
+            return (ret, [])
 
     def __validate_rspec(self, generic_rspec):
         (result, error) = validate(generic_rspec)

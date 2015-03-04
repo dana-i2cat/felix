@@ -1,19 +1,23 @@
 from rspecs.commons import DEFAULT_XMLNS, DEFAULT_XS, DEFAULT_SCHEMA_LOCATION,\
-    DSL_PREFIX
+    DSL_PREFIX, PROTOGENI_PREFIX
 from rspecs.formatter_base import FormatterBase
 from lxml import etree
 
 DEFAULT_MANIFEST_SCHEMA_LOCATION = DEFAULT_SCHEMA_LOCATION
 DEFAULT_MANIFEST_SCHEMA_LOCATION += DSL_PREFIX + "3/manifest.xsd"
+DEFAULT_MANIFEST_SCHEMA_LOCATION += PROTOGENI_PREFIX
+DEFAULT_MANIFEST_SCHEMA_LOCATION += PROTOGENI_PREFIX + "/manifest.xsd "
 
 
 class CRMv3ManifestFormatter(FormatterBase):
     def __init__(self, xmlns=DEFAULT_XMLNS, xs=DEFAULT_XS,
+                 protogeni=PROTOGENI_PREFIX,
                  schema_location=DEFAULT_MANIFEST_SCHEMA_LOCATION):
         super(CRMv3ManifestFormatter, self).__init__(
-            "manifest", schema_location, {},
+            "manifest", schema_location, {"protogeni": "%s" % (protogeni)},
             xmlns, xs)
         self.__com = DEFAULT_XMLNS
+        self.__proto = protogeni
 
     def add_sliver(self, rspec, n):
         sliver = etree.SubElement(rspec, "{%s}node" % (self.xmlns))
@@ -37,6 +41,10 @@ class CRMv3ManifestFormatter(FormatterBase):
         node_.attrib["component_id"] = n.get("component_id")
         node_.attrib["component_manager_id"] = n.get("component_manager_id")
         node_.attrib["sliver_id"] = n.get("sliver_id")
+
+        if n.get("component_manager_uuid") is not None:
+            node_.attrib["{%s}component_manager_uuid" % (self.__proto)] =\
+                n.get("component_manager_uuid")
 
         if n.get("sliver_type_name") is not None:
             sliver_ = etree.SubElement(node_, "{%s}sliver_type" % (self.xmlns))
