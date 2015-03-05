@@ -332,9 +332,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     }
                 ]
 
-        rspec = {"geni_rspec": "%s" % se_manifest}
-
-        return rspec, slivers
+        return str(se_manifest), slivers
 
     def status(self, urns, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
