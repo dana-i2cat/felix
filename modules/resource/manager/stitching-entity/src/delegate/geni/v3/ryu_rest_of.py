@@ -19,6 +19,7 @@ def addSwitchingRule(in_port, out_port, in_vlan, out_vlan):
             in_vlan (int)
             out_vlan (int)
     """
+    print "install flows"
     headers = {'content-type': 'application/json'}
     payload = {
                 "dpid":dpid,
@@ -46,11 +47,36 @@ def addSwitchingRule(in_port, out_port, in_vlan, out_vlan):
                 }
     r = requests.post("http://" + host + ":" + port + "/stats/flowentry/add", data=json.dumps(payload), headers=headers)
     print r.status_code
-    print r.headers
-    print r.__dict__
+
+    payload = {
+                "dpid":dpid,
+                "cookie":1,
+                "cookie_mask":1,
+                "table_id":0,
+                "idle_timeout":0,
+                "hard_timeout":0,
+                "priority":1,
+                "flags":1,  
+                 "match": {
+                             "dl_vlan":out_vlan,
+                             "in_port":out_port
+                          }, 
+                 "actions":[
+                                 {
+                                     "type":"SET_VLAN_VID",
+                                     "vlan_vid":in_vlan
+                                },
+                                 {
+                                     "type":"OUTPUT",
+                                     "port":in_port
+                                }
+                             ]
+                }
+    r = requests.post("http://" + host + ":" + port + "/stats/flowentry/add", data=json.dumps(payload), headers=headers)
+    print r.status_code
 
 def deleteSwitchingRule(in_port, out_port, in_vlan, out_vlan):
-    print "start"
+    print "delete flows"
     headers = {'content-type': 'application/json'}
 
     payload = {
@@ -74,6 +100,33 @@ def deleteSwitchingRule(in_port, out_port, in_vlan, out_vlan):
                                  {
                                      "type":"OUTPUT",
                                      "port":out_port
+                                }
+                             ]
+                }
+    r = requests.post("http://" + host + ":" + port + "/stats/flowentry/delete", data=json.dumps(payload), headers=headers)
+    print r.status_code
+
+    payload = {
+                "dpid":dpid,
+                "cookie":1,
+                "cookie_mask":1,
+                "table_id":0,
+                "idle_timeout":0,
+                "hard_timeout":0,
+                "priority":1,
+                "flags":1,  
+                 "match": {
+                             "dl_vlan":out_vlan,
+                             "in_port":out_port
+                          }, 
+                 "actions":[
+                                 {
+                                     "type":"SET_VLAN_VID",
+                                     "vlan_vid":in_vlan
+                                },
+                                 {
+                                     "type":"OUTPUT",
+                                     "port":in_port
                                 }
                              ]
                 }
