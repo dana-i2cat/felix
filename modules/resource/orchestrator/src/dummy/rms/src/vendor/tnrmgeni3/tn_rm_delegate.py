@@ -166,7 +166,7 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
 
     def __sliver_date_status(self, link, etime=None):
         t = datetime.datetime.now() if (etime is None) else etime
-        return {'geni_sliver_urn': link.get("id"),
+        return {'geni_sliver_urn': link.get("component_id"),
                 'geni_expires': t,
                 'geni_allocation_status': self.ALLOCATION_STATE_ALLOCATED,
                 'geni_operational_status': self.OPERATIONAL_STATE_READY,

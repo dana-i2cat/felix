@@ -271,6 +271,14 @@ class SDNRMGENI3Delegate(GENIv3DelegateBase):
                 'geni_operational_status': self.OPERATIONAL_STATE_READY,
                 'geni_error': ""}
 
+    def __dummy_sliver(self):
+        t = datetime.datetime.now()
+        return {'geni_sliver_urn': "psnc-dpid-666",
+                'geni_expires': t,
+                'geni_allocation_status': self.ALLOCATION_STATE_ALLOCATED,
+                'geni_operational_status': self.OPERATIONAL_STATE_READY,
+                'geni_error': ""}
+
     def __sliver_details_status(self, dpid):
         cid = dpid.get("id")
         return {'geni_sliver_urn': cid,
@@ -325,6 +333,8 @@ class SDNRMGENI3Delegate(GENIv3DelegateBase):
         logger.info("Matches=%s" % matches)
 
         slivers = [self.__sliver_date_status(d) for d in datapaths]
+        if len(slivers) == 0:
+            slivers.append(self.__dummy_sliver())
         manifest = self.lxml_to_string(self.__manifest(sliver))
 
         logger.info("Manifest=%s, Slivers=%s" % (manifest, slivers))
