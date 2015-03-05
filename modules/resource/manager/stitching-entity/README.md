@@ -36,7 +36,7 @@ Get the source code from git repository and switch to ''stitching-element'' bran
 
 ```
  $ git clone https://github.com/dana-i2cat/felix.git
- $ git checkout stitching-element
+ $ git checkout stitching-entity
 ```
 
 Now, enter the SE-RM's deploy directory and run the installation script (root account or sudo is needed):
@@ -233,4 +233,62 @@ request_rspec_example.xml - example Rspec request slivers
         </link> 
         
     </rspec>
+
 ```
+
+# Ryu controller (SE-RM-OF-CTRL) for SE hardware OpenFlow compatible
+
+SE-RM-OF-CTRL is a Stitching Element Resource Manager OpenFlow Controller entity. The module is responsible for provisioning OpenFlow resources in the SDN network. SE-RM-OF-CTRL build upon Ryu OF Controller configures OpenFlow switch and provides REST API interface towards SE-RM.
+
+[Ryu REST API app documentation](http://ryu.readthedocs.org/en/latest/app/ofctl_rest.html)
+
+##Installation
+
+The following prerequisites are needed priot to install Ryu: 
+* python-eventlet
+* python-routes
+* python-webob
+* python-paramiko
+
+```% pip install ryu```
+
+Or install from the source code:
+
+```% git clone git://github.com/osrg/ryu.git```
+```% cd ryu; python ./setup.py install```
+
+##How to run SE-RM-OF-CTRL
+
+```% ~/ryu\> PYTHONPATH=. ./bin/ryu-manager --verbose ryu/app/ofctl_rest.py```
+ofctl_rest is one of the built-in Ryu application.
+
+###REST API interface
+
+ryu.app.ofctl_rest provides REST APIs for retrieving the switch stats and Updating the switch stats. This application helps you debug your application and get various statistics. This application supports OpenFlow version 1.0, 1.2 and 1.3. [Ryu rest Api](http://ryu.readthedocs.org/en/latest/app/ofctl_rest.html)
+
+##Example of use
+
+To add flowmod whitch translates VLAN_ID=333 on in_port=12 to VLAN_ID=555 on out_port=13:
+  ```% curl -X POST -d
+  '{"dpid":110533270894679, "cookie":1, "cookie_mask":1, "table_id":0, "idle_timeout":30, "hard_timeout":30, "priority":1, "flags":1,  
+  "match":   {"dl_vlan":333, "in_port":12}, 
+  "actions":[{"type":"SET_VLAN_VID","vlan_vid":555},{"type":"OUTPUT","port":13}]}' 
+  http://localhost:8080/stats/flowentry/add```
+
+To delete above flowmode:
+  ```% curl -X POST -d 
+  '{"dpid":110533270894679, "cookie":1, "cookie_mask":1, "table_id":0, "idle_timeout":30, "hard_timeout":30, "priority":1, "flags":1,  
+  "match":{"dl_vlan":333, "in_port":12},"actions":[{"type":"SET_VLAN_VID","vlan_vid":555},{"type":"OUTPUT","port":13}]}' 
+  http://localhost:8080/stats/flowentry/delete```
+##Deployment
+
+SE-RM-OF-CTRL is deployed on VM(KVM) with ubuntu 13.04.
+In PSNC SDN testbed SE-RM-OF-CTRL provision OF resources into Juniper MX80 (Junos 12.3 with OpenFlow v1.0).
+
+###Slice configuration 
+```
+% fvctl add-slice {slice_name} tcp:{of_contorller_ipv4:port} admin@{slice_name}
+% fvctl add-flowspace {flowspace_name} {dpid} 1 in_port={number} {slice_name}=7
+                                          .....                        
+```
+
