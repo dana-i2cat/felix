@@ -286,8 +286,9 @@ SE-RM-OF-CTRL is deployed on VM(KVM) with ubuntu 13.04.
 In PSNC SDN testbed SE-RM-OF-CTRL provision OF resources into Juniper MX80 (Junos 12.3 with OpenFlow v1.0).
 
 ###Slice configuration 
- ```
+```
 % fvctl add-slice {slice_name} tcp:{of_contorller_ipv4:port} admin@{slice_name}
 % fvctl add-flowspace {flowspace_name} {dpid} 1 in_port={number} {slice_name}=7
-                                          .....                        ```
+                                          .....                        
+```
 
