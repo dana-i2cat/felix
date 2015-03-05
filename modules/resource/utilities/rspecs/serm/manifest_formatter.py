@@ -18,6 +18,7 @@ class SERMv3ManifestFormatter(TNRMv3ManifestFormatter):
                  schema_location=DEFAULT_MANIFEST_SCHEMA_LOCATION):
         super(SERMv3ManifestFormatter, self).__init__(
             xmlns, xs, sharedvlan, protogeni, schema_location)
+        self.__proto = protogeni
 
     def add_link(self, rspec, l):
         link_ = etree.SubElement(rspec, "{%s}link" % (self.xmlns))
