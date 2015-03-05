@@ -365,38 +365,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def perform_operational_action(self, urns, client_cert, credentials,
                                    action, best_effort):
-        ro_slivers = []
-
-        internal_action = self.__translate_action(action)
-        logger.info("action=%s, best_effort=%s, internal_action=%s" %
-                    (action, best_effort, internal_action,))
-
-        if self._verify_users:
-            for urn in urns:
-                logger.debug("poa: authenticate the user for %s" % (urn))
-                client_urn, client_uuid, client_email =\
-                    self.auth(client_cert, credentials, urn, (internal_action,))
-                logger.info("Client urn=%s, uuid=%s, email=%s" % (
-                    client_urn, client_uuid, client_email,))
-
-        route = db_sync_manager.get_slice_routing_keys(urns)
-        logger.debug("Route=%s" % (route,))
-
-        for r, v in route.iteritems():
-            peer = db_sync_manager.get_configured_peer(r)
-            logger.debug("peer=%s" % (peer,))
-            if peer.get("type") in ["sdn_networking", "transport_network",
-                                    "stitching_entity"]:
-                slivers = self.__manage_operational_action(
-                    peer, v, credentials, action, best_effort)
-
-                logger.debug("slivers=%s" % (slivers,))
-                ro_slivers.extend(slivers)
-
-        for s in ro_slivers:
-            s["geni_expires"] = self.__str2datetime(s["geni_expires"])
-        logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
-        return ro_slivers
+        raise geni_ex.GENIv3GeneralError("unsupported method")
 
     def delete(self, urns, client_cert, credentials, best_effort):     ### FIX the response
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
