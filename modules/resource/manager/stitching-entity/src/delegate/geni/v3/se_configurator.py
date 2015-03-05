@@ -189,34 +189,13 @@ class seConfigurator:
         config = self.initial_configured_interfaces
         for interface in config:
             endpoints = config[interface]["remote_endpoints"]
-            avail_vlans = {}
             for endpoint in endpoints:
+                # links_se_temp = []
+                found = False
                 for vlan in endpoint["vlans"]:
-                    if isinstance(vlan, int ):
-                        new_static_link =  {
-                            'component_id':component_id_prefix + ':' + interface + "+" + endpoint["name"],
-                            'component_manager_name':None,
-                            'interface_ref':[
-                                {
-                                    'component_id': component_id_prefix + ':' + interface
-                                },
-                                {
-                                    'component_id': endpoint["name"]
-                                }
-                            ],
-                            'property':[
-
-                            ],
-                            'link_type':'urn:felix+' + endpoint["type"]
-                        }
-                        if configured_interfaces[interface][str(vlan)] == True:
-                            links_se.append(new_static_link)
-                            break
-                    else:
-                        try:
-                            v_start, v_end = vlan.split("-")
-                            v_range = range(int(v_start), int(v_end)+1, 1)
-                            for v in v_range:
+                    if found == False:
+                        if isinstance(vlan, int ):
+                            if configured_interfaces[interface][str(vlan)] == True:
                                 new_static_link =  {
                                     'component_id':component_id_prefix + ':' + interface + "+" + endpoint["name"],
                                     'component_manager_name':None,
@@ -233,10 +212,35 @@ class seConfigurator:
                                     ],
                                     'link_type':'urn:felix+' + endpoint["type"]
                                 }
-                                if configured_interfaces[interface][str(vlan)] == True:
-                                    links_se.append(new_static_link)
-                                    break
-                        except:
-                            pass
+                                links_se.append(new_static_link)
+                                found = True
+                                break
+                        else:
+                            try:
+                                v_start, v_end = vlan.split("-")
+                                v_range = range(int(v_start), int(v_end)+1, 1)
+                                for v in v_range:
+                                    if configured_interfaces[interface][str(v)] == True:
+                                        new_static_link =  {
+                                            'component_id':component_id_prefix + ':' + interface + "+" + endpoint["name"],
+                                            'component_manager_name':None,
+                                            'interface_ref':[
+                                                {
+                                                    'component_id': component_id_prefix + ':' + interface
+                                                },
+                                                {
+                                                    'component_id': endpoint["name"]
+                                                }
+                                            ],
+                                            'property':[
+
+                                            ],
+                                            'link_type':'urn:felix+' + endpoint["type"]
+                                        }
+                                        links_se.append(new_static_link)
+                                        found = True
+                                        break
+                            except:
+                                pass
 
         return links_se
