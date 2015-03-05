@@ -249,7 +249,7 @@ class SDNRMGENI3Delegate(GENIv3DelegateBase):
                   "email": "r.monno@nextworks.it"}
 
         slivers = [self.__sliver_str_status(d) for d in datapaths]
-        manifest = self.lxml_to_string(self.__manifest(sliver))
+        manifest = "%s" % self.__manifest(sliver)
 
         logger.info("Manifest=%s, Slivers=%s" % (manifest, slivers))
         return {'geni_rspec': manifest,
@@ -289,19 +289,12 @@ class SDNRMGENI3Delegate(GENIv3DelegateBase):
                 'geni_resource_status': "some-details-%s" % cid}
 
     def __manifest(self, sliver):
-        mr = self.lxml_manifest_root()
-        em = self.lxml_manifest_element_maker('openflow')
-
-        ref = "Pending" if sliver.get("ref") is None else sliver.get("ref")
-
-        s = em.sliver(email=sliver.get("email"),
-                      description=sliver.get("description"),
-                      ref=ref,
-                      status="Pending Provisioning",
-                      urn="urn:publicid:IDN+ocf:i2cat:ofam+sliver+sliceNo4")
-        mr.append(s)
-
-        return mr
+        manifest = rspec_manager.get_OFv3ManifestFormatter()
+        manifest.sliver({"description": sliver.get("description"),
+            "email": sliver.get("email"),
+            "status": "Pending Provisioning",
+            "urn": "urn:publicid:IDN+ocf:i2cat:ofam+sliver+sliceNo4"})
+        return manifest
 
     @enter_method_log
     def allocate(self, slice_urn, client_cert, credentials, rspec,
@@ -335,7 +328,7 @@ class SDNRMGENI3Delegate(GENIv3DelegateBase):
         slivers = [self.__sliver_date_status(d) for d in datapaths]
         if len(slivers) == 0:
             slivers.append(self.__dummy_sliver())
-        manifest = self.lxml_to_string(self.__manifest(sliver))
+        manifest = "%s" % self.__manifest(sliver)
 
         logger.info("Manifest=%s, Slivers=%s" % (manifest, slivers))
         return (manifest, slivers)

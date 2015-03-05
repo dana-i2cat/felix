@@ -1,0 +1,10 @@
+{
+  "name" : "Ryu (Simulator)",
+  "author" : "Roberto Monno",
+  "author-email" : "r.monno@nextworks.it",
+  "version" : 0.1,
+  "implements" : [],
+  "loads-after" : ["geniv3handler", "geniv3delegatebase", "geniv3exceptions",
+                     "xmlrpc", "config"],
+  "requires" : []
+}

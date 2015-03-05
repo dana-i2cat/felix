@@ -3,6 +3,7 @@
 COMRMGENI3="comrmgeni3"
 SDNRMGENI3="sdnrmgeni3"
 SERMGENI3="sermgeni3"
+RYU="ryu"
 TNRMGENI3="tnrmgeni3"
 MONITORING="monitoring"
 
@@ -12,6 +13,7 @@ function clean() {
     rm -f plugins/${COMRMGENI3}
     rm -f plugins/${SDNRMGENI3}
     rm -f plugins/${SERMGENI3}
+    rm -f plugins/${RYU}
     rm -f plugins/${TNRMGENI3}
     rm -f plugins/${MONITORING}
 }
@@ -36,6 +38,7 @@ function simulate() {
 simulate ${COMRMGENI3}
 simulate ${SDNRMGENI3}
 simulate ${SERMGENI3}
+simulate ${RYU}
 simulate ${TNRMGENI3}
 simulate ${MONITORING}
 

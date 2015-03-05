@@ -11,6 +11,7 @@ from rspecs.crm.advertisement_formatter import CRMv3AdvertisementFormatter
 from rspecs.crm.manifest_formatter import CRMv3ManifestFormatter
 from rspecs.crm.request_parser import CRMv3RequestParser
 from rspecs.openflow.advertisement_formatter import OFv3AdvertisementFormatter
+from rspecs.openflow.manifest_formatter import OFv3ManifestFormatter
 from rspecs.commons_of import Datapath, Link as OFLink
 from rspecs.commons import FEDLink, validate
 from rspecs.openflow.request_parser import OFv3RequestParser
@@ -55,6 +56,11 @@ class Geni3RSpecsManager(object):
     @serviceinterface
     def get_OFv3AdvertisementFormatter():
         return OFv3AdvertisementFormatter()
+
+    @staticmethod
+    @serviceinterface
+    def get_OFv3ManifestFormatter():
+        return OFv3ManifestFormatter()
 
     @staticmethod
     @serviceinterface
