@@ -250,16 +250,16 @@ The following prerequisites are needed priot to install Ryu:
 * python-webob
 * python-paramiko
 
-  ```% pip install ryu```
+```% pip install ryu```
 
 Or install from the source code:
 
-  ```% git clone git://github.com/osrg/ryu.git```
-  ```% cd ryu; python ./setup.py install```
+```% git clone git://github.com/osrg/ryu.git```
+```% cd ryu; python ./setup.py install```
 
 ##How to run SE-RM-OF-CTRL
 
-  ```% ~/ryu\> PYTHONPATH=. ./bin/ryu-manager --verbose ryu/app/ofctl_rest.py```
+```% ~/ryu\> PYTHONPATH=. ./bin/ryu-manager --verbose ryu/app/ofctl_rest.py```
 ofctl_rest is one of the built-in Ryu application.
 
 ###REST API interface
@@ -286,8 +286,8 @@ SE-RM-OF-CTRL is deployed on VM(KVM) with ubuntu 13.04.
 In PSNC SDN testbed SE-RM-OF-CTRL provision OF resources into Juniper MX80 (Junos 12.3 with OpenFlow v1.0).
 
 ###Slice configuration 
- ``` % fvctl add-slice {slice_name} tcp:{of_contorller_ipv4:port} admin@{slice_name}
-  % fvctl add-flowspace {flowspace_name} {dpid} 1 in_port={number} {slice_name}=7
-  
-                                                     .....                        ```
+ ```
+% fvctl add-slice {slice_name} tcp:{of_contorller_ipv4:port} admin@{slice_name}
+% fvctl add-flowspace {flowspace_name} {dpid} 1 in_port={number} {slice_name}=7
+                                          .....                        ```
 
