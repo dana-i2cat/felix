@@ -230,7 +230,7 @@ class SDNRMGENI3Delegate(GENIv3DelegateBase):
             if self.urn_type(urn) == "slice":
                 last_urn = urn
 
-        values = [{"id": "sdn-dpid_%d" % (i)} for i in range(0, offset)]
+        values = [{"dpid": "sdn-dpid_%d" % (i)} for i in range(0, offset)]
         return values, last_urn
 
     def __test_datapaths(self, dpids):
@@ -257,7 +257,7 @@ class SDNRMGENI3Delegate(GENIv3DelegateBase):
                 'geni_slivers': slivers}
 
     def __sliver_str_status(self, dpid):
-        return {'geni_sliver_urn': dpid.get("id"),
+        return {'geni_sliver_urn': dpid.get("dpid"),
                 'geni_expires': self.__datetime2str(datetime.datetime.now()),
                 'geni_allocation_status': self.ALLOCATION_STATE_ALLOCATED,
                 'geni_operational_status': self.OPERATIONAL_STATE_READY,
