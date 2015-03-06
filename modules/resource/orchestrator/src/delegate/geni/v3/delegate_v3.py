@@ -1,3 +1,4 @@
+from core import dates
 from core.peers import AllowedPeers
 from delegate.geni.v3.base import GENIv3DelegateBase
 from db.db_manager import db_sync_manager
@@ -27,15 +28,14 @@ from handler.geni.v3 import exceptions as geni_ex
 from core.config import ConfParser
 import ast
 import core
-import datetime
-import re
-import dateutil
 
 logger = core.log.getLogger("geniv3delegate")
 
 
 class GENIv3Delegate(GENIv3DelegateBase):
     """
+    Note: 'geni_expires' keys are returned as a python datetime object 
+    to the handler in the upper layer. This will convert them to strings
     """
     # TODO should also include a changing component, identified by a config key
     URN_PREFIX = "urn:RO"
@@ -203,7 +203,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         for s in ro_slivers:
             # Extra conversion added tp return string
-            s["geni_expires"] = self.__translate_to_rfc3339(s["geni_expires"])
+            s["geni_expires"] = dates.rfc3339_to_datetime(s["geni_expires"])
         logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
 
         return {"geni_rspec": "%s" % ro_manifest,
@@ -323,7 +323,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         self.__validate_rspec(ro_manifest.get_rspec())
 
         for s in ro_slivers:
-            s["geni_expires"] = self.__str2datetime(s["geni_expires"])
+            s["geni_expires"] = dates.rfc3339_to_datetime(s["geni_expires"])
         logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
 
         logger.info("allocate successfully completed: %s" % (ro_db_slivers,))
@@ -349,7 +349,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         route = db_sync_manager.get_slice_routing_keys(urns)
         logger.debug("Route=%s" % (route,))
 
-        etime_str = self.__datetime2str(expiration_time)
+        etime_str = dates.datetime_to_rfc3339(expiration_time)
         for r, v in route.iteritems():
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
@@ -361,7 +361,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 ro_slivers.extend(slivers)
 
         for s in ro_slivers:
-            s["geni_expires"] = self.__str2datetime(s["geni_expires"])
+            s["geni_expires"] = dates.rfc3339_to_datetime(s["geni_expires"])
         logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
         return ro_slivers
 
@@ -429,7 +429,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
                 ro_slivers.extend(se_slivers)
 
-            elif peer.get("type") == "island_ro":
+            elif peer.get("type") == self._allowed_peers.get("PEER_RO"):
                 ro_m_info, ro_slivers = self.__manage_ro_provision(
                     peer, v, credentials, best_effort, end_time, geni_users)
 
@@ -452,7 +452,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
 
         for s in ro_slivers:
-            s["geni_expires"] = self.__str2datetime(s["geni_expires"])
+            s["geni_expires"] = dates.rfc3339_to_datetime(s["geni_expires"])
         logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
 
         return ("%s" % ro_manifest, ro_slivers)
@@ -483,7 +483,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 ro_slivers.extend(slivers)
 
         for s in ro_slivers:
-            s["geni_expires"] = self.__str2datetime(s["geni_expires"])
+            s["geni_expires"] = dates.rfc3339_to_datetime(s["geni_expires"])
         logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
         return last_slice, ro_slivers
 
@@ -518,7 +518,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 ro_slivers.extend(slivers)
 
         for s in ro_slivers:
-            s["geni_expires"] = self.__str2datetime(s["geni_expires"])
+            s["geni_expires"] = dates.rfc3339_to_datetime(s["geni_expires"])
         logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
         return ro_slivers
 
@@ -551,7 +551,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         db_urns = []
         for s in ro_slivers:
-            s["geni_expires"] = self.__str2datetime(s["geni_expires"])
+            s["geni_expires"] = dates.rfc3339_to_datetime(s["geni_expires"])
             db_urns.append(s.get("geni_sliver_urn"))
         logger.debug("RO-Slivers(%d)=%s, DB-URNs(%d)=%s" %
                      (len(ro_slivers), ro_slivers, len(db_urns), db_urns))
@@ -618,7 +618,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         adaptor, uri = AdaptorFactory.create_from_db(peer)
         logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
         return adaptor.allocate(slice_urn, credentials[0]["geni_value"],
-                                "%s" % req_rspec, end_time)
+                                str(req_rspec), end_time)
 
     def __extend_slivers(self, values, routing_key, slivers, db_slivers):
         logger.info("Slivers=%s" % (values,))
@@ -790,6 +790,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         for k, v in route.iteritems():
             (m, ss) = self.__send_request_rspec(k, v, surn, creds, end)
+            print "!!!!!!!!!!!!!!!!!!! MANIFEST ALLOCATE: ", m
             manifest = TNRMv3ManifestParser(from_string=m)
             logger.debug("TNRMv3ManifestParser=%s" % (manifest,))
             self.__validate_rspec(manifest.get_rspec())
@@ -1170,54 +1171,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
             raise geni_ex.GENIv3GeneralError("RSpec validation failure: %s" % (
                                              error,))
         logger.info("Validation success!")
-
-    def __str2datetime(self, strval):
-        logger.debug("Converting string (%s) to datetime object: %s" %
-                     (type(strval), strval))
-        return self.__rfc3339_to_datetime(strval)
-
-    def __rfc3339_to_datetime(self, date):
-        """
-        Returns a datetime object from an input string formatted
-        according to RFC3339.
-
-        Ref: https://github.com/fp7-ofelia/ocf/blob/ofelia.development/core/
-             lib/am/ambase/src/geni/v3/handler/handler.py#L321-L332
-        """
-        try:
-            date_form = re.sub(r'[\+|\.].+', "", date)
-            formatted_date = datetime.datetime.strptime(
-                date_form.replace("T", " ").
-                replace("Z", ""), "%Y-%m-%d %H:%M:%S")
-        except:
-            formatted_date = date
-
-        logger.debug("Converted datetime object (%s): %s" %
-                     (type(formatted_date), formatted_date))
-        return formatted_date
-
-    def __datetime2str(self, date):
-        return self.__datetime_to_rfc3339(date)
-
-    def __datetime_to_rfc3339(self, date):
-        """
-        Returns a datetime object that is formatted according to RFC3339.
-
-        Ref: https://github.com/fp7-ofelia/ocf/blob/ofelia.development/core/
-             lib/am/ambase/src/geni/v3/handler/handler.py#L309-L319
-        """
-        try:
-            formatted_date = date.replace(tzinfo=dateutil.tz.tzutc()).\
-                strftime("%Y-%m-%d %H:%M:%S").replace(" ", "T")+"Z"
-        except:
-            formatted_date = date
-        return formatted_date
-
-    def __translate_to_rfc3339(self, date):
-        logger.debug("Converting datime object (%s) to string" % str(date))
-        date = self.__rfc3339_to_datetime(date)
-        date = self.__datetime_to_rfc3339(date)
-        return date
 
     def __translate_action(self, geni_action):
         actions_to_permissions = {

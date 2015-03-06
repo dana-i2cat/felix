@@ -3,10 +3,8 @@
 # import os, os.path
 # import urllib2
 import traceback
-from datetime import datetime
-from dateutil import parser as dateparser
+
 import base64
-import re
 import zlib
 
 
@@ -17,6 +15,7 @@ from handler.geni.v3 import exceptions as geni_ex
 # import handler.geni.v3.extensions.geni
 # import handler.geni.v3.extensions.sfa.trust.gid as gid
 
+from core import dates
 from core import log
 logger = log.getLogger("handlergeniv3")
 
@@ -31,7 +30,6 @@ xmlrpc = FlaskXMLRPC(flaskserver)
 
 
 class GENIv3Handler(xmlrpc.Dispatcher):
-    RFC3339_FORMAT_STRING = "%Y-%m-%d %H:%M:%S.%fZ"
 
     def __init__(self):
         super(GENIv3Handler, self).__init__(logger)
@@ -117,6 +115,9 @@ class GENIv3Handler(xmlrpc.Dispatcher):
             self._checkRSpecVersion(options["geni_rspec_version"])
             result = self._delegate.describe(urns, self.requestCertificate(),
                                              credentials)
+            # change datetimes to strings
+            result["geni_slivers"] = self._convertExpiresDate(result["geni_slivers"])
+
         except Exception as e:
             return self._errorReturn(e)
 
@@ -131,7 +132,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         to geni compliant date format."""
         geni_end_time = None
         if "geni_end_time" in options:
-            geni_end_time = self.__str2datetime(options["geni_end_time"])
+            geni_end_time = dates.rfc3339_to_datetime(options["geni_end_time"])
 
         # TODO check the end_time against the duration of the credential
         try:
@@ -142,7 +143,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
                 slice_urn, self.requestCertificate(),
                 credentials, rspec, geni_end_time)
 
-            # change datetime"s to strings
+            # change datetimes to strings
             result = {"geni_rspec": r_rspec,
                       "geni_slivers": self._convertExpiresDate(r_sliver_list)}
 
@@ -153,13 +154,13 @@ class GENIv3Handler(xmlrpc.Dispatcher):
 
     def Renew(self, urns, credentials, expiration_time_str, options):
         geni_best_effort = self._option(options, "geni_best_effort", ret=True)
-        expiration_time = self.__str2datetime(expiration_time_str)
+        expiration_time = dates.rfc3339_to_datetime(expiration_time_str)
         try:
             # delegate
             result = self._delegate.renew(urns, self.requestCertificate(),
                                           credentials, expiration_time,
                                           geni_best_effort)
-            # change datetime"s to strings
+            # change datetimes to strings
             result = self._convertExpiresDate(result)
 
         except Exception as e:
@@ -172,8 +173,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         geni_users = options.get("geni_users", [])
         geni_end_time = None
         if "geni_end_time" in options:
-            geni_end_time = self.__str2datetime(options["geni_end_time"])
-#            geni_end_time = self.__rfc3339_to_datetime(options["geni_end_time"])
+            geni_end_time = dates.rfc3339_to_datetime(options["geni_end_time"])
 
         # TODO check the end_time against the duration of the credential
         try:
@@ -242,67 +242,23 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         return self._successReturn(result)
 
     # ---- helper methods
-    def __str2datetime(self, strval):
-#        logger.info("xxxxx __str2datetime before xxxx %s" % type(strval))
-#        result = dateparser.parse(strval)
-#        if result:
-#            result = result - result.utcoffset()
-#            result = result.replace(tzinfo=None)
-#        logger.info("xxxxx __str2datetime after xxxx %s" % type(strval))
-#        return result
-        logger.debug("Converting string (%s) to datetime object: %s" %
-                     (type(strval), strval))
-        return self.__rfc3339_to_datetime(strval)
-
-    def __rfc3339_to_datetime(self, date):
-        """
-        Returns a datetime object from an input string formatted according to RFC3339.
-        
-        Ref: https://github.com/fp7-ofelia/ocf/blob/ofelia.development/core/
-             lib/am/ambase/src/geni/v3/handler/handler.py#L321-L332
-        """
-        try:
-            date_form = re.sub(r'[\+|\.].+', "", date)
-            formatted_date = datetime.datetime.strptime(
-                date_form.replace("T", " ").replace("Z",""), "%Y-%m-%d %H:%M:%S")
-        except:
-            formatted_date = date
-
-        logger.debug("Converted datetime object (%s): %s" %
-                     (type(formatted_date), formatted_date))
-        return formatted_date
-
-    def _datetime2str(self, date):
-        return date.strftime(self.RFC3339_FORMAT_STRING)
-#        return self.__datetime_to_rfc3339(date)
-
-    def __datetime_to_rfc3339(self, date):
-        """
-        Returns a datetime object that is formatted according to RFC3339.
-        
-        Ref: https://github.com/fp7-ofelia/ocf/blob/ofelia.development/core/
-             lib/am/ambase/src/geni/v3/handler/handler.py#L309-L319
-        """
-        try:
-            # Hint: use "strict_rfc3339" package for validation: strict_rfc3339.validate_rfc3339(...)
-            # May also be computed as date.replace(...).isoformat("T")
-            formatted_date = date.replace(tzinfo=dateutil.tz.tzutc()).strftime("%Y-%m-%d %H:%M:%S").replace(" ", "T")+"Z"
-        except:
-            formatted_date = date
-        return formatted_date
 
     def _convertExpiresDate(self, sliver_list):
+        """
+        Converts datetime objects received from the delegate into strings.
+        This is the expected returned type for the 'geni_expires' value.
+        """
         for slhash in sliver_list:
             if slhash["geni_expires"] is None:
                 continue
 
             logger.info("xxxxx __convertExpiresDate before xxxx: %s, type: %s" % (str(slhash["geni_expires"]), str(type(slhash["geni_expires"]))))
-            if not isinstance(slhash["geni_expires"], datetime):
+            if not dates.is_date(slhash["geni_expires"]):
                 raise ValueError("Given geni_expires in sliver_list hash " +
                                  "retrieved from delegate's method is not " +
                                  "a python datetime object.")
 
-            slhash["geni_expires"] = self._datetime2str(slhash["geni_expires"])
+            slhash["geni_expires"] = dates.datetime_to_rfc3339(slhash["geni_expires"])
             logger.info("xxxxx __convertExpiresDate after xxxx %s, type: %s" % (str(slhash["geni_expires"]), type(slhash["geni_expires"])))
 
         return sliver_list
