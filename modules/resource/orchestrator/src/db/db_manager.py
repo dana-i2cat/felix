@@ -200,6 +200,22 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
+    def get_slice_urn(self, urns):
+        table = pymongo.MongoClient().felix_ro.topology.slice
+        try:
+            self.__mutex.acquire()
+            for u in urns:
+                for r in table.find():
+                    if r.get("slice_urn") == u:
+                        return u
+
+                    for s in r.get("slivers"):
+                        if s.get("geni_sliver_urn") == u:
+                            return r.get("slice_urn")
+            return None
+        finally:
+            self.__mutex.release()
+
     def delete_slice_urns(self, urns):
         table = pymongo.MongoClient().felix_ro.topology.slice
         try:
