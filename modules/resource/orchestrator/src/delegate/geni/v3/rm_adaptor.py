@@ -1,3 +1,4 @@
+from core import dates
 from core.peers import AllowedPeers
 from db.db_manager import db_sync_manager
 from delegate.geni.v3 import exceptions
@@ -163,7 +164,8 @@ class GENIv3Client(SFAClient):
         if compress:
             options["geni_compress"] = compress
         if end_time:
-            options["geni_end_time"] = end_time
+            # Convert to rfc3339 prior to sending
+            options["geni_end_time"] = dates.datetime_to_rfc3339(end_time)
         if best_effort:
             options["geni_best_effort"] = best_effort
         if users:
