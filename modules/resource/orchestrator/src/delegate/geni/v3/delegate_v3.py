@@ -25,6 +25,8 @@ from rspecs.tnrm.manifest_parser import TNRMv3ManifestParser
 from rspecs.tnrm.request_formatter import TNRMv3RequestFormatter
 from handler.geni.v3 import exceptions as geni_ex
 
+from monitoring.slice_monitoring import SliceMonitoring
+
 from core.config import ConfParser
 import ast
 import core
@@ -34,7 +36,7 @@ logger = core.log.getLogger("geniv3delegate")
 
 class GENIv3Delegate(GENIv3DelegateBase):
     """
-    Note: 'geni_expires' keys are returned as a python datetime object 
+    Note: 'geni_expires' keys are returned as a python datetime object
     to the handler in the upper layer. This will convert them to strings
     """
     # TODO should also include a changing component, identified by a config key
@@ -373,7 +375,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
         """Documentation see [geniv3rpc] GENIv3DelegateBase.
         {geni_users} is relevant here."""
         ro_manifest, ro_slivers = ROManifestFormatter(), []
+        slice_monitor = SliceMonitoring()
 
+        client_urn = None
         if self._verify_users:
             for urn in urns:
                 logger.debug("provision: authenticate the user for %s" % (urn))
@@ -381,6 +385,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     self.auth(client_cert, credentials, urn, ("createsliver",))
                 logger.info("Client urn=%s, uuid=%s, email=%s" % (
                     client_urn, client_uuid, client_email,))
+
+        slice_urn = db_sync_manager.get_slice_urn(urns)
+        slice_monitor.add_topology(slice_urn, client_urn)
 
         route = db_sync_manager.get_slice_routing_keys(urns)
         logger.debug("Route=%s" % (route,))
@@ -397,6 +404,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     ro_manifest.com_node(n)
 
                 ro_slivers.extend(com_slivers)
+                # introduce slice-monitoring info for C resources
+                slice_monitor.add_c_resources(
+                    slice_urn, com_m_info.get("nodes"), com_slivers)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_SDNRM"):
                 of_m_info, of_slivers = self.__manage_sdn_provision(
@@ -451,6 +461,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     ro_manifest.se_link(l)
 
                 ro_slivers.extend(ro_slivers)
+
+        # send slice-monitoring info to the monitoring system
+        slice_monitor.send()
 
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
 
