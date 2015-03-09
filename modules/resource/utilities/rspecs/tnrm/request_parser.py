@@ -13,8 +13,14 @@ class TNRMv3RequestParser(ParserBase):
             exclusive = None
             sliver = n.find("{%s}sliver_type" % (self.none))
             if sliver is not None:
-                # for TNRM request the sliver tag MUST be empty
-                # so this node is NOT a TN resource!
+                # For TNRM request the sliver tag MUST be empty
+                # so this node is NOT a TN resource, but a CRM resouce!
+                continue
+
+            component_manager = n.find("{%s}component_manager" % (self.none))
+            if component_manager.attrib.get("name").endswith("serm"):
+#            if "se" in n.attrib.get("client_id"):
+                # FIXME Lousy hack to identify SE resources
                 continue
 
             node = Node(n.attrib.get("client_id"),
@@ -40,6 +46,12 @@ class TNRMv3RequestParser(ParserBase):
             manager_ = l.find("{%s}component_manager" % (self.none))
             if manager_ is None:
                 self.raise_exception("Component-Mgr tag not found in link!")
+
+            component_manager = n.find("{%s}component_manager" % (self.none))
+            if component_manager.attrib.get("name").endswith("serm"):
+#            if "se" in n.attrib.get("client_id"):
+                # FIXME Lousy hack to identify SE resources
+                continue
 
             l_ = Link(l.attrib.get("client_id"), manager_.attrib.get("name"))
 

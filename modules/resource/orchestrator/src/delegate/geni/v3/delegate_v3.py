@@ -229,10 +229,11 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         ro_manifest, ro_slivers, ro_db_slivers = ROManifestFormatter(), [], []
 
+        print "********* DELEGATE allocate rspec = ", req_rspec
+
         # COM resources
         slivers = req_rspec.com_slivers()
         nodes = req_rspec.com_nodes()
-
         if slivers:
             logger.debug("Found a COM-slivers segment (%d): %s" %
                          (len(slivers), slivers,))
@@ -244,7 +245,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
             for m in com_m_info:
                 for n in m.get("nodes"):
                     ro_manifest.com_node(n)
-
             ro_slivers.extend(com_slivers)
             # insert com-resources into slice table
             self.__insert_slice_info(
@@ -274,6 +274,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
         se_tn_info = None
         nodes = req_rspec.tn_nodes()
         links = req_rspec.tn_links()
+        print "....... TN nodes: ", nodes
+        print "....... TN links: ", links
         if (len(nodes) > 0) or (len(links) > 0):
             logger.debug("Found a TN-nodes segment (%d): %s" %
                          (len(nodes), nodes,))
@@ -282,7 +284,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
             (tn_m_info, tn_slivers, db_slivers, se_tn_info) =\
                 self.__manage_tn_allocate(slice_urn, credentials, end_time,
                                           nodes, links)
-
             logger.debug("tn_m=%s, tn_s=%s, db_s=%s" %
                          (tn_m_info, tn_slivers, db_slivers))
             for m in tn_m_info:
@@ -299,6 +300,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
         # SE resources
         if (se_sdn_info is not None) and (len(se_sdn_info) > 0) and\
            (se_tn_info is not None) and (len(se_tn_info) > 0):
+            print "....... SE info: ", se_sdn_info
+            print "....... TN info: ", se_tn_info
             logger.debug("Found a SE-sdn segment (%d): %s" %
                          (len(se_sdn_info), se_sdn_info,))
             logger.debug("Found a SE-tn segment (%d): %s" %
@@ -683,11 +686,11 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.info("Route=%s" % (route,))
         manifests, slivers, db_slivers = [], [], []
 
-        print "\n\n\n\n\n\n\n> route: ", route
         for k, v in route.iteritems():
+            print "\n\n\n--------------- send allocate for CRM"
             (m, ss) = self.__send_request_rspec(
                 k, v, slice_urn, credentials, slice_expiration)
-            logger.debug("\n\n\n\n\ndelegate > manifest: %s\n\n\n\n" % str(m))
+            print "\n\n\n--------------- manifest allocate for SDN: ", m
             manifest = CRMv3ManifestParser(from_string=m)
             logger.debug("CRMv3ManifestParser=%s" % (manifest,))
 
@@ -721,7 +724,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
         manifests, slivers, db_slivers = [], [], []
 
         for k, v in route.iteritems():
+            print "\n\n\n--------------- send allocate for SDN"
             (m, ss) = self.__send_request_rspec(k, v, surn, creds, end)
+            print "\n\n\n--------------- manifest allocate for SDN: ", m
             manifest = OFv3ManifestParser(from_string=m)
             logger.debug("OFv3ManifestParser=%s" % (manifest,))
 
@@ -789,8 +794,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
         manifests, slivers, db_slivers, se_tn_info = [], [], [], []
 
         for k, v in route.iteritems():
+            print "\n\n\n--------------- send allocate for TN"
             (m, ss) = self.__send_request_rspec(k, v, surn, creds, end)
-            print "!!!!!!!!!!!!!!!!!!! MANIFEST ALLOCATE: ", m
+            print "\n\n\n--------------- manifest allocate for TN: ", m
             manifest = TNRMv3ManifestParser(from_string=m)
             logger.debug("TNRMv3ManifestParser=%s" % (manifest,))
             self.__validate_rspec(manifest.get_rspec())
@@ -920,7 +926,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
         manifests, slivers, db_slivers = [], [], []
 
         for k, v in route.iteritems():
+            print "\n\n\n--------------- send allocate for SE"
             (m, ss) = self.__send_request_rspec(k, v, surn, creds, end)
+            print "\n\n\n--------------- manifest allocate for SE: ", m
             manifest = SERMv3ManifestParser(from_string=m)
             logger.debug("SERMv3ManifestParser=%s" % (manifest,))
             self.__validate_rspec(manifest.get_rspec())
