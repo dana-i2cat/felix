@@ -401,6 +401,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     ro_manifest.com_node(n)
 
                 ro_slivers.extend(com_slivers)
+                # introduce slice-monitoring info for C resources
+                slice_monitor.add_c_resources(
+                    slice_urn, com_m_info.get("nodes"), com_slivers)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_SDNRM"):
                 of_m_info, of_slivers = self.__manage_sdn_provision(

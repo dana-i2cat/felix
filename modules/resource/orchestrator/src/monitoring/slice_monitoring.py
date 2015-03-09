@@ -29,15 +29,44 @@ class SliceMonitoring(BaseMonitoring):
     def __get_topologies(self):
         return etree.tostring(self.__topologies, pretty_print=True)
 
+    def __add_snmp_management(self, tag, address):
+        manag = etree.SubElement(tag, "management", type="snmp")
+
+        addr = etree.SubElement(manag, "address")
+        addr.text = address
+        port = etree.SubElement(manag, "port")
+        port.text = "161"
+        auth = etree.SubElement(manag, "auth")
+        auth.text = "community"
+
     def add_topology(self, slice_urn, client_urn=None):
-        topology = etree.SubElement(self.__topologies, "topology")
-        topology.attrib["type"] = "slice"
-        topology.attrib["last_update_time"] = str(time.time())
-        topology.attrib["name"] = slice_urn
-        topology.attrib["owner"] =\
-            client_urn if client_urn else "not_certified_user"
+        owner_name = client_urn if client_urn else "not_certified_user"
+        topology = etree.SubElement(
+            self.__topologies, "topology", type="slice",
+            last_update_time=str(time.time()), name=slice_urn,
+            owner=owner_name)
         # store the currect slice topology identifier
         self.__stored[slice_urn] = topology
+
+    def add_c_resources(self, slice_urn, nodes, slivers):
+        if slice_urn in self.__stored:
+            logger.debug("Nodes(%d)=%s, Slivers(%d)=%s" %
+                         (len(nodes), nodes, len(slivers), slivers))
+            topology = self.__stored.get(slice_urn)
+            for n in nodes:
+                node_ = etree.SubElement(
+                    topology, "node", id=n.get('component_id'), type="server")
+
+                inner_node_ = etree.SubElement(
+                    node_, "node", id=n.get('sliver_id'),
+                    type=n.get('sliver_type_name'))
+
+                if len(n.get('services')) > 0:
+                    self.__add_snmp_management(
+                        inner_node_,
+                        n.get('services')[0].get('login').get('hostname'))
+        else:
+            logger.error("Unable to find Topology info from %s!" % slice_urn)
 
     def send(self):
         try:
