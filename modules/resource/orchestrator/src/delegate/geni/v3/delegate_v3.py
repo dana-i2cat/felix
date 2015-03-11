@@ -259,7 +259,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             logger.debug("Found an OF-sliver segment: %s", sliver)
             (of_m_info, of_slivers, db_slivers, se_sdn_info) =\
                 self.__manage_sdn_allocate(slice_urn, credentials, end_time,
-                                           sliver, req_rspec)
+                                           sliver, req_rspec, slice_urn)
 
             logger.debug("of_m=%s, of_s=%s, db_s=%s" %
                          (of_m_info, of_slivers, db_slivers))
@@ -718,7 +718,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         return (manifests, slivers, db_slivers)
 
-    def __manage_sdn_allocate(self, surn, creds, end, sliver, parser):
+    def __manage_sdn_allocate(self, surn, creds, end, sliver, parser,
+                              slice_urn):
         route = {}
         controllers = parser.of_controllers()
         logger.debug("Controllers=%s" % (controllers,))
@@ -751,6 +752,10 @@ class GENIv3Delegate(GENIv3DelegateBase):
             manifests.append({"slivers": slivers_})
 
             self.__extend_slivers(ss, k, slivers, db_slivers)
+
+        # insert sliver details (groups and matches) into the slice.sdn table
+        id_ = db_sync_manager.store_slice_sdn(slice_urn, groups, matches)
+        logger.info("Stored slice.sdn info: id=%s" % (id_,))
 
         return (manifests, slivers, db_slivers, se_sdn_info)
 

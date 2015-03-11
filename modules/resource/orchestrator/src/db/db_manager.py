@@ -20,6 +20,7 @@ logger = core.log.getLogger("db-manager")
 #   resource.tn.link
 #   topology.physical
 #   topology.slice
+#   topology.slice.sdn
 #
 
 
@@ -578,6 +579,18 @@ class DBManager(object):
 
             raise Exception("Link (%s,%s,%s) owner is not found into RO-DB!" %
                             (cid, cmid, ifrefs))
+        finally:
+            self.__mutex.release()
+
+    # (felix_ro) topology.slice.sdn
+    def store_slice_sdn(self, slice_urn, groups_info, matches_info):
+        table = pymongo.MongoClient().felix_ro.topology.slice.sdn
+        try:
+            self.__mutex.acquire()
+            value = {"slice_urn": slice_urn,
+                     "groups": groups_info,
+                     "matches": matches_info}
+            return table.insert(value)
         finally:
             self.__mutex.release()
 
