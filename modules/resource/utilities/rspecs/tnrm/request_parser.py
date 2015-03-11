@@ -17,11 +17,12 @@ class TNRMv3RequestParser(ParserBase):
                 # so this node is NOT a TN resource, but a CRM resouce!
                 continue
 
-            component_manager = n.find("{%s}component_manager" % (self.none))
-            if component_manager.attrib.get("name").endswith("serm"):
-#            if "se" in n.attrib.get("client_id"):
-                # FIXME Lousy hack to identify SE resources
-                continue
+            # component_manager = n.find("{%s}component_manager" % (self.none))
+            # print component_manager
+            # if component_manager.attrib.get("name").endswith("serm"):
+            #   if "se" in n.attrib.get("client_id"):
+            # FIXME Lousy hack to identify SE resources
+            #    continue
 
             node = Node(n.attrib.get("client_id"),
                         n.attrib.get("component_manager_id"),
@@ -31,7 +32,7 @@ class TNRMv3RequestParser(ParserBase):
                 interface = Interface(i.attrib.get("client_id"))
                 for sv in i.iterfind("{%s}link_shared_vlan" % (self.__sv)):
                     interface.add_vlan(sv.attrib.get("vlantag"),
-                                sv.attrib.get("name"))
+                                       sv.attrib.get("name"))
                 node.add_interface(interface.serialize())
 
             nodes.append(node.serialize())
@@ -47,11 +48,11 @@ class TNRMv3RequestParser(ParserBase):
             if manager_ is None:
                 self.raise_exception("Component-Mgr tag not found in link!")
 
-            component_manager = n.find("{%s}component_manager" % (self.none))
-            if component_manager.attrib.get("name").endswith("serm"):
-#            if "se" in n.attrib.get("client_id"):
-                # FIXME Lousy hack to identify SE resources
-                continue
+            # component_manager = n.find("{%s}component_manager" % (self.none))
+            # if component_manager.attrib.get("name").endswith("serm"):
+            #   if "se" in n.attrib.get("client_id"):
+            # FIXME Lousy hack to identify SE resources
+            #    continue
 
             l_ = Link(l.attrib.get("client_id"), manager_.attrib.get("name"))
 

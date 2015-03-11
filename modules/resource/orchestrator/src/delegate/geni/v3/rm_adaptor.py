@@ -65,7 +65,9 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
             elif type == allowed_peers.get("PEER_RO"):
                 return ROGeniv3Adaptor(uri)
 
-        raise exceptions.GeneralError("Resource Manager type not implemented yet! Details: type=%s,version=%s" % (str(am_type), str(am_version)))
+        e = "Resource Manager type not implemented yet! "
+        e += "Details: type=%s,version=%s" % (str(am_type), str(am_version),)
+        raise exceptions.GeneralError(e)
 
     @staticmethod
     def create_from_db(peer_db):
@@ -80,8 +82,8 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
                 adaptor_endpoint = adaptor_endpoint[1:]
 
         adaptor_uri = "%s://%s:%s" % (peer_db.get("protocol"),
-                                         peer_db.get("address"),
-                                         peer_db.get("port"))
+                                      peer_db.get("address"),
+                                      peer_db.get("port"))
 
         if adaptor_endpoint:
             adaptor_uri += "/%s" % str(adaptor_endpoint)
@@ -96,9 +98,13 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
     @staticmethod
     def geni_v3_credentials():
         from core.utils import calls
-        (text, ucredential) = calls.getusercred(
-            user_cert_filename="alice-cert.pem", geni_api=3)
-        return ucredential["geni_value"]
+        try:
+            (text, ucredential) = calls.getusercred(
+                user_cert_filename="alice-cert.pem", geni_api=3)
+            return ucredential["geni_value"]
+        except Exception as e:
+            logger.error("Unable to get user-cred from CH: %s" % (e,))
+            raise e
 
 
 class SFAClient(AdaptorFactory):
@@ -339,7 +345,7 @@ class GENIv3Client(SFAClient):
         # Credentials must be sent in the proper format
         credentials = self.format_credentials(credentials)
         try:
-            params = [urns, credentials, options,]
+            params = [urns, credentials, options, ]
             result = self.Provision(*params)
             logger.info("\n\n\n%s Provision result=%s\n\n\n" %
                         (self.typee, result,))

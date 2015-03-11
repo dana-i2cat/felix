@@ -29,15 +29,16 @@ class SliceMonitoring(BaseMonitoring):
     def __get_topologies(self):
         return etree.tostring(self.__topologies, pretty_print=True)
 
-    def __add_snmp_management(self, tag, address):
+    def __add_snmp_management(self, tag, address,
+                              port_num="161", auth_string="community"):
         manag = etree.SubElement(tag, "management", type="snmp")
 
         addr = etree.SubElement(manag, "address")
         addr.text = address
         port = etree.SubElement(manag, "port")
-        port.text = "161"
+        port.text = port_num
         auth = etree.SubElement(manag, "auth")
-        auth.text = "community"
+        auth.text = auth_string
 
     def add_topology(self, slice_urn, client_urn=None):
         owner_name = client_urn if client_urn else "not_certified_user"
@@ -65,6 +66,16 @@ class SliceMonitoring(BaseMonitoring):
                     self.__add_snmp_management(
                         inner_node_,
                         n.get('services')[0].get('login').get('hostname'))
+        else:
+            logger.error("Unable to find Topology info from %s!" % slice_urn)
+
+    def add_sdn_resources(self, slice_urn, nodes, slivers):
+        # We cannot use information extracted from the manifest here!
+        # We can look into the db-table containing the requested dpids
+        # and matches.
+        if slice_urn in self.__stored:
+            logger.debug("Nodes(%d)=%s, Slivers(%d)=%s" %
+                         (len(nodes), nodes, len(slivers), slivers))
         else:
             logger.error("Unable to find Topology info from %s!" % slice_urn)
 
