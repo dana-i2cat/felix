@@ -14,14 +14,7 @@ class seSlicesWithSlivers(object):
         self._links_db = {}
         
     def set_link_db(self, slice_urn, end_time,links, nodes):
-        print "end time in slice", end_time
         self._links_db[slice_urn] = self._create_sliver_from_req_n_and_l(end_time, links, nodes)
-
-        #print nodes
-        #print links
-        #print slice_urn
-        #self.__nodes[slice_urn] = nodes
-        #self.__links[slice_urn] = links
         db_sync_manager.set_slices(slice_urn,{"nodes":nodes,"links":links,"slivers":self._links_db[slice_urn]})
     
     def remove_link_db(self, slice_urn):
@@ -34,17 +27,14 @@ class seSlicesWithSlivers(object):
         
         if slice_urn:
             try:
-                
-                #links_db1 = self._links_db[slice_urn]
-                #nodes1 = self.__nodes[slice_urn]
-                #links1 = self.__links[slice_urn]
+
                 slice_resources=db_sync_manager.get_slices(slice_urn)
-                
                 links_db = slice_resources["slivers"]
                 # Fix geni_sliver_urn to present just urn
                 links_db["geni_sliver_urn"] = links_db["geni_sliver_urn"][0].keys()[0]
                 nodes = slice_resources["nodes"]
                 links = slice_resources["links"]
+                sliver_id = links[0]["sliver_id"]
                 
                 return links_db, nodes, links
             except :
@@ -53,7 +43,6 @@ class seSlicesWithSlivers(object):
     
     def _create_sliver_from_req_n_and_l( self, end_time, links, nodes):
         s_temp={}
-        print "end time in slice2", end_time
         for l in links:
             
             temp =[]
@@ -68,11 +57,10 @@ class seSlicesWithSlivers(object):
                             temp.append(e['vlan'])
           
             if s_temp.get("geni_sliver_urn") == None:
-                s_temp["geni_sliver_urn"] = [{l["component_id"]:temp}]
-                
+                s_temp["geni_sliver_urn"] = [{l["sliver_id"]:temp}]
             else:
                 temp2 = s_temp.get("geni_sliver_urn")
-                s_temp["geni_sliver_urn"] = list(temp2) + [{l["component_id"]:temp}]
+                s_temp["geni_sliver_urn"] = list(temp2) + [{l["sliver_id"]:temp}]
                 
         s_temp["geni_expires"] = end_time
         s_temp["geni_allocation_status"] = base.GENIv3DelegateBase.ALLOCATION_STATE_ALLOCATED   #ALLOCATION_STATE_UNALLOCATED

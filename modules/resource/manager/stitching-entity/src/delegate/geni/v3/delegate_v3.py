@@ -237,23 +237,18 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 
                      
             s =  self.SESlices._allocate_ports_in_slice(nodes) 
-            print "seslice ports ",s
             
             logger.debug("requested SE-Sliver(%d)=%s" % (len(se_slivers), se_slivers,))
             #link_additional_info={}
             
-            print "check link db before operation :", self.SESlices.get_link_db(slice_urn)
             self.SESlices.set_link_db(slice_urn, end_time,links, nodes)
-            print "check link db after operation", self.SESlices.get_link_db()
             
 
             links_db, nodes, links = self.SESlices.get_link_db(slice_urn)
-
             se_slivers.append(links_db)
             #id_ = db_sync_manager.store_slice_info(slice_urn, se_db_slivers)
             logger.info("allocate successfully completed: %s", slice_urn)
             #self.__schedule_slice_release(end_time, se_db_slivers)
-            print "WWWWWWWWWW: %s", se_slivers
             return ("%s" % se_manifest, se_slivers)
 
         else:
