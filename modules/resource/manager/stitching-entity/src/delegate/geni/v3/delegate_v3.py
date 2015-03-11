@@ -75,6 +75,14 @@ def se_job_release_resources(time, ports, slice_urn):
     # Remove reservation - TODO
     # SESlices.remove_link_db(slice_urn)
 
+def se_job_unprovision(time, reservation_ports, slice_urn):
+    in_port = int(reservation_ports[0]["port"].rsplit(":", 1)[1])
+    out_port = int(reservation_ports[1]["port"].rsplit(":", 1)[1])
+    in_vlan = int(reservation_ports[0]["vlan"])
+    out_vlan = int(reservation_ports[1]["vlan"])
+
+    se_provision.deleteSwitchingRule(in_port, out_port, in_vlan, out_vlan)
+
 class GENIv3Delegate(GENIv3DelegateBase):
     """
     """
@@ -221,14 +229,15 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
             # Mark resources as reserved
             self.SEResources.set_resource_reservation(reservation_ports['ports'])
-            alarm_time = end_time
-            #SESchedulerService.get_scheduler().add_job( SEConfigurator.set_resource_reservation(), "date", run_date=end_time, args=reservation_ports['ports'])
-            SESchedulerService.get_scheduler().add_job( se_job_release_resources,
-                                                        "date",
-                                                        run_date=alarm_time,
-                                                        args=[datetime.now(),
-                                                        reservation_ports['ports'],
-                                                        slice_urn])
+            if end_time != None:
+                alarm_time = end_time
+                #SESchedulerService.get_scheduler().add_job( SEConfigurator.set_resource_reservation(), "date", run_date=end_time, args=reservation_ports['ports'])
+                SESchedulerService.get_scheduler().add_job( se_job_release_resources,
+                                                            "date",
+                                                            run_date=alarm_time,
+                                                            args=[datetime.now(),
+                                                            reservation_ports['ports'],
+                                                            slice_urn])
             #print "manifest  ", se_manifest
             #print "nodes ", nodes
             #print "links", links
@@ -311,14 +320,18 @@ class GENIv3Delegate(GENIv3DelegateBase):
             links_db, nodes, links = self.SESlices.get_link_db(urn)
             self.SESlices._create_manifest_from_req_n_and_l(se_manifest, nodes,links)
 
+
             reservation_ports = self.SESlices._allocate_ports_in_slice(nodes)["ports"]
 
-            in_port = int(reservation_ports[0]["port"].rsplit(":", 1)[1])
-            out_port = int(reservation_ports[1]["port"].rsplit(":", 1)[1])
-            in_vlan = int(reservation_ports[0]["vlan"])
-            out_vlan = int(reservation_ports[1]["vlan"])
+            if end_time != None:
+                alarm_time = end_time
+                SESchedulerService.get_scheduler().add_job( se_job_unprovision,
+                                                            "date",
+                                                            run_date=alarm_time,
+                                                            args=[datetime.now(),
+                                                            reservation_ports,
+                                                            urn])
 
-            se_provision.addSwitchingRule(in_port, out_port, in_vlan, out_vlan)
 
         slivers = [{'geni_sliver_urn' : urns[0],
                     "geni_allocation_status"  : "geni_allocated",
@@ -344,7 +357,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
             links_db, nodes, links = self.SESlices.get_link_db(urn)
 
-            expires_date = datetime.strptime(links_db['geni_expires'], RFC3339_FORMAT_STRING)
+            # expires_date = datetime.strptime(links_db['geni_expires'], RFC3339_FORMAT_STRING)
+            expires_date = links_db['geni_expires']
 
             result.append( 
                             {   
@@ -360,7 +374,49 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def perform_operational_action(self, urns, client_cert, credentials,
                                    action, best_effort):
-        raise geni_ex.GENIv3GeneralError("unsupported method")
+        result = []
+
+        for urn in urns:
+            if self._verify_users: ### TODO: Fix authentication
+                logger.debug("status: authenticate the user for %s" % (urn))
+                client_urn, client_uuid, client_email =\
+                    self.auth(client_cert, credentials, urn, ("sliverstatus",))
+                logger.info("Client urn=%s, uuid=%s, email=%s" % (
+                    client_urn, client_uuid, client_email,))
+
+            links_db, nodes, links = self.SESlices.get_link_db(urn)
+
+            expires_date = links_db['geni_expires']
+
+            ### TODO: Add status updating
+            result.append( 
+                            {   
+                                "geni_sliver_urn": urn,
+                                "geni_expires": expires_date,
+                                "geni_allocation_status": links_db["geni_allocation_status"],
+                                "geni_operational_status" : "Ready"
+                            }
+                        )
+
+            reservation_ports = self.SESlices._allocate_ports_in_slice(nodes)["ports"]
+
+            in_port = int(reservation_ports[0]["port"].rsplit(":", 1)[1])
+            out_port = int(reservation_ports[1]["port"].rsplit(":", 1)[1])
+            in_vlan = int(reservation_ports[0]["vlan"])
+            out_vlan = int(reservation_ports[1]["vlan"])
+
+            if action == "start":
+                se_provision.addSwitchingRule(in_port, out_port, in_vlan, out_vlan)
+
+            elif action == "stop":
+                se_provision.deleteSwitchingRule(in_port, out_port, in_vlan, out_vlan)
+                
+            elif action == "restart":
+                se_provision.deleteSwitchingRule(in_port, out_port, in_vlan, out_vlan)
+                se_provision.addSwitchingRule(in_port, out_port, in_vlan, out_vlan)
+
+
+        return result
 
     def delete(self, urns, client_cert, credentials, best_effort):     ### FIX the response
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
