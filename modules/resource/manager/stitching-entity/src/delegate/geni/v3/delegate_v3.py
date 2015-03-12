@@ -179,7 +179,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
             result.append( 
                             {   
-                                "geni_sliver_urn": links_db['geni_sliver_urn'][0].keys(),
+                                "geni_sliver_urn": links_db['geni_sliver_urn'],
                                 "geni_expires": links_db['geni_expires'],
                                 "geni_allocation_status": links_db["geni_allocation_status"],
                                 "geni_operational_status" : "Not yet implemented"
@@ -243,8 +243,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
             #print "links", links
             self.SESlices._create_manifest_from_req_n_and_l(se_manifest, nodes,links)
             logger.debug("SE-ManifestFormatter=%s" % (se_manifest,))
-                
-                     
+
+
             s =  self.SESlices._allocate_ports_in_slice(nodes) 
             
             logger.debug("requested SE-Sliver(%d)=%s" % (len(se_slivers), se_slivers,))
@@ -268,6 +268,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
               best_effort):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         ro_slivers = []
+        print "RENEW!!!!!!!!!!!!"
 
         if self._verify_users:
             for urn in urns:
@@ -362,7 +363,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
             result.append( 
                             {   
-                                "geni_sliver_urn": urn,
+                                "geni_sliver_urn": links_db["geni_sliver_urn"],
                                 "geni_expires": expires_date,
                                 "geni_allocation_status": links_db["geni_allocation_status"],
                                 "geni_operational_status" : "Ready"
