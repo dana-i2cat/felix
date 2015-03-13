@@ -7,18 +7,30 @@ import pymongo
 
 class CommandMgr(object):
     TABLES = {
-        "domain.routing": pymongo.MongoClient().felix_ro.domain.routing,
-#        "GeneralInfoTable": pymongo.MongoClient().felix_ro.GeneralInfoTable,
-        "resource.com.node": pymongo.MongoClient().felix_ro.resource.com.node,
-        "resource.com.link": pymongo.MongoClient().felix_ro.resource.com.link,
-        "resource.of.node": pymongo.MongoClient().felix_ro.resource.of.node,
-        "resource.of.link": pymongo.MongoClient().felix_ro.resource.of.link,
-        "resource.se.link": pymongo.MongoClient().felix_ro.resource.se.link,
-        "resource.se.node": pymongo.MongoClient().felix_ro.resource.se.node,
-        "resource.tn.link": pymongo.MongoClient().felix_ro.resource.tn.link,
-        "resource.tn.node": pymongo.MongoClient().felix_ro.resource.tn.node,
-        "topology.slice": pymongo.MongoClient().felix_ro.topology.slice,
-        "scheduler.jobs": pymongo.MongoClient().felix_ro.scheduler.jobs,
+        "domain.routing":
+            pymongo.MongoClient().felix_ro.domain.routing,
+        "resource.com.node":
+            pymongo.MongoClient().felix_ro.resource.com.node,
+        "resource.com.link":
+            pymongo.MongoClient().felix_ro.resource.com.link,
+        "resource.of.node":
+            pymongo.MongoClient().felix_ro.resource.of.node,
+        "resource.of.link":
+            pymongo.MongoClient().felix_ro.resource.of.link,
+        "resource.se.link":
+            pymongo.MongoClient().felix_ro.resource.se.link,
+        "resource.se.node":
+            pymongo.MongoClient().felix_ro.resource.se.node,
+        "resource.tn.link":
+            pymongo.MongoClient().felix_ro.resource.tn.link,
+        "resource.tn.node":
+            pymongo.MongoClient().felix_ro.resource.tn.node,
+        "topology.slice":
+            pymongo.MongoClient().felix_ro.topology.slice,
+        "topology.slice.sdn":
+            pymongo.MongoClient().felix_ro.topology.slice.sdn,
+        "scheduler.jobs":
+            pymongo.MongoClient().felix_ro.scheduler.jobs,
     }
 
     def __select(self, table, name):
@@ -34,22 +46,28 @@ class CommandMgr(object):
         print "\n\nManaged Tables: %s\n\n" % CommandMgr.TABLES.keys()
 
     def select_routing_table(self):
-        self.__select(CommandMgr.TABLES["domain.routing"], "domain.routing")
+        self.__select(CommandMgr.TABLES["domain.routing"],
+                      "domain.routing")
 
     def select_ofdatapath_table(self):
-        self.__select(CommandMgr.TABLES["resource.of.node"], "resource.of.node")
+        self.__select(CommandMgr.TABLES["resource.of.node"],
+                      "resource.of.node")
 
     def select_oflink_table(self):
-        self.__select(CommandMgr.TABLES["resource.of.link"], "resource.of.link")
+        self.__select(CommandMgr.TABLES["resource.of.link"],
+                      "resource.of.link")
 
     def delete_routing_table(self):
-        self.__delete(CommandMgr.TABLES["domain.routing"], "domain.routing")
+        self.__delete(CommandMgr.TABLES["domain.routing"],
+                      "domain.routing")
 
     def delete_ofdatapath_table(self):
-        self.__delete(CommandMgr.TABLES["resource.of.node"], "resource.of.node")
+        self.__delete(CommandMgr.TABLES["resource.of.node"],
+                      "resource.of.node")
 
     def delete_oflink_table(self):
-        self.__delete(CommandMgr.TABLES["resource.of.link"], "resource.of.link")
+        self.__delete(CommandMgr.TABLES["resource.of.link"],
+                      "resource.of.link")
 
     def delete_all_tables(self):
         for table, mongo_table in CommandMgr.TABLES.items():

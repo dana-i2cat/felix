@@ -50,34 +50,77 @@ class SliceMonitoring(BaseMonitoring):
         self.__stored[slice_urn] = topology
 
     def add_c_resources(self, slice_urn, nodes, slivers):
-        if slice_urn in self.__stored:
-            logger.debug("Nodes(%d)=%s, Slivers(%d)=%s" %
-                         (len(nodes), nodes, len(slivers), slivers))
-            topology = self.__stored.get(slice_urn)
-            for n in nodes:
-                node_ = etree.SubElement(
-                    topology, "node", id=n.get('component_id'), type="server")
-
-                inner_node_ = etree.SubElement(
-                    node_, "node", id=n.get('sliver_id'),
-                    type=n.get('sliver_type_name'))
-
-                if len(n.get('services')) > 0:
-                    self.__add_snmp_management(
-                        inner_node_,
-                        n.get('services')[0].get('login').get('hostname'))
-        else:
+        if slice_urn not in self.__stored:
             logger.error("Unable to find Topology info from %s!" % slice_urn)
+            return
+
+        topology = self.__stored.get(slice_urn)
+
+        logger.debug("Nodes=%d" % (len(nodes),))
+        for n in nodes:
+            logger.debug("Node=%s" % (n,))
+
+            node_ = etree.SubElement(
+                topology, "node", id=n.get('component_id'), type="server")
+
+            inner_node_ = etree.SubElement(
+                node_, "node", id=n.get('sliver_id'),
+                type=n.get('sliver_type_name'))
+
+            if len(n.get('services')) > 0:
+                self.__add_snmp_management(
+                    inner_node_,
+                    n.get('services')[0].get('login').get('hostname'))
+
+    def __update_match_with_groups(self, match, groups):
+        for mg in match.get('use_groups'):
+            for g in groups:
+                if g.get('name') == mg.get('name'):
+                    match.get('dpids').extend(g.get('dpids'))
+                    break
+
+        logger.debug("Updated Match=%s" % (match,))
+
+    def __add_packet_info(self, node_tag, packet_detail):
+        m = etree.SubElement(node_tag, "match")
+        vlans = packet_detail.get('dl_vlan').split(',', 1)
+        if len(vlans) == 2:
+            etree.SubElement(m, "vlan", start=vlans[0], end=vlans[1])
+        else:
+            etree.SubElement(m, "vlan", start=packet_detail.get('dl_vlan'),
+                             end=packet_detail.get('dl_vlan'))
 
     def add_sdn_resources(self, slice_urn, nodes, slivers):
         # We cannot use information extracted from the manifest here!
         # We can look into the db-table containing the requested dpids
         # and matches.
-        if slice_urn in self.__stored:
-            logger.debug("Nodes(%d)=%s, Slivers(%d)=%s" %
-                         (len(nodes), nodes, len(slivers), slivers))
-        else:
+        if slice_urn not in self.__stored:
             logger.error("Unable to find Topology info from %s!" % slice_urn)
+            return
+
+        topology = self.__stored.get(slice_urn)
+        groups, matches = db_sync_manager.get_slice_sdn(slice_urn)
+
+        logger.debug("Groups(%d)=%s" % (len(groups), groups))
+        logger.debug("Matches=%d" % (len(matches),))
+        for m in matches:
+            logger.debug("Match=%s" % (m,))
+            self.__update_match_with_groups(m, groups)
+
+            for dpid in m.get('dpids'):
+                logger.debug("Dpid=%s" % (dpid,))
+
+                node_ = etree.SubElement(
+                    topology, "node", id=dpid.get('component_id'),
+                    type="switch")
+
+                for p in dpid.get('ports'):
+                    ifid = dpid.get('component_id') + "_" + str(p.get('num'))
+                    if_ = etree.SubElement(node_, "interface", id=ifid)
+
+                    etree.SubElement(if_, "port", num=str(p.get('num')))
+
+                self.__add_packet_info(node_, m.get('packet'))
 
     def send(self):
         try:

@@ -587,10 +587,30 @@ class DBManager(object):
         table = pymongo.MongoClient().felix_ro.topology.slice.sdn
         try:
             self.__mutex.acquire()
-            value = {"slice_urn": slice_urn,
-                     "groups": groups_info,
-                     "matches": matches_info}
-            return table.insert(value)
+            row = table.find_one({"slice_urn": slice_urn})
+            if not row:
+                value = {"slice_urn": slice_urn,
+                         "groups": groups_info,
+                         "matches": matches_info}
+                return table.insert(value)
+
+            logger.warning("A row with %s already exist!" % slice_urn)
+            return None
+        finally:
+            self.__mutex.release()
+
+    def get_slice_sdn(self, slice_urn):
+        table = pymongo.MongoClient().felix_ro.topology.slice.sdn
+        gs, ms = [], []
+        try:
+            self.__mutex.acquire()
+            for r in table.find({"slice_urn": slice_urn}):
+                if r.get("groups"):
+                    gs.extend(r.get("groups"))
+                if r.get("matches"):
+                    ms.extend(r.get("matches"))
+
+            return gs, ms
         finally:
             self.__mutex.release()
 
