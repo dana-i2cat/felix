@@ -12,6 +12,7 @@ class seConfigurator:
         conf_file_path = os.path.join(current_path, "../../../../conf/se-config.yaml")
         stream = open(conf_file_path, "r")
         initial_config = yaml.load(stream)
+        print initial_config
         # self.configured_interfaces = initial_config["interfaces"]
         self.configured_interfaces = self.convert_config_into_Resources_datamodel(initial_config["interfaces"])
         self.initial_configured_interfaces = initial_config["interfaces"]
@@ -156,10 +157,10 @@ class seConfigurator:
 
         # Prepare link capability translations
         link_trans_capability = 'urn:felix'
-        if vlan_trans:
-            link_trans_capability += '+vlan_trans'
-        if qinq:
-            link_trans_capability += '+QinQ'
+        # if vlan_trans:
+        #     link_trans_capability += '+vlan_trans'
+        # if qinq:
+        #     link_trans_capability += '+QinQ'
 
         links_se = [
             {
