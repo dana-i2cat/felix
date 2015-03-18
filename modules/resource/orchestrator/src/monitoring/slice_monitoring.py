@@ -90,6 +90,23 @@ class SliceMonitoring(BaseMonitoring):
             etree.SubElement(m, "vlan", start=packet_detail.get('dl_vlan'),
                              end=packet_detail.get('dl_vlan'))
 
+    def __create_link_id(self, datapath, portnumber):
+        return datapath + "_" + str(portnumber)
+
+    def __add_link_info(self, topology_tag, link_type, ep_src, ep_dst):
+        link_ = etree.SubElement(topology_tag, "link", type=link_type)
+        etree.SubElement(link_, "interface_ref", client_id=ep_src)
+        etree.SubElement(link_, "interface_ref", client_id=ep_dst)
+
+    def __extend_link_ids(self, ids):
+        ret = []
+        for i in ids:
+            tmp = list(ids)
+            tmp.remove(i)
+            for t in tmp:
+                ret.append(i + "_" + t)
+        return ret
+
     def add_sdn_resources(self, slice_urn, nodes, slivers):
         # We cannot use information extracted from the manifest here!
         # We can look into the db-table containing the requested dpids
@@ -101,6 +118,9 @@ class SliceMonitoring(BaseMonitoring):
         topology = self.__stored.get(slice_urn)
         groups, matches = db_sync_manager.get_slice_sdn(slice_urn)
 
+        link_ids = []
+
+        # Nodes info
         logger.debug("Groups(%d)=%s" % (len(groups), groups))
         logger.debug("Matches=%d" % (len(matches),))
         for m in matches:
@@ -120,7 +140,39 @@ class SliceMonitoring(BaseMonitoring):
 
                     etree.SubElement(if_, "port", num=str(p.get('num')))
 
+                    link_ids.append(
+                        self.__create_link_id(dpid.get('dpid'), p.get('num')))
+
                 self.__add_packet_info(node_, m.get('packet'))
+
+        logger.info("Link identifiers(%d)=%s" % (len(link_ids), link_ids,))
+        # C-SDN link info
+        for l in link_ids:
+            com_link = db_sync_manager.get_com_link_by_sdnkey(l)
+            if com_link:
+                logger.debug("COM link=%s" % (com_link,))
+                for eps in com_link.get('links'):
+                    self.__add_link_info(
+                        topology, com_link.get('link_type'),
+                        eps.get('source_id'), eps.get('dest_id'))
+
+        # SDN-SDN link info
+        ext_link_ids = self.__extend_link_ids(link_ids)
+        logger.info("Extended link identifiers(%d)=%s" %
+                    (len(ext_link_ids), ext_link_ids,))
+        for l in ext_link_ids:
+            sdn_link = db_sync_manager.get_sdn_link_by_sdnkey(l)
+            if sdn_link:
+                logger.debug("SDN link=%s" % (sdn_link,))
+                if len(sdn_link.get('dpids')) == 2 and\
+                   len(sdn_link.get('ports')) == 2:
+                    ep1 = self.__create_link_id(
+                        sdn_link.get('dpids')[0].get('component_id'),
+                        sdn_link.get('ports')[0].get('port_num'))
+                    ep2 = self.__create_link_id(
+                        sdn_link.get('dpids')[1].get('component_id'),
+                        sdn_link.get('ports')[1].get('port_num'))
+                    self.__add_link_info(topology, "l2", ep1, ep2)
 
     def send(self):
         try:

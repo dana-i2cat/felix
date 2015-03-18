@@ -319,6 +319,13 @@ class DBManager(object):
         links = self.get_com_links(filter_params)
         return links
 
+    def get_com_link_by_sdnkey(self, sdn_link_key):
+        table = pymongo.MongoClient().felix_ro.resource.com.link
+        for l in self.__get_all(table, {}):
+            if l.get('component_id').endswith(sdn_link_key):
+                return l
+        return None
+
     # (felix_ro) resource.of.node
     def store_sdn_datapaths(self, routingKey, values):
         table = pymongo.MongoClient().felix_ro.resource.of.node
@@ -411,6 +418,13 @@ class DBManager(object):
         filter_params = {"component_id": domain_urn_re, }
         links = self.get_sdn_links(filter_params)
         return links
+
+    def get_sdn_link_by_sdnkey(self, sdn_link_key):
+        table = pymongo.MongoClient().felix_ro.resource.of.link
+        for l in self.__get_all(table, {}):
+            if l.get('component_id').endswith(sdn_link_key):
+                return l
+        return None
 
     # (felix_ro) resource.se.node
     def store_se_nodes(self, routingKey, values):
