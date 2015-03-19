@@ -177,6 +177,49 @@ class SliceMonitoring(BaseMonitoring):
                         sdn_link.get('ports')[1].get('port_num'))
                     self.__add_link_info(topology, "l2", ep1, ep2)
 
+    def __add_rest_management(self, tag, address, port_num, protocol,
+                              endpoint="/metrics/list/"):
+        manag = etree.SubElement(tag, "management", type="rest")
+
+        addr = etree.SubElement(manag, "address")
+        addr.text = address
+        port = etree.SubElement(manag, "port")
+        port.text = port_num
+        proto = etree.SubElement(manag, "protocol")
+        proto.text = protocol
+        endp = etree.SubElement(manag, "endpoint")
+        endp.text = endpoint
+
+    def add_tn_resources(self, slice_urn, nodes, links, slivers, peer_info):
+        if slice_urn not in self.__stored:
+            logger.error("Unable to find Topology info from %s!" % slice_urn)
+            return
+
+        topology = self.__stored.get(slice_urn)
+
+        logger.debug("Nodes=%d, PeerInfo=%s" % (len(nodes), peer_info,))
+        for n in nodes:
+            logger.debug("Node=%s" % (n,))
+
+            node_ = etree.SubElement(
+                topology, "node", id=n.get('component_id'), type="tn")
+
+            vlan_ids = set()
+            for ifs in n.get('interfaces'):
+                etree.SubElement(
+                    node_, "interface", id=ifs.get('component_id'))
+                for v in ifs.get('vlan'):
+                    vlan_ids.add(v.get('tag'))
+
+            logger.debug("Vlan-ids=%s" % vlan_ids)
+            for vlan in vlan_ids:
+                m_ = etree.SubElement(node_, "match")
+                etree.SubElement(m_, "vlan", start=vlan, end=vlan)
+
+            self.__add_rest_management(
+                node_, peer_info.get('address'), peer_info.get('port'),
+                peer_info.get('protocol'))
+
     def send(self):
         try:
             logger.info("Send slice-monitoring info to %s: %s" %

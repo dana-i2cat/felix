@@ -433,6 +433,10 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     ro_manifest.tn_link(l)
 
                 ro_slivers.extend(tn_slivers)
+                # introduce slice-monitoring info for TN resources
+                slice_monitor.add_tn_resources(
+                    slice_urn, tn_m_info.get("nodes"), tn_m_info.get("links"),
+                    tn_slivers, peer)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_SERM"):
                 se_m_info, se_slivers = self.__manage_se_provision(
@@ -843,10 +847,11 @@ class GENIv3Delegate(GENIv3DelegateBase):
         for v in values:
             k, ifs = db_sync_manager.get_se_link_routing_key(v.get(key))
             if k is None:
-                logger.warning("%s (%s) is unknown for this SERM, remove it!" %
+                logger.warning("%s (%s) is unknown for this SERM!" %
                                (key, v.get(key),))
-                values.remove(v)
                 continue
+
+            logger.info("Found a match with key=%s, ifs=%s" % (k, ifs,))
 
             v['routing_key'] = k
             v['internal_ifs'] = ifs
@@ -854,6 +859,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
             v['node'] = node
             if (k is not None) and (k not in route):
                 route[k] = SERMv3RequestFormatter()
+
+        # remove all the elements that not have internal_ifs as key!
+        values[:] = [v for v in values if 'internal_ifs' in v]
 
     def __update_se_nodes(self, nodes, values):
         for v in values:
