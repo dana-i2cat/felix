@@ -220,6 +220,17 @@ class SliceMonitoring(BaseMonitoring):
                 node_, peer_info.get('address'), peer_info.get('port'),
                 peer_info.get('protocol'))
 
+        logger.debug("Links=%d" % (len(links),))
+        for l in links:
+            logger.debug("Link=%s" % (l,))
+
+            for p in l.get('property'):
+                link_ = etree.SubElement(topology, "link", type="virtual-link")
+                etree.SubElement(
+                    link_, "interface_ref", client_id=p.get('source_id'))
+                etree.SubElement(
+                    link_, "interface_ref", client_id=p.get('dest_id'))
+
     def send(self):
         try:
             logger.info("Send slice-monitoring info to %s: %s" %
