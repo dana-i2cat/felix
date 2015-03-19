@@ -387,7 +387,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     client_urn, client_uuid, client_email,))
 
         slice_urn = db_sync_manager.get_slice_urn(urns)
-        slice_monitor.add_topology(slice_urn, client_urn)
+        slice_monitor.add_topology(slice_urn, SliceMonitoring.PROVISIONED,
+                                   client_urn)
 
         route = db_sync_manager.get_slice_routing_keys(urns)
         logger.debug("Route=%s" % (route,))

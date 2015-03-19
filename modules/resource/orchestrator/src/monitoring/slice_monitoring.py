@@ -17,6 +17,9 @@ class SliceMonitoring(BaseMonitoring):
     Send monitoring info to MS after any GENIv3 provision & delete methods.
     """
 
+    PROVISIONED = "geni_provisioned"
+    DELETED = "geni_deleted"
+
     def __init__(self):
         super(SliceMonitoring, self).__init__()
         ms = ConfParser("ro.conf").get("monitoring")
@@ -40,12 +43,12 @@ class SliceMonitoring(BaseMonitoring):
         auth = etree.SubElement(manag, "auth")
         auth.text = auth_string
 
-    def add_topology(self, slice_urn, client_urn=None):
+    def add_topology(self, slice_urn, status, client_urn=None):
         owner_name = client_urn if client_urn else "not_certified_user"
         topology = etree.SubElement(
             self.__topologies, "topology", type="slice",
             last_update_time=str(time.time()), name=slice_urn,
-            owner=owner_name)
+            owner=owner_name, status=status)
         # store the currect slice topology identifier
         self.__stored[slice_urn] = topology
 
