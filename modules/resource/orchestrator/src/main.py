@@ -39,7 +39,7 @@ def main(argv=None):
     except KeyboardInterrupt:
         return True
     except Exception as e:
-        sys.stderr.write("Got an exception: %s" % str(e))
+        sys.stderr.write("Got an exception: %s\n" % str(e))
         return False
     finally:
         # Stop the services
