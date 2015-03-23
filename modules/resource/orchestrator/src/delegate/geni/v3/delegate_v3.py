@@ -449,6 +449,10 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     ro_manifest.se_link(l)
 
                 ro_slivers.extend(se_slivers)
+                # introduce slice-monitoring info for SE resources
+                slice_monitor.add_se_resources(
+                    slice_urn, se_m_info.get("nodes"), se_m_info.get("links"),
+                    se_slivers)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_RO"):
                 ro_m_info, ro_slivers = self.__manage_ro_provision(
