@@ -449,6 +449,10 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     ro_manifest.se_link(l)
 
                 ro_slivers.extend(se_slivers)
+                # introduce slice-monitoring info for SE resources
+                slice_monitor.add_se_resources(
+                    slice_urn, se_m_info.get("nodes"), se_m_info.get("links"),
+                    se_slivers)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_RO"):
                 ro_m_info, ro_slivers = self.__manage_ro_provision(
@@ -469,9 +473,23 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     ro_manifest.se_link(l)
 
                 ro_slivers.extend(ro_slivers)
+                # introduce slice-monitoring info for ALL the resource types!
+                slice_monitor.add_c_resources(
+                    slice_urn, ro_m_info.get("com_nodes"), ro_slivers)
+                slice_monitor.add_sdn_resources(
+                    slice_urn, ro_m_info.get("sdn_slivers"), ro_slivers)
+                slice_monitor.add_tn_resources(
+                    slice_urn, ro_m_info.get("tn_nodes"),
+                    ro_m_info.get("tn_links"), tn_slivers, peer)
+                slice_monitor.add_se_resources(
+                    slice_urn, ro_m_info.get("se_nodes"),
+                    ro_m_info.get("se_links"), se_slivers)
 
         # send slice-monitoring info to the monitoring system
         slice_monitor.send()
+        # add slice_monitoring object to the slice table
+        db_sync_manager.store_slice_monitoring_info(slice_urn,
+                                                    slice_monitor.serialize())
 
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
 
@@ -548,7 +566,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def delete(self, urns, client_cert, credentials, best_effort):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        ro_slivers = []
+        ro_slivers, slice_monitor, client_urn = [], SliceMonitoring(), None
 
         if self._verify_users:
             for urn in urns:
@@ -579,6 +597,14 @@ class GENIv3Delegate(GENIv3DelegateBase):
             db_urns.append(s.get("geni_sliver_urn"))
         logger.debug("RO-Slivers(%d)=%s, DB-URNs(%d)=%s" %
                      (len(ro_slivers), ro_slivers, len(db_urns), db_urns))
+
+        # update MS to stop slice-monitoring collection
+        slice_urn = db_sync_manager.get_slice_urn(urns)
+        if slice_urn:
+            slice_monitor.add_topology(slice_urn, SliceMonitoring.DELETED,
+                                       client_urn)
+            slice_monitor.send()
+            db_sync_manager.delete_slice_sdn(slice_urn)
 
         db_sync_manager.delete_slice_urns(db_urns)
         return ro_slivers
@@ -1073,7 +1099,11 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def __manage_delete(self, peer, urns, creds, beffort):
         adaptor, uri = AdaptorFactory.create_from_db(peer)
         logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
-        return adaptor.delete(urns, creds[0]["geni_value"], beffort)
+        try:
+            return adaptor.delete(urns, creds[0]["geni_value"], beffort)
+        except Exception as e:
+            logger.error("manage_delete: exception=%s" % (e,))
+            return []
 
     def __manage_tn_provision(self, peer, urns, creds,
                               beffort, etime, gusers):

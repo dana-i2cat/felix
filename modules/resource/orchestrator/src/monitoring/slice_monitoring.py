@@ -59,7 +59,7 @@ class SliceMonitoring(BaseMonitoring):
 
         topology = self.__stored.get(slice_urn)
 
-        logger.debug("Nodes=%d" % (len(nodes),))
+        logger.debug("add_c_resources Nodes=%d" % (len(nodes),))
         for n in nodes:
             logger.debug("Node=%s" % (n,))
 
@@ -124,8 +124,8 @@ class SliceMonitoring(BaseMonitoring):
         link_ids = []
 
         # Nodes info
-        logger.debug("Groups(%d)=%s" % (len(groups), groups))
-        logger.debug("Matches=%d" % (len(matches),))
+        logger.debug("add_sdn_resources Groups(%d)=%s" % (len(groups), groups))
+        logger.debug("add_sdn_resources Matches=%d" % (len(matches),))
         for m in matches:
             logger.debug("Match=%s" % (m,))
             self.__update_match_with_groups(m, groups)
@@ -148,7 +148,8 @@ class SliceMonitoring(BaseMonitoring):
 
                 self.__add_packet_info(node_, m.get('packet'))
 
-        logger.info("Link identifiers(%d)=%s" % (len(link_ids), link_ids,))
+        logger.info("add_sdn_resources Link identifiers(%d)=%s" %
+                    (len(link_ids), link_ids,))
         # C-SDN link info
         for l in link_ids:
             com_link = db_sync_manager.get_com_link_by_sdnkey(l)
@@ -161,7 +162,7 @@ class SliceMonitoring(BaseMonitoring):
 
         # SDN-SDN link info
         ext_link_ids = self.__extend_link_ids(link_ids)
-        logger.info("Extended link identifiers(%d)=%s" %
+        logger.info("add_sdn_resources Extended link identifiers(%d)=%s" %
                     (len(ext_link_ids), ext_link_ids,))
         for l in ext_link_ids:
             sdn_link = db_sync_manager.get_sdn_link_by_sdnkey(l)
@@ -197,7 +198,8 @@ class SliceMonitoring(BaseMonitoring):
 
         topology = self.__stored.get(slice_urn)
 
-        logger.debug("Nodes=%d, PeerInfo=%s" % (len(nodes), peer_info,))
+        logger.debug("add_tn_resources Nodes=%d, PeerInfo=%s" %
+                     (len(nodes), peer_info,))
         for n in nodes:
             logger.debug("Node=%s" % (n,))
 
@@ -220,16 +222,58 @@ class SliceMonitoring(BaseMonitoring):
                 node_, peer_info.get('address'), peer_info.get('port'),
                 peer_info.get('protocol'))
 
-        logger.debug("Links=%d" % (len(links),))
+        logger.debug("add_tn_resources Links=%d" % (len(links),))
         for l in links:
             logger.debug("Link=%s" % (l,))
 
             for p in l.get('property'):
-                link_ = etree.SubElement(topology, "link", type="virtual-link")
+                self.__add_link_info(topology, "virtual-link",
+                                     p.get('source_id'), p.get('dest_id'))
+
+    def add_se_resources(self, slice_urn, nodes, links, slivers):
+        if slice_urn not in self.__stored:
+            logger.error("Unable to find Topology info from %s!" % slice_urn)
+            return
+
+        topology = self.__stored.get(slice_urn)
+
+        logger.debug("add_se_resources Nodes=%d" % (len(nodes),))
+        for n in nodes:
+            logger.debug("Node=%s" % (n,))
+
+            node_ = etree.SubElement(
+                topology, "node", id=n.get('component_id'), type="se")
+
+            if n.get('host_name'):
+                self.__add_snmp_management(node_, n.get('host_name'))
+
+            vlan_ids = set()
+            for ifs in n.get('interfaces'):
                 etree.SubElement(
-                    link_, "interface_ref", client_id=p.get('source_id'))
-                etree.SubElement(
-                    link_, "interface_ref", client_id=p.get('dest_id'))
+                    node_, "interface", id=ifs.get('component_id'))
+                for v in ifs.get('vlan'):
+                    vlan_ids.add(v.get('tag'))
+
+            logger.debug("Vlan-ids=%s" % vlan_ids)
+            for vlan in vlan_ids:
+                m_ = etree.SubElement(node_, "match")
+                etree.SubElement(m_, "vlan", start=vlan, end=vlan)
+
+        logger.debug("add_se_resources Links=%d" % (len(links),))
+        for l in links:
+            logger.debug("Link=%s" % (l,))
+
+            if len(l.get('interface_ref')) != 2:
+                logger.warning("Unable to manage extra-list of info (%d)!" %
+                               len(l.get('interface_ref')))
+                continue
+
+            self.__add_link_info(topology, l.get('link_type'),
+                                 l.get('interface_ref')[0].get('component_id'),
+                                 l.get('interface_ref')[1].get('component_id'))
+            self.__add_link_info(topology, l.get('link_type'),
+                                 l.get('interface_ref')[1].get('component_id'),
+                                 l.get('interface_ref')[0].get('component_id'))
 
     def send(self):
         try:
@@ -244,6 +288,9 @@ class SliceMonitoring(BaseMonitoring):
         except Exception as e:
             logger.error("Unable to send slice-monitoring info to %s: %s" %
                          (self.__ms_url, e,))
+
+    def serialize(self):
+        return etree.tostring(self.__topologies)
 
     def retrieve_topology(self, peer):
         # General information
