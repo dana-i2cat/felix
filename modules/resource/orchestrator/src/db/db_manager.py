@@ -237,6 +237,19 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
+    def store_slice_monitoring_info(self, slice_urn, monitoring_info):
+        table = pymongo.MongoClient().felix_ro.topology.slice
+        try:
+            self.__mutex.acquire()
+            row = table.find_one({"slice_urn": slice_urn})
+            if row is not None:
+                table.update({"slice_urn": slice_urn},
+                             {"slice_urn": slice_urn,
+                              "slivers": row.get("slivers"),
+                              "slice_monitoring": monitoring_info})
+        finally:
+            self.__mutex.release()
+
     # (felix_ro) resource.com.node
     # TODO Ensure correctness
     def store_com_nodes(self, routingKey, values):

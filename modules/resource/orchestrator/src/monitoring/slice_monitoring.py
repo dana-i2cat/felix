@@ -289,6 +289,9 @@ class SliceMonitoring(BaseMonitoring):
             logger.error("Unable to send slice-monitoring info to %s: %s" %
                          (self.__ms_url, e,))
 
+    def serialize(self):
+        return etree.tostring(self.__topologies)
+
     def retrieve_topology(self, peer):
         # General information
         self.__add_general_info()

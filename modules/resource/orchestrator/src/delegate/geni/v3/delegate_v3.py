@@ -473,9 +473,23 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     ro_manifest.se_link(l)
 
                 ro_slivers.extend(ro_slivers)
+                # introduce slice-monitoring info for ALL the resource types!
+                slice_monitor.add_c_resources(
+                    slice_urn, ro_m_info.get("com_nodes"), ro_slivers)
+                slice_monitor.add_sdn_resources(
+                    slice_urn, ro_m_info.get("sdn_slivers"), ro_slivers)
+                slice_monitor.add_tn_resources(
+                    slice_urn, ro_m_info.get("tn_nodes"),
+                    ro_m_info.get("tn_links"), tn_slivers, peer)
+                slice_monitor.add_se_resources(
+                    slice_urn, ro_m_info.get("se_nodes"),
+                    ro_m_info.get("se_links"), se_slivers)
 
         # send slice-monitoring info to the monitoring system
         slice_monitor.send()
+        # add slice_monitoring object to the slice table
+        db_sync_manager.store_slice_monitoring_info(slice_urn,
+                                                    slice_monitor.serialize())
 
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
 
