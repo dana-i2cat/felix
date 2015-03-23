@@ -16,6 +16,7 @@
             <sharedvlan:link_shared_vlan name="urn:publicid:aist-se1:if3+vlan"
                                          vlantag="1983"/>
         </interface>
+        <host name="192.168.76.98"/>
     </node>
     <link client_id="urn:publicid:aist-se1:if2-if3"
           sliver_id="SE-RM reservationID"

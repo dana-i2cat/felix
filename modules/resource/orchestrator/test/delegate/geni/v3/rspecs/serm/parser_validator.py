@@ -13,6 +13,7 @@ if __name__ == '__main__':
 
 from rspecs.commons import validate
 from rspecs.serm.request_parser import SERMv3RequestParser
+from rspecs.serm.manifest_parser import SERMv3ManifestParser
 
 
 def in_validate(rspec):
@@ -34,6 +35,10 @@ def main(argv=None):
 
     print '=== SERMv3RequestParser: request_rspec_example-1.xml ==='
     rspec = SERMv3RequestParser("request_rspec_example-1.xml")
+    in_validate(rspec.get_rspec())
+
+    print '=== SERMv3ManifestParser: manifest_rspec_example.xml ==='
+    rspec = SERMv3ManifestParser("manifest_rspec_example.xml")
     in_validate(rspec.get_rspec())
 
     print 'Bye Bye...'
