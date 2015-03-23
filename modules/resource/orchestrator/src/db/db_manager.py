@@ -221,11 +221,11 @@ class DBManager(object):
         table = pymongo.MongoClient().felix_ro.topology.slice
         try:
             self.__mutex.acquire()
-            rows = table.find()
             for u in urns:
-                for r in rows:
+                for r in table.find():
                     if r.get("slice_urn") == u:
                         table.remove({"slice_urn": u})
+                        logger.info("Removed slice entry: %s" % (u,))
                     else:
                         for s in r.get("slivers"):
                             if s.get("geni_sliver_urn") == u:
@@ -233,6 +233,9 @@ class DBManager(object):
                                 self.__delete_sliver_urn(
                                     table, r.get("slice_urn"),
                                     r.get("slivers"), s)
+                                logger.info(
+                                    "Removed sliver from slice entry: %s" %
+                                    (u,))
                                 break
         finally:
             self.__mutex.release()
@@ -638,6 +641,15 @@ class DBManager(object):
                     ms.extend(r.get("matches"))
 
             return gs, ms
+        finally:
+            self.__mutex.release()
+
+    def delete_slice_sdn(self, slice_urn):
+        table = pymongo.MongoClient().felix_ro.topology.slice.sdn
+        try:
+            self.__mutex.acquire()
+            table.remove({"slice_urn": slice_urn})
+
         finally:
             self.__mutex.release()
 

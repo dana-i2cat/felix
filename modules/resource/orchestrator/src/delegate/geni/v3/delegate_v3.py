@@ -566,7 +566,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
     def delete(self, urns, client_cert, credentials, best_effort):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        ro_slivers = []
+        ro_slivers, slice_monitor, client_urn = [], SliceMonitoring(), None
 
         if self._verify_users:
             for urn in urns:
@@ -597,6 +597,14 @@ class GENIv3Delegate(GENIv3DelegateBase):
             db_urns.append(s.get("geni_sliver_urn"))
         logger.debug("RO-Slivers(%d)=%s, DB-URNs(%d)=%s" %
                      (len(ro_slivers), ro_slivers, len(db_urns), db_urns))
+
+        # update MS to stop slice-monitoring collection
+        slice_urn = db_sync_manager.get_slice_urn(urns)
+        if slice_urn:
+            slice_monitor.add_topology(slice_urn, SliceMonitoring.DELETED,
+                                       client_urn)
+            slice_monitor.send()
+            db_sync_manager.delete_slice_sdn(slice_urn)
 
         db_sync_manager.delete_slice_urns(db_urns)
         return ro_slivers
@@ -1091,7 +1099,11 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def __manage_delete(self, peer, urns, creds, beffort):
         adaptor, uri = AdaptorFactory.create_from_db(peer)
         logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
-        return adaptor.delete(urns, creds[0]["geni_value"], beffort)
+        try:
+            return adaptor.delete(urns, creds[0]["geni_value"], beffort)
+        except Exception as e:
+            logger.error("manage_delete: exception=%s" % (e,))
+            return []
 
     def __manage_tn_provision(self, peer, urns, creds,
                               beffort, etime, gusers):
