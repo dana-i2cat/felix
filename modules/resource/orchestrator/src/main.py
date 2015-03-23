@@ -43,7 +43,8 @@ def main(argv=None):
         return False
     finally:
         # Stop the services
-        geni_v3_scheduler.stop()
+        if "geni_v3_scheduler" in locals():
+            geni_v3_scheduler.stop()
     return True
 
 
