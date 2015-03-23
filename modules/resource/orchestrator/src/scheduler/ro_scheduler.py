@@ -1,4 +1,7 @@
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.jobstores.mongodb import MongoDBJobStore
+from apscheduler.triggers.date import DateTrigger
+from apscheduler.triggers.cron import CronTrigger
 from core.config import ConfParser
 from core.service import Service
 from datetime import datetime, timedelta
@@ -23,8 +26,8 @@ class ROSchedulerService(Service):
 
         global ro_scheduler
         ro_scheduler = BackgroundScheduler()
-        ro_scheduler.add_jobstore("mongodb", database="felix_ro",
-                                  collection="scheduler.jobs")
+        ro_scheduler.add_jobstore(
+            MongoDBJobStore(database="felix_ro", collection="scheduler.jobs"))
         ro_scheduler.start()
 
         super(ROSchedulerService, self).__init__(
@@ -52,7 +55,8 @@ class ROSchedulerService(Service):
     def __add_oneshot(self, secs_, func_, id_):
         try:
             run_time = datetime.now() + timedelta(seconds=secs_)
-            ro_scheduler.add_job(func_, "date", id=id_, run_date=run_time)
+            ro_scheduler.add_job(
+                func_, trigger=DateTrigger(run_date=run_time), id=id_)
 
         except Exception as e:
             logger.warning("oneshot_jobs failure: %s" % (e,))
@@ -75,8 +79,8 @@ class ROSchedulerService(Service):
 
     def __add_cron(self, func_, id_, hour_, min_, sec_):
         try:
-            ro_scheduler.add_job(func_, "cron", id=id_,
-                                 hour=hour_, minute=min_, second=sec_)
+            tr_ = CronTrigger(hour=hour_, minute=min_, second=sec_)
+            ro_scheduler.add_job(func_, trigger=tr_, id=id_)
         except Exception as e:
             logger.warning("cron_jobs failure: %s" % (e,))
 
