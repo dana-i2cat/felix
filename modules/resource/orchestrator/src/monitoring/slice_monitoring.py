@@ -305,25 +305,12 @@ class SliceMonitoring(BaseMonitoring):
         self._add_se_info()
 
     def send_topology(self, monitoring_server):
-        logger.debug("Configured peers=%d" % (len(self.peers)))
-        for peer in self.peers:
-            # Looks for referred domain through peer ID; retrieve
-            # URN and last update
-            filter_params = {"_ref_peer": peer.get("_id"), }
-            domain_peer = db_sync_manager.get_domain_info(filter_params)
-            self.domain_urn = domain_peer.get("domain_urn")
-
-            physical_topology = db_sync_manager.get_physical_info_from_domain(
-                domain_peer.get("_id"))
-            self.domain_last_update = physical_topology.get("last_update")
-            logger.debug("Peer=%s, domain=%s" % (peer, self.domain_urn,))
-
-            # Retrieve topology per peer
-            self.retrieve_topology(peer)
-
-        # Send topology after all peers are completed
-        self._send(self.get_topology(), monitoring_server)
-        logger.debug("Resulting RSpec=%s" % self.get_topology_pretty())
+        # retrieve slice info from db (the info are already formatted!)
+        slices = db_sync_manager.get_slice_monitoring_info()
+        logger.debug("Slices: %d" % (len(slices),))
+        for s in slices:
+            self.__topologies = etree.fromstring(s)
+            self.send()
 
     ##########
     # Helpers
