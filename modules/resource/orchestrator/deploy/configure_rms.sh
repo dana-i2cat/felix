@@ -20,7 +20,16 @@ config_entry() {
     echo -n "Please enter $1 PORT number: "
     read port
 
-    python manage.py add_route_entry -t $1 -a $ip -p $port --protocol $proto --endpoint $endpoint
+    opts="-t $1 -a $ip -p $port --protocol $proto"
+
+    echo -n "Please enter $1 END-POINT (e.g. $endpoint): "
+    read ep
+
+    if [[ x${ep}x != xx ]]; then
+        opts="${opts} --endpoint $ep"
+    fi
+
+    python manage.py add_route_entry ${opts}
 }
 
 # Clean the environment
