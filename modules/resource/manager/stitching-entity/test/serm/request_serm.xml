@@ -10,11 +10,11 @@
           component_manager_id="urn:publicid:IDN+AIST+authority+serm">
         <interface client_id="urn:publicid:aist-se1:1">
             <sharedvlan:link_shared_vlan name="urn:publicid:aist-se1:1+vlan"
-                                         vlantag="2000"/>
+                                         vlantag="2001"/>
         </interface>
         <interface client_id="urn:publicid:aist-se1:2">
             <sharedvlan:link_shared_vlan name="urn:publicid:aist-se1:2+vlan"
-                                         vlantag="1000"/>
+                                         vlantag="1001"/>
         </interface>
     </node>
 

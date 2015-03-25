@@ -255,41 +255,42 @@ class GENIv3Delegate(GENIv3DelegateBase):
             raise geni_ex.GENIv3GeneralError("Allocation Failed. Requested resources are not available.")
 
 
-    def renew(self, urns, client_cert, credentials, expiration_time,
-              best_effort):
+    def renew(self, urns, client_cert, credentials, expiration_time,best_effort):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        ro_slivers = []
+        print "!!!!!!!!!!W renew !!!!!!!!"
+        slice_urn = urns[0]
+        result = []
 
-        if self._verify_users:
-            for urn in urns:
+        for urn in urns:
+            if self._verify_users:
                 logger.debug("renew: authenticate the user for %s" % (urn))
                 client_urn, client_uuid, client_email =\
                     self.auth(client_cert, credentials, urn, ("renewsliver",))
                 logger.info("Client urn=%s, uuid=%s, email=%s" % (
                     client_urn, client_uuid, client_email,))
 
-        logger.info("expiration_time=%s, best_effort=%s" % (
-            expiration_time, best_effort,))
+            logger.info("current expiration_time=%s, best_effort=%s" % (expiration_time, best_effort,))
 
-        route = db_sync_manager.get_slice_routing_keys(urns)
-        logger.debug("Route=%s" % (route,))
+            links_db, nodes, links = self.SESlices.get_link_db(urn)
+            self.SESlices.set_link_db(urn,expiration_time,links,nodes)
 
-        etime_str = self.__datetime2str(expiration_time)
-        for r, v in route.iteritems():
-            peer = db_sync_manager.get_configured_peer(r)
-            logger.debug("peer=%s" % (peer,))
-            if peer.get("type") in ["sdn_networking", "transport_network",
-                                    "stitching_entity"]:
-                slivers = self.__manage_renew(
-                    peer, v, credentials, etime_str, best_effort)
+            logger.info("new expiration_time=%s" % (expiration_time,))
+            
+            links_db['geni_expires'] = expiration_time
+            
+            expires_date = datetime.strptime(links_db['geni_expires'], RFC3339_FORMAT_STRING)
 
-                logger.debug("slivers=%s" % (slivers,))
-                ro_slivers.extend(slivers)
 
-        for s in ro_slivers:
-            s["geni_expires"] = self.__str2datetime(s["geni_expires"])
-        logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
-        return ro_slivers
+            result.append( 
+                            {   "geni_sliver_urn": urns[0],
+                                "geni_expires": expiration_time,
+                                "geni_allocation_status": links_db["geni_allocation_status"],
+                                "geni_operational_status" : "geni_notready"
+                            }
+                        )
+
+        print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", result
+        return  slice_urn,result
 
     def provision(self, urns, client_cert, credentials, best_effort, end_time,
                   geni_users):

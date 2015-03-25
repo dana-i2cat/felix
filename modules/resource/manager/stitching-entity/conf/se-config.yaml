@@ -13,12 +13,12 @@ interfaces:
                 name: urn:publicid:psnc-nsi:if1
                 type: vlan_trans
                 vlans:
-                    - 1000-1001
+                    - 1000
             -
                 name: urn:publicid:psnc-nsi:if2
                 type: vlan_trans
                 vlans:
-                    - 2000-2002
+                    - 2001
 
     "2":
         remote_endpoints:
@@ -26,4 +26,4 @@ interfaces:
                 name: urn:publicid:psnc-dpid:if2
                 type: static_link
                 vlans:
-                    - 1000
+                    - 1001
