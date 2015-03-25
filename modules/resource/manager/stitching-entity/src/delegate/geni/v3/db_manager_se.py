@@ -56,10 +56,10 @@ class DBManager(object):
         print "links"
         print resources
         try:
-            print "jestem w set" 
+            #print "jestem w set" 
             self.__mutex.acquire()
             table.update({"sliceurn":sliceurn},{"sliceurn":sliceurn, "resources": resources},upsert=True)
-            print "po set "
+            #print "po set "
         finally:
             self.__mutex.release()
     

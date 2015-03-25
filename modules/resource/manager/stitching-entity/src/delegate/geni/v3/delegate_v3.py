@@ -62,6 +62,8 @@ link_additional_info={}
 
 RFC3339_FORMAT_STRING = "%Y-%m-%d %H:%M:%S.%fZ"
 
+
+
 def se_job_release_resources(time, ports, slice_urn):
 
     SEResources = SEConfigurator.seConfigurator()
@@ -198,6 +200,12 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def allocate(self, slice_urn, client_cert, credentials,
                  rspec, end_time=None):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
+        #Default end time, 30 days
+        default_end_time = datetime.now() + timedelta(days=30)
+        if end_time == None:
+
+            print "###################################    time default   ", default_end_time
+            end_time = default_end_time
         if self._verify_users:
             logger.debug("allocate: authenticate the user...")
             client_urn, client_uuid, client_email =\
@@ -292,7 +300,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
 
             result.append( 
-                            {   "geni_sliver_urn": urns[0],
+                            {   "geni_sliver_urn": links_db['geni_sliver_urn'],
                                 "geni_expires": expiration_time,
                                 "geni_allocation_status": links_db["geni_allocation_status"],
                                 "geni_operational_status" : "geni_notready"
@@ -340,6 +348,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     "geni_expires"         : end_time
                     }
                 ]
+        logger.info("provision successfully completed: %s", slice_urn)
 
         return str(se_manifest), slivers
 
@@ -422,72 +431,54 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def delete(self, urns, client_cert, credentials, best_effort):     ### FIX the response
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         result = []
+        slice_urn = urns[0]
+        try:
+            for urn in urns:
+                if self._verify_users:
+                    logger.debug("delete: authenticate the user for %s" % (urn))
+                    client_urn, client_uuid, client_email = self.auth(client_cert, credentials, urn, ("deletesliver",))
+                    logger.info("Client urn=%s, uuid=%s, email=%s" % (client_urn, client_uuid, client_email,))
 
-        for urn in urns:
-            if self._verify_users:
-                logger.debug("delete: authenticate the user for %s" % (urn))
-                client_urn, client_uuid, client_email =\
-                    self.auth(client_cert, credentials, urn, ("deletesliver",))
-                logger.info("Client urn=%s, uuid=%s, email=%s" % (
-                    client_urn, client_uuid, client_email,))
+                links_db, nodes, links = self.SESlices.get_link_db(urn)
+                logger.debug("SE-Slice-Urn=%s, DB-links=%s" % (urn, links_db))
+                reservation_ports = self.SESlices._allocate_ports_in_slice(nodes)
+                reservation_ports = self.SESlices._allocate_ports_in_slice(nodes)["ports"]
 
-            links_db, nodes, links = self.SESlices.get_link_db(urn)
-            reservation_ports = self.SESlices._allocate_ports_in_slice(nodes)
+                in_port = int(reservation_ports[0]["port"].rsplit(":", 1)[1])
+                out_port = int(reservation_ports[1]["port"].rsplit(":", 1)[1])
+                in_vlan = int(reservation_ports[0]["vlan"])
+                out_vlan = int(reservation_ports[1]["vlan"])
 
-            reservation_ports = self.SESlices._allocate_ports_in_slice(nodes)["ports"]
-
-            in_port = int(reservation_ports[0]["port"].rsplit(":", 1)[1])
-            out_port = int(reservation_ports[1]["port"].rsplit(":", 1)[1])
-            in_vlan = int(reservation_ports[0]["vlan"])
-            out_vlan = int(reservation_ports[1]["vlan"])
-
-            se_provision.deleteSwitchingRule(in_port, out_port, in_vlan, out_vlan)
-
-            # expires_date = datetime.strptime(links_db['geni_expires'], RFC3339_FORMAT_STRING)
-            expires_date = links_db['geni_expires']
+                se_provision.deleteSwitchingRule(in_port, out_port, in_vlan, out_vlan)
+                logger.debug("unprovision SE-Slice-Urn=%s, in_port=%s , out_port=%s,  in_vlan=%s,  out_port=%s" % (urn,in_port, out_port, in_vlan, out_vlan))
+		        #expires_date = datetime.strptime(links_db['geni_expires'], RFC3339_FORMAT_STRING)
+                expires_date = links_db['geni_expires']
 
 
-            result.append( 
-                {   
-                    "geni_sliver_urn": urn,# links_db['geni_sliver_urn'][0].keys(),
-                    "geni_expires": expires_date,
-                    "geni_allocation_status": links_db["geni_allocation_status"],
-                    "geni_operational_status" : "Not yet implemented"
-                }
-            )
+                result.append( 
+                   {   
+                        "geni_sliver_urn": urn,# links_db['geni_sliver_urn'][0].keys(),
+                        "geni_expires": expires_date,
+                        "geni_allocation_status": "geni_unallocated",
+                        "geni_operational_status" : "Not yet implemented"
+                   }
+                    )
 
-            # Mark resources as free
-            self.SEResources.free_resource_reservation(reservation_ports)
 
-            # Remove reservation
-            self.SESlices.remove_link_db(urn)
+		        # Mark resources as free
+                self.SEResources.free_resource_reservation(reservation_ports)
 
-        # logger.info("best_effort=%s" % (best_effort,))
+		        # Remove reservation
+                self.SESlices.remove_link_db(urn)
+                
+                logger.info("delete successfully completed: %s", slice_urn)
 
-        # route = db_sync_manager.get_slice_routing_keys(urns)
-        # logger.debug("Route=%s" % (route,))
+		        
+            return result
 
-        # for r, v in route.iteritems():
-        #     peer = db_sync_manager.get_configured_peer(r)
-        #     logger.debug("peer=%s" % (peer,))
-        #     if peer.get("type") in ["sdn_networking", "transport_network",
-        #                             "stitching_entity"]:
-        #         slivers = self.__manage_delete(
-        #             peer, v, credentials, best_effort)
+        except:
 
-        #         logger.debug("slivers=%s" % (slivers,))
-        #         ro_slivers.extend(slivers)
-
-        # db_urns = []
-        # for s in ro_slivers:
-        #     s["geni_expires"] = self.__str2datetime(s["geni_expires"])
-        #     db_urns.append(s.get("geni_sliver_urn"))
-        # logger.debug("RO-Slivers(%d)=%s, DB-URNs(%d)=%s" %
-        #              (len(ro_slivers), ro_slivers, len(db_urns), db_urns))
-
-        # db_sync_manager.delete_slice_urns(db_urns)
-
-        return result
+            raise geni_ex.GENIv3GeneralError("Delete Failed. Requested resources are not available.")
 
     def shutdown(self, slice_urn, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
