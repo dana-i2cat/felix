@@ -11,3 +11,4 @@ unittest2
 networkx
 apscheduler
 requests
+colorlog
