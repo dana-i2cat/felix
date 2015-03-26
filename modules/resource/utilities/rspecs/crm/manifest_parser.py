@@ -38,8 +38,7 @@ class CRMv3ManifestParser(CRMv3RequestParser):
                 comnode.sliver_type(stn.attrib.get("name"))
 
             for s in n.iterfind("{%s}services" % (self.none)):
-                login = s.find("{%s}login" % (self.none))
-                if login is not None:
+                for login in s.iterfind("{%s}login" % (self.none)):
                     comnode.add_service(login.attrib.get("authentication"),
                                         login.attrib.get("hostname"),
                                         login.attrib.get("port"),
