@@ -62,9 +62,8 @@ lhandle.setLevel(log_level)
 colormap = {'DEBUG': 'green', 'INFO': 'yellow', 'WARNING': 'blue',
             'ERROR': 'red', 'CRITICAL': 'purple'}
 formatter = ColoredFormatter(
-    "%(log_color)s%(asctime)s [%(levelname)s] - %(message)s",
-    datefmt=None, reset=True, log_colors=colormap,
-    secondary_log_colors={}, style='%')
+    "%(log_color)s%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)s] - %(message)s",
+    datefmt=None, reset=True, log_colors=colormap, secondary_log_colors={}, style='%')
 lhandle.setFormatter(formatter)
 logger = getLogger()
 logger.addHandler(lhandle)

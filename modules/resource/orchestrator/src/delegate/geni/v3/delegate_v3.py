@@ -231,8 +231,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         ro_manifest, ro_slivers, ro_db_slivers = ROManifestFormatter(), [], []
 
-        print "********* DELEGATE allocate rspec = ", req_rspec
-
         # COM resources
         slivers = req_rspec.com_slivers()
         nodes = req_rspec.com_nodes()
@@ -276,8 +274,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
         se_tn_info = None
         nodes = req_rspec.tn_nodes()
         links = req_rspec.tn_links()
-        print "....... TN nodes: ", nodes
-        print "....... TN links: ", links
         if (len(nodes) > 0) or (len(links) > 0):
             logger.debug("Found a TN-nodes segment (%d): %s" %
                          (len(nodes), nodes,))
@@ -302,8 +298,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
         # SE resources
         if (se_sdn_info is not None) and (len(se_sdn_info) > 0) and\
            (se_tn_info is not None) and (len(se_tn_info) > 0):
-            print "....... SE info: ", se_sdn_info
-            print "....... TN info: ", se_tn_info
             logger.debug("Found a SE-sdn segment (%d): %s" %
                          (len(se_sdn_info), se_sdn_info,))
             logger.debug("Found a SE-tn segment (%d): %s" %
@@ -734,18 +728,19 @@ class GENIv3Delegate(GENIv3DelegateBase):
         manifests, slivers, db_slivers = [], [], []
 
         for k, v in route.iteritems():
-            print "\n\n\n--------------- send allocate for CRM"
-            (m, ss) = self.__send_request_rspec(
-                k, v, slice_urn, credentials, slice_expiration)
-            print "\n\n\n--------------- manifest allocate for SDN: ", m
-            manifest = CRMv3ManifestParser(from_string=m)
-            logger.debug("CRMv3ManifestParser=%s" % (manifest,))
+            try:
+                (m, ss) = self.__send_request_rspec(
+                    k, v, slice_urn, credentials, slice_expiration)
+                manifest = CRMv3ManifestParser(from_string=m)
+                logger.debug("CRMv3ManifestParser=%s" % (manifest,))
 
-            nodes = manifest.nodes()
-            logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
-            manifests.append({"nodes": nodes})
+                nodes = manifest.nodes()
+                logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
+                manifests.append({"nodes": nodes})
 
-            self.__extend_slivers(ss, k, slivers, db_slivers)
+                self.__extend_slivers(ss, k, slivers, db_slivers)
+            except Exception as e:
+                logger.critical(e)
 
         return (manifests, slivers, db_slivers)
 
@@ -772,17 +767,18 @@ class GENIv3Delegate(GENIv3DelegateBase):
         manifests, slivers, db_slivers = [], [], []
 
         for k, v in route.iteritems():
-            print "\n\n\n--------------- send allocate for SDN"
-            (m, ss) = self.__send_request_rspec(k, v, surn, creds, end)
-            print "\n\n\n--------------- manifest allocate for SDN: ", m
-            manifest = OFv3ManifestParser(from_string=m)
-            logger.debug("OFv3ManifestParser=%s" % (manifest,))
+            try:
+                (m, ss) = self.__send_request_rspec(k, v, surn, creds, end)
+                manifest = OFv3ManifestParser(from_string=m)
+                logger.debug("OFv3ManifestParser=%s" % (manifest,))
 
-            slivers_ = manifest.slivers()
-            logger.info("Slivers(%d)=%s" % (len(slivers_), slivers_,))
-            manifests.append({"slivers": slivers_})
+                slivers_ = manifest.slivers()
+                logger.info("Slivers(%d)=%s" % (len(slivers_), slivers_,))
+                manifests.append({"slivers": slivers_})
 
-            self.__extend_slivers(ss, k, slivers, db_slivers)
+                self.__extend_slivers(ss, k, slivers, db_slivers)
+            except Exception as e:
+                logger.critical(e)
 
         # insert sliver details (groups and matches) into the slice.sdn table
         id_ = db_sync_manager.store_slice_sdn(slice_urn, groups, matches)
@@ -846,26 +842,27 @@ class GENIv3Delegate(GENIv3DelegateBase):
         manifests, slivers, db_slivers, se_tn_info = [], [], [], []
 
         for k, v in route.iteritems():
-            print "\n\n\n--------------- send allocate for TN"
-            (m, ss) = self.__send_request_rspec(k, v, surn, creds, end)
-            print "\n\n\n--------------- manifest allocate for TN: ", m
-            manifest = TNRMv3ManifestParser(from_string=m)
-            logger.debug("TNRMv3ManifestParser=%s" % (manifest,))
-            self.__validate_rspec(manifest.get_rspec())
+            try:
+                (m, ss) = self.__send_request_rspec(k, v, surn, creds, end)
+                manifest = TNRMv3ManifestParser(from_string=m)
+                logger.debug("TNRMv3ManifestParser=%s" % (manifest,))
+                self.__validate_rspec(manifest.get_rspec())
 
-            nodes = manifest.nodes()
-            logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
-            links = manifest.links()
-            logger.info("Links(%d)=%s" % (len(links), links,))
+                nodes = manifest.nodes()
+                logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
+                links = manifest.links()
+                logger.info("Links(%d)=%s" % (len(links), links,))
 
-            manifests.append({"nodes": nodes, "links": links})
+                manifests.append({"nodes": nodes, "links": links})
 
-            self.__extend_slivers(ss, k, slivers, db_slivers)
+                self.__extend_slivers(ss, k, slivers, db_slivers)
 
-            se_tn = self.__extract_se_from_tn(nodes, links)
-            logger.debug("SE-TN-INFO=%s" % (se_tn,))
-            if len(se_tn) > 0:
-                se_tn_info.extend(se_tn)
+                se_tn = self.__extract_se_from_tn(nodes, links)
+                logger.debug("SE-TN-INFO=%s" % (se_tn,))
+                if len(se_tn) > 0:
+                    se_tn_info.extend(se_tn)
+            except Exception as e:
+                logger.critical(e)
 
         return (manifests, slivers, db_slivers, se_tn_info)
 
@@ -982,21 +979,22 @@ class GENIv3Delegate(GENIv3DelegateBase):
         manifests, slivers, db_slivers = [], [], []
 
         for k, v in route.iteritems():
-            print "\n\n\n--------------- send allocate for SE"
-            (m, ss) = self.__send_request_rspec(k, v, surn, creds, end)
-            print "\n\n\n--------------- manifest allocate for SE: ", m
-            manifest = SERMv3ManifestParser(from_string=m)
-            logger.debug("SERMv3ManifestParser=%s" % (manifest,))
-            self.__validate_rspec(manifest.get_rspec())
+            try:
+                (m, ss) = self.__send_request_rspec(k, v, surn, creds, end)
+                manifest = SERMv3ManifestParser(from_string=m)
+                logger.debug("SERMv3ManifestParser=%s" % (manifest,))
+                self.__validate_rspec(manifest.get_rspec())
 
-            nodes = manifest.nodes()
-            logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
-            links = manifest.links()
-            logger.info("Links(%d)=%s" % (len(links), links,))
+                nodes = manifest.nodes()
+                logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
+                links = manifest.links()
+                logger.info("Links(%d)=%s" % (len(links), links,))
 
-            manifests.append({"nodes": nodes, "links": links})
+                manifests.append({"nodes": nodes, "links": links})
 
-            self.__extend_slivers(ss, k, slivers, db_slivers)
+                self.__extend_slivers(ss, k, slivers, db_slivers)
+            except Exception as e:
+                logger.critical(e)
 
         return (manifests, slivers, db_slivers)
 

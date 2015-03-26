@@ -200,6 +200,19 @@ class GENIv3Client(SFAClient):
             err = "%s ListResources failure: %s" % (self.typee, str(e))
             raise exceptions.RPCError(err)
 
+    def __check_errors(self, result):
+        if result.get("output") is not None:
+            return False, "Error detected in the server (%s): %s" %\
+                (self.typee, result.get("output"))
+
+        if "geni_slivers" in result.get("value"):
+            for s in result.get("value").get("geni_slivers"):
+                if s.get("geni_error"):
+                    return False, "Error detected in a sliver (%s): %s" %\
+                        (self.typee, s.get("geni_error"))
+
+        return True, ""
+
     def allocate(self, slice_urn, credentials, rspec, end_time):
         options = self.format_options(end_time=end_time)
         logger.debug("%s Options: %s" % (self.typee, options,))
@@ -211,10 +224,8 @@ class GENIv3Client(SFAClient):
             logger.info("\n\n\n%s Allocate result=%s\n\n\n" %
                         (self.typee, result,))
 
-            if result.get("output") is not None:
-                err = "Error detected in the server (%s): %s" %\
-                      (self.typee, result.get("output"))
-            else:
+            status, err = self.__check_errors(result)
+            if status is True:
                 return (result.get("value").get("geni_rspec"),
                         result.get("value").get("geni_slivers"))
 
@@ -234,10 +245,8 @@ class GENIv3Client(SFAClient):
             logger.info("\n\n\n%s Describe result=%s\n\n\n" %
                         (self.typee, result,))
 
-            if result.get("output") is not None:
-                err = "Error detected in the server (%s): %s" %\
-                      (self.typee, result.get("output"))
-            else:
+            status, err = self.__check_errors(result)
+            if status is True:
                 return (result.get("value").get("geni_rspec"),
                         result.get("value").get("geni_urn"),
                         result.get("value").get("geni_slivers"))
@@ -258,10 +267,8 @@ class GENIv3Client(SFAClient):
             logger.info("\n\n\n%s Renew result=%s\n\n\n" %
                         (self.typee, result,))
 
-            if result.get("output") is not None:
-                err = "Error detected in the server (%s): %s" %\
-                      (self.typee, result.get("output"))
-            else:
+            status, err = self.__check_errors(result)
+            if status is True:
                 return result.get("value")
 
         except Exception as e:
@@ -280,10 +287,8 @@ class GENIv3Client(SFAClient):
             logger.info("\n\n\n%s Status result=%s\n\n\n" %
                         (self.typee, result,))
 
-            if result.get("output") is not None:
-                err = "Error detected in the server (%s): %s" %\
-                      (self.typee, result.get("output"))
-            else:
+            status, err = self.__check_errors(result)
+            if status is True:
                 return (result.get("value").get("geni_urn"),
                         result.get("value").get("geni_slivers"))
 
@@ -304,10 +309,8 @@ class GENIv3Client(SFAClient):
             logger.info("\n\n\n%s PerformOperationalAction result=%s\n\n\n" %
                         (self.typee, result,))
 
-            if result.get("output") is not None:
-                err = "Error detected in the server (%s): %s" %\
-                      (self.typee, result.get("output"))
-            else:
+            status, err = self.__check_errors(result)
+            if status is True:
                 return result.get("value")
 
         except Exception as e:
@@ -326,10 +329,8 @@ class GENIv3Client(SFAClient):
             logger.info("\n\n\n%s Delete result=%s\n\n\n" %
                         (self.typee, result,))
 
-            if result.get("output") is not None:
-                err = "Error detected in the server (%s): %s" %\
-                      (self.typee, result.get("output"))
-            else:
+            status, err = self.__check_errors(result)
+            if status is True:
                 return result.get("value")
 
         except Exception as e:
@@ -350,10 +351,8 @@ class GENIv3Client(SFAClient):
             logger.info("\n\n\n%s Provision result=%s\n\n\n" %
                         (self.typee, result,))
 
-            if result.get("output") is not None:
-                err = "Error detected in the server (%s): %s" %\
-                      (self.typee, result.get("output"))
-            else:
+            status, err = self.__check_errors(result)
+            if status is True:
                 return (result.get("value").get("geni_rspec"),
                         result.get("value").get("geni_slivers"))
 
