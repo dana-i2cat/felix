@@ -2,6 +2,9 @@ from rspecs.commons import DEFAULT_XMLNS
 from rspecs.commons_com import EMULAB_XMLNS, Sliver
 from rspecs.parser_base import ParserBase
 
+import core
+logger = core.log.getLogger("utility-rspec")
+
 
 class CRMv3RequestParser(ParserBase):
     def __init__(self, from_file=None, from_string=None):
@@ -9,12 +12,31 @@ class CRMv3RequestParser(ParserBase):
         self.xmlns = DEFAULT_XMLNS
         self.__com = EMULAB_XMLNS
 
+    def __check_c_resource(self, node):
+        # according to the proposed URNs structure, a C-node MUST have
+        # "vtam" as resource-name (component_id) and authority
+        # (component_manager_id) fields
+        if (not node.attrib.get("component_id")) or\
+           (not node.attrib.get("component_manager_id")):
+            return False
+
+        if ("vtam" in node.attrib.get("component_id")) and\
+           ("vtam" in node.attrib.get("component_manager_id")):
+            return True
+        return False
+
     def get_slivers(self):
         # nodes = self.rspec.xpath("//d:node[@component_id='%s']" %\
         #               component_id, namespaces = {"d": self.xmlns})
         nodes = self.__find_nodes()
         sliver_list = []
         for node in nodes:
+            if not self.__check_c_resource(node):
+                logger.info("Skipping this node, not a C-res: %s", (node,))
+                continue
+
+            logger.debug("Analizing C-res: %s" % (node,))
+
             server_c_id = node.attrib.get("component_id")
             server_cm_id = node.attrib.get("component_manager_id")
             server_client_id = node.attrib.get("client_id")

@@ -3,6 +3,9 @@ from rspecs.crm.request_parser import CRMv3RequestParser
 from rspecs.openflow.request_parser import OFv3RequestParser
 from rspecs.tnrm.request_parser import TNRMv3RequestParser
 
+import core
+logger = core.log.getLogger("utility-rspec")
+
 
 class RORequestParser(ParserBase):
     def __init__(self, from_file=None, from_string=None):
@@ -15,20 +18,23 @@ class RORequestParser(ParserBase):
     def com_nodes(self):
         try:
             return self.__com_parser.get_nodes()
-        except:
+        except Exception as e:
+            logger.error("com_nodes exception: %s", e)
             return []
 
     def com_slivers(self):
         try:
             return self.__com_parser.get_slivers()
-        except:
+        except Exception as e:
+            logger.error("com_slivers exception: %s", e)
             return []
 
     # OF resources
     def of_sliver(self):
         try:
             return self.__of_parser.get_sliver(self.rspec)
-        except:
+        except Exception as e:
+            logger.error("of_sliver exception: %s", e)
             return None
 
     def of_controllers(self):
@@ -44,11 +50,13 @@ class RORequestParser(ParserBase):
     def tn_nodes(self):
         try:
             return self.__tn_parser.get_nodes(self.rspec)
-        except:
+        except Exception as e:
+            logger.error("tn_nodes exception: %s", e)
             return []
 
     def tn_links(self):
         try:
             return self.__tn_parser.get_links(self.rspec)
-        except:
+        except Exception as e:
+            logger.error("tn_links exception: %s", e)
             return []
