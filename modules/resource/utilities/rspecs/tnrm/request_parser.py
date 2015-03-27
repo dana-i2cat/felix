@@ -1,32 +1,47 @@
 from rspecs.parser_base import ParserBase
 from rspecs.commons_tn import Node, Link, Interface
 
+import core
+logger = core.log.getLogger("utility-rspec")
+
 
 class TNRMv3RequestParser(ParserBase):
     def __init__(self, from_file=None, from_string=None):
         super(TNRMv3RequestParser, self).__init__(from_file, from_string)
         self.__sv = self.rspec.nsmap.get('sharedvlan')
 
+    def __check_tn_node_resource(self, node):
+        # according to the proposed URNs structure, a TN-node MUST have
+        # "tnrm" as resource-name (client_id) and authority
+        # (component_manager_id) fields
+        # At least we verify the autority field here!
+        if not node.attrib.get("component_manager_id"):
+            return False
+        if "tnrm" in node.attrib.get("component_manager_id"):
+            return True
+        return False
+
+    def __check_tn_link_resource(self, link, c_manager):
+        # according to the proposed URNs structure, a TN-link MUST have
+        # "tnrm" as resource-name (client_id) and authority
+        # (component_manager_name) fields
+        # At least we verify the autority field here!
+        if not c_manager.attrib.get("name"):
+            return False
+        if "tnrm" in c_manager.attrib.get("name"):
+            return True
+        return False
+
     def get_nodes(self, rspec):
         nodes = []
         for n in rspec.findall(".//{%s}node" % (self.none)):
-            exclusive = None
-            sliver = n.find("{%s}sliver_type" % (self.none))
-            if sliver is not None:
-                # For TNRM request the sliver tag MUST be empty
-                # so this node is NOT a TN resource, but a CRM resouce!
+            if not self.__check_tn_node_resource(n):
+                logger.info("Skipping this node, not a TN-res: %s", (n,))
                 continue
-
-            # component_manager = n.find("{%s}component_manager" % (self.none))
-            # print component_manager
-            # if component_manager.attrib.get("name").endswith("serm"):
-            #   if "se" in n.attrib.get("client_id"):
-            # FIXME Lousy hack to identify SE resources
-            #    continue
 
             node = Node(n.attrib.get("client_id"),
                         n.attrib.get("component_manager_id"),
-                        n.attrib.get("exclusive"), exclusive)
+                        n.attrib.get("exclusive"))
 
             for i in n.iterfind("{%s}interface" % (self.none)):
                 interface = Interface(i.attrib.get("client_id"))
@@ -48,11 +63,9 @@ class TNRMv3RequestParser(ParserBase):
             if manager_ is None:
                 self.raise_exception("Component-Mgr tag not found in link!")
 
-            # component_manager = n.find("{%s}component_manager" % (self.none))
-            # if component_manager.attrib.get("name").endswith("serm"):
-            #   if "se" in n.attrib.get("client_id"):
-            # FIXME Lousy hack to identify SE resources
-            #    continue
+            if not self.__check_tn_link_resource(l, manager_):
+                logger.info("Skipping this link, not a TN-res: %s", (l,))
+                continue
 
             l_ = Link(l.attrib.get("client_id"), manager_.attrib.get("name"))
 

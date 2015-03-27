@@ -487,6 +487,11 @@ class DBManager(object):
         table = pymongo.MongoClient().felix_ro.resource.se.node
         return self.__get_all(table)
 
+    def get_se_node_routing_key(self, cid):
+        table = pymongo.MongoClient().felix_ro.resource.se.node
+        filter_params = {"component_id": cid}
+        return self.__get_one(table, filter_params).get("routing_key")
+
     # (felix_ro) resource.se.link
     def store_se_links(self, routingKey, values):
         table = pymongo.MongoClient().felix_ro.resource.se.link
@@ -541,6 +546,25 @@ class DBManager(object):
     def get_se_links(self):
         table = pymongo.MongoClient().felix_ro.resource.se.link
         return self.__get_all(table)
+
+    def get_direct_se_link_routing_key(self, cid, ifrefs):
+        try:
+            self.__mutex.acquire()
+            table = pymongo.MongoClient().felix_ro.resource.se.link
+            row = table.find_one({"component_id": cid})
+            if row is not None:
+                return row.get("routing_key")
+
+            table = pymongo.MongoClient().felix_ro.resource.se.node
+            for row in table.find():
+                for i in row.get("interfaces"):
+                    if i.get("component_id") in ifrefs:
+                        return row.get("routing_key")
+
+            raise Exception("Link (%s,%s) owner is not found into RO-DB!" %
+                            (cid, ifrefs))
+        finally:
+            self.__mutex.release()
 
     # (felix_ro) resource.tn.node
     def store_tn_nodes(self, routingKey, values):

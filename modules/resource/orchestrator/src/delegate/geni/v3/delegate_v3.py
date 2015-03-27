@@ -318,6 +318,31 @@ class GENIv3Delegate(GENIv3DelegateBase):
             self.__insert_slice_info(
                 "se-resources", slice_urn, db_slivers, ro_db_slivers)
 
+        # This is an extension provided to allow MRO-RO interoperability
+        # And could be very useful for testing & debugging, too...
+        nodes = req_rspec.se_nodes()
+        links = req_rspec.se_links()
+        if (len(nodes) > 0) or (len(links) > 0):
+            logger.debug("Found a SE-nodes segment (%d): %s" %
+                         (len(nodes), nodes,))
+            logger.debug("Found a SE-links segment (%d): %s" %
+                         (len(links), links,))
+            (se_m_info, se_slivers, db_slivers) =\
+                self.__manage_direct_se_allocate(
+                    slice_urn, credentials, end_time, nodes, links)
+            logger.debug("se_m=%s, se_s=%s, db_s=%s" %
+                         (se_m_info, se_slivers, db_slivers))
+            for m in se_m_info:
+                for n in m.get("nodes"):
+                    ro_manifest.se_node(n)
+                for l in m.get("links"):
+                    ro_manifest.se_link(l)
+
+            ro_slivers.extend(se_slivers)
+            # insert se-resources into slice table
+            self.__insert_slice_info(
+                "se-resources", slice_urn, db_slivers, ro_db_slivers)
+
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
         self.__validate_rspec(ro_manifest.get_rspec())
 
@@ -974,6 +999,54 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.debug("SE-TnInfo(%d)=%s" % (len(tn_info), tn_info,))
 
         self.__update_se_route_rspec(route, sdn_info, tn_info)
+        logger.info("Route=%s" % (route,))
+
+        manifests, slivers, db_slivers = [], [], []
+
+        for k, v in route.iteritems():
+            try:
+                (m, ss) = self.__send_request_rspec(k, v, surn, creds, end)
+                manifest = SERMv3ManifestParser(from_string=m)
+                logger.debug("SERMv3ManifestParser=%s" % (manifest,))
+                self.__validate_rspec(manifest.get_rspec())
+
+                nodes = manifest.nodes()
+                logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
+                links = manifest.links()
+                logger.info("Links(%d)=%s" % (len(links), links,))
+
+                manifests.append({"nodes": nodes, "links": links})
+
+                self.__extend_slivers(ss, k, slivers, db_slivers)
+            except Exception as e:
+                logger.critical(e)
+
+        return (manifests, slivers, db_slivers)
+
+    def __update_se_node_route(self, route, values):
+        for v in values:
+            k = db_sync_manager.get_se_node_routing_key(v.get("component_id"))
+            v["routing_key"] = k
+            if k not in route:
+                route[k] = SERMv3RequestFormatter()
+
+    def __update_se_link_route(self, route, values):
+        for v in values:
+            k = db_sync_manager.get_direct_se_link_routing_key(
+                v.get("component_id"),
+                [i.get("component_id") for i in v.get("interface_ref")])
+            v["routing_key"] = k
+            if k not in route:
+                route[k] = SERMv3RequestFormatter()
+
+    def __manage_direct_se_allocate(self, surn, creds, end, nodes, links):
+        route = {}
+        self.__update_se_node_route(route, nodes)
+        logger.debug("Nodes(%d)=%s" % (len(nodes), nodes,))
+        self.__update_se_link_route(route, links)
+        logger.debug("Links(%d)=%s" % (len(links), links,))
+        # Note: we can reuse the same template of tn here! (it is NOT an error)
+        self.__update_tn_route_rspec(route, nodes, links)
         logger.info("Route=%s" % (route,))
 
         manifests, slivers, db_slivers = [], [], []
