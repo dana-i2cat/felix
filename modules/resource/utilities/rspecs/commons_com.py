@@ -79,10 +79,11 @@ class Link(object):
 
 class COMNode(object):
     def __init__(self, client_id, component_id, component_manager_id,
-                 sliver_id):
+                 sliver_id, component_manager_uuid=None):
         self.node = {'client_id': client_id,
                      'component_id': component_id,
                      'component_manager_id': component_manager_id,
+                     'component_manager_uuid': component_manager_uuid,
                      'sliver_id': sliver_id,
                      'sliver_type_name': None,
                      'services': []}
@@ -97,6 +98,9 @@ class COMNode(object):
                  'username': username,
                  'password': pswd}
         self.node['services'].append({'login': login})
+
+    def add_component_manager_uuid(self, cm_uuid):
+        self.node['component_manager_uuid'] = cm_uuid
 
     def serialize(self):
         return self.node

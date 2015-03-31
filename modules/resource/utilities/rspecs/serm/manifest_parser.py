@@ -2,6 +2,9 @@ from rspecs.serm.request_parser import SERMv3RequestParser
 from rspecs.commons_se import SELink, SENode
 from rspecs.commons_tn import Interface
 
+import core
+logger = core.log.getLogger("utility-rspec")
+
 
 class SERMv3ManifestParser(SERMv3RequestParser):
     def __init__(self, from_file=None, from_string=None):
@@ -11,9 +14,8 @@ class SERMv3ManifestParser(SERMv3RequestParser):
     def nodes(self):
         nodes = []
         for n in self.rspec.findall(".//{%s}node" % (self.none)):
-            sliver = n.find("{%s}sliver_type" % (self.none))
-            if sliver is not None:
-                # For SERM manifest the sliver tag MUST be empty
+            if not self.check_se_node_resource(n):
+                logger.info("Skipping this node, not a SE-res: %s", (n,))
                 continue
 
             host_name = None
@@ -26,6 +28,8 @@ class SERMv3ManifestParser(SERMv3RequestParser):
                           n.attrib.get("component_manager_id"),
                           n.attrib.get("exclusive"),
                           hostname=host_name)
+
+            self.update_protogeni_cm_uuid(n, node)
 
             for i in n.iterfind("{%s}interface" % (self.none)):
                 interface = Interface(i.attrib.get("client_id"))
@@ -44,6 +48,10 @@ class SERMv3ManifestParser(SERMv3RequestParser):
             if manager_ is None:
                 self.raise_exception("Component-Mgr tag not found in link!")
 
+            if not self.check_se_link_resource(l, manager_):
+                logger.info("Skipping this link, not a SE-res: %s", (l,))
+                continue
+
             type_ = l.find("{%s}link_type" % (self.none))
             if type_ is None:
                 self.raise_exception("Link-Type tag not found in link!")
@@ -51,6 +59,8 @@ class SERMv3ManifestParser(SERMv3RequestParser):
             l_ = SELink(l.attrib.get("client_id"), type_.attrib.get("name"),
                         manager_.attrib.get("name"), l.attrib.get("vlantag"),
                         l.attrib.get("sliver_id"))
+
+            self.update_protogeni_cm_uuid(l, l_)
 
             [l_.add_interface_ref(i.attrib.get("client_id"))
              for i in l.iterfind("{%s}interface_ref" % (self.none))]

@@ -50,6 +50,16 @@ class GENIv3Delegate(GENIv3DelegateBase):
                              get("verify_users"))
         self._allowed_peers = AllowedPeers.get_peers()
 
+    def trace_method_inputs(f):
+        as_ = f.func_code.co_varnames[:f.func_code.co_argcount]
+
+        def wrapper(*args, **kwargs):
+            ass_ = ', '.join('%s=%r' % e for e in zip(as_, args) +
+                             kwargs.items())
+            logger.info("Calling %s with args=%s" % (f.func_name, ass_,))
+            return f(*args, **kwargs)
+        return wrapper
+
     def get_request_extensions_mapping(self):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         return {"resource-orchestrator":
@@ -76,6 +86,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         We allow to incrementally add new slivers (IPs)."""
         return "geni_many"
 
+    @trace_method_inputs
     def list_resources(self, client_cert, credentials, geni_available):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         if self._verify_users:
@@ -134,6 +145,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         self.__validate_rspec(rspec.get_rspec())
         return "%s" % rspec
 
+    @trace_method_inputs
     def describe(self, urns, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         ro_manifest, ro_slivers, last_slice = ROManifestFormatter(), [], ""
@@ -200,6 +212,27 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
                 ro_slivers.extend(com_slivers)
 
+            elif peer.get("type") == self._allowed_peers.get("PEER_RO"):
+                ro_m_info, last_slice, ro_slivers =\
+                    self.__manage_ro_describe(peer, v, credentials)
+
+                logger.debug("ro_m=%s, ro_s=%s, urn=%s" %
+                             (ro_m_info, ro_slivers, last_slice))
+                for n in ro_m_info.get("com_nodes"):
+                    ro_manifest.com_node(n)
+                for s in ro_m_info.get("sdn_slivers"):
+                    ro_manifest.of_sliver(s)
+                for n in ro_m_info.get("tn_nodes"):
+                    ro_manifest.tn_node(n)
+                for l in ro_m_info.get("tn_links"):
+                    ro_manifest.tn_link(l)
+                for n in ro_m_info.get("se_nodes"):
+                    ro_manifest.se_node(n)
+                for l in ro_m_info.get("se_links"):
+                    ro_manifest.se_link(l)
+
+                ro_slivers.extend(ro_slivers)
+
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
         logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
 
@@ -212,6 +245,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 "geni_urn": last_slice,
                 "geni_slivers": ro_slivers}
 
+    @trace_method_inputs
     def allocate(self, slice_urn, client_cert, credentials,
                  rspec, end_time=None):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
@@ -354,6 +388,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         self.__schedule_slice_release(end_time, ro_db_slivers)
         return ("%s" % ro_manifest, ro_slivers)
 
+    @trace_method_inputs
     def renew(self, urns, client_cert, credentials, expiration_time,
               best_effort):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
@@ -389,6 +424,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
         return ro_slivers
 
+    @trace_method_inputs
     def provision(self, urns, client_cert, credentials, best_effort, end_time,
                   geni_users):
         """Documentation see [geniv3rpc] GENIv3DelegateBase.
@@ -499,10 +535,10 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     slice_urn, ro_m_info.get("sdn_slivers"), ro_slivers)
                 slice_monitor.add_tn_resources(
                     slice_urn, ro_m_info.get("tn_nodes"),
-                    ro_m_info.get("tn_links"), tn_slivers, peer)
+                    ro_m_info.get("tn_links"), ro_slivers, peer)
                 slice_monitor.add_se_resources(
                     slice_urn, ro_m_info.get("se_nodes"),
-                    ro_m_info.get("se_links"), se_slivers)
+                    ro_m_info.get("se_links"), ro_slivers)
 
         # send slice-monitoring info to the monitoring system
         slice_monitor.send()
@@ -518,6 +554,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         return ("%s" % ro_manifest, ro_slivers)
 
+    @trace_method_inputs
     def status(self, urns, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         ro_slivers, last_slice = [], ""
@@ -548,6 +585,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
         return last_slice, ro_slivers
 
+    @trace_method_inputs
     def perform_operational_action(self, urns, client_cert, credentials,
                                    action, best_effort):
         ro_slivers = []
@@ -583,6 +621,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
         return ro_slivers
 
+    @trace_method_inputs
     def delete(self, urns, client_cert, credentials, best_effort):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         ro_slivers, slice_monitor, client_urn = [], SliceMonitoring(), None
@@ -628,6 +667,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         db_sync_manager.delete_slice_urns(db_urns)
         return ro_slivers
 
+    @trace_method_inputs
     def shutdown(self, slice_urn, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         if self._verify_users:
@@ -1139,6 +1179,45 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
 
         return ({"nodes": nodes}, urn, ss)
+
+    def __manage_ro_describe(self, peer, urns, creds):
+        adaptor, uri = AdaptorFactory.create_from_db(peer)
+        logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
+
+        ret = {"com_nodes": [], "sdn_slivers": [],
+               "tn_nodes": [], "tn_links": [],
+               "se_nodes": [], "se_links": []}
+        m, urn, ss = adaptor.describe(urns, creds[0]["geni_value"])
+
+        manifest = ROManifestParser(from_string=m)
+        logger.debug("ROManifestParser=%s" % (manifest,))
+        self.__validate_rspec(manifest.get_rspec())
+
+        ret["com_nodes"] = manifest.com_nodes()
+        logger.info("COMNodes(%d)=%s" %
+                    (len(ret["com_nodes"]), ret["com_nodes"],))
+
+        ret["sdn_slivers"] = manifest.sdn_slivers()
+        logger.info("SDNSlivers(%d)=%s" %
+                    (len(ret["sdn_slivers"]), ret["sdn_slivers"],))
+
+        ret["tn_nodes"] = manifest.tn_nodes()
+        logger.info("TNNodes(%d)=%s" %
+                    (len(ret["tn_nodes"]), ret["tn_nodes"],))
+
+        ret["tn_links"] = manifest.tn_links()
+        logger.info("TNLinks(%d)=%s" %
+                    (len(ret["tn_links"]), ret["tn_links"],))
+
+        ret["se_nodes"] = manifest.se_nodes()
+        logger.info("SENodes(%d)=%s" %
+                    (len(ret["se_nodes"]), ret["se_nodes"],))
+
+        ret["se_links"] = manifest.se_links()
+        logger.info("SELinks(%d)=%s" %
+                    (len(ret["se_links"]), ret["se_links"],))
+
+        return (ret, urn, ss)
 
     def __manage_status(self, peer, urns, creds):
         adaptor, uri = AdaptorFactory.create_from_db(peer)

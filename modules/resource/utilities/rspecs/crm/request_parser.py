@@ -12,7 +12,7 @@ class CRMv3RequestParser(ParserBase):
         self.xmlns = DEFAULT_XMLNS
         self.__com = EMULAB_XMLNS
 
-    def __check_c_resource(self, node):
+    def check_c_resource(self, node):
         # according to the proposed URNs structure, a C-node MUST have
         # "vtam" as resource-name (component_id) and authority
         # (component_manager_id) fields
@@ -31,7 +31,7 @@ class CRMv3RequestParser(ParserBase):
         nodes = self.__find_nodes()
         sliver_list = []
         for node in nodes:
-            if not self.__check_c_resource(node):
+            if not self.check_c_resource(node):
                 logger.info("Skipping this node, not a C-res: %s", (node,))
                 continue
 

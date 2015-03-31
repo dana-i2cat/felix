@@ -4,6 +4,9 @@ from rspecs.openflow.manifest_parser import OFv3ManifestParser
 from rspecs.serm.manifest_parser import SERMv3ManifestParser
 from rspecs.tnrm.manifest_parser import TNRMv3ManifestParser
 
+import core
+logger = core.log.getLogger("utility-rspec")
+
 
 class ROManifestParser(ParserBase):
     def __init__(self, from_file=None, from_string=None):
@@ -19,14 +22,16 @@ class ROManifestParser(ParserBase):
             nodes = self.__com_parser.nodes()
             return [n for n in nodes
                     if n.get('component_manager_uuid') == "felix:CRM"]
-        except:
+        except Exception as e:
+            logger.warning("com_nodes exception: %s", e)
             return []
 
     # SDN resources (slivers)
     def sdn_slivers(self):
         try:
             return self.__of_parser.slivers()
-        except:
+        except Exception as e:
+            logger.warning("sdn_slivers exception: %s", e)
             return []
 
     # SE resources (nodes & links)
@@ -35,7 +40,8 @@ class ROManifestParser(ParserBase):
             nodes = self.__se_parser.nodes()
             return [n for n in nodes
                     if n.get('component_manager_uuid') == "felix:SERM"]
-        except:
+        except Exception as e:
+            logger.warning("se_nodes exception: %s", e)
             return []
 
     def se_links(self):
@@ -43,7 +49,8 @@ class ROManifestParser(ParserBase):
             links = self.__se_parser.links()
             return [l for l in links
                     if l.get('component_manager_uuid') == "felix:SERM"]
-        except:
+        except Exception as e:
+            logger.warning("se_links exception: %s", e)
             return []
 
     # TN resources (nodes & links)
@@ -52,7 +59,8 @@ class ROManifestParser(ParserBase):
             nodes = self.__tn_parser.nodes()
             return [n for n in nodes
                     if n.get('component_manager_uuid') == "felix:TNRM"]
-        except:
+        except Exception as e:
+            logger.warning("tn_nodes exception: %s", e)
             return []
 
     def tn_links(self):
@@ -60,5 +68,6 @@ class ROManifestParser(ParserBase):
             links = self.__tn_parser.links()
             return [l for l in links
                     if l.get('component_manager_uuid') == "felix:TNRM"]
-        except:
+        except Exception as e:
+            logger.warning("tn_links exception: %s", e)
             return []
