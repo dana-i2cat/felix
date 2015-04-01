@@ -59,7 +59,7 @@ class PrefixAdapter(logging.LoggerAdapter):
 # Initialization
 lhandle = logging.handlers.RotatingFileHandler(log_file, maxBytes=1000000)
 lhandle.setLevel(log_level)
-colormap = {'DEBUG': 'green', 'INFO': 'yellow', 'WARNING': 'blue',
+colormap = {'DEBUG': 'green', 'INFO': 'blue', 'WARNING': 'yellow',
             'ERROR': 'red', 'CRITICAL': 'purple'}
 formatter = ColoredFormatter(
     "%(log_color)s%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)s] - %(message)s",
