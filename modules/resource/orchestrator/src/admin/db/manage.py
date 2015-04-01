@@ -1,13 +1,17 @@
 #!/usr/bin/env python
 
-from core.config import ConfParser
-
 import argparse
 import ast
 import os
 import pymongo
 import sys
 
+path = os.path.abspath(__file__)
+path = path.split("/")
+path = "/".join(path[:-3])
+sys.path.append(path)
+
+from core.config import ConfParser
 
 class GenericCommand:
     def __init__(self):
@@ -44,7 +48,7 @@ class RoutingTableCommand(GenericCommand):
         self.am_version_ = None
         self.config = ConfParser("ro.conf")
         self.master_ro = self.config.get("master_ro")
-        self.mro_enabled = ast.literal_eval(master_ro.get("mro_enabled"))
+        self.mro_enabled = ast.literal_eval(self.master_ro.get("mro_enabled"))
 
     def __get_table(self, table_name):
         db_name = "felix_ro"
