@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 
-import sys
-import os
+from core.config import ConfParser
+
 import argparse
+import ast
+import os
 import pymongo
+import sys
 
 
 class GenericCommand:
@@ -27,6 +30,7 @@ class GenericCommand:
 
 
 class RoutingTableCommand(GenericCommand):
+
     def __init__(self):
         GenericCommand.__init__(self)
         self.type_ = None
@@ -38,6 +42,15 @@ class RoutingTableCommand(GenericCommand):
         self.password_ = None
         self.am_type_ = None
         self.am_version_ = None
+        self.config = ConfParser("ro.conf")
+        self.master_ro = self.config.get("master_ro")
+        self.mro_enabled = ast.literal_eval(master_ro.get("mro_enabled"))
+
+    def __get_table(self, table_name):
+        db_name = "felix_ro"
+        if self.mro_enabled:
+            db_name = "felix_mro"
+        return getattr(getattr(pymongo.MongoClient(), db_name), table_name)
 
     def updateType(self, type_):
         self.type_ = type_
@@ -77,9 +90,10 @@ class RoutingTableCommand(GenericCommand):
             raise AttributeError("Port argument is NOT allowed!")
 
     def getTable(self):
-        client_ = pymongo.MongoClient()
-        felix_ro_ = client_.felix_ro
-        return felix_ro_.domain.routing
+        db_name = "felix_ro"
+        if self.mro_enabled:
+            db_name = "felix_mro"
+        return getattr(getattr(pymongo.MongoClient(), db_name), "domain.routing")
 
 
 class Dump(RoutingTableCommand):
@@ -94,7 +108,7 @@ class Dump(RoutingTableCommand):
 
     def execute(self):
         self.__dump_table(self.getTable(), "domain.routing")
-#        self.__dump_table(pymongo.MongoClient().felix_ro.GeneralInfoTable,
+#        self.__dump_table(pymongo.MongoClient().felix_mro.GeneralInfoTable,
 #                          "GeneralInfoTable")
 
     def helpMessage(self):
@@ -192,7 +206,7 @@ class DelRouteEntry(RoutingTableCommand):
 #            raise AttributeError("Domain argument is NOT specified!")
 #
 #    def execute(self):
-#        table_ = pymongo.MongoClient().felix_ro.GeneralInfoTable
+#        table_ = pymongo.MongoClient().felix_mro.GeneralInfoTable
 #
 #        row_ = {"domain": self.domain_}
 #

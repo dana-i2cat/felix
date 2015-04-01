@@ -1,37 +1,56 @@
 #!/usr/bin/env python
-import sys
-import os
+
+from core.config import ConfParser
+
 import argparse
+import ast
+import os
 import pymongo
+import sys
 
 
 class CommandMgr(object):
-    TABLES = {
-        "domain.routing":
-            pymongo.MongoClient().felix_ro.domain.routing,
-        "resource.com.node":
-            pymongo.MongoClient().felix_ro.resource.com.node,
-        "resource.com.link":
-            pymongo.MongoClient().felix_ro.resource.com.link,
-        "resource.of.node":
-            pymongo.MongoClient().felix_ro.resource.of.node,
-        "resource.of.link":
-            pymongo.MongoClient().felix_ro.resource.of.link,
-        "resource.se.link":
-            pymongo.MongoClient().felix_ro.resource.se.link,
-        "resource.se.node":
-            pymongo.MongoClient().felix_ro.resource.se.node,
-        "resource.tn.link":
-            pymongo.MongoClient().felix_ro.resource.tn.link,
-        "resource.tn.node":
-            pymongo.MongoClient().felix_ro.resource.tn.node,
-        "topology.slice":
-            pymongo.MongoClient().felix_ro.topology.slice,
-        "topology.slice.sdn":
-            pymongo.MongoClient().felix_ro.topology.slice.sdn,
-        "scheduler.jobs":
-            pymongo.MongoClient().felix_ro.scheduler.jobs,
-    }
+
+    def __init__(self):
+        """
+        Constructor of the service.
+        """
+        self.config = ConfParser("ro.conf")
+        master_ro = self.config.get("master_ro")
+        mro_enabled = ast.literal_eval("mro_enabled")
+
+        self.TABLES = {
+            "domain.routing":
+                self.__get_table("domain.routing"),
+            "resource.com.node":
+                self.__get_table("resource.com.node"),
+            "resource.com.link":
+                self.__get_table("resource.com.link"),
+            "resource.of.node":
+                self.__get_table("resource.of.node"),
+            "resource.of.link":
+                self.__get_table("resource.of.link"),
+            "resource.se.link":
+                self.__get_table("resource.se.link"),
+            "resource.se.node":
+                self.__get_table("resource.se.node"),
+            "resource.tn.link":
+                self.__get_table("resource.tn.link"),
+            "resource.tn.node":
+                self.__get_table("resource.tn.node"),
+            "topology.slice":
+                self.__get_table("topology.slice"),
+            "topology.slice.sdn":
+                self.__get_table("topology.slice.sdn"),
+            "scheduler.jobs":
+                self.__get_table("scheduler.jobs"),
+        }
+
+    def __get_table(self, table_name):
+        db_name = "felix_ro"
+        if mro_enabled:
+            db_name = "felix_mro"
+        return getattr(getattr(pymongo.MongoClient(), db_name), table_name)
 
     def __select(self, table, name):
         print "\n\n" + "(RO) %s has %d rows\n" % (name, table.count())
@@ -43,34 +62,34 @@ class CommandMgr(object):
         print "\n\n" + "Deleted all rows of (RO) %s" % (name)
 
     def list_tables(self):
-        print "\n\nManaged Tables: %s\n\n" % CommandMgr.TABLES.keys()
+        print "\n\nManaged Tables: %s\n\n" % self.TABLES.keys()
 
     def select_routing_table(self):
-        self.__select(CommandMgr.TABLES["domain.routing"],
+        self.__select(self.TABLES["domain.routing"],
                       "domain.routing")
 
     def select_ofdatapath_table(self):
-        self.__select(CommandMgr.TABLES["resource.of.node"],
+        self.__select(self.TABLES["resource.of.node"],
                       "resource.of.node")
 
     def select_oflink_table(self):
-        self.__select(CommandMgr.TABLES["resource.of.link"],
+        self.__select(self.TABLES["resource.of.link"],
                       "resource.of.link")
 
     def delete_routing_table(self):
-        self.__delete(CommandMgr.TABLES["domain.routing"],
+        self.__delete(self.TABLES["domain.routing"],
                       "domain.routing")
 
     def delete_ofdatapath_table(self):
-        self.__delete(CommandMgr.TABLES["resource.of.node"],
+        self.__delete(self.TABLES["resource.of.node"],
                       "resource.of.node")
 
     def delete_oflink_table(self):
-        self.__delete(CommandMgr.TABLES["resource.of.link"],
+        self.__delete(self.TABLES["resource.of.link"],
                       "resource.of.link")
 
     def delete_all_tables(self):
-        for table, mongo_table in CommandMgr.TABLES.items():
+        for table, mongo_table in self.TABLES.items():
             self.__delete(mongo_table, table)
 
 

@@ -9,6 +9,7 @@ from jobs import com_resource_detector, sdn_resource_detector,\
     se_resource_detector, tn_resource_detector, physical_monitoring,\
     slice_monitoring, ro_resource_detector
 
+import ast
 import core
 logger = core.log.getLogger("ro-scheduler")
 
@@ -21,13 +22,18 @@ class ROSchedulerService(Service):
         """
         Constructor of the service.
         """
-        self.config = ConfParser("ro.conf").get("scheduler")
-        interval = int(self.config.get("frequency"))
-
+        self.config = ConfParser("ro.conf")
+        self.scheduler = self.config.get("scheduler")
+        interval = int(self.scheduler.get("frequency"))
+        master_ro = self.config.get("master_ro")
+        mro_enabled = ast.literal_eval(master_ro.get("mro_enabled"))
+        db_name = "felix_ro"
+        if mro_enabled:
+            db_name = "felix_mro"
         global ro_scheduler
         ro_scheduler = BackgroundScheduler()
         ro_scheduler.add_jobstore(
-            MongoDBJobStore(database="felix_ro", collection="scheduler.jobs"))
+            MongoDBJobStore(database=db_name, collection="scheduler.jobs"))
         ro_scheduler.start()
 
         super(ROSchedulerService, self).__init__(
@@ -62,19 +68,19 @@ class ROSchedulerService(Service):
             logger.warning("oneshot_jobs failure: %s" % (e,))
 
     def __oneshot_jobs(self):
-        self.__add_oneshot(int(self.config.get("oneshot_ro")),
+        self.__add_oneshot(int(self.scheduler.get("oneshot_ro")),
                            ro_resource_detector, "oneshot_ro_rd")
-        self.__add_oneshot(int(self.config.get("oneshot_com")),
+        self.__add_oneshot(int(self.scheduler.get("oneshot_com")),
                            com_resource_detector, "oneshot_com_rd")
-        self.__add_oneshot(int(self.config.get("oneshot_sdn")),
+        self.__add_oneshot(int(self.scheduler.get("oneshot_sdn")),
                            sdn_resource_detector, "oneshot_sdn_rd")
-        self.__add_oneshot(int(self.config.get("oneshot_se")),
+        self.__add_oneshot(int(self.scheduler.get("oneshot_se")),
                            se_resource_detector, "oneshot_se_rd")
-        self.__add_oneshot(int(self.config.get("oneshot_tn")),
+        self.__add_oneshot(int(self.scheduler.get("oneshot_tn")),
                            tn_resource_detector, "oneshot_tn_rd")
-        self.__add_oneshot(int(self.config.get("oneshot_phy-monit")),
+        self.__add_oneshot(int(self.scheduler.get("oneshot_phy-monit")),
                            physical_monitoring, "oneshot_physical_monitoring")
-        self.__add_oneshot(int(self.config.get("oneshot_slice-monit")),
+        self.__add_oneshot(int(self.scheduler.get("oneshot_slice-monit")),
                            slice_monitoring, "oneshot_slice_monitoring")
 
     def __add_cron(self, func_, id_, hour_, min_, sec_):
