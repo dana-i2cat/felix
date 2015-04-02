@@ -13,6 +13,7 @@ sys.path.append(path)
 
 from core.config import ConfParser
 
+
 class GenericCommand:
     def __init__(self):
         self.__active = False

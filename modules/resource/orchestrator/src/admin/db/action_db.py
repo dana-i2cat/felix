@@ -1,12 +1,17 @@
 #!/usr/bin/env python
 
-from core.config import ConfParser
-
 import argparse
 import ast
 import os
 import pymongo
 import sys
+
+path = os.path.abspath(__file__)
+path = path.split("/")
+path = "/".join(path[:-3])
+sys.path.append(path)
+
+from core.config import ConfParser
 
 
 class CommandMgr(object):
@@ -48,7 +53,7 @@ class CommandMgr(object):
 
     def __get_table(self, table_name):
         db_name = "felix_ro"
-        if mro_enabled:
+        if self.mro_enabled:
             db_name = "felix_mro"
         return getattr(getattr(pymongo.MongoClient(), db_name), table_name)
 
