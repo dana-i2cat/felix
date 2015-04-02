@@ -76,7 +76,10 @@ class ResourceDetector(object):
             # later on
             # The second is retrieved by examinining its resources (valid for RM only)
             try:
-                self.__set_domain_component_id(nodes[0].get("component_id"))
+                try:
+                    self.__set_domain_component_id(nodes[0].get("component_manager_id"))
+                except:
+                    self.__set_domain_component_id(nodes[0].get("component_id"))
                 db_sync_manager.store_domain_info(self.adaptor_uri,
                                                   self.domain_urn)
                 self.debug("Storing mapping <%s:%s> for domain info" %
