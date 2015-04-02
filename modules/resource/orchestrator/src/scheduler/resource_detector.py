@@ -121,6 +121,8 @@ class ResourceDetector(object):
         Retrieve domain URN from component ID.
         """
         try:
+            self.debug("Getting Domain info from resource-id: %s" %
+                       (resource_cid,))
             # First part of the tuple
             resource_hrn = xrn.urn_to_hrn(resource_cid)[0]
             # XXX Conversion from HRN to URN sometimes translates
@@ -128,10 +130,19 @@ class ResourceDetector(object):
             resource_hrn = resource_hrn.replace("\.", ".")
             resource_auth = xrn.get_authority(resource_hrn)
             resource_cid = xrn.hrn_to_urn(resource_auth, "authority")
+
+            self.domain_urn = resource_cid
+            self.info("The URN is well-formed, update domain-urn: %s" %
+                      (self.domain_urn,))
+
         except Exception as e:
             self.error("Malformed URN on resource_detector. Exception: %s" %
                        str(e))
-        self.domain_urn = resource_cid or self.domain_urn
+            # XXX_FIXME_XXX: this is just a workaround.
+            # We reuse the component-id as prefix of the "autority" string.
+            # We also introduce "malformed" just to point out this case!
+            self.domain_urn = resource_cid + "+malformed+" + "authority+sa"
+            self.warning("Malformed Domain URN: %s" % (self.domain_urn,))
 
     def __get_timestamp(self):
         # Return integer part as a string

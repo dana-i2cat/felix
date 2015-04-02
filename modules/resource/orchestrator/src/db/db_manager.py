@@ -140,8 +140,6 @@ class DBManager(object):
                 entry = {"domain_urn": domain_urn,
                          "_ref_peer": peer.get("_id")}
                 return table.insert(entry)
-        except:
-            pass
         finally:
             self.__mutex.release()
 
