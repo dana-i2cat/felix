@@ -22,7 +22,7 @@ class CommandMgr(object):
         """
         self.config = ConfParser("ro.conf")
         master_ro = self.config.get("master_ro")
-        mro_enabled = ast.literal_eval("mro_enabled")
+        self.mro_enabled = ast.literal_eval(master_ro.get("mro_enabled"))
 
         self.TABLES = {
             "domain.routing":
