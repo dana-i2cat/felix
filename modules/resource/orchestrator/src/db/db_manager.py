@@ -98,16 +98,17 @@ class DBManager(object):
         # Parse URL in order to filtering entry in domain.routing collection
         rm_url = urlparse.urlparse(rm_url)
         rm_endpoint = rm_url.path
-        # Remove internal slashes
-        if rm_endpoint[0] == "/":
-            rm_endpoint = rm_endpoint[1:]
-        if rm_endpoint[-1] == "/":
-            rm_endpoint = rm_endpoint[:-1]
-        rm_address, rm_port = rm_url.netloc.split(":")
-        rm_protocol = rm_url.scheme
-        rm_endpoint_re = self.__get_regexp_for_query(rm_endpoint)
+        if rm_endpoint and len(rm_endpoint):
+            # Remove internal slashes
+            if rm_endpoint[0] == "/":
+                rm_endpoint = rm_endpoint[1:]
+            if rm_endpoint[-1] == "/":
+                rm_endpoint = rm_endpoint[:-1]
         # Prepare "rm_endpoint" for "like" query (as regexp)
         # rm_endpoint = rm_endpoint.replace("/","\/")
+        rm_endpoint_re = self.__get_regexp_for_query(rm_endpoint)
+        rm_address, rm_port = rm_url.netloc.split(":")
+        rm_protocol = rm_url.scheme
         filter_params = {"protocol": rm_protocol, "address": rm_address,
                          "port": rm_port, "endpoint": rm_endpoint_re, }
         peer = self.get_configured_peer(filter_params)

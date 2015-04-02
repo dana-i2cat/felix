@@ -15,7 +15,7 @@ def format_uri(protocol, user, password, address, port, endpoint):
         uri += "%s:%s@" % (str(user), str(password),)
 
     uri += "%s:%s" % (str(address), str(port))
-    if endpoint:
+    if endpoint and len(endpoint):
         if endpoint[0] == "/":
             endpoint = endpoint[1:]
         uri += "/%s" % str(endpoint)
@@ -77,7 +77,7 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
         @return adaptor_url (useful for domain identification)
         """
         adaptor_endpoint = peer_db.get("endpoint", "")
-        if adaptor_endpoint:
+        if adaptor_endpoint and len(adaptor_endpoint):
             if adaptor_endpoint[0] == "/":
                 adaptor_endpoint = adaptor_endpoint[1:]
 
