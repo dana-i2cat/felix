@@ -5,7 +5,7 @@
 '''
 
 #Import static settings
-from settings.staticSettings import *
+from staticSettings import *
 
 #Import Spirent template VM settings
 from spirentSettings import *

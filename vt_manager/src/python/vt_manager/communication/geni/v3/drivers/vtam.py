@@ -1,4 +1,4 @@
-from am.geniutils.src.xrn.xrn import hrn_to_urn
+from am.geniutils.src.xrn.xrn import hrn_to_urn, urn_to_hrn
 from am.rspecs.src.geni.v3.container.resource import Resource
 from am.rspecs.src.geni.v3.container.sliver import Sliver
 from am.rspecs.src.geni.v3.container.link import Link
@@ -11,7 +11,7 @@ from vt_manager.utils.UrlUtils import UrlUtils
 from vt_manager.models.VirtualMachine import VirtualMachine
 from vt_manager.models.VTServer import VTServer
 from vt_manager.models.Action import Action
-from vt_manager.models.reservation import Reservation
+from vt_manager.models.Reservation import Reservation
 from vt_manager.models.expiring_components import ExpiringComponents
 
 from vt_manager.utils.SyncThread import SyncThread
@@ -21,8 +21,8 @@ from vt_manager.communication.utils.XmlHelper import XmlHelper
 from vt_manager.communication.utils.XmlHelper import XmlCrafter
 from vt_manager.models.VirtualMachineKeys import VirtualMachineKeys
 
-from geniutils.src.xrn.xrn import hrn_to_urn
-from geniutils.src.xrn.xrn import urn_to_hrn
+#from geniutils.src.xrn.xrn import hrn_to_urn
+#from geniutils.src.xrn.xrn import urn_to_hrn
 
 import multiprocessing
 import threading
@@ -35,6 +35,7 @@ from datetime import timedelta
 import dateutil.parser
 
 class VTAMDriver:
+    logger = logging.getLogger("vtam")
 
     def __init__(self):
         self.__geni_best_effort_mode = True
@@ -67,8 +68,14 @@ class VTAMDriver:
             vms = list()
             if not server.available and geni_available:
                 continue
+            VTAMDriver.logger.debug("virttech = " + server.getVirtTech())
             # Look for provisioned VMs
-            vms_provisioned = server.getChildObject().getVMs(**params)
+            vms_provisioned = list()
+            child = server.getChildObject()
+            if child:
+                VTAMDriver.logger.debug("child = " + child.__class__.__name__)
+                vms_provisioned.extend(child.getVMs(**params))
+            # ... Also for reserved VMs
             vm_names = self.__return_vm_names(vms_provisioned)
             # NOTE: if there are VMs provisioned, these are the ones to be returned
             # Explanation: when a VM is provisioned, the reservation for the
@@ -211,8 +218,8 @@ class VTAMDriver:
         try:
             provisioned_vms = VirtualMachine.objects.filter(**vm_params)
             if provisioned_vms:
-               for provisioned_vm in provisioned_vms:
-                   self.__add_expiration(expiration, provisioned_vm.projectName, provisioned_vm.sliceName)
+                for provisioned_vm in provisioned_vms:
+                    self.__add_expiration(expiration, provisioned_vm.projectName, provisioned_vm.sliceName)
         except Exception as e:
             if self.__geni_best_effort:
                 resources.extend(self.get_specific_server_and_vms(urn))
@@ -231,9 +238,9 @@ class VTAMDriver:
                 resources.extend(self.__convert_to_resources_with_slivers(reserved_vm.server, [reserved_vm], expiration))
         except Exception as e:
             if reserved_vms:
-               for reserved_vm in reserved_vms:
-                   self.__add_expiration(expiration, reserved_vm.projectName, reserved_vm.sliceName)
-                   resources.extend(self.__convert_to_resources_with_slivers(reserved_vm.server, [reserved_vm], expiration))
+                for reserved_vm in reserved_vms:
+                    self.__add_expiration(expiration, reserved_vm.projectName, reserved_vm.sliceName)
+                    resources.extend(self.__convert_to_resources_with_slivers(reserved_vm.server, [reserved_vm], expiration))
             raise e 
         return self.get_specific_server_and_vms(urn)
 
@@ -295,6 +302,7 @@ class VTAMDriver:
         resources = list()
         for server in servers:
             vms = list()
+            VTAMDriver.logger.debug("XXX server = " + str(server.__class__))
             # Look for provisioned VMs
             vms_provisioned = server.getChildObject().getVMs(**params)
             # ... Also for reserved VMs
@@ -302,6 +310,7 @@ class VTAMDriver:
             vms.extend(vms_provisioned)
             vms.extend(vms_allocated)
             for vm in vms:
+                VTAMDriver.logger.debug("XXX vm = " + str(vm.__class__))
                 # The following is to be executed only for provisioned VMs
                 if isinstance(vm, VirtualMachine):
                     # Return "REFUSED" exception if sliver is in a transient state
@@ -315,6 +324,7 @@ class VTAMDriver:
                     try:
                         with self.__mutex_thread:
                             VTDriver.PropagateActionToProvisioningDispatcher(vm.id, server.uuid, action)
+                            
                     except Exception as e:
                         try:
                             if self.get_geni_best_effort_mode():
@@ -326,6 +336,7 @@ class VTAMDriver:
                             else:
                                 raise e
                         except Exception as e:
+                            VTAMDriver.logger.exception("")
                             raise e
                 # The resources are fetched for any (allocated/provisioned) VM
                 resource = self.__convert_to_resources_with_slivers(server, [vm])
@@ -378,7 +389,9 @@ class VTAMDriver:
     def __convert_to_links(self, server):
         links = list()
         network_ifaces = server.networkInterfaces.all()
+        VTAMDriver.logger.debug("XXX len = " + str(len(network_ifaces)))
         for network_interface in network_ifaces:
+            VTAMDriver.logger.debug("XXX name = " + network_interface.name)
             link = Link()
             if not network_interface.switchID:
                 continue
@@ -401,7 +414,7 @@ class VTAMDriver:
     def __correct_iface_name(self, iface_name):
         # Returns correct eth name from server
         if "." not in iface_name:
-    	    return iface_name.replace(iface_name[-1], str(int(iface_name[-1])-1))
+            return iface_name.replace(iface_name[-1], str(int(iface_name[-1])-1))
         else:
             return self.__correct_iface_name(iface_name.split(".")[0])
 
@@ -427,6 +440,7 @@ class VTAMDriver:
                     print e
             new_resource = copy.deepcopy(resource)
             new_resource.set_id(vm.name)
+            VTAMDriver.logger.debug("vm.name = " + new_resource.get_id())
             sliver = Sliver()
             sliver.set_type("VM")
             sliver.set_expiration(expiration)
@@ -500,31 +514,32 @@ class VTAMDriver:
         return "None"
  
     def get_action_instance(self, reservation):
- 	rspec = XmlHelper.getSimpleActionQuery()
- 	actionClass = copy.deepcopy(rspec.query.provisioning.action[0])
+        rspec = XmlHelper.getSimpleActionQuery()
+        actionClass = copy.deepcopy(rspec.query.provisioning.action[0])
         actionClass.type_ = "create"
         rspec.query.provisioning.action.pop()
         #server = reservation.server()
         server = reservation.server
- 	vm = self.get_default_vm_parameters(reservation)
+        vm = self.get_default_vm_parameters(reservation)
         actionClass.id = uuid.uuid4()
         self.vm_dict_to_class(vm, actionClass.server.virtual_machines[0])
- 	self.vm_dict_ifaces_to_class(vm["interfaces"],actionClass.server.virtual_machines[0].xen_configuration.interfaces)
+        self.vm_dict_ifaces_to_class(vm["interfaces"],actionClass.server.virtual_machines[0].xen_configuration.interfaces)
         actionClass.server.uuid = server.uuid
         actionClass.server.virtualization_type = server.getVirtTech()
         rspec.query.provisioning.action.append(actionClass)
         return rspec.query.provisioning
    
     def get_default_vm_parameters(self, reservation):
+        VTAMDriver.logger.debug("get_default_vm_parameters() called")
         vm = dict()
-        ### TODO: Consider used the same name as id for porject and slices
+        ### TODO: Consider used the same name as id for project and slices
         vm["project-id"] = str(uuid.uuid4())
         vm["slice-id"] = str(uuid.uuid4())	
- 	vm["project-name"] = reservation.get_project_name()
- 	vm["slice-name"]= reservation.get_slice_name()
- 	vm["uuid"] = reservation.uuid
+        vm["project-name"] = reservation.get_project_name()
+        vm["slice-name"]= reservation.get_slice_name()
+        vm["uuid"] = reservation.uuid
         vm["virtualization-type"] = reservation.server.getVirtTech()
- 	vm["server-id"] = reservation.server.getUUID()
+        vm["server-id"] = reservation.server.getUUID()
         vm["name"] = reservation.get_name()
         vm["state"] = "on queue"
         vm["aggregate-id"] = "aggregate-id"

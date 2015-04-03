@@ -6,6 +6,7 @@
 
 from communications.XmlRpcClient import XmlRpcClient
 from utils.Logger import Logger
+import traceback
 
 class MonitoringDispatcher: 
 	
@@ -16,9 +17,12 @@ class MonitoringDispatcher:
 
 		#Import of Dispatchers must go here to avoid import circular dependecy 		
 		from xen.monitoring.XenMonitoringDispatcher import XenMonitoringDispatcher
+		from kvm.monitoring.KVMMonitoringDispatcher import KVMMonitoringDispatcher
 
 		if vtype == "xen": 
 			return XenMonitoringDispatcher 
+		elif vtype == "kvm": 
+			return KVMMonitoringDispatcher 
 		else:
 			raise Exception("Virtualization type not supported by the agent")	
 	
@@ -40,7 +44,7 @@ class MonitoringDispatcher:
 				dispatcher = MonitoringDispatcher.__getMonitoringDispatcher(server.virtualization_type)	
 			except Exception as e:
 				XmlRpcClient.sendAsyncMonitoringActionStatus(action.id,"FAILED",str(e))
-				MonitoringDispatcher.logger.error(str(e))	
+				MonitoringDispatcher.logger.error(traceback.format_exc())	
 				return
 
 			try:
@@ -49,7 +53,7 @@ class MonitoringDispatcher:
 				MonitoringDispatcher.logger.debug("After sending ongoing")	
 				MonitoringDispatcher.__dispatchAction(dispatcher,action,server)	
 			except Exception as e:
-				MonitoringDispatcher.logger.error(str(e))	
+				MonitoringDispatcher.logger.error(traceback.format_exc())	
 				try:
 					if "No route to host" in str(e):
 						from settings.settingsLoader import VTAM_IP, VTAM_PORT, XMLRPC_USER, XMLRPC_PASS

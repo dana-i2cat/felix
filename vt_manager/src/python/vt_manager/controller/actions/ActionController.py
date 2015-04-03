@@ -48,7 +48,9 @@ class ActionController():
     @staticmethod
     def PopulateNewActionWithVM(action, vm):
 		action.id = uuid.uuid4()
+		action.server.virtualization_type = vm.virttech
 		virtual_machine = action.server.virtual_machines[0]
+		virtual_machine.virtualization_type = vm.virttech
 		virtual_machine.name = vm.getName()
 		virtual_machine.uuid = vm.getUUID()
 		virtual_machine.project_id = vm.getProjectId()

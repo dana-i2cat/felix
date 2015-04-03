@@ -166,7 +166,7 @@ class virEventLoopPure:
     def run_once(self):
         sleep = -1
         next = self.next_timeout()
-        logger.debug("Next timeout due at %d" % next)
+        #logger.debug("Next timeout due at %d" % next)
         if next > 0:
             now = int(time.time() * 1000)
             if now >= next:
@@ -174,7 +174,7 @@ class virEventLoopPure:
             else:
                 sleep = (next - now) / 1000.0
 
-        logger.debug("Poll with a sleep of %d" % sleep)
+        #logger.debug("Poll with a sleep of %d" % sleep)
         events = self.poll.poll(sleep)
 
         # Dispatch any file handle events that occurred
@@ -188,7 +188,7 @@ class virEventLoopPure:
 
             h = self.get_handle_by_fd(fd)
             if h:
-                logger.debug("Dispatch fd %d handle %d events %d" % (fd, h.get_id(), revents))
+                #logger.debug("Dispatch fd %d handle %d events %d" % (fd, h.get_id(), revents))
                 h.dispatch(self.events_from_poll(revents))
 
         now = int(time.time() * 1000)
@@ -201,7 +201,7 @@ class virEventLoopPure:
             # Deduct 20ms, since schedular timeslice
             # means we could be ever so slightly early
             if now >= (want-20):
-                logger.debug("Dispatch timer %d now %s want %s" % (t.get_id(), str(now), str(want)))
+                #logger.debug("Dispatch timer %d now %s want %s" % (t.get_id(), str(now), str(want)))
                 t.set_last_fired(now)
                 t.dispatch()
 
@@ -260,7 +260,7 @@ class virEventLoopPure:
             self.poll.register(h.get_fd(), self.events_to_poll(events))
             self.interrupt()
 
-            logger.debug("Update handle %d fd %d events %d" % (handleID, h.get_fd(), events))
+            #logger.debug("Update handle %d fd %d events %d" % (handleID, h.get_fd(), events))
 
     # Change the periodic frequency of the timer
     def update_timer(self, timerID, interval):
@@ -269,7 +269,7 @@ class virEventLoopPure:
                 h.set_interval(interval);
                 self.interrupt()
 
-                logger.debug("Update timer %d interval %d"  % (timerID, interval))
+                #logger.debug("Update timer %d interval %d"  % (timerID, interval))
                 break
 
     # Stop monitoring for events on the file handle
@@ -416,23 +416,29 @@ class LibvirtMonitor:
 # Everything that now follows is a simple demo of domain lifecycle events
 ##########################################################################
 def eventToString(event):
+    logger.debug("event = " + str(event))
     eventStrings = ( "Defined",
                      "Undefined",
                      "Started",
                      "Suspended",
                      "Resumed",
                      "Stopped" );
+    if event < 0 or event >= len(eventStrings):
+        return "UNKNOWN"
     return eventStrings[event];
 
 def detailToString(event, detail):
+    logger.debug("event = " + str(event) + ", detail = " + str(detail))
     eventStrings = (
         ( "Added", "Updated" ),
-        ( "Removed" ),
+        ( "Removed", ),
         ( "Booted", "Migrated", "Restored", "Snapshot" ),
         ( "Paused", "Migrated", "IOError", "Watchdog" ),
         ( "Unpaused", "Migrated"),
         ( "Shutdown", "Destroyed", "Crashed", "Migrated", "Saved", "Failed", "Snapshot")
         )
+    if event < 0 or event >= len(eventStrings):
+        return "UNKNOWN"
     return eventStrings[event][detail]
 
 

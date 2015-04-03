@@ -20,7 +20,7 @@ import unittest
 from vt_manager.communication.geni.v3.drivers.vtam import VTAMDriver
 from vt_manager.communication.geni.v3.tests.mockers.resource import ResourceMocker
 from am.rspecs.src.geni.v3.container.resource import Resource
-from vt_manager.models.reservation import Reservation
+from vt_manager.models.Reservation import Reservation
 from datetime import datetime
 from datetime import timedelta
 

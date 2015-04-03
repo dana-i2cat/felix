@@ -6,7 +6,7 @@ import re
 import inspect 
 from vt_manager.models.VirtualMachine import VirtualMachine
 from vt_manager.utils.MutexStore import MutexStore
-
+from vt_manager.models.utils.Choices import VirtTechClass
 
 ''' Choices  and constants '''
 #HD setup type
@@ -57,7 +57,7 @@ class XenVM(VirtualMachine):
 	hdSetupType = models.CharField(max_length = 1024, default="",validators=[validateHdSetupWrapper])
 	hdOriginPath = models.CharField(max_length = 1024, default="")
 	virtualizationSetupType = models.CharField(max_length = 1024, default="",validators=[validateVirtualizationSetupType])
-
+	virttech = VirtTechClass.VIRT_TECH_TYPE_XEN
 
 	@staticmethod	
 	def constructor(name,uuid,projectId,projectName,sliceId,sliceName,osType,osVersion,osDist,memory,discSpaceGB,numberOfCPUs,callBackUrl,interfaces,hdSetupType,hdOriginPath,virtSetupType,save=True):
@@ -110,10 +110,11 @@ class XenVM(VirtualMachine):
 		return 	self.hdSetupType
 	@staticmethod
 	def validateHdSetupType(hdType):
-		if value not in HD_SETUP_TYPE_CHOICES:
-			raise Exception("Invalid HD Setup type")	
+		if hdType not in HD_SETUP_TYPE_CHOICES:
+			raise Exception("Invalid HD Setup type")
+			
 	def setHdSetupType(self,hdType):
-		validateHdSetupType(hdType)
+		XenVM.validateHdSetupType(hdType)
 		self.hdSetupType
 		self.autoSave()
 
@@ -126,7 +127,7 @@ class XenVM(VirtualMachine):
 		return 	self.virtualizationSetupType
 	@staticmethod
 	def validateVirtualizationSetupType(self,vType):
-		if value not in VIRTUALIZATION_SETUP_TYPE_CHOICES:
+		if vType not in VIRTUALIZATION_SETUP_TYPE:
 			raise Exception("Invalid Virtualization Setup type")	
 	def setVirtualizationSetupType(self,vType):
 		self.validateVirtualizationSetupType(vType)

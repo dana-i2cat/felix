@@ -37,6 +37,7 @@ class AgentMonitoringThread(Thread):
 				VMMonitor.sendUpdateVMs(server)
 			
 				if server.available == False:
+					print " set %s as available" % server.name
 					server.setAvailable(True)
 					server.save()
 		except Exception as e:

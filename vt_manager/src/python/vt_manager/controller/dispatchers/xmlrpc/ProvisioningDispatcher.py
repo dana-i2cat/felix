@@ -11,15 +11,14 @@ from vt_manager.utils.UrlUtils import UrlUtils
 from vt_manager.controller.actions.ActionController import ActionController
 
 from vt_manager.controller.policies.RuleTableManager import RuleTableManager
-
 #from vt_manager.communication.sfa.vm_utils.SfaCommunicator import SfaCommunicator
 #from vt_manager.common.middleware.thread_local import thread_locals, pull
 
 class ProvisioningDispatcher():
-  
+	logger = logging.getLogger("ProvisioningDispatcher")
 
-    @staticmethod
-    def processProvisioning(provisioning):
+	@staticmethod
+	def processProvisioning(provisioning):
 		logging.debug("PROVISIONING STARTED...\n")
 		for action in provisioning.action:
 			actionModel = ActionController.ActionToModel(action,"provisioning")
@@ -31,9 +30,12 @@ class ProvisioningDispatcher():
 				XmlRpcClient.callRPCMethod(threading.currentThread().callBackURL,"sendAsync",XmlHelper.craftXmlClass(XmlHelper.getProcessingResponse(Action.FAILED_STATUS, action,str(e)[0:MAX_CHARS_ALLOWED-1])))
 				return None
 			try:
+				ProvisioningDispatcher.logger.debug("virtualization_type = " + action.server.virtualization_type)
 				controller = VTDriver.getDriver(action.server.virtualization_type)
+				
 				#XXX:Change this when xml schema is updated
 				server = VTDriver.getServerByUUID(action.server.uuid)
+				ProvisioningDispatcher.logger.debug("server.id = " + str(server.id))
 				#if actionModel.getType() == Action.PROVISIONING_VM_CREATE_TYPE:
 				#	server = VTDriver.getServerByUUID(action.virtual_machine.server_id)
 				#else:
@@ -68,26 +70,25 @@ class ProvisioningDispatcher():
 						print "Could not delete VM. Exception: %s" % str(e)
 				#XmlRpcClient.callRPCMethod(threading.currentThread().callBackURL,"sendAsync",XmlHelper.craftXmlClass(XmlHelper.getProcessingResponse(Action.FAILED_STATUS, action, str(e))))
 		logging.debug("PROVISIONING FINISHED...")
- 
 
-    @staticmethod
-    @transaction.commit_on_success
-    def __createVM(controller, actionModel, action):
-        try:
-            actionModel.checkActionIsPresentAndUnique()
-            Server, VMmodel = controller.getServerAndCreateVM(action)
-            ActionController.completeConfiguratorInActionRspec(action.server.virtual_machines[0].xen_configuration)
-            ActionController.PopulateNetworkingParams(action.server.virtual_machines[0].xen_configuration.interfaces.interface, VMmodel)
-	    #XXX:Change action Model
-            actionModel.objectUUID = VMmodel.getUUID()
-	    #actionModel.callBackUrl = threading.currentThread().callBackURL
-            actionModel.save()
-            return VMmodel
-        except:
-            raise
+	@staticmethod
+	@transaction.commit_on_success
+	def __createVM(controller, actionModel, action):
+		try:
+			actionModel.checkActionIsPresentAndUnique()
+			Server, VMmodel = controller.getServerAndCreateVM(action)
+			ActionController.completeConfiguratorInActionRspec(action.server.virtual_machines[0].xen_configuration)
+			ActionController.PopulateNetworkingParams(action.server.virtual_machines[0].xen_configuration.interfaces.interface, VMmodel)
+		#XXX:Change action Model
+			actionModel.objectUUID = VMmodel.getUUID()
+		#actionModel.callBackUrl = threading.currentThread().callBackURL
+			actionModel.save()
+			return VMmodel
+		except:
+			raise
 
-    @staticmethod
-    def __deleteStartStopRebootVM(controller, actionModel, action):
+	@staticmethod
+	def __deleteStartStopRebootVM(controller, actionModel, action):
 
 		try:
 			actionModel.checkActionIsPresentAndUnique()
@@ -101,4 +102,3 @@ class ProvisioningDispatcher():
 			actionModel.save()
 		except:
 			raise 
-

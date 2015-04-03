@@ -1,6 +1,8 @@
 #!/usr/bin/python
 import sys,os
 import pprint
+sys.dont_write_bytecode = True
+
 from provisioning.ProvisioningDispatcher import ProvisioningDispatcher 
 from monitoring.MonitoringDispatcher import MonitoringDispatcher
 from monitoring.LibvirtMonitoring import LibvirtMonitor 
@@ -16,7 +18,6 @@ from utils.Logger import Logger
 	OXA: Ofelia XEN Agent. 
 
 '''
-
 logger = Logger.getLogger()
 
 ''' Usage message '''

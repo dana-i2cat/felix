@@ -2,8 +2,10 @@
 class VirtTechClass: 
 	
 	VIRT_TECH_TYPE_XEN = "xen"
+	VIRT_TECH_TYPE_KVM = "kvm"
 	VIRT_TECH_CHOICES = (
 		(VIRT_TECH_TYPE_XEN, 'XEN'),
+		(VIRT_TECH_TYPE_KVM, 'kvm'),
 	)
 	
 	@staticmethod

@@ -1,7 +1,4 @@
 from django.db import models
-from django.contrib import auth
-from threading import Lock 
-import re
 import uuid
 import inspect 
 from django.core.exceptions import ValidationError
@@ -27,6 +24,7 @@ class VTServer(models.Model):
 
 	__childClasses = (
 		'XenServer',
+		'KVMServer',
 	  )
 
 
@@ -79,14 +77,14 @@ class VTServer(models.Model):
 
 	def getChildObject(self):
 		for childClass in self.__childClasses:
-	  		try:
+			try:
 				return self.__getattribute__(childClass.lower())
-	  		except Exception:
-	  		#except eval(childClass).DoesNotExist:
+			except Exception:
+				#except eval(childClass).DoesNotExist:
 				pass
 				#return self
 	
-	def __tupleContainsKey(tu,key):
+	def __tupleContainsKey(self, tu,key):
 		for val in tu:
 			if val[0] == key:
 				return True
@@ -99,7 +97,7 @@ class VTServer(models.Model):
 	def getLockIdentifier(self):
 		#Uniquely identifies object by a key
 		return inspect.currentframe().f_code.co_filename+str(self)+str(self.id)
- 
+
 	##Public methods
 
 	''' Getters and setters '''
@@ -186,7 +184,7 @@ class VTServer(models.Model):
 		self.autoSave()
 	def getAvailable(self):
 		return self.available
-   	def setEnabled(self,en):
+	def setEnabled(self,en):
 		self.enabled = en
 		self.autoSave()
 	def getEnabled(self):
@@ -269,7 +267,7 @@ class VTServer(models.Model):
 		for macRange in self.getSubscribedMacRanges():
 			try:
 				macObj = macRange.allocateMac() 
-			except Exception as e:
+			except Exception:
 				continue
 			break
 
@@ -285,7 +283,7 @@ class VTServer(models.Model):
 		for ipRange in self.getSubscribedIp4Ranges():
 			try:
 				ipObj = ipRange.allocateIp() 
-			except Exception as e:
+			except Exception:
 				continue
 			break
 		if ipObj == None:
@@ -380,4 +378,3 @@ class VTServer(models.Model):
 
 	def getNetworkInterfaces(self):
 		return self.networkInterfaces.all().order_by('-isMgmt','id')
-

@@ -16,12 +16,14 @@ from vt_manager.controller.actions.ActionController import ActionController
 from vt_manager.utils.ServiceThread import *
 from django.core.exceptions import ValidationError
 from vt_manager.utils.HttpUtils import HttpUtils
+import logging
 
 class VTDriver():
-
+	logger = logging.getLogger("VTDriver") 
 
 	CONTROLLER_TYPE_XEN = "xen"
-	__possibleVirtTechs = [CONTROLLER_TYPE_XEN]
+	CONTROLLER_TYPE_KVM = "kvm"
+	__possibleVirtTechs = [CONTROLLER_TYPE_XEN, CONTROLLER_TYPE_KVM]
 
 #	ServerClass = None
 #	VMclass = None
@@ -30,16 +32,20 @@ class VTDriver():
 	@staticmethod
 	def getDriver(virtType):
 		from vt_manager.controller.drivers.XenDriver import XenDriver
+		from vt_manager.controller.drivers.KVMDriver import KVMDriver
 		if virtType == VTDriver.CONTROLLER_TYPE_XEN:
 			return XenDriver.getInstance()
+		elif virtType == VTDriver.CONTROLLER_TYPE_KVM:
+			return KVMDriver.getInstance()
 
 	@staticmethod
 	def getAllDrivers():
 		from vt_manager.controller.drivers.XenDriver import XenDriver
+		from vt_manager.controller.drivers.KVMDriver import KVMDriver
 
 		drivers = []	
-		for vt in Driver.__possibleVirtTechs:
-			drivers.append(Driver.getDriver(vt))
+		for vt in VTDriver.__possibleVirtTechs:
+			drivers.append(VTDriver.getDriver(vt))
 		return drivers
 
 	@staticmethod
@@ -133,9 +139,11 @@ class VTDriver():
 		except:
 			raise
 
+	@staticmethod
 	def deleteVM():
 		raise Exception("Method not callable for Driver Class")
 
+	@staticmethod
 	def getServerAndCreateVM(): 
 		raise Exception("Method not callable for Driver Class")
 	

@@ -16,6 +16,7 @@ from OpenSSL import SSL
 from utils.Logger import Logger
 
 from settings.settingsLoader import XMLRPC_SERVER_LISTEN_HOST,XMLRPC_SERVER_LISTEN_PORT,XMLRPC_SERVER_KEYFILE,XMLRPC_SERVER_CERTFILE,XMLRPC_SERVER_PASSWORD
+from _socket import SHUT_RDWR
 
 
 class SecureXMLRPCServer(BaseHTTPServer.HTTPServer,SimpleXMLRPCServer.SimpleXMLRPCDispatcher):
@@ -31,12 +32,13 @@ class SecureXMLRPCServer(BaseHTTPServer.HTTPServer,SimpleXMLRPCServer.SimpleXMLR
 
         SimpleXMLRPCServer.SimpleXMLRPCDispatcher.__init__(self)
         SocketServer.BaseServer.__init__(self, server_address, HandlerClass)
-        ctx = SSL.Context(SSL.SSLv23_METHOD)
+        #ctx = SSL.Context(SSL.SSLv23_METHOD)
 
-        ctx.use_privatekey_file (XMLRPC_SERVER_KEYFILE)
-        ctx.use_certificate_file(XMLRPC_SERVER_CERTFILE)
-        self.socket = SSL.Connection(ctx, socket.socket(self.address_family,
-                                                        self.socket_type))
+        #ctx.use_privatekey_file (XMLRPC_SERVER_KEYFILE)
+        #ctx.use_certificate_file(XMLRPC_SERVER_CERTFILE)
+        #self.socket = SSL.Connection(ctx, socket.socket(self.address_family,
+        #                                                self.socket_type))
+        self.socket = socket.socket(self.address_family, self.socket_type)
         self.server_bind()
         self.server_activate()
 
@@ -56,6 +58,7 @@ class SecureXMLRpcRequestHandler(SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
         It was copied out from SimpleXMLRPCServer.py and modified to shutdown the socket cleanly.
         """
 
+        XmlRpcServer.logger.debug("POST received")
         try:
             # get arguments
             data = self.rfile.read(int(self.headers["content-length"]))
@@ -69,10 +72,12 @@ class SecureXMLRpcRequestHandler(SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
                 )
         except: # This should only happen if the module is buggy
             # internal error, report as HTTP server error
+            XmlRpcServer.logger.debug("got invalid RPC response")
             self.send_response(500)
             self.end_headers()
         else:
             # got a valid XML RPC response
+            XmlRpcServer.logger.debug("got a valid XML RPC response")
             self.send_response(200)
             self.send_header("Content-type", "text/xml")
             self.send_header("Content-length", str(len(response)))
@@ -81,7 +86,7 @@ class SecureXMLRpcRequestHandler(SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
 
             # shut down the connection
             self.wfile.flush()
-            self.connection.shutdown() # Modified here!
+            self.connection.shutdown(SHUT_RDWR) # Modified here!
     
 class XmlRpcServer():
 	

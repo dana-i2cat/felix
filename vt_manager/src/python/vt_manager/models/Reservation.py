@@ -1,5 +1,6 @@
 from django.db import models
 from vt_manager.models.XenServer import XenServer
+from vt_manager.models.VTServer import VTServer
 
 class Reservation(models.Model):
 
@@ -8,7 +9,8 @@ class Reservation(models.Model):
 
     valid_until = models.CharField(max_length = 1024, default="") 
     is_provisioned = models.BooleanField(default=False) 
-    server = models.ForeignKey(XenServer, related_name="reservation")
+    #server = models.ForeignKey(XenServer, related_name="reservation")
+    server = models.ForeignKey(VTServer, related_name="reservation")
 
     name = models.CharField(max_length = 512, default="", verbose_name = "Reservation name")
     projectName = models.CharField(max_length = 1024, default="")

@@ -1,5 +1,5 @@
-from vt_manager.models.reservation import Reservation 
 from vt_manager.models.VirtualMachine import VirtualMachine
+from vt_manager.models.Reservation import Reservation
 from datetime import datetime
 import threading
 import time

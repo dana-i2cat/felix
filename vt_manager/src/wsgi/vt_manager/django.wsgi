@@ -4,10 +4,9 @@ from os.path import dirname, join
 
 PYTHON_DIR = join(dirname(__file__), '../../python')
 
-print PYTHON_DIR
-
 # This is needed because wsgi disallows using stdout
 sys.stdout = sys.stderr
+sys.dont_write_bytecode = True
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vt_manager.settings.settingsLoader'
 

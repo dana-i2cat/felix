@@ -55,6 +55,7 @@ def naiveUTC(dt):
     return dt
 
 class CredentialVerifier(object):
+    logger = logging.getLogger("CredentialVerifier")
     """Utilities to verify signed credentials from a given set of 
     root certificates. Will compare target and source URNs, and privileges.
     See verify and verify_from_strings methods in particular."""

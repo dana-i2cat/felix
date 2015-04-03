@@ -16,7 +16,7 @@ OXA_LOG="/opt/ofelia/oxa/log/"
 
 #Log level. Should be: 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
 #Default warning
-LOG_LEVEL="WARNING"
+LOG_LEVEL="DEBUG"
 
 '''XMLRPC over HTTPS server parameters'''
 #XMLRPC_SERVER_LISTEN_HOST='127.0.0.1' # You should not use '' here, unless you have a real FQDN.
@@ -31,7 +31,7 @@ OXA_DEFAULT_SWAP_SIZE_MB=512
 
 ##FileHD driver settings
 '''Enable/disable file-type Hdmanager Cache FS'''
-OXA_FILEHD_USE_CACHE=True
+OXA_FILEHD_USE_CACHE=False
 
 '''Cache folder to store VMs (if cache mechanism is used)'''
 OXA_FILEHD_CACHE_VMS="/opt/ofelia/oxa/cache/vms/"
@@ -67,6 +67,7 @@ OXA_XEN_SERVER_INITRD="/boot/initrd.img-2.6.32-5-xen-amd64"
 OXA_DEBIAN_INTERFACES_FILE_LOCATION = "/etc/network/interfaces"
 OXA_DEBIAN_UDEV_FILE_LOCATION = "/etc/udev/rules.d/70-persistent-net.rules"
 OXA_DEBIAN_HOSTNAME_FILE_LOCATION="/etc/hostname"
+OXA_DEBIAN_HOSTS_FILE_LOCATION="/etc/hosts"
 OXA_DEBIAN_SECURITY_ACCESS_FILE_LOCATION="/etc/security/access.conf"
 
 '''RedHat-family usual file locations'''

@@ -21,14 +21,14 @@ class RuleTableManager():
 
 	#RuleTableManager atributes
 	_instance = None
-        _mutex = Lock()
+	_mutex = Lock()
 	_createdRuleTables = list()
 	logger = PolicyLogger.getLogger()
 	
 	#Mappings	
-        #Mappings contains the basic association between keywords and objects, functions or static values
-        #Note that these mappings are ONLY defined by the lib user (programmer) 
-        _ConditionMappings = ControllerMappings.getConditionMappings()
+	#Mappings contains the basic association between keywords and objects, functions or static values
+	#Note that these mappings are ONLY defined by the lib user (programmer) 
+	_ConditionMappings = ControllerMappings.getConditionMappings()
 	_ActionMappings = ControllerMappings.getActionMappings()
 
 	#RuleTable default atributes
@@ -38,7 +38,7 @@ class RuleTableManager():
 	_defaultParser = 'RegexParser'
 	_persistenceFlag = True
 	_policyType = True #True: Accept; False:Deny
- 	
+
 	#Main methods 
 #	@staticmethod
 #        def getInstance(name = None):
@@ -55,9 +55,10 @@ class RuleTableManager():
 	def getInstance(name=None):
 		if not name:
 			name = RuleTableManager._defaultName
+		RuleTableManager.logger.debug("XXX " + name)
 		mapps = dict()
-                mapps.update(RuleTableManager.getConditionMappings())
-                mapps.update(RuleTableManager.getActionMappings())
+		mapps.update(RuleTableManager.getConditionMappings())
+		mapps.update(RuleTableManager.getActionMappings())
 		sorted(mapps.iterkeys())
 		
 		with RuleTableManager._mutex:
@@ -65,27 +66,27 @@ class RuleTableManager():
 				
 		return RuleTableManager._instance
 
-        '''
+		'''
         Deletes the instance of PolicyRuleTable for a given ID.
         This method should be seldom used.
         '''
-        @staticmethod
-        def deleteInstance(tableID=None):
-            if tableID:
-                backend = RuleTableManager._defaultPersistence
-                with RuleTableManager._mutex:
-                    RuleTable.delete(tableID, backend)
+	@staticmethod
+	def deleteInstance(tableID=None):
+		if tableID:
+			backend = RuleTableManager._defaultPersistence
+			with RuleTableManager._mutex:
+				RuleTable.delete(tableID, backend)
 
 	'''
 	Retrieves all instances of PolicyRuleTable for a given name.
 	This method should be seldom used.
 	'''
-        @staticmethod
-        def getAllInstances(name=None):
-                if not name:
-                        name = RuleTableManager._defaultName
+	@staticmethod
+	def getAllInstances(name=None):
+		if not name:
+			name = RuleTableManager._defaultName
 		backend = RuleTableManager._defaultPersistence
-                with RuleTableManager._mutex:
+		with RuleTableManager._mutex:
 			instances = RuleTable.loadAll(name, backend)
 		return instances
 
@@ -105,33 +106,31 @@ class RuleTableManager():
 	@staticmethod
 	def EnableOrDisableRule(ruleUUID,tableName=None):
 		enabled = RuleTableManager.getRuleOrIndexOrIsEnabled(ruleUUID,'Enabled',tableName)
-	        index = RuleTableManager.getRuleOrIndexOrIsEnabled(ruleUUID,'Index',tableName)
-        	if enabled:
-                	RuleTableManager.DisableRule(None,index,tableName)
-                
-        	else:
-                	RuleTableManager.EnableRule(None,index,tableName)
+		index = RuleTableManager.getRuleOrIndexOrIsEnabled(ruleUUID,'Index',tableName)
+		if enabled:
+			RuleTableManager.DisableRule(None,index,tableName)
+		else:
+			RuleTableManager.EnableRule(None,index,tableName)
 
 		return RuleTableManager.getInstance(tableName)
 
 	@staticmethod
 	def editRule(rule,enable,priority,PreviousPriority,tableName):
-
-                #When the IM is editing a Rule, a new one is added to the top of the ruleSet(the edited rule).That rule is in a known position.
-                #Then the "old rule" is removed. This rule was in previousPriority + 1 beacuse of the addition of the edited rule
-                #Finally the edited rule in pos. 0 is moved to the priority position
-                #This aproach is maked in this way to avoid to lose the removed Rule if the edited rule raises any exception.
-                RuleTableManager.AddRule(rule,enable,0, None, None,False,tableName)
-                RuleTableManager.RemoveRule(None,(int(PreviousPriority)+1),tableName)
-                RuleTableManager.MoveRule(priority,None,0)
+		#When the IM is editing a Rule, a new one is added to the top of the ruleSet(the edited rule).That rule is in a known position.
+		#Then the "old rule" is removed. This rule was in previousPriority + 1 beacuse of the addition of the edited rule
+		#Finally the edited rule in pos. 0 is moved to the priority position
+		#This aproach is maked in this way to avoid to lose the removed Rule if the edited rule raises any exception.
+		RuleTableManager.AddRule(rule,enable,0, None, None,False,tableName)
+		RuleTableManager.RemoveRule(None,(int(PreviousPriority)+1),tableName)
+		RuleTableManager.MoveRule(priority,None,0)
 	
 	@staticmethod
 	def deleteRule(ruleUUID,tableName):
-        	ruleSet = RuleTableManager.GetRuleSet(tableName)
-        	for rule in ruleSet:
-                	if str(rule.rule.getUUID()) == ruleUUID:
-                        	index = ruleSet.index(rule)
-                        	RuleTableManager.RemoveRule(None,index,tableName)
+		ruleSet = RuleTableManager.GetRuleSet(tableName)
+		for rule in ruleSet:
+			if str(rule.rule.getUUID()) == ruleUUID:
+				index = ruleSet.index(rule)
+				RuleTableManager.RemoveRule(None,index,tableName)
 
 	@staticmethod
 	def EnableRule(rule=None,index=None,tableName=None):
@@ -139,19 +138,19 @@ class RuleTableManager():
 		return ruleTable.enableRule(rule,index)
 
 	@staticmethod
-        def DisableRule(rule=None,index=None,tableName=None):
-               	ruleTable = RuleTableManager.getInstance(tableName)
+	def DisableRule(rule=None,index=None,tableName=None):
+		ruleTable = RuleTableManager.getInstance(tableName)
 		return ruleTable.disableRule(rule,index)
 		
 
 	@staticmethod
 	def SetPolicy(policy,tableName=None):
-                return RuleTableManager.getInstance(tableName).setPolicy(policy)
+		return RuleTableManager.getInstance(tableName).setPolicy(policy)
 
 	@staticmethod
 	def Evaluate(metaObj, tableName=None):
 		try:
-			RuleTableManager.getInstance(tableName).evaluate(metaObj)
+			pass #RuleTableManager.getInstance(tableName).evaluate(metaObj)
 		except Exception as e:
 			RuleTableManager.logger.error("Denied policy: %s" %(e))
 			#if isinstance(e, MultiplePolicyObjectsReturned):
@@ -166,37 +165,37 @@ class RuleTableManager():
 			# Policy denial raises Exception to avoid VM resources allocation
 			raise e
 
-                RuleTableManager.logger.debug("All policies were accepted")
-                return
+		RuleTableManager.logger.debug("All policies were accepted")
+		return
 
 	#getters
 	@staticmethod
 	def GetRuleSet(tableName = None):
-                return RuleTableManager.getInstance(tableName).getRuleSet()
+		return RuleTableManager.getInstance(tableName).getRuleSet()
 	
 	@staticmethod
-        def GetName(tableName = None):
-                return RuleTableManager.getInstance(tableName).getName()
+	def GetName(tableName = None):
+		return RuleTableManager.getInstance(tableName).getName()
 
 	@staticmethod
-        def GetPolicyType(tableName = None):
-                return RuleTableManager.getInstance(tableName).getPolicyType()
+	def GetPolicyType(tableName = None):
+		return RuleTableManager.getInstance(tableName).getPolicyType()
 
 	@staticmethod
-        def GetPersistence(tableName = None):
-                return RuleTableManager.getInstance(tableName).getPersistence()
+	def GetPersistence(tableName = None):
+		return RuleTableManager.getInstance(tableName).getPersistence()
 
 	@staticmethod
-        def GetParser(tableName = None):
-                return RuleTableManager.getInstance(tableName).getParser()
+	def GetParser(tableName = None):
+		return RuleTableManager.getInstance(tableName).getParser()
 
 	@staticmethod
-        def GetResolverMappings(tableName = None):
-                return sorted(RuleTableManager.getInstance(tableName).getResolverMappings().iterkeys())
+	def GetResolverMappings(tableName = None):
+		return sorted(RuleTableManager.getInstance(tableName).getResolverMappings().iterkeys())
 
 	@staticmethod
-        def GetPersistenceFlag(tableName = None):
-                return RuleTableManager.getInstance(tableName).getPersistenceFlag()
+	def GetPersistenceFlag(tableName = None):
+		return RuleTableManager.getInstance(tableName).getPersistenceFlag()
 
 
 	#@staticmethod
@@ -229,92 +228,89 @@ class RuleTableManager():
 	@staticmethod
 	def UpdateRuleTablePolicy(policy,tableName=None):
 		if policy == 'accept':
-                	RuleTableManager.SetPolicy(True,tableName)
-        	else:
-                	RuleTableManager.SetPolicy(False,tableName)
+			RuleTableManager.SetPolicy(True,tableName)
+		else:
+			RuleTableManager.SetPolicy(False,tableName)
 	
 	#Useful Provisioning Methods
-        @staticmethod
-        def getRuleOrIndexOrIsEnabled(ruleID,Mode,tableName=None):
-
-
-                if Mode not in ['Rule','Index','Enabled']:
-                        raise Exception ('Unrecognized Mode. Only three modes are allowed: Rule, Index and Enabled')
-		
+	@staticmethod
+	def getRuleOrIndexOrIsEnabled(ruleID,Mode,tableName=None):
+		if Mode not in ['Rule','Index','Enabled']:
+			raise Exception ('Unrecognized Mode. Only three modes are allowed: Rule, Index and Enabled')
 		ruleList = RuleTableManager.getInstance(tableName).getRuleSet()
-                for rule in ruleList:
-                        if str(rule.rule.getUUID()) == str(ruleID):
-                                if Mode == 'Rule':
-                                        return rule.rule
-                                if Mode == 'Index':
-                                        return ruleList.index(rule)
-                                if Mode == 'Enabled':
-                                        return rule.enabled
-                raise Exception('Cannot edit the rule. The rule you are looking for does not exist')
+		for rule in ruleList:
+			if str(rule.rule.getUUID()) == str(ruleID):
+				if Mode == 'Rule':
+					return rule.rule
+				if Mode == 'Index':
+					return ruleList.index(rule)
+				if Mode == 'Enabled':
+					return rule.enabled
+		raise Exception('Cannot edit the rule. The rule you are looking for does not exist')
 
 	@staticmethod
-        def getPriorityList(name = None):
-                RuleSetLength = len(RuleTableManager.getInstance(name)._ruleSet)
-                i = 0
-                out = []
-                while i < RuleSetLength:
-                        out.append(i)
-                        i += 1
-                return out
+	def getPriorityList(name = None):
+		RuleSetLength = len(RuleTableManager.getInstance(name)._ruleSet)
+		i = 0
+		out = []
+		while i < RuleSetLength:
+			out.append(i)
+			i += 1
+		return out
 
 	@staticmethod
 	def getValue(rule):
-        	types = ['accept','deny']
-        	if rule._type['value']:
-                	value = 'accept'
-        	else:
-                	value = 'deny'
-        	types.pop(types.index(value))
-        	return value, types
+		types = ['accept','deny']
+		if rule._type['value']:
+			value = 'accept'
+		else:
+			value = 'deny'
+		types.pop(types.index(value))
+		return value, types
 	
 	@staticmethod
 	def getType(rule):
-        	terminals = ['terminal','nonterminal']
-        	if rule._type['terminal']:
-                	value = 'terminal'
-        	else:
-                	value = 'nonterminal'
-        	terminals.pop(terminals.index(value))
-        	return value, terminals
+		terminals = ['terminal','nonterminal']
+		if rule._type['terminal']:
+			value = 'terminal'
+		else:
+			value = 'nonterminal'
+		terminals.pop(terminals.index(value))
+		return value, terminals
 
 	@staticmethod
 	def SetConditionList(rule,conditions):
-        	condition = rule.getConditionDump()
-        	for cond in conditions:
-                	if condition.replace(" ","")== cond.replace(" ", ""):
-                	        conditions.pop(conditions.index(cond))
-        	return condition, conditions
+		condition = rule.getConditionDump()
+		for cond in conditions:
+			if condition.replace(" ","")== cond.replace(" ", ""):
+				conditions.pop(conditions.index(cond))
+		return condition, conditions
 
 	@staticmethod
 	def SetActionList(rule,mapps):
-        	try:
-                	action = rule.getMatchAction()
-        	except:
-                	action = "None"
+		try:
+			action = rule.getMatchAction()
+		except:
+				action = "None"
 		if action == None:
 			action = "None"
-        	keys = mapps.keys()
-        	for act in keys:
-                	if action.replace(" ","") == act.replace(" ",""):
-        	                keys.pop(keys.index(act))
-	        return action, keys
+			keys = mapps.keys()
+			for act in keys:
+				if action.replace(" ","") == act.replace(" ",""):
+					keys.pop(keys.index(act))
+			return action, keys
 
 	@staticmethod
 	def SetPriorityList(rule, tableName=None):
-        	Rules = RuleTableManager.GetRuleSet(tableName)
-        	PriorityList = RuleTableManager.getPriorityList()
-        	for Rule in Rules:
-                	if rule.dump() == Rule.rule.dump():
-                        	index = Rules.index(Rule)
-                        	for num in PriorityList:
-                                	if index == num:
-                                        	PriorityList.pop(PriorityList.index(num))
-        	return index, PriorityList
+		Rules = RuleTableManager.GetRuleSet(tableName)
+		PriorityList = RuleTableManager.getPriorityList()
+		for Rule in Rules:
+			if rule.dump() == Rule.rule.dump():
+				index = Rules.index(Rule)
+				for num in PriorityList:
+					if index == num:
+						PriorityList.pop(PriorityList.index(num))
+		return index, PriorityList
 
 #	@staticmethod
 #	def setDefaultRule(RAM,NVMS,name=None):

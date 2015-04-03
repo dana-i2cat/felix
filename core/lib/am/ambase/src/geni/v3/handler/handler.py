@@ -11,8 +11,11 @@ import datetime
 import dateutil.parser
 import re
 import zlib
+import logging
+import traceback
 
 class GeniV3Handler(HandlerBase):
+    logger = logging.getLogger("handler")
        
     def __init__(self):
         self.__delegate = None
@@ -33,6 +36,7 @@ class GeniV3Handler(HandlerBase):
         try:
             self.__credential_manager.validate_for("ListResources", credentials)
         except Exception as e:
+            GeniV3Handler.logger.error(traceback.format_exc())
             return self.error_result(self.__geni_exception_manager.FORBIDDEN, e)
         # Required options validation
         if not options.has_key("geni_rspec_version"):
@@ -65,6 +69,7 @@ class GeniV3Handler(HandlerBase):
         try:
             self.__credential_manager.validate_for("Describe", credentials)
         except Exception as e:
+            GeniV3Handler.logger.error(traceback.format_exc())
             return self.error_result(self.__geni_exception_manager.FORBIDDEN, e)
         if not options.get("geni_rspec_version"):
             return self.error_result(self.__geni_exception_manager.BADARGS, "Bad Arguments: option geni_rspec_version does not have a version, type or geni_rspec_version fields.")
@@ -101,6 +106,7 @@ class GeniV3Handler(HandlerBase):
         try:
             creds = self.__credential_manager.validate_for("Allocate", credentials)
         except Exception as e:
+            GeniV3Handler.logger.error(traceback.format_exc())
             return self.error_result(self.__geni_exception_manager.FORBIDDEN, e)
         reservation = self.__rspec_manager.parse_request(rspec)
         # expiration == self.__get_expiration(creds)
@@ -126,8 +132,10 @@ class GeniV3Handler(HandlerBase):
     def Provision(self, urns=list(), credentials=list(), options=dict()):
         # Credential validation
         try:
+            # XXX
             creds = self.__credential_manager.validate_for("Provision", credentials)
         except Exception as e:
+            GeniV3Handler.logger.error(traceback.format_exc())
             return self.error_result(self.__geni_exception_manager.FORBIDDEN, e)
         
         #expiration = self.__get_expiration()
@@ -168,6 +176,7 @@ class GeniV3Handler(HandlerBase):
         try:
             creds = self.__credential_manager.validate_for("Delete", credentials)
         except Exception as e:
+            GeniV3Handler.logger.error(traceback.format_exc())
             return self.error_result(self.__geni_exception_manager.FORBIDDEN, e)
         
         # Calling Delete() on an unknown, expired or deleted sliver (by explicit URN) shall 
@@ -193,6 +202,7 @@ class GeniV3Handler(HandlerBase):
         try:
             creds = self.__credential_manager.validate_for("PerformOperationalAction", credentials)
         except Exception as e:
+            GeniV3Handler.logger.error(traceback.format_exc())
             return self.error_result(self.__geni_exception_manager.FORBIDDEN, e)
 
         actions = ["geni_start", "geni_restart", "geni_stop", "geni_update_users",
@@ -226,6 +236,7 @@ class GeniV3Handler(HandlerBase):
         try:
             creds = self.__credential_manager.validate_for("Status", credentials)
         except Exception as e:
+            GeniV3Handler.logger.error(traceback.format_exc())
             return self.error_result(self.__geni_exception_manager.FORBIDDEN, e)
         
         #expiration = self.__credential_manager.get_slice_expiration(creds)
@@ -253,6 +264,7 @@ class GeniV3Handler(HandlerBase):
         try:
             creds = self.__credential_manager.validate_for("Renew", credentials)
         except Exception as e:
+            GeniV3Handler.logger.error(traceback.format_exc())
             return self.error_result(self.__geni_exception_manager.FORBIDDEN, e)
         slice_expiration = self.__credential_manager.get_slice_expiration(creds)
         try:

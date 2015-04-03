@@ -1,15 +1,12 @@
-from datetime import datetime
-from django.contrib import auth
 from django.db import models
-from threading import Lock
-#from expedient.common.utils import validators
-from vt_manager.models.faults import *
+from django.core.exceptions import ValidationError
 from vt_manager.models.utils.Choices import OSDistClass, OSVersionClass, OSTypeClass
-from vt_manager.utils.MutexStore import MutexStore
 import re
 import inspect
+import logging
 
 class VirtualMachine(models.Model):
+	logger = logging.getLogger("VirtualMachine")
 	"""VM data model class"""
 
 	class Meta:
@@ -19,6 +16,7 @@ class VirtualMachine(models.Model):
 
 	__childClasses = (
 		'XenVM',
+		'KVMVM',
 	)
 
 	
@@ -65,7 +63,7 @@ class VirtualMachine(models.Model):
 	
 	__possibleStates = (RUNNING_STATE,CREATED_STATE,STOPPED_STATE,UNKNOWN_STATE,FAILED_STATE,ONQUEUE_STATE,STARTING_STATE,STOPPING_STATE,CREATING_STATE,DELETING_STATE,REBOOTING_STATE)
 
-  	''' Mutex over the instance '''
+	''' Mutex over the instance '''
 	#Mutex
 	mutex = None 
 
@@ -84,15 +82,24 @@ class VirtualMachine(models.Model):
 	def getLockIdentifier(self):
 		#Uniquely identifies object by a key
 		return inspect.currentframe().f_code.co_filename+str(self)+str(self.id)
- 
+
 	##public methods
 
 	def getChildObject(self):
+		childobj = None
 		for childClass in self.__childClasses:
+			VirtualMachine.logger.debug("childClass = " + childClass)
 			try:
-				return self.__getattribute__(childClass.lower())
-			except eval(childClass).DoesNotExist:
-				return self
+				childobj = self.__getattribute__(childClass.lower())
+			except Exception:
+				VirtualMachine.logger.debug("cannot find " + childClass + ", try other child class")
+				pass
+		if childobj is None:
+			VirtualMachine.logger.debug("cannot find child, return self.")
+			return self
+		else:
+			VirtualMachine.logger.debug("child object found. class = " + str(childobj.__class__))
+			return childobj
 
 	''' Getters and setters'''
 	def setName(self, name):
@@ -105,7 +112,7 @@ class VirtualMachine(models.Model):
 				error()
 		try:
 			validate_name(name)
-#                        validators.resourceNameValidator(name)
+#			validators.resourceNameValidator(name)
 			self.name = name
 			self.autoSave()
 		except Exception as e:
@@ -156,7 +163,7 @@ class VirtualMachine(models.Model):
 		return self.expedientId
 	
 	def setState(self,state):
-        	if state not in self.__possibleStates:
+		if state not in self.__possibleStates:
 			raise KeyError, "Unknown state"
 		else:
 			self.state = state
@@ -184,9 +191,9 @@ class VirtualMachine(models.Model):
 	def getDiscSpaceGB(self):
 		return self.discSpaceGB
 
-	def setOSType(self, type):
-		OSTypeClass.validateOSType(type)
-		self.operatingSystemType = type
+	def setOSType(self, ostype):
+		OSTypeClass.validateOSType(ostype)
+		self.operatingSystemType = ostype
 		self.autoSave()
 	def getOSType(self):
 		return self.operatingSystemType
@@ -213,4 +220,3 @@ class VirtualMachine(models.Model):
 
 	def getNetworkInterfaces(self):
 		return self.networkInterfaces.all().order_by('-isMgmt','id')
-

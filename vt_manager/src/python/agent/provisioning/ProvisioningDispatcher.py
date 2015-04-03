@@ -19,9 +19,12 @@ class ProvisioningDispatcher:
 
 		#Import of Dispatchers must go here to avoid import circular dependecy 		
 		from xen.provisioning.XenProvisioningDispatcher import XenProvisioningDispatcher
+		from kvm.provisioning.KVMProvisioningDispatcher import KVMProvisioningDispatcher
 
 		if vtype == "xen": 
 			return XenProvisioningDispatcher 
+		elif vtype == "kvm": 
+			return KVMProvisioningDispatcher 
 		else:
 			raise Exception("Virtualization type not supported by the agent")	
 	
@@ -86,12 +89,16 @@ class ProvisioningDispatcher:
 		raise Exception("Abstract method cannot be called")	
 	
 	#Scheduling
+	@staticmethod
 	def startVM(id,vm):
 		raise Exception("Abstract method cannot be called")	
+	@staticmethod
 	def rebootVM(id,vm):
 		raise Exception("Abstract method cannot be called")	
+	@staticmethod
 	def stopVM(id,vm):
 		raise Exception("Abstract method cannot be called")	
+	@staticmethod
 	def hardStopVM(id,vm):
 		raise Exception("Abstract method cannot be called")	
 

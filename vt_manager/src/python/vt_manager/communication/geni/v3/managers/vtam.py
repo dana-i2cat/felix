@@ -1,8 +1,9 @@
 from am.ambase.src.abstract.classes.resourcemanagerbase import ResourceManagerBase
 from vt_manager.communication.geni.v3.drivers.vtam import VTAMDriver
+import logging
 
 class VTAMRM(ResourceManagerBase):
-
+    logger = logging.getLogger("VTAMRM")
     def __init__(self):
         self.__driver = VTAMDriver()
         self.START_ACTION = "START"
@@ -17,6 +18,7 @@ class VTAMRM(ResourceManagerBase):
         servers = list()
         if urns:
             for urn in urns:
+                VTAMRM.logger.debug("urn = " + urn)
                 server = self.__driver.get_specific_server_and_vms(urn, geni_available)
                 if type(server) == list:
                     servers.extend(server)
