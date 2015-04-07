@@ -1,3 +1,19 @@
+<!-- 
+# Copyright 2014-2015 National Institute of Advanced Industrial Science and Technology
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+-->
+
 <resources>
       <node component_id="urn:publicid:tn-network1:"
 	    component_manager_id="urn:publicid:IDN+NSI+authority+tnrm"
@@ -10,7 +26,6 @@
 		   nsi_stp_id_out="urn:ogf:network:aist.go.jp:2013:out-ps"
 		   vlan="1779-1799"
 		   capacity="10000" />
-
 	<interface felix_domain_id="urn:publicid:tn:aist:network1" 
 		   felix_stp_id="urn:ogf:network:aist:network1:stp2"
 		   nsi_stp_id="urn:ogf:network:aist.go.jp:2013:bi-video"
@@ -35,16 +50,35 @@
 		   capacity="10000" />
 
 	<interface felix_domain_id="urn:publicid:tn:xxx:network1" 
-		   felix_stp_id="urn:felix:xxx:stp1"
+		   felix_stp_id="urn:felix:xxx-stp1"
 		   nsi_stp_id="urn:ogf:network:xxx:bi-stp1"
 		   nsi_stp_id_in="urn:ogf:network:xxx:in-stp1"
-		   nsi_stp_id_out="urn:ogf:network:xxx:out-stp1" />
+		   nsi_stp_id_out="urn:ogf:network:xxx:out-stp1"
+		   vlan="1779-1799"
+		   capacity="10000" />
+	<interface felix_domain_id="urn:publicid:tn:xxx:network1" 
+		   felix_stp_id="urn:felix:xxx-stp2"
+		   nsi_stp_id="urn:ogf:network:xxx:bi-stp2"
+		   nsi_stp_id_in="urn:ogf:network:xxx:in-stp2"
+		   nsi_stp_id_out="urn:ogf:network:xxx:out-stp2"
+		   vlan="1779-1799"
+		   capacity="10000" />
 
 	<interface felix_domain_id="urn:publicid:tn:yyy:network1" 
-		   felix_stp_id="urn:felix:yyy-stp2"
+		   felix_stp_id="urn:felix:yyy-stp1"
 		   nsi_stp_id="urn:ogf:network:yyy:bi-stp1"
 		   nsi_stp_id_in="urn:ogf:network:yyy:in-stp1"
-		   nsi_stp_id_out="urn:ogf:network:yyy:out-stp1"/>
+		   nsi_stp_id_out="urn:ogf:network:yyy:out-stp1"
+		   vlan="1779-1799"
+		   capacity="10000" />
+		   
+	<interface felix_domain_id="urn:publicid:tn:yyy:network1" 
+		   felix_stp_id="urn:felix:yyy-stp2"
+		   nsi_stp_id="urn:ogf:network:yyy:bi-stp2"
+		   nsi_stp_id_in="urn:ogf:network:yyy:in-stp2"
+		   nsi_stp_id_out="urn:ogf:network:yyy:out-stp2"
+		   vlan="1779-1799"
+		   capacity="10000" />
 		   
       </node>
 </resources>

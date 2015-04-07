@@ -14,8 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+# Copyright 2014-2015 National Institute of Advanced Industrial Science and Technology
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import java.util.Calendar;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Hashtable;
 import java.net.URL;
@@ -30,6 +46,8 @@ import nsi2.reply.ReserveReply;
 import nsi2.NSI2Client;
 import nsi2.SampleEventListener;
 
+import javax.xml.bind.JAXBElement;
+
 import org.ogf.schemas.nsi._2013._12.connection._interface.ServiceException;
 import org.ogf.schemas.nsi._2013._12.connection.types.QueryNotificationConfirmedType;
 import org.ogf.schemas.nsi._2013._12.connection.types.QueryNotificationType;
@@ -40,6 +58,12 @@ import org.ogf.schemas.nsi._2013._12.connection.types.QueryType;
 import org.ogf.schemas.nsi._2013._12.connection.types.ReservationConfirmCriteriaType;
 import org.ogf.schemas.nsi._2013._12.connection.types.ReservationRequestCriteriaType;
 import org.ogf.schemas.nsi._2013._12.connection.types.ScheduleType;
+import org.ogf.schemas.nsi._2013._12.services.point2point.P2PServiceBaseType;
+import org.ogf.schemas.nsi._2013._12.services.types.StpListType;
+
+import org.ogf.schemas.nsi._2013._12.services.types.StpListType;
+import org.ogf.schemas.nsi._2013._12.services.types.OrderedStpType;
+import org.ogf.schemas.nsi._2013._12.services.point2point.P2PServiceBaseType;
 
 import org.apache.cxf.Bus;
 import org.apache.cxf.bus.spring.SpringBusFactory;
@@ -121,19 +145,93 @@ public class NSI2Interface {
     }
 
 
+    public static P2PServiceBaseType getP2PServiceBaseType(List<Object> list)
+    {
+	Object o = list.get(0);
+	if (o instanceof JAXBElement) {
+	    Object ele = ((JAXBElement<?>) o).getValue();
+	    if (ele instanceof P2PServiceBaseType) 
+		return (P2PServiceBaseType) ele;
+	}
+
+	return null;
+    }
+
     public String reserveCommit
 	(String sSTP, String dSTP, int sVlan, int dVlan, long capacity,
-	 int start, int end)
+	 int start, int end, String[] eros)
 	throws Exception 
     {
 	ReservationRequestCriteriaType criteria = makeReservationCriteria
 	    (sSTP, dSTP, sVlan, dVlan, capacity, start, end);
+
+	P2PServiceBaseType p2p = getP2PServiceBaseType(criteria.getAny());
+	if (p2p != null) {
+	    StpListType erolist = p2p.getEro();
+	    if (eros != null) {
+		int size = eros.length;
+		if (erolist == null && size != 0) {
+		    erolist = new StpListType();
+		    p2p.setEro(erolist);
+		}
+		List<OrderedStpType> oero = erolist.getOrderedSTP();
+
+		for (int i = 0; i < size; i ++) {
+		    if (debug) System.out.println("******************* ero[" + i + "]=" + eros[i]);
+		    OrderedStpType ost = new OrderedStpType();
+		    ost.setStp(eros[i]);
+		    ost.setOrder(i);
+		    
+		    oero.add(ost);
+		}
+	    } else {
+		if (debug) System.out.println("******************* ero os null");
+	    }
+	}
+
 	String reservationId = reserve(criteria);
 	commit(reservationId);
 
 	criterias.put(reservationId, criteria);
 	capacities.put(reservationId, new Long(capacity));
 	return reservationId;
+    }
+
+    public ReservationRequestCriteriaType makeReservationCriteria
+	(String sSTP, String dSTP, int sVlan, int dVlan, long capacity,
+	 int startTime, int endTime, String[] ero)
+    {
+	ReservationRequestCriteriaType criteria = makeReservationCriteria
+	    (sSTP, dSTP, sVlan, dVlan, capacity, startTime, endTime);
+
+	if (ero == null || ero.length == 0) return criteria;
+
+	List<Object> objs = criteria.getAny();
+	if (! objs.isEmpty()) {
+	    Object obj = objs.get(0);
+	    if (! (obj instanceof P2PServiceBaseType)) 
+		return criteria;
+
+	    StpListType slt = ((P2PServiceBaseType) obj).getEro();
+	    if (slt == null) {
+		slt = new StpListType();
+		((P2PServiceBaseType) obj).setEro(slt);
+	    }
+	    List<OrderedStpType> osp= slt.getOrderedSTP();
+
+	    for (int i = 0; i < ero.length; i++) {
+		String stp = ero[i];
+		if (debug) System.out.println("order=" + i +
+					      ", stp=" + stp);
+
+		OrderedStpType ostp = new OrderedStpType();
+		ostp.setOrder(i);
+		ostp.setStp(stp);
+
+		osp.add(ostp);
+	    }
+	}
+	return criteria;
     }
 
     public ReservationRequestCriteriaType makeReservationCriteria
@@ -386,16 +484,21 @@ public class NSI2Interface {
 	try {
 	    NSI2Interface nsi = new NSI2Interface
 		("urn:ogf:network:aist.go.jp:2013:nsa",
-		 "https://127.0.0.1:22311/aist_upa/services/ConnectionProvider",
+		 // "https://127.0.0.1:22311/aist_upa/services/ConnectionProvider",
+		 "http://127.0.0.1:28080/provider/services/ConnectionProvider",
 		 "urn:ogf:network:aist.go.jp:2013:nsa",
 		 "https://127.0.0.1:29081/nsi2_requester/services/ConnectionRequester",
 		 null,
 		 null);
+
+	    String[] eros = new String[2];
+	    eros[0] = "rn:ogf:network:xxx:2013:ero";
+	    eros[1] = "rn:ogf:network:yyy:2013:ero";
 	    
 	    String id = nsi.reserveCommit
 		("urn:ogf:network:aist.go.jp:2013:bi-ps",
 		 "urn:ogf:network:aist.go.jp:2013:bi-aist-jgn-x",
-		 1783, 1783, 400, 0, 0);
+		 1783, 1783, 400, 0, 0, eros);
 	    nsi.provision(id);
 
 	    Thread.sleep(10 * 1000);

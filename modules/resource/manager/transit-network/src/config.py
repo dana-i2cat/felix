@@ -1,3 +1,17 @@
+# Copyright 2014-2015 National Institute of Advanced Industrial Science and Technology
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 #import amsoil.core
 #import amsoil.core.log
 #logger = amsoil.core.log.getLogger('tnrmgeniv3delegate')
@@ -34,7 +48,7 @@ class TNRM_Exception:
 
 class Config:
     def __init__(self, file):
-        self.advertizement = ""
+        self.advertisement = ""
         # tree = fromstring(text)
         tree = parse(file)
         elem = tree.getroot()
@@ -62,21 +76,21 @@ class Config:
                 felix_stps[cinterface.component_id] = cinterface
 
     def get_advertisement(self):
-        if (self.advertizement != ""):
-            return self.advertizement
+        if (self.advertisement != ""):
+            return self.advertisement
         
         s = advertisement_rspec
         for cnode in dict_nodes.values():
-            s += cnode.get_open_advertizement();
+            s += cnode.get_open_advertisement();
 
             for ifs in cnode.interfaces.values():
-                s += ifs.get_advertizement()
+                s += ifs.get_advertisement()
             
-            s += cnode.get_close_advertizement();
+            s += cnode.get_close_advertisement();
 
         s += close_rspec
-        self.advertizement = s
-        return self.advertizement
+        self.advertisement = s
+        return self.advertisement
 
     def get_node(self, id):
         if (isinstance(id, type(None))):
@@ -85,11 +99,11 @@ class Config:
         try:
             tnode = dict_nodes[id]
             if (isinstance(tnode, type(None))):
-                raise TNRM_Exception("Node Component Id does not exist. Id=" + id)
+                raise TNRM_Exception("Node Component Id does not exist. Id=%s" % id)
             else:
                 return tnode
         except KeyError:
-            print "Node Component Id does not exist. Id=" + id
+            print "Node Component Id does not exist. Id=%s" % id
         return  None
 
     def get_interface(self, id):
@@ -98,11 +112,11 @@ class Config:
         try:
             ifs = dict_interfaces[id]
             if (isinstance(ifs, type(None))):
-                raise TNRM_Exception("Interface Component Id does not exist. Id=" + id)
+                raise TNRM_Exception("Interface Component Id does not exist. Id=%s" % id)
             else:
                 return ifs
         except KeyError:
-            print "Interface Component Id does not exist. Id=" + id
+            print "Interface Component Id does not exist. Id=%s" % id
         return  None
 
     def get_stp(self, id):
@@ -111,11 +125,11 @@ class Config:
         try:
             ifs = dict_interfaces[id]
             if (isinstance(ifs, type(None))):
-                raise TNRM_Exception("Interface Component Id does not exist. Id=" + id)
+                raise TNRM_Exception("Interface Component Id does not exist. Id=%s" % id)
             else:
                 return ifs.nsi_stp_id
         except KeyError:
-            print "Interface Component Id does not exist. Id=" + id
+            print "Interface Component Id does not exist. Id=%s" % id
         return  None
 
 
@@ -141,13 +155,13 @@ class Node:
             # print "Add #2 Node Component Id=" + component_id
             dict_nodes[component_id] = self
 
-    def get_open_advertizement(self):
+    def get_open_advertisement(self):
         s =  space4 + "<node component_id=\"" + self.component_id + "\"\n"
         s += space4 + "      component_manager_id=\"" + self.manager_id + "\"\n"
         s += space4 + "      exclusive=\"" + self.isExclusive + "\">\n\n"
         return s
 
-    def get_close_advertizement(self):
+    def get_close_advertisement(self):
         s =  space4 + "</node>\n"
         return s;
 
@@ -163,7 +177,7 @@ class Interface:
         self.vlan = vlan
         self.capacity = capacity
         self.component_id = felix_domain_id + "+" + felix_stp_id
-        self.advertizement = ""
+        self.advertisement = ""
         #
         if (self.component_id == ""):
             raise TNRM_Exception("Felix Component Id is null.")
@@ -180,9 +194,9 @@ class Interface:
         if (self.nsi_stp_id_out != ""):
             dict_nsi_stps[self.nsi_stp_id_out] = self
 
-    def get_advertizement(self):
-        if (self.advertizement != ""):
-            return self.advertizement
+    def get_advertisement(self):
+        if (self.advertisement != ""):
+            return self.advertisement
 
         s = space4 + space4 + "<interface component_id=\"" + self.component_id +"\">\n"
 
@@ -191,9 +205,9 @@ class Interface:
 
         s += space4 + space4 + "</interface>\n\n"
 
-        self.advertizement = s
-        return self.advertizement
+        self.advertisement = s
+        return self.advertisement
 
-
-#config = Config("config.xml")
-#print config.get_advertizement()
+if __name__ == "__main__":
+    c = Config("config.xml")
+    print "adv rspec=", c.get_advertisement()

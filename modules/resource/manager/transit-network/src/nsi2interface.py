@@ -1,3 +1,17 @@
+# Copyright 2014-2015 National Institute of Advanced Industrial Science and Technology
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import sys
 from datetime import datetime, timedelta
 import time
@@ -85,9 +99,12 @@ from java.util import ArrayList
 import jarray
 
 pNSA = 'urn:ogf:network:aist.go.jp:2013:nsa'
-pURI = 'https://127.0.0.1:22311/aist_upa/services/ConnectionProvider'
+#pURI = 'https://127.0.0.1:22311/aist_upa/services/ConnectionProvider'
+#pURI='http://127.0.0.1:28080/provider/services/ConnectionProvider'
+pURI='https://163.220.30.145:28443/provider/services/ConnectionProvider'
 rNSA = 'urn:ogf:network:aist.go.jp:2013:nsa'
-rURI = 'https://127.0.0.1:29081/nsi2_requester/services/ConnectionRequester'
+rURI = 'https://163.220.30.145:29081/nsi2_requester/services/ConnectionRequester'
+#rURI = 'https://127.0.0.1:29081/nsi2_requester/services/ConnectionRequester'
 user = ''
 password = ''
 
@@ -96,7 +113,7 @@ class NSI:
             self.nsi = NSI2Interface(pNSA, pURI, rNSA, rURI, user, password)
 
       def reserve_sec(self, src, dst, srcvlan, dstvlan, capacity, eros, start_sec, end_sec):
-            rid = self.nsi.reserveCommit(src, dst, srcvlan, dstvlan, capacity, start_sec, end_sec)
+            rid = self.nsi.reserveCommit(src, dst, srcvlan, dstvlan, capacity, start_sec, end_sec, eros)
             return rid
 
       def reserve(self, resv):
@@ -105,8 +122,9 @@ class NSI:
             ep_end = int(resv.end_time)
             print "start=%s" % (ep_start)
             print "end=%s" % (ep_end)
+            print "ero=%s" % (resv.eroEP)
 
-            rid = self.nsi.reserveCommit(resv.sSTP, resv.dSTP, int(resv.sEP.vlantag), int(resv.dEP.vlantag), int(resv.capacity), ep_start, ep_end)
+            rid = self.nsi.reserveCommit(resv.sSTP, resv.dSTP, int(resv.sEP.vlantag), int(resv.dEP.vlantag), int(resv.capacity), ep_start, ep_end, resv.eroEP)
             return rid
 
       def modify_sec(self, rid, end_sec):
@@ -139,7 +157,7 @@ if __name__ == "__main__":
       s_vlan = 1786
       d_vlan = s_vlan
       capacity = 100
-      eros = {}
+      eros = ["urn:ogf:network:xxx:2013:stp1", "urn:ogf:network:yyy:2013:stp2"]
       nsi = NSI()
 
       epoch = datetime.utcfromtimestamp(0)
