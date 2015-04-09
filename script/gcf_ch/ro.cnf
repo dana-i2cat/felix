@@ -1,0 +1,28 @@
+HOME            = .
+RANDFILE        = $ENV::HOME/.rnd
+
+####################################################################
+[ req ]
+default_bits        = 1024
+default_keyfile     = ro-key.pem
+distinguished_name  = server_distinguished_name
+req_extensions      = server_req_extensions
+string_mask         = utf8only
+
+####################################################################
+[ server_distinguished_name ]
+commonName          = Enter RO Name
+commonName_default      = cbas.eict.de.user.ro # ChangeMe
+
+####################################################################
+[ server_req_extensions ]
+
+subjectKeyIdentifier        = hash
+basicConstraints        = CA:FALSE
+keyUsage            = digitalSignature, keyEncipherment
+subjectAltName          = @alternate_names
+
+####################################################################
+[ alternate_names ]
+
+URI.1      = urn:publicid:IDN+cbas.eict.de+user+ro # ChangeMe
