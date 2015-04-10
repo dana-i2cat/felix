@@ -29,7 +29,6 @@ CREATE TABLE IF NOT EXISTS `M_NETWORK` (
   `registration_time` int(11) NOT NULL,
   `last_update_time` int(11) NOT NULL,
   `network_name` varchar(255) NOT NULL,
-  `uri` varchar(255) NOT NULL,
   `user` varchar(255) DEFAULT NULL,
   `dbUpdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
@@ -62,6 +61,24 @@ CREATE TABLE IF NOT EXISTS `M_NODE_INFO` (
   `idNode` int(11) NOT NULL,
   `vkey` varchar(255) NOT NULL,
   `value` varchar(255) DEFAULT NULL,
+  `dbUpdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`idNode`,`vkey`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- TABLE `M_NODE_MGMT`
+--
+
+DROP TABLE IF EXISTS `M_NODE_MGMT`;
+CREATE TABLE IF NOT EXISTS `M_NODE_MGMT` (
+  `idNode` int(11) NOT NULL,
+  `vkey` varchar(255) NOT NULL,
+  `type` varchar(10) NOT NULL,
+  `address` varchar(48),
+  `port` varchar(8),
+  `auth` varchar(255),
   `dbUpdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`idNode`,`vkey`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -120,8 +137,12 @@ CREATE TABLE IF NOT EXISTS `M_IF_INFO` (
 DROP TABLE IF EXISTS `M_LINK`;
 CREATE TABLE IF NOT EXISTS `M_LINK` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `src_idIF` int(11) NOT NULL,
-  `dst_idIF` int(11) NOT NULL,
+  `src_idIF` int(11) DEFAULT NULL,
+  `dst_idIF` int(11) DEFAULT NULL,
+  `type` varchar(32) NOT NULL,
+  `network_name` varchar(255) NOT NULL,
+  `link_name` varchar(255) DEFAULT NULL,
+  `abst_idLink` int(11) DEFAULT NULL,
   `dbUpdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
