@@ -18,6 +18,11 @@ class NodeInfo(Entity):
     node = ManyToOne('Node',primaryjoin=lambda: NodeInfo.idNode == Node.id,
                                foreign_keys=lambda: [NodeInfo.idNode])
 
+class NodeManagement(Entity):
+    using_options(tablename='M_NODE_MGMT', autoload=True)
+    node = ManyToOne('Node',primaryjoin=lambda: NodeManagement.idNode == Node.id,
+                               foreign_keys=lambda: [NodeManagement.idNode])
+
 class VMMapping(Entity):
     using_options(tablename='M_VM_MAPPING', autoload=True)
     server_node = ManyToOne('Node',primaryjoin=lambda: VMMapping.idServer == Node.id,
@@ -41,6 +46,8 @@ class Link(Entity):
                                foreign_keys=lambda: [Link.src_idIF])
     dst_if = ManyToOne('InterFace',primaryjoin=lambda: Link.dst_idIF == InterFace.id,
                                foreign_keys=lambda: [Link.dst_idIF])
+    network = ManyToOne('Network',primaryjoin=lambda: Link.network_name == Network.network_name,
+                               foreign_keys=lambda: [Link.network_name])
 
 class LinkInfo(Entity):
     using_options(tablename='M_LINK_INFO', autoload=True)
@@ -50,26 +57,86 @@ class LinkInfo(Entity):
 def get_all_network(nw_type):
     return Network.query.filter(Network.type == nw_type).all()
 
-def get_all_node(nw):
-    return Node.query.filter(Node.network_name == nw.network_name)\
-                        .filter(Node.type == const.TYPE_NODE_SW).all()
+def get_all_node(nw=None):
+    if nw is None:
+        return Node.query.all()
+    else:
+        return Node.query.filter(Node.network_name == nw.network_name).all()
+
+def get_all_sw(nw=None):
+    if nw is None:
+        return Node.query.filter(Node.type == const.TYPE_NODE_SW).all()
+    else:
+        return Node.query.filter(Node.network_name == nw.network_name)\
+                            .filter(Node.type == const.TYPE_NODE_SW).all()
+
+def get_all_se(nw=None):
+    if nw is None:
+        return Node.query.filter(Node.type == const.TYPE_NODE_SE).all()
+    else:
+        return Node.query.filter(Node.network_name == nw.network_name)\
+                            .filter(Node.type == const.TYPE_NODE_SE).all()
+
+def get_all_srv(nw=None):
+    if nw is None:
+        return Node.query.filter(Node.type == const.TYPE_NODE_SRV).all()
+    else:
+        return Node.query.filter(Node.network_name == nw.network_name)\
+                            .filter(Node.type == const.TYPE_NODE_SRV).all()
+
+def get_all_vm(nw=None):
+    if nw is None:
+        return Node.query.filter(Node.type == const.TYPE_NODE_VM).all()
+    else:
+        return Node.query.filter(Node.network_name == nw.network_name)\
+                            .filter(Node.type == const.TYPE_NODE_VM).all()
+
+def get_all_mgmt(node):
+    return NodeManagement.query.filter(NodeManagement.idNode == node.id).all()
 
 def get_all_if(node):
     return InterFace.query.filter(InterFace.idNode == node.id).all()
 
 def get_all_target_if(node_name,port):
-    #search node
+    # search node
     subq = join(InterFace, Node, InterFace.idNode == Node.id) \
             .select(Node.node_name == node_name)
 
-    #To specify the column to get.
+    # To specify the column to get.
     subq =  subq.with_only_columns([InterFace.id])
  
-    #look for the interface that node_name and port_num matches.
+    # look for the interface that node_name and port_num matches.
     return InterFace.query.filter(InterFace.port == port).filter(InterFace.id.in_(subq)).all()
 
 def get_all_sw_if():
-    return InterFace.query.filter(InterFace.port != None).all()
+    # search node
+    subq = join(InterFace, Node, InterFace.idNode == Node.id) \
+            .select(Node.type == const.TYPE_NODE_SW)
+
+    # To specify the column to get.
+    subq =  subq.with_only_columns([InterFace.id])
+ 
+    # look for the interface that node_type == 'se'.
+    return InterFace.query.filter(InterFace.id.in_(subq)).all()
+#     return InterFace.query.filter(InterFace.port != None).all()
+
+def get_all_se_if():
+    # search node
+    subq = join(InterFace, Node, InterFace.idNode == Node.id) \
+            .select(Node.type == const.TYPE_NODE_SE)
+
+    # To specify the column to get.
+    subq =  subq.with_only_columns([InterFace.id])
+ 
+    # look for the interface that node_type == 'se'.
+    return InterFace.query.filter(InterFace.id.in_(subq)).all()
+
+def get_all_tn_link(nw=None):
+    if nw is None:
+        return Link.query.filter(Link.type == const.TYPE_LINK_TN).all()
+    else:
+        return Link.query.filter(Link.network_name == nw.network_name)\
+                            .filter(Link.type == const.TYPE_LINK_TN).all()
 
 def create_metadata(db_name,db_addr,db_port,db_user,db_pass,debug_flg):
     metadata.bind = 'mysql://{0}:{1}@{2}:{3}/{4}'.format(db_user,db_pass,db_addr,str(db_port),db_name)

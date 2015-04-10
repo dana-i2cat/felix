@@ -1,21 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
-import os
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-import sys
-sys.path.append(os.path.normpath(os.path.join(BASE_DIR, '../../lib')))
 import logging
 import calendar
 import xmltodict
 import module.api.config as config
 import module.common.const as const
+import module.common.util as util
 from datetime import datetime
 from sqlalchemy.orm import join
 from sqlalchemy.sql import select
 from xml.etree.ElementTree import Element,SubElement
 from bottle import route, request, HTTPResponse
 from module.common.topologydb import *
-from module.common.xml_util import prettify,to_array
 from module.common.md import search_target_table,DBHandle
 
 # constants
@@ -24,11 +20,85 @@ BASE_URI = '/' + config.rest_base + '/' + const.REST_TOPOL
 #logger.
 logger = logging.getLogger(const.MODULE_NAME_API)
 
+def parse_link_xml(xd_root):
+    link_dict_list = []
+    if xd_root.has_key(const.XML_TAG_LINK):
+        link_list = util.to_array(xd_root[const.XML_TAG_LINK])
+    else:
+        logger.debug('no link.')
+        return None
+
+    for link in link_list:
+        link_dict = dict()
+
+        #get link id<link id=xxx>
+        if link.has_key('@'+const.XML_ATTR_ID):
+            #add link name.
+            link_dict[const.XML_ATTR_ID] = link['@'+const.XML_ATTR_ID]
+
+        #get link type<link type=xxx>
+        if link.has_key('@'+const.XML_ATTR_TYPE):
+            link_type = link['@'+const.XML_ATTR_TYPE].lower()
+        else:
+            logger.warn('attribute <{0} {1}> is not specified.'\
+                        .format(const.XML_TAG_LINK,const.XML_ATTR_TYPE))
+            return None
+
+        if link_type == const.TYPE_LINK_LAN or \
+            link_type == const.TYPE_LINK_TN or \
+            link_type == const.TYPE_LINK_SE or \
+            link_type == const.TYPE_LINK_ABST_SDN:
+            # get interface_ref<interface_ref>
+            if link.has_key(const.XML_TAG_IF_REF):
+                ifref_list = util.to_array(link[const.XML_TAG_IF_REF])
+            else:
+                logger.warn('tag <{0}> is not specified.'.format(const.XML_TAG_IF_REF))
+                return None
+
+            # interface_ref exist two always
+            if len(ifref_list) != 2:
+                logger.warn('tag <{0}> exist two always.({1})'
+                            .format(const.XML_TAG_IF_REF),len(ifref_list))
+                return None
+
+            ifref_client_list = []
+            link_dict[const.XML_TAG_IF_REF] = ifref_client_list       
+            for ifref in ifref_list:
+                #get link type<link type=xxx>
+                if ifref.has_key('@'+const.XML_ATTR_CLIENT_ID):
+                    ifref_client_id = ifref['@'+const.XML_ATTR_CLIENT_ID]
+                else:
+                    logger.warn('attribute <{0} {1}> is not specified.'\
+                                .format(const.XML_TAG_IF_REF,const.XML_ATTR_CLIENT_ID))
+                    return None
+
+                #add client id.
+                ifref_client_list.append( ifref_client_id)
+   
+            #append link dictionary list.
+            link_dict_list.append(link_dict)
+
+        else:
+            logger.warn('attribute <{0} {1}={2}> is invalid value.'\
+                        .format(const.XML_TAG_LINK,const.XML_ATTR_TYPE,link_type))
+            return None
+
+        #add link type.
+        link_dict[const.XML_ATTR_TYPE] = link_type
+
+        if link_type == const.TYPE_LINK_ABST_SDN:
+            # get abstract link.<link>(Recursively call)
+            sub_link_dict_list = parse_link_xml(link)
+            if sub_link_dict_list:
+                link_dict[const.XML_TAG_LINK] = sub_link_dict_list
+
+    return link_dict_list
+    
 def parse_node_xml(xd_root):
     #get node<node>
     node_dict_list = [] 
     if xd_root.has_key(const.XML_TAG_NODE):
-        node_list = to_array(xd_root[const.XML_TAG_NODE])
+        node_list = util.to_array(xd_root[const.XML_TAG_NODE])
     else:
         logger.debug('tag <{0}> is not specified.'.format(const.XML_TAG_NODE))
         return None
@@ -53,6 +123,12 @@ def parse_node_xml(xd_root):
         if node_type == const.TYPE_NODE_SW:
             pass
 
+        elif node_type == const.TYPE_NODE_SE:
+            pass
+
+        elif node_type == const.TYPE_NODE_TN:
+            pass
+
         elif node_type == const.TYPE_NODE_SRV:
             # get vm<node>(Recursively call)
             sub_node_dict_list = parse_node_xml(node)
@@ -67,9 +143,30 @@ def parse_node_xml(xd_root):
                         .format(const.XML_TAG_NODE,const.XML_ATTR_TYPE,node_type))
             return None
 
-        #add node name and node type and network.
+        #add node name and node type.
         node_dict[const.XML_ATTR_ID] = node_id
         node_dict[const.XML_ATTR_TYPE] = node_type
+
+        #get management type and details
+        mgmt_dict = dict()
+        if node.has_key(const.XML_TAG_MGMT):
+            mgmt_list = util.to_array(node[const.XML_TAG_MGMT])
+            if len(mgmt_list) > 1:
+                logger.warn('more than one management definition. (node id={0})'.format(node_id))
+            mgmt = mgmt_list[0]
+            if mgmt.has_key(const.XML_TAG_MGMT_TYPE):
+                mgmt_dict[const.XML_TAG_MGMT_TYPE] = mgmt[const.XML_TAG_MGMT_TYPE]
+            else:
+                logger.warn('management definition has no type. (node id={0})'.format(node_id))
+            if mgmt.has_key(const.XML_TAG_MGMT_ADDRESS):
+                mgmt_dict[const.XML_TAG_MGMT_ADDRESS] = mgmt[const.XML_TAG_MGMT_ADDRESS]
+            if mgmt.has_key(const.XML_TAG_MGMT_PORT):
+                mgmt_dict[const.XML_TAG_MGMT_PORT] = mgmt[const.XML_TAG_MGMT_PORT]
+            if mgmt.has_key(const.XML_TAG_MGMT_AUTH):
+                mgmt_dict[const.XML_TAG_MGMT_AUTH] = mgmt[const.XML_TAG_MGMT_AUTH]
+
+        #add management
+        node_dict[const.XML_TAG_MGMT] = mgmt_dict
 
         #add interface dictionary list.
         if_dict_list = []
@@ -83,7 +180,7 @@ def parse_node_xml(xd_root):
             logger.debug('no interface.(node_id={0})'.format(node_id))
             continue
 
-        if_list = to_array(node[const.XML_TAG_IF])
+        if_list = util.to_array(node[const.XML_TAG_IF])
         for interface in if_list:
             if_dict = dict()
             #get interface id<interface id=xxx>
@@ -129,7 +226,7 @@ def parse_topology_xml(topology_list_xml):
 
         #get <topology>
         if xd_topol_list.has_key(const.XML_TAG_TOPOL):
-            topol_list = to_array(xd_topol_list[const.XML_TAG_TOPOL])
+            topol_list = util.to_array(xd_topol_list[const.XML_TAG_TOPOL])
         else:
             logger.warn('tag <{0}> is not specified.'.format(const.XML_TAG_TOPOL))
             return None
@@ -204,62 +301,12 @@ def parse_topology_xml(topology_list_xml):
             topol_dict[const.XML_TAG_NODE] = node_dict_list
     
             #get <link>
-            link_dict_list = []
+            link_dict_list = parse_link_xml(xd_topol)
+            if not link_dict_list:
+                link_dict_list = []
+
+            #add link dictionary list.
             topol_dict[const.XML_TAG_LINK] = link_dict_list
-            if xd_topol.has_key(const.XML_TAG_LINK):
-                link_list = to_array(xd_topol[const.XML_TAG_LINK])
-    
-                for link in link_list:
-                    #get link type<link type=xxx>
-                    link_dict = dict()
-                    if link.has_key('@'+const.XML_ATTR_TYPE):
-                        link_type = link['@'+const.XML_ATTR_TYPE].lower()
-                    else:
-                        logger.warn('attribute <{0} {1}> is not specified.'\
-                                    .format(const.XML_TAG_LINK,const.XML_ATTR_TYPE))
-                        return None
-        
-                    if link_type == const.TYPE_LINK_TN:
-                        # Processing for TN is T.B.D.
-                        pass
-        
-                    elif link_type == const.TYPE_LINK_LAN:
-                        # get interface_ref<interface_ref>
-                        if link.has_key(const.XML_TAG_IF_REF):
-                            ifref_list = to_array(link[const.XML_TAG_IF_REF])
-                        else:
-                            logger.warn('tag <{0}> is not specified.'.format(const.XML_TAG_IF_REF))
-                            return None
-        
-                        # interface_ref exist two always
-                        if len(ifref_list) != 2:
-                            logger.warn('tag <{0}> exist two always.({1})'
-                                        .format(const.XML_TAG_IF_REF),len(ifref_list))
-                            return None
-        
-                        ifref_client_list = []
-                        link_dict[const.XML_TAG_IF_REF] = ifref_client_list       
-                        for ifref in ifref_list:
-                            #get link type<link type=xxx>
-                            if ifref.has_key('@'+const.XML_ATTR_CLIENT_ID):
-                                ifref_client_id = ifref['@'+const.XML_ATTR_CLIENT_ID]
-                            else:
-                                logger.warn('attribute <{0} {1}> is not specified.'\
-                                            .format(const.XML_TAG_IF_REF,const.XML_ATTR_CLIENT_ID))
-                                return None
-        
-                            #add client id.
-                            ifref_client_list.append( ifref_client_id)
-               
-                        #append link dictionary list.
-                        link_dict_list.append(link_dict)
-        
-                    else:
-                        logger.warn('attribute <{0} {1}={2}> is invalid value.'\
-                                    .format(const.XML_TAG_LINK,const.XML_ATTR_TYPE,link_type))
-                        return None
-            else:
-                logger.debug('no link.')
 
             # append topology dict
             topol_dict_list.append(topol_dict)
@@ -279,16 +326,18 @@ def create_node_xml(xml_topology, network_name):
                                 {const.XML_ATTR_ID:node.node_name,
                                  const.XML_ATTR_TYPE:node.type
                                     })
-       
-        if node.type == const.TYPE_NODE_SRV:
-            #add <server_info>
-            xml_server_info = SubElement(xml_node, const.XML_TAG_SRV_INFO)
-            #add <vm_id>xxx</vm_id>
-            for vm_mapping in VMMapping.query.filter(VMMapping.idServer == node.id).all():
-                SubElement(xml_server_info, const.XML_TAG_VM_ID).text \
-                    = vm_mapping.vm_node.node_name
-        
-        elif node.type == const.TYPE_NODE_VM:
+
+### VM on Server is create in the GUI side based on vm_info
+#         if node.type == const.TYPE_NODE_SRV:
+#             #add <server_info>
+#             xml_server_info = SubElement(xml_node, const.XML_TAG_SRV_INFO)
+#             #add <vm_id>xxx</vm_id>
+#             for vm_mapping in VMMapping.query.filter(VMMapping.idServer == node.id).all():
+#                 SubElement(xml_server_info, const.XML_TAG_VM_ID).text \
+#                     = vm_mapping.vm_node.node_name
+#         
+#         elif node.type == const.TYPE_NODE_VM:
+        if node.type == const.TYPE_NODE_VM:
             #add <vm_info>
             xml_vm_info = SubElement(xml_node, const.XML_TAG_VM_INFO)
             #add <server_id>xxx</server_id>
@@ -301,44 +350,147 @@ def create_node_xml(xml_topology, network_name):
             #add <interface id='xxx'>
             xml_if = SubElement(xml_node, const.XML_TAG_IF,
                                  {const.XML_ATTR_ID:inter_face.if_name})
-            if inter_face.node.type == const.TYPE_NODE_SW :
+            if inter_face.node.type == const.TYPE_NODE_SW or inter_face.node.type == const.TYPE_NODE_SE:
                 #add <port num='xxx'>
                 SubElement(xml_if, const.XML_TAG_PORT,
                                  {const.XML_ATTR_NUM:inter_face.port})
 
-    return xml_topology
+    return
 
-def create_link_xml(xml_topology, network_name):
-    #search link
-    subq = join(InterFace, Node, InterFace.idNode == Node.id) \
-            .select(Node.network_name == network_name)
-    #To specify the column to get.
-    subq =  subq.with_only_columns([InterFace.id])
- 
-    #find a link connection source I/F in the network.
-    link_list = Link.query.filter(Link.src_idIF.in_(subq)).group_by(Link.id).all()
+def create_link_xml(xml_root, network_name, crrent_link=None):
+    if not crrent_link:
+        #search link in the network.
+        link_list = Link.query.filter(Link.network_name == network_name) \
+                                .filter(Link.abst_idLink == None).all()
+    else:
+        link_list = Link.query.filter(Link.network_name == network_name) \
+                                .filter(Link.abst_idLink == crrent_link.id).all()
+                                    
     for link in link_list:
-        if link.src_if is None or link.dst_if is None:
-            logger.warn('{0} is invalid link.(src_if:{1}-dst_if{2})'\
-                        .format(link.id,link.src_idIF,link.dst_idIF))
-            continue
-            
-        #add <link type='lan'>
-        xml_link = SubElement(xml_topology, const.XML_TAG_LINK,
-                             {const.XML_ATTR_TYPE:const.TYPE_LINK_LAN})
+        #add <link type=xxx>
+        xml_link = SubElement(xml_root, const.XML_TAG_LINK,
+                             {const.XML_ATTR_TYPE:link.type})
+        if link.link_name:
+            xml_link.set(const.XML_ATTR_ID,link.link_name)
      
+        srcif_name = '*'
+        if link.src_if:
+            srcif_name = link.src_if.if_name
         #add (source I/F) <interface_ref client_id='xxx'>
         SubElement(xml_link, const.XML_TAG_IF_REF,
-                             {const.XML_ATTR_CLIENT_ID:link.src_if.if_name})
+                             {const.XML_ATTR_CLIENT_ID:srcif_name})
+
+        dstif_name = '*'
+        if link.dst_if:
+            dstif_name = link.dst_if.if_name
         #add (destination I/F) <interface_ref client_id='xxx'>
         SubElement(xml_link, const.XML_TAG_IF_REF,
-                             {const.XML_ATTR_CLIENT_ID:link.dst_if.if_name})
+                             {const.XML_ATTR_CLIENT_ID:dstif_name})
         
-    return xml_topology
+        # create abstract link.<link>(Recursively call)
+        if link.type == const.TYPE_LINK_ABST_SDN:
+            create_link_xml(xml_link,network_name,link)
+        
+    return
+
+def insert_link(link_list,db_nw,crrent_link=None):
+    # sub query.(search node in the network.)
+    subq = select().where(Node.network_name == db_nw.network_name).with_only_columns([Node.id])
+
+    for link in link_list:
+        ifref_list = link[const.XML_TAG_IF_REF]
+        db_srcif_id = None
+        db_dstif_id = None
+
+        srcif_name = None
+        if not ifref_list[0] == '*':
+            srcif_name = ifref_list[0]
+
+        dstif_name = None
+        if not ifref_list[1] == '*':
+            dstif_name = ifref_list[1]
+
+        link_name = None
+        if link.has_key(const.XML_ATTR_ID):
+            link_name = link[const.XML_ATTR_ID]
+
+        link_type = None
+        if link.has_key(const.XML_ATTR_TYPE):
+            link_type = link[const.XML_ATTR_TYPE]
+
+        link_abst_id = None
+        if crrent_link:
+            link_abst_id = crrent_link.id
+
+        # find a interface in the network.
+        db_srcif = None
+        if srcif_name:
+            db_srcif = InterFace.query.filter(InterFace.idNode.in_(subq))\
+                                        .filter(InterFace.if_name == srcif_name).first()
+            if not db_srcif:
+                logger.warn('Interface({0}) can not be found.'.format(srcif_name))
+                continue
+            db_srcif_id = db_srcif.id
+
+        # find a interface in the network.
+        db_dstif = None
+        if dstif_name:
+            db_dstif = InterFace.query.filter(InterFace.idNode.in_(subq))\
+                                        .filter(InterFace.if_name == dstif_name).first()
+            if not db_dstif:
+                logger.warn('Interface({0}) can not be found.'.format(dstif_name))
+                continue
+            db_dstif_id = db_dstif.id
+            
+        # Existence check.
+        db_link = Link.query.filter(Link.src_idIF == db_srcif_id) \
+                                .filter(Link.dst_idIF == db_dstif_id) \
+                                .filter(Link.type == link_type) \
+                                .filter(Link.network_name == db_nw.network_name) \
+                                .filter(Link.link_name == link_name) \
+                                .filter(Link.abst_idLink == link_abst_id) \
+                                .first()
+        if db_link:
+            logger.debug('link({0}-{1}) is Already existence.'.format(db_link.src_idIF,db_link.dst_idIF))
+            continue
+
+        db_link = Link.query.filter(Link.src_idIF == db_dstif_id) \
+                                .filter(Link.dst_idIF == db_srcif_id) \
+                                .filter(Link.type == link_type) \
+                                .filter(Link.network_name == db_nw.network_name) \
+                                .filter(Link.link_name == link_name) \
+                                .filter(Link.abst_idLink == link_abst_id) \
+                                .first()
+        if db_link:
+            logger.debug('link({0}-{1}) is Already existence.'.format(db_link.src_idIF,db_link.dst_idIF))
+            continue
+
+        # insert DB.
+        db_link = Link(src_idIF=db_srcif_id,dst_idIF=db_dstif_id
+                       ,type=link_type,network_name=db_nw.network_name
+                       ,link_name=link_name,abst_idLink=link_abst_id,)
+        session.commit()        
+
+        # register the abstract link in the case of (link_type=="sdn").
+        if link.has_key(const.XML_TAG_LINK):
+            insert_link(link[const.XML_TAG_LINK],db_nw,db_link)
 
 def insert_node(node_list,db_nw,crrent_node=None):
     ### insert node
     for node in node_list:
+        # register the VM in the case of (topology_type=="slice" and node_type=="server").
+        if db_nw.type == const.TYPE_NW_SLICE and node[const.XML_ATTR_TYPE] == const.TYPE_NODE_SRV:
+            db_node = Node.query.filter(Node.type == node[const.XML_ATTR_TYPE]) \
+                                    .filter(Node.node_name == node[const.XML_ATTR_ID]).first()
+            if not db_node:
+                logger.warn('server node({0}) is not existence.(VM can not be registered.)'
+                            .format(node[const.XML_ATTR_ID]))
+                continue
+
+            if node.has_key(const.XML_TAG_NODE):
+                insert_node(node[const.XML_TAG_NODE],db_nw,db_node)
+            continue
+
         # Existence check.
         db_node = Node.query.filter(Node.type == node[const.XML_ATTR_TYPE]) \
                                 .filter(Node.node_name == node[const.XML_ATTR_ID])\
@@ -353,11 +505,34 @@ def insert_node(node_list,db_nw,crrent_node=None):
                                 )
             session.commit()
 
-        # register the VM in the case of (topology_type=="slice" and node_type=="server").
-        if db_nw.type == const.TYPE_NW_SLICE and db_node.type == const.TYPE_NODE_SRV:
-            if node.has_key(const.XML_TAG_NODE):
-                insert_node(node[const.XML_TAG_NODE],db_nw,db_node)
-            continue
+        ### insert management details
+        mgmt = []
+        if node.has_key(const.XML_TAG_MGMT):
+            mgmt = node[const.XML_TAG_MGMT]
+            db_mgmt = NodeManagement.query.filter(NodeManagement.idNode == db_node.id).first()
+            if db_mgmt:
+                logger.debug('management for node({0}) already exists.'.format(node[const.XML_ATTR_ID]))
+                continue
+            if not mgmt.has_key(const.XML_TAG_MGMT_TYPE):
+                logger.debug('management for node({0}) has no type.'.format(node[const.XML_ATTR_ID]))
+            else:
+                mgmt_type = mgmt[const.XML_TAG_MGMT_TYPE]
+                mgmt_address = None
+                mgmt_port = None
+                mgmt_auth = None
+                if mgmt.has_key(const.XML_ATTR_MGMT_ADDRESS):
+                    mgmt_address = mgmt[const.XML_ATTR_MGMT_ADDRESS]
+                if mgmt.has_key(const.XML_ATTR_MGMT_PORT):
+                    mgmt_port = mgmt[const.XML_ATTR_MGMT_PORT]
+                if mgmt.has_key(const.XML_ATTR_MGMT_AUTH):
+                    mgmt_auth = mgmt[const.XML_ATTR_MGMT_AUTH]
+            
+                db_mgmt = NodeManagement(idNode=db_node.id
+                                   ,type=mgmt_type
+                                   ,address=mgmt_address
+                                   ,port=mgmt_port
+                                   ,auth=mgmt_auth )
+                session.commit()
 
         ### insert interface
         if_list = []
@@ -368,7 +543,7 @@ def insert_node(node_list,db_nw,crrent_node=None):
             db_if = InterFace.query.filter(InterFace.idNode == db_node.id) \
                                     .filter(InterFace.if_name == interface[const.XML_ATTR_ID]).first()
             if db_if:
-                logger.debug('interface({0}) is Already existence.'.format(db_if.if_name))
+                logger.debug('interface({0}) already exists.'.format(db_if.if_name))
                 continue
 
             port_num = None
@@ -397,86 +572,56 @@ def insert_node(node_list,db_nw,crrent_node=None):
     return
 
 def insert_topol(topol_dict):
+    logger.debug('insert topology -start-')
     try:
-        logger.debug('insert topology -start-')
-        #open DB connection.
-        tpldb_setup()
-        
-        ### insert topology
-        # Existence check.
-        db_nw = Network.query.filter(Network.type == topol_dict[const.XML_ATTR_TYPE]) \
-                                .filter(Network.network_name == topol_dict[const.XML_ATTR_NAME]).first()
-        if db_nw:
-            logger.debug('network({0}) is Already existence.'.format(db_nw.network_name))
-
-        else:
-            topol_uri = BASE_URI + '/'+ topol_dict[const.XML_ATTR_TYPE]
-            nw_owner = None
-            if topol_dict[const.XML_ATTR_TYPE] == const.TYPE_NW_SLICE:
-                topol_uri = topol_uri + '/' + topol_dict[const.XML_ATTR_NAME]
-                if topol_dict.has_key(const.XML_ATTR_OWN):
-                    nw_owner = topol_dict[const.XML_ATTR_OWN]
-
-            #get now time.(UTC:0)
-            now_time = calendar.timegm(datetime.utcnow().timetuple())
-    
-            # insert DB.
-            db_nw = Network(type=topol_dict[const.XML_ATTR_TYPE]
-                            ,registration_time=now_time
-                            ,last_update_time=topol_dict[const.XML_ATTR_LAST_UPD_TIME]
-                            ,network_name=topol_dict[const.XML_ATTR_NAME]
-                            ,uri=topol_uri
-                            ,user=nw_owner
-                                )
-            session.commit()
-
-        ### insert node
-        node_list = []
-        if topol_dict.has_key(const.XML_TAG_NODE):
-            node_list = topol_dict[const.XML_TAG_NODE]
-
-        insert_node(node_list,db_nw)
-
-        ### insert link
-        link_list = []
-        if topol_dict.has_key(const.XML_TAG_LINK):
-            link_list = topol_dict[const.XML_TAG_LINK]
-
-        # sub query.(search node in the network.)
-        subq = select().where(Node.network_name == db_nw.network_name).with_only_columns([Node.id])
-
-        for link in link_list:
-            ifref_list = link[const.XML_TAG_IF_REF]
-            # find a interface in the network.
-            db_srcif = InterFace.query.filter(InterFace.idNode.in_(subq))\
-                                        .filter(InterFace.if_name == ifref_list[0]).first()
-            if not db_srcif:
-                logger.warn('Interface({0}) can not be found.'.format(ifref_list[0]))
-                continue
-
-            # find a interface in the network.
-            db_dstif = InterFace.query.filter(InterFace.idNode.in_(subq))\
-                                        .filter(InterFace.if_name == ifref_list[1]).first()
-            if not db_dstif:
-                logger.warn('Interface({0}) can not be found.'.format(ifref_list[1]))
-                continue
+        # lock -start-
+        with util.semaphore_tpl:
+            with util.semaphore_md:
+                #open DB connection.
+                tpldb_setup()
                 
-            # Existence check.
-            db_link = Link.query.filter(Link.src_idIF == db_srcif.id) \
-                                    .filter(Link.dst_idIF == db_dstif.id).first()
-            if db_link:
-                logger.debug('link({0}-{1}) is Already existence.'.format(db_link.src_idIF,db_link.dst_idIF))
-                continue
-
-            db_link = Link.query.filter(Link.src_idIF == db_dstif.id) \
-                                    .filter(Link.dst_idIF == db_srcif.id).first()
-            if db_link:
-                logger.debug('link({0}-{1}) is Already existence.'.format(db_link.src_idIF,db_link.dst_idIF))
-                continue
-
-            # insert DB.
-            db_link = Link(src_idIF=db_srcif.id,dst_idIF=db_dstif.id)
-            session.commit()        
+                ### insert topology
+                # Existence check.
+                db_nw = Network.query.filter(Network.type == topol_dict[const.XML_ATTR_TYPE]) \
+                                        .filter(Network.network_name == topol_dict[const.XML_ATTR_NAME]).first()
+                if db_nw:
+                    logger.debug('network({0}) is Already existence.'.format(db_nw.network_name))
+                    # update DB.
+                    db_nw.last_update_time=topol_dict[const.XML_ATTR_LAST_UPD_TIME]
+                    session.commit()
+        
+                else:
+                    nw_owner = None
+                    if topol_dict[const.XML_ATTR_TYPE] == const.TYPE_NW_SLICE:
+                        if topol_dict.has_key(const.XML_ATTR_OWN):
+                            nw_owner = topol_dict[const.XML_ATTR_OWN]
+        
+                    #get now time.(UTC:0)
+                    now_time = calendar.timegm(datetime.utcnow().timetuple())
+            
+                    # insert DB.
+                    db_nw = Network(type=topol_dict[const.XML_ATTR_TYPE]
+                                    ,registration_time=now_time
+                                    ,last_update_time=topol_dict[const.XML_ATTR_LAST_UPD_TIME]
+                                    ,network_name=topol_dict[const.XML_ATTR_NAME]
+                                    ,user=nw_owner
+                                        )
+                    session.commit()
+        
+                ### insert node
+                node_list = []
+                if topol_dict.has_key(const.XML_TAG_NODE):
+                    node_list = topol_dict[const.XML_TAG_NODE]
+        
+                insert_node(node_list,db_nw)
+        
+                ### insert link
+                link_list = []
+                if topol_dict.has_key(const.XML_TAG_LINK):
+                    link_list = topol_dict[const.XML_TAG_LINK]
+        
+                insert_link(link_list,db_nw)
+        # lock -end-
 
     except Exception:
         logger.exception('insert topology error.')
@@ -489,12 +634,11 @@ def insert_topol(topol_dict):
 
     return
 
-def del_md(nw_name,regist_time):
+def del_md(nw_name,regist_time,mon_data_db):
+    logger.debug('delete monitoring-data -start-')
     #database handle.
     db_handle = DBHandle()
     try:
-        logger.debug('delete monitoring-data -start-')
-
         #get now time.(UTC:0)
         now_time = calendar.timegm(datetime.utcnow().timetuple())
     
@@ -503,10 +647,10 @@ def del_md(nw_name,regist_time):
         if not regist_time :
             logger.warn('Target network can not be found.')
             return
-        tbl_name_list = search_target_table(logger,int(regist_time),int(now_time))
+        tbl_name_list = search_target_table(logger,int(regist_time),int(now_time),mon_data_db)
 
         #connect to the database.
-        db_con = db_handle.connect(config.mon_data_sdn_db,config.db_addr
+        db_con = db_handle.connect(mon_data_db,config.db_addr
                                    ,config.db_port,config.db_user,config.db_pass)
         
         #no data in the search time-range.
@@ -556,46 +700,64 @@ def del_md(nw_name,regist_time):
     return
 
 def del_topol(topol_dict,md_flg=False):
+    logger.debug('delete topology -start-')
     try:
-        logger.debug('delete topology -start-')
-        #open DB connection.
-        tpldb_setup()
+        # lock -start-
+        with util.semaphore_tpl:
+            with util.semaphore_md:
+                #open DB connection.
+                tpldb_setup()
+                
+                #get all node in topology.
+                for node in Node.query.filter(Node.network_name == topol_dict[const.XML_ATTR_NAME]).all():
+                    #get all management details in node (should be only one)
+                    for mgmt in NodeManagement.query.filter(NodeManagement.idNode == node.id).all():
+                        ### delete management details
+                        mgmt.delete()
+                    #get all interface in node.
+                    for interface in InterFace.query.filter(InterFace.idNode == node.id).all():
+                        #get search all of the links that interface is involved.
+                        for link in Link.query.filter((Link.src_idIF == interface.id) | (Link.dst_idIF == interface.id)).all():
+                            ### delete link
+                            link.delete()
         
-        #get all node in topology.
-        for node in Node.query.filter(Node.network_name == topol_dict[const.XML_ATTR_NAME]).all():
-            #get all interface in node.
-            for interface in InterFace.query.filter(InterFace.idNode == node.id).all():
-                #get search all of the links that interface is involved.
-                for link in Link.query.filter((Link.src_idIF == node.id) | (Link.dst_idIF == node.id)).all():
-                    ### delete link
-                    link.delete()
-
-                ### delete interface
-                interface.delete()
-
-            #get all of the vm-mappings that node is involved.
-            for vmmap in VMMapping.query.filter((VMMapping.idServer == node.id) | (VMMapping.idVM == node.id)).all():
-                ### delete vm-mapping
-                vmmap.delete()
-
-            ### delete node
-            node.delete()
-
-        # keep in order to remove the monitoring-data.
-        nw_name = None
-        regist_time = None
-        nw = Network.query.filter(Network.network_name == topol_dict[const.XML_ATTR_NAME]).first()
-        if nw:
-            nw_name = nw.network_name
-            regist_time = nw.registration_time
-            ### delete network
-            nw.delete()
-
-        session.commit()
+                        ### delete interface
+                        interface.delete()
+        
+                    #get all of the vm-mappings that node is involved.
+                    for vmmap in VMMapping.query.filter((VMMapping.idServer == node.id) | (VMMapping.idVM == node.id)).all():
+                        ### delete vm-mapping
+                        vmmap.delete()
+        
+                    ### delete node
+                    node.delete()
+        
+                # keep in order to remove the monitoring-data.
+                nw_name = None
+                regist_time = None
+                nw = Network.query.filter(Network.network_name == topol_dict[const.XML_ATTR_NAME]).first()
+                if nw:
+                    nw_name = nw.network_name
+                    regist_time = nw.registration_time
+                    ### delete network
+                    nw.delete()
+        
+                session.commit()
+        # lock -end-
 
         ### delete monitoring-data
         if md_flg is True:
-            del_md(nw_name,regist_time)
+            # delete monitoring-data-sdn
+            del_md(nw_name,regist_time,config.mon_data_sdn_db)
+
+            # delete monitoring-data-cp
+            del_md(nw_name,regist_time,config.mon_data_cp_db)
+
+            # delete monitoring-data-se
+            del_md(nw_name,regist_time,config.mon_data_se_db)
+
+            # delete monitoring-data-tn
+            del_md(nw_name,regist_time,config.mon_data_tn_db)
 
     except Exception:
         logger.exception('delete topology error.')
@@ -611,30 +773,29 @@ def del_topol(topol_dict,md_flg=False):
 @route(BASE_URI, method='GET')
 @route(BASE_URI + '/', method='GET')
 def topology_list():
-    logger.info('GET topology list.')
+    logger.info('GET topology list. -start-')
     try:
-        #open DB connection.
-        tpldb_setup()
+        # lock -start-
+        with util.semaphore_tpl:
+            #open DB connection.
+            tpldb_setup()
+    
+            #create <topology_list>
+            xml_topology_list = Element(const.XML_TAG_TOPOL_LIST)
+            
+            nw_list = Network.query.all()
+            for nw in nw_list:
+                #add <topology type='slice' last_update_time='xxx' name='xxx' owner='xxx'>
+                xml_topology = SubElement(xml_topology_list, const.XML_TAG_TOPOL,
+                                            {const.XML_ATTR_TYPE:nw.type,
+                                             const.XML_ATTR_LAST_UPD_TIME:str(nw.last_update_time),
+                                             const.XML_ATTR_NAME:nw.network_name
+                                                })
+    
+                if nw.type == const.TYPE_NW_SLICE:
+                    xml_topology.set(const.XML_ATTR_OWN,nw.user)
+        # lock -end-
 
-        #create <topology_list>
-        xml_topology_list = Element(const.XML_TAG_TOPOL_LIST)
-        
-        nw_list = Network.query.all()
-        for nw in nw_list:
-            #add <topology type='slice' last_update_time='xxx' name='xxx' owner='xxx'>
-            xml_topology = SubElement(xml_topology_list, const.XML_TAG_TOPOL,
-                                        {const.XML_ATTR_TYPE:nw.type,
-                                         const.XML_ATTR_LAST_UPD_TIME:str(nw.last_update_time),
-                                         const.XML_ATTR_NAME:nw.network_name
-                                            })
-
-            if nw.type == const.TYPE_NW_SLICE:
-                xml_topology.set(const.XML_ATTR_OWN,nw.user)
-
-            #add <uri>xxx</uri>
-            xml_uri = SubElement(xml_topology, const.XML_TAG_URI)
-            xml_uri.text = nw.uri
-           
     except Exception:
         logger.exception('GET topology list error.')
         return HTTPResponse("GET topology list error.", status=500)
@@ -642,33 +803,37 @@ def topology_list():
     finally:
         #close DB connection.
         tpldb_close()
+    logger.info('GET topology list. -end-')
 
-    return prettify(xml_topology_list)
+    return util.prettify(xml_topology_list)
 
 @route(BASE_URI + '/' + const.TYPE_NW_PHYSICAL, method='GET')
 @route(BASE_URI + '/'+ const.TYPE_NW_PHYSICAL +'/', method='GET')
 def physical_topology_get():
-    logger.info('GET {0} topology.'.format(const.TYPE_NW_PHYSICAL))
+    logger.info('GET {0} topology. -start-'.format(const.TYPE_NW_PHYSICAL))
     try:
-        #open DB connection.
-        tpldb_setup()
-
-        #create <topology_list>
-        xml_topology_list = Element(const.XML_TAG_TOPOL_LIST)
-        
-        nw_list = Network.query.filter(Network.type == const.TYPE_NW_PHYSICAL).all()        
-        for nw in nw_list:
-            #add <topology type='slice' last_update_time='xxx' name='xxx' owner='xxx'>
-            xml_topology = SubElement(xml_topology_list, const.XML_TAG_TOPOL,
-                                        {const.XML_ATTR_TYPE:nw.type,
-                                         const.XML_ATTR_LAST_UPD_TIME:str(nw.last_update_time),
-                                         const.XML_ATTR_NAME:nw.network_name
-                                            })
-
-            #create node xml
-            xml_topology = create_node_xml(xml_topology, nw.network_name)
-            #create link xml
-            xml_topology = create_link_xml(xml_topology, nw.network_name)
+        # lock -start-
+        with util.semaphore_tpl:
+            #open DB connection.
+            tpldb_setup()
+    
+            #create <topology_list>
+            xml_topology_list = Element(const.XML_TAG_TOPOL_LIST)
+            
+            nw_list = Network.query.filter(Network.type == const.TYPE_NW_PHYSICAL).all()        
+            for nw in nw_list:
+                #add <topology type='slice' last_update_time='xxx' name='xxx' owner='xxx'>
+                xml_topology = SubElement(xml_topology_list, const.XML_TAG_TOPOL,
+                                            {const.XML_ATTR_TYPE:nw.type,
+                                             const.XML_ATTR_LAST_UPD_TIME:str(nw.last_update_time),
+                                             const.XML_ATTR_NAME:nw.network_name
+                                                })
+    
+                #create node xml
+                create_node_xml(xml_topology, nw.network_name)
+                #create link xml
+                create_link_xml(xml_topology, nw.network_name)
+        # lock -end-
 
     except Exception:
         logger.exception('GET physical topology error.')
@@ -677,36 +842,40 @@ def physical_topology_get():
     finally:
         #close DB connection.
         tpldb_close()
+    logger.info('GET {0} topology. -end-'.format(const.TYPE_NW_PHYSICAL))
 
-    return prettify(xml_topology_list)
+    return util.prettify(xml_topology_list)
 
 @route(BASE_URI + '/'+ const.TYPE_NW_SLICE +'/<slice_id>', method='GET')
 def slice_topology_get( slice_id="default_slice_id" ):
     logger.info('GET {0} topology.(slice_id={1})'.format(const.TYPE_NW_SLICE,slice_id))
     try:
-        #open DB connection.
-        tpldb_setup()
-
-        #create <topology_list>
-        xml_topology_list = Element(const.XML_TAG_TOPOL_LIST)
-            
-        #add <network type='slice' last_update_time='xxx'>
-        nw = Network.query.filter(Network.type == const.TYPE_NW_SLICE)\
-                            .filter(Network.network_name == slice_id).first()
-        if not nw:
-            return prettify(xml_topology_list)
-
-        #add <topology type='slice' last_update_time='xxx' name='xxx' owner='xxx'>
-        xml_topology = SubElement(xml_topology_list, const.XML_TAG_TOPOL,
-                                    {const.XML_ATTR_TYPE:nw.type,
-                                     const.XML_ATTR_LAST_UPD_TIME:str(nw.last_update_time),
-                                     const.XML_ATTR_NAME:nw.network_name
-                                        })
-
-        #create node xml
-        xml_topology = create_node_xml(xml_topology, slice_id)
-        #create link xml
-        xml_topology = create_link_xml(xml_topology, slice_id)
+        # lock -start-
+        with util.semaphore_tpl:
+            #open DB connection.
+            tpldb_setup()
+    
+            #create <topology_list>
+            xml_topology_list = Element(const.XML_TAG_TOPOL_LIST)
+                
+            #add <network type='slice' last_update_time='xxx'>
+            nw = Network.query.filter(Network.type == const.TYPE_NW_SLICE)\
+                                .filter(Network.network_name == slice_id).first()
+            if not nw:
+                return util.prettify(xml_topology_list)
+    
+            #add <topology type='slice' last_update_time='xxx' name='xxx' owner='xxx'>
+            xml_topology = SubElement(xml_topology_list, const.XML_TAG_TOPOL,
+                                        {const.XML_ATTR_TYPE:nw.type,
+                                         const.XML_ATTR_LAST_UPD_TIME:str(nw.last_update_time),
+                                         const.XML_ATTR_NAME:nw.network_name
+                                            })
+    
+            #create node xml
+            create_node_xml(xml_topology, slice_id)
+            #create link xml
+            create_link_xml(xml_topology, slice_id)
+        # lock -end-
     
     except Exception:
         logger.exception('GET slice topology error.')
@@ -716,12 +885,12 @@ def slice_topology_get( slice_id="default_slice_id" ):
         #close DB connection.
         tpldb_close()
 
-    return prettify(xml_topology_list)
+    return util.prettify(xml_topology_list)
 
 @route(BASE_URI, method='POST')
 @route(BASE_URI + '/', method='POST')
 def topology_post():
-    logger.info('POST topology.')
+    logger.info('POST topology. -start-')
     try:
         #get request body.(xml message.)
         param_list=request.body
@@ -741,7 +910,7 @@ def topology_post():
         for topol_dict in topol_dict_list:
             # topology to DB.
             if topol_dict[const.XML_ATTR_TYPE] == const.TYPE_NW_PHYSICAL:
-                logger.debug('topology(type={0}) add.'.format(const.TYPE_NW_PHYSICAL))
+                logger.debug('topology add.(type={0})'.format(const.TYPE_NW_PHYSICAL))
                 # physical topology will be inserted after you delete all the information of the domain of interest.
                 # delete from DB.(monitoring-data is not deleted.)
                 del_topol(topol_dict)
@@ -750,7 +919,7 @@ def topology_post():
                 insert_topol(topol_dict)
      
             elif topol_dict[const.XML_ATTR_TYPE] == const.TYPE_NW_SLICE:
-                logger.debug('topology(type={0},status={1}) add.'.format(const.TYPE_NW_SLICE,topol_dict[const.XML_ATTR_STS]))
+                logger.debug('topology add.(type={0},status={1})'.format(const.TYPE_NW_SLICE,topol_dict[const.XML_ATTR_STS]))
                 # status == Provision is insert DB.(start monitoring)
                 # status == Delete is delete DB.(stop monitoring)
                 # ignore　other status.
@@ -770,5 +939,6 @@ def topology_post():
     except Exception:
         logger.exception('POST topology error.')
         return HTTPResponse("POST topology error.", status=500)
+    logger.info('POST topology. -end-')
 
     return

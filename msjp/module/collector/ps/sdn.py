@@ -8,10 +8,12 @@ import module.collector.config as config
 import module.common.const as const
 from datetime import datetime
 from module.common.topologydb import *
-from module.common.md import create_monitoring_data_xml,post_md,DBUploader
-from module.common.xml_util import to_array
+from module.common.md import post_md
+from module.common.sdn_md import create_monitoring_data_xml,DBUploader
+from module.common.util import to_array
 
 # constants
+COL_NAME = 'monitoring-data(sdn)'
 POST_URI = config.post_uri + "/" + const.TYPE_MON_SDN
 
 PS_MSG_TEMPLATE = """
@@ -26,17 +28,17 @@ PS_MSG_TEMPLATE = """
 </SOAP-ENV:Envelope>
 """
 
-#logger.
+# logger.
 logger = logging.getLogger(const.MODULE_NAME_COL)
 
-#set data uploader script file path.
+# set data uploader script file path.
 db_upld = DBUploader(log_name=const.MODULE_NAME_COL,
                         db_name=config.mon_data_sdn_db,
                         db_host=config.db_addr,db_port=config.db_port,
                         db_user=config.db_user,db_pass=config.db_pass)
 
 class MonitoringDataSDN():
-    #befor monitoring timesamp(stime)
+    # befor monitoring timesamp(stime)
     before_time = calendar.timegm(datetime.utcnow().timetuple())
 
     def __create_ps_msg(self,nmwg_msg):
@@ -111,17 +113,16 @@ class MonitoringDataSDN():
 
     def __get_monitoring_data(self,node_name,port,stime,etime,tblsaffix_list):
         logger.debug("get monitoring-data.")
-#         tblsaffix_list = self.__get_tblsaffix(stime,etime)
         sql_metaid = "(SELECT metaID FROM metaData " \
-                      + "WHERE sw_id='{0}' AND port='{1}')"\
+                      + "WHERE node_name='{0}' AND port='{1}')"\
                       .format(node_name,port)
         # search database.(data)
         sql_base = "(SELECT timestamp,{0} FROM {1} WHERE metaID={2}"\
                     + " AND timestamp &gt;= {0}".format(stime)\
-                    + " AND timestamp &lt;= {0})".format(etime)
+                    + " AND timestamp &lt; {0})".format(etime)
 
         mon_item_list = []
-        for mon_item in config.mon_item_list:
+        for mon_item in config.ps_sdn_mon_item_list:
             mon_item_list.append(mon_item['data-name'])
         if not mon_item_list:
             logger.debug('monitoring-item is not specified.')
@@ -185,37 +186,42 @@ class MonitoringDataSDN():
         return res_dict
     
     def __aggregate_avg(self,data_name,val_list):
-        ###val_list:list(val_dict[param_name:value])}
+        ### val_list:list(val_dict[param_name:value])}
 
         total_val = 0
         count = 0
+        timestamp = 0
         for val in val_list:
             if not val.has_key(data_name):
                 continue
             total_val += int(val[data_name])
+            # a final time of timestamp
+            if timestamp <  int(val['timestamp']):
+                timestamp = int(val['timestamp'])
             count += 1
             
         if  count == 0:
-            return None
+            return None,timestamp
+
         agg_val = total_val / count
 
-        return agg_val
+        return agg_val,timestamp
 
     def __aggregate_last(self,data_name,val_list):
-        ###val_list:list(val_dict[param_name:value])}
+        ### val_list:list(val_dict[param_name:value])}
 
         last_val = 0
         timestamp = 0
         for val in val_list:
             if not val.has_key(data_name):
                 continue
+            # a final time of timestamp
             if timestamp <  int(val['timestamp']):
                 last_val = val[data_name]
                 timestamp = int(val['timestamp'])
         if timestamp == 0:
-            return None
-        
-        return last_val
+            return None,timestamp
+        return last_val,timestamp
 
     def __aggregate(self,md_dict,timestamp):
         ### md_dict={type:switch,network_name:xxx,node_name:xxx,
@@ -225,17 +231,18 @@ class MonitoringDataSDN():
         # Aggregate(average value or last value)
         agg_val_list = []
         agg_val_dict = dict()
-        for item_dict in config.mon_item_list:
+        for item_dict in config.ps_sdn_mon_item_list:
             data_name = item_dict['data-name']
             agg_type = item_dict['agg-type']
             logger.debug('data_name={0} agg_type={1}'.format(data_name,agg_type))
             if agg_type == const.TYPE_AGG_AVG:
                 # adding the value　and increments the counter.
-                agg_val = self.__aggregate_avg(data_name,md_dict['val_list'])
+                agg_val,agg_ts = self.__aggregate_avg(data_name,md_dict['val_list'])
 
             elif agg_type == const.TYPE_AGG_LAST:
                 # Compare the time stamp, to hold the latest value.
-                agg_val = self.__aggregate_last(data_name,md_dict['val_list'])
+                agg_val,agg_ts = self.__aggregate_last(data_name,md_dict['val_list'])
+
             else :
                 logger.warn('aggregate type is invalid.({0})'.format(agg_val))
                 continue
@@ -244,9 +251,9 @@ class MonitoringDataSDN():
                 logger.warn('aggregate value is null.')
                 continue
 
-            logger.debug('timestamp={0} agg_val={1}'.format(timestamp,agg_val))
+            logger.debug('timestamp={0} agg_val={1}'.format(agg_ts,agg_val))
             # Timestamp is common to all of the aggregate data
-            agg_val_dict['timestamp'] = str(timestamp)
+            agg_val_dict['timestamp'] = str(agg_ts)
             agg_val_dict[data_name] = str(agg_val)
 
         # Store a list that Aggregate value exists only one (overwrite)
@@ -256,51 +263,39 @@ class MonitoringDataSDN():
         return md_dict
 
     def main(self):
-        #now monitoring timesamp(etime)
-        now_time = 0
-#--- debug
-        TEST_BEFOR=1414775962
-        TEST_NOW=1415775991
-#--- debug
+        # get now time.(UTC:0)
+        # for monitoring timesamp(etime)
+        now_time = calendar.timegm(datetime.utcnow().timetuple())
         try:
-            print('monitoring-data(sdn) -start-')
-            logger.debug('monitoring-data(sdn) -start-')
+            print(COL_NAME + ' -start-')
+            logger.info(COL_NAME + ' -start-')
 
-            #open topology database connection.
+            # open topology database connection.
             tpldb_setup()
 
-            #get now time.(UTC:0)
-            now_time = calendar.timegm(datetime.utcnow().timetuple())
-            
-            #get monitoring-data from SequelService.
-#--- debug
-#             tblsaffix_list = self.__get_tblsaffix(self.before_time,now_time)
-            tblsaffix_list = self.__get_tblsaffix(TEST_BEFOR,TEST_NOW)
-#--- debug
+            # get monitoring-data from SequelService.
+            tblsaffix_list = self.__get_tblsaffix(self.before_time,now_time)
             if not tblsaffix_list:
                 logger.debug('tblsaffix_list is no data.')
                 return
 
-            #get all of the switch-I/F(port) from DB.
+            # get all of the switch-I/F(port) from DB.
             if_list = get_all_sw_if()
             all_md_list = []
             for interface in if_list:
                 if interface.node.network.type == const.TYPE_NW_SLICE:
                     logger.debug('(skip)slice interface is not target.')
                     continue
-                #get monitoring-data from SequelService.
+                # get monitoring-data from SequelService.
                 node_name = interface.node.node_name
                 port = interface.port
-#--- debug
-#                 md_dict = self.__get_monitoring_data(node_name,port,self.before_time,now_time,tblsaffix_list)
-                md_dict = self.__get_monitoring_data(node_name,port,TEST_BEFOR,TEST_NOW,tblsaffix_list)
-#--- debug
+                md_dict = self.__get_monitoring_data(node_name,port,self.before_time,now_time,tblsaffix_list)
                 if not md_dict:
                     logger.debug('monitoring-data is no data.(node={0},port={1})'.format(node_name,port))
                     continue
                 logger.debug(md_dict)
 
-                #aggregate the monitoring-data.
+                # aggregate the monitoring-data.
                 if config.aggregate_flg == 1:
                     logger.debug('aggregate the monitoring-data.')
                     md_dict = self.__aggregate(md_dict,now_time)
@@ -315,34 +310,39 @@ class MonitoringDataSDN():
             if not all_md_list:
                 logger.debug('monitoring-data is no data.(all interface)')
                 return
-            #parse monitoring-data-list to monitoring-data-xml.
+            # parse monitoring-data-list to monitoring-data-xml.
             md_xml = create_monitoring_data_xml(logger,all_md_list)
             if not md_xml:
                 logger.debug('monitoring-data-xml is null.')
                 return
+            logger.debug(md_xml)
 
-            #upload monitoring-data to DB.
+            # upload all monitoring-data to DB.
             logger.debug('upload monitoring-data to DB.')
-            if not db_upld.upload_monitoring_data_all(md_xml):
+            mon_data_dict = db_upld.cleate_monitoring_data_dict(md_xml)
+            if not mon_data_dict:
                 logger.debug('upload monitoring-data is null.')
                 return
+            val_dict_list = db_upld.cleate_upload_data_list(mon_data_dict)
+            db_upld.upload_monitoring_data_all(val_dict_list)
     
-            #post the monitoring-data to the master-monitoring-server.
+            # post the monitoring-data to the master-monitoring-server.
             logger.debug('post the monitoring-data to the master-monitoring-server.')
             res_flg,res = post_md(POST_URI,md_xml,'yes')
             if res_flg is False:
                 logger.error('post monitoring-data error.(post_uri={0})'.format(POST_URI))
             if res:
-                logger.debug(res.text)
+                logger.debug("HTTP Response({0}):{1}".format(res.status_code,res.text))
 
         except Exception:
-            logger.exception(const.MODULE_NAME_COL)
+            logger.exception(COL_NAME)
+            print(COL_NAME + ' -exception-')
     
         finally:
-            #close topology database connection.
-            tpldb_close()
             self.before_time = now_time
-            logger.debug('monitoring-data(sdn) -end-')
-            print('monitoring-data(sdn) -end-')
+            # close topology database connection.
+            tpldb_close()
+            logger.info(COL_NAME + ' -end-')
+            print(COL_NAME + ' -end-')
     
         return
