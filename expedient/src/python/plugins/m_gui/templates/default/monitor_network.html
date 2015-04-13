@@ -1,21 +1,21 @@
 {% extends "default/iframebase.html" %}
 {% load ch_extras %}
 
-{% block title %}detail for monitoring cp{% endblock title %}
+{% block title %}detail for monitoring network{% endblock title %}
 
 {% block head %}
-<link rel="stylesheet" href="{% url css_media_m_gui 'monitor_cp.css' %}">
+<link rel="stylesheet" href="{% url css_media_m_gui 'monitor_network.css' %}">
 <link rel="stylesheet" href="{% url css_media_m_gui 'jquery.datetimepicker.css' %}">
-<link rel="stylesheet" href="{% url css_media_m_gui 'tooltip.monitor_cp.css' %}">
+<link rel="stylesheet" href="{% url css_media_m_gui 'tooltip.monitor_network.css' %}">
 
-<script src="{% url js_media_m_gui 'tooltip.monitor_cp.js' %}"></script>
+<script src="{% url js_media_m_gui 'tooltip.monitor_network.js' %}"></script>
 <script src="{% url js_media_m_gui 'd3.v2.min.js' %}"></script>
 <script src="{% url js_media_m_gui 'jquery.datetimepicker.js' %}"></script>
 {% endblock %}
 
 {% block content %}
 {% if form %}
-<div id="cpContainer" class="expandable">
+<div id="networkContainer" class="expandable">
 	<div id="id_resourceinfo">{{ resourceid }}</div>
 	<div id="id_condition">
 		<form method="post" action="">{% csrf_token %}
@@ -29,11 +29,11 @@
 		</form>
 	</div>
 	<div>
-		<div id="cp_view"></div>
+		<div id="network_view"></div>
 {% if mdatas %}
-		<div id="cp_overview"></div>
-		<div id="cp_grid">
-			<div id="cp_grid_data">
+		<div id="network_overview"></div>
+		<div id="network_grid">
+			<div id="network_grid_data">
 			</div>
 		</div>
 {% endif %}
@@ -108,11 +108,12 @@ $(function(){
 {% if mdatas %}
 var margin_ov = {top: 10, right: 10, bottom: 20, left: 30},
     margin_view = {top: 30, right: 80, bottom: 140, left: 100},
-    width_container = parseInt($("#cpContainer").css("width")), /* Obtain width from container */
-    width_view = width_container - parseInt($("#cp_overview").css("width")) - margin_view.left - margin_view.right - 4,
-    width_ov = parseInt($("#cp_overview").css("width")) - margin_ov.left - margin_ov.right,
-    height_ov = parseInt($("#cp_overview").css("height")) - margin_ov.top - margin_ov.bottom,
-    height_view = parseInt($("#cp_view").css("height")) - margin_view.top - margin_view.bottom;
+    width_container = parseInt($("#networkContainer").css("width")), /* Obtain width from container */
+    width_view = width_container - parseInt($("#network_overview").css("width")) - margin_view.left - margin_view.right - 4,
+    width_ov = parseInt($("#network_overview").css("width")) - margin_ov.left - margin_ov.right,
+    height_ov = parseInt($("#network_overview").css("height")) - margin_ov.top - margin_ov.bottom,
+    height_view = parseInt($("#network_view").css("height")) - margin_view.top - margin_view.bottom;
+
 
 var hdata = [
         {% for hdata in hdatas %}
@@ -160,7 +161,7 @@ var valueMax = d3.max( graph_data, function(d) { return d3.max(d.values, functio
 {% endif %}
 
 // genarate grid
-var table_nm = d3.select("#cp_grid_data")
+var table_nm = d3.select("#network_grid_data")
 	.append("table");
 var thead_nm = table_nm.append("thead");
 var tbody_nm = table_nm.append("tbody");
@@ -265,30 +266,30 @@ var area_ov = d3.svg.area()
 	.y(function(d) { return yScale_ov(d.value); });
 
 // stage
-var svg_cp_view = d3.select("#cp_view")
+var svg_network_view = d3.select("#network_view")
 	.append("svg")
 		.attr("width", width_view + margin_view.left + margin_view.right)
 		.attr("height", height_view + margin_view.top + margin_view.bottom);
 
-var svg_cp_ov = d3.select("#cp_overview")
+var svg_network_ov = d3.select("#network_overview")
 	.append("svg")
 		.attr("width", width_ov + margin_ov.left + margin_ov.right)
 		.attr("height", height_ov + margin_ov.top + margin_ov.bottom);
 
 // clippath
-svg_cp_view.append("defs").append("clipPath")
+svg_network_view.append("defs").append("clipPath")
 	.attr("id", "clip")
 	.append("rect")
 		.attr("width", width_view)
 		.attr("height", height_view + margin_view.top + margin_view.bottom);
 
-var focus = svg_cp_view.selectAll(".focus")
+var focus = svg_network_view.selectAll(".focus")
 	.data(graph_data)
 	.enter().append("g")
 		.attr("class", "focus")
 		.attr("transform", "translate(" + margin_view.left + "," + margin_view.top + ")");
 
-var context = svg_cp_ov.selectAll(".context")
+var context = svg_network_ov.selectAll(".context")
 	.data(graph_data)
 	.enter().append("g")
 		.attr("class", "context")

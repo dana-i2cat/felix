@@ -7,7 +7,6 @@ var tooltip=function(){
  var timer = 20;
  var endalpha = 95;
  var alpha = 0;
- var dopos = false;
  var tt,t,c,b,h;
  var ie = document.all ? true : false;
  return{
@@ -28,11 +27,7 @@ var tooltip=function(){
     tt.style.opacity = 0;
     tt.style.filter = 'alpha(opacity=0)';
     document.onmousemove = this.pos;
-    tt.onmouseout = this.hide;
-    tt.onmouseover = this.mover;
    }
-   // init
-   dopos = true;
    tt.style.display = 'block';
    c.innerHTML = v;
    tt.style.width = w ? w + 'px' : 'auto';
@@ -48,19 +43,7 @@ var tooltip=function(){
   clearInterval(tt.timer);
   tt.timer = setInterval(function(){tooltip.fade(1)},timer);
   },
-  update:function(v,w){
-   c.innerHTML = v;
-  },
-  mover:function(){
-   tt.style.display = 'block';
-  h = parseInt(tt.offsetHeight) + top;
-  clearInterval(tt.timer);
-  tt.timer = setInterval(function(){tooltip.fade(1)},timer);
-  },
   pos:function(e){
-   if (dopos == false)
-     return;
-   dopos = false;
    var u = ie ? event.clientY + document.documentElement.scrollTop : e.pageY;
    var l = ie ? event.clientX + document.documentElement.scrollLeft : e.pageX;
    tt.style.top = (u - h) + 'px';

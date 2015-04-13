@@ -63,12 +63,11 @@ function layer_object(param)
 	{
 		this.nodes = data.nodes;
 		this.links = data.links;
-
-		// pick up of interdomain link
-//		this.links_popup = data.links_interd;
+		this.links_popup = data.links_popup;
 
 		// Set color for each node
 		SetNodeColor(this.nodes);
+		SetLinkColor(this.links_popup);
 	};
 
 	this.setlocation = function(dataislands)
@@ -195,19 +194,34 @@ function layer_object(param)
 					break;
 				}
 				return stroke;
-			})
-
-/*
-		this.link_popup = svg_layer.selectAll(".link_popup")
-			.data(this.links_popup)
-			.attr("class", "link_popup")
-			.on("mouseover", function (d, i){
-				tooltip.show($('<div/>').html("link popup test " + d.source + " - " + d.target).text());
-			})
-			.on("mouseout", function(){
-				tooltip.hide();
 			});
-*/
+
+		switch (layername)
+		{
+		case "physical":
+			break;
+		case "slice":
+			// popup links
+			this.link_popup = svg_layer.selectAll(".link_popup")
+				.data(this.links_popup)
+				.attr("class", "link_popup")
+				.enter().append("line")
+				.style("stroke-width", "10px")
+				.style("opacity", "0.0")
+				.on("mouseover", function (d, i){
+					selectLink(d);
+					showLinkTooltip("");
+					$("#selected_node_info").html("Selected " + d.type + " link at " + d.locationName);
+					$("#selected_node_info").css("background-color", d.color );
+					$("#selected_node_info").css("text-shadow", "-3px 2px 4px #eee");
+					$("#selected_node_info").show();
+				})
+				.on("mouseout", function(){
+					$("#selected_node_info").css("background-color", "#ebf5ff");
+					tooltip.hide();
+				});
+			break;
+		}
 
 		// nodes
 		this.node = svg_layer.selectAll(".node")
@@ -253,14 +267,16 @@ function layer_object(param)
 			.text(function(d) { return d.name });
 
 		this.node.on("mouseover", function (d, i){
-	      // Ugly hack to decode HTML
-				selectNode(d, layername);
-				tooltip.show($('<div/>').html(d.description).text());
-				$("#selected_node_info").html("Selected " + d.type + ": " + d.nodeName + " at " + d.locationName);
-				$("#selected_node_info").css("background-color", d.color );
-				$("#selected_node_info").css("text-shadow", "-3px 2px 4px #eee");
-				$("#selected_node_info").show();
-				})
+				if (d.type != "tn")
+				{
+		      // Ugly hack to decode HTML
+					selectNode(d, layername);
+					tooltip.show($('<div/>').html(d.description).text());
+					$("#selected_node_info").html("Selected " + d.type + " at " + d.locationName);
+					$("#selected_node_info").css("background-color", d.color );
+					$("#selected_node_info").css("text-shadow", "-3px 2px 4px #eee");
+					$("#selected_node_info").show();
+				}})
 			.on("mouseout", function(){
 				$("#selected_node_info").css("background-color", "#ebf5ff");
         tooltip.hide();
@@ -298,12 +314,10 @@ function layer_object(param)
 				.attr("y1", function(d) { return nodes[d.source].y; })
 				.attr("x2", function(d) { return nodes[d.target].x; })
 				.attr("y2", function(d) { return nodes[d.target].y; });
-/*
 			this.link_popup.attr("x1", function(d) { return nodes[d.source].x; })
 				.attr("y1", function(d) { return nodes[d.source].y; })
 				.attr("x2", function(d) { return nodes[d.target].x; })
 				.attr("y2", function(d) { return nodes[d.target].y; });
-*/
 			break;
 		}
 	}
@@ -339,12 +353,10 @@ function layer_object(param)
 				.attr("y1", function(d) { return nodes[d.source].y; })
 				.attr("x2", function(d) { return nodes[d.target].x; })
 				.attr("y2", function(d) { return nodes[d.target].y; });
-/*
 			this.link_popup.attr("x1", function(d) { return nodes[d.source].x; })
 				.attr("y1", function(d) { return nodes[d.source].y; })
 				.attr("x2", function(d) { return nodes[d.target].x; })
 				.attr("y2", function(d) { return nodes[d.target].y; });
-*/
 			break;
 		}
 	}
@@ -368,18 +380,21 @@ function layer_object(param)
 			.style("opacity",1)
 			.text(function(d) { return d.location });
 
-		iellipses.transition()
-			.style("stroke-width",3)
-			.style("stroke", function(d) { return d3.rgb(color(d.group%nNetworks)).brighter(10);})
-			.duration(1500)
-		iellipses.transition()
-			.delay(1500)
-			.style("opacity",0)
-			.duration(3000)
-		ilabels.transition()
-			.delay(1500)
-			.style("opacity",0)
-			.duration(3000);
+		if (allways_domain != "True")
+		{
+			iellipses.transition()
+				.style("stroke-width",3)
+				.style("stroke", function(d) { return d3.rgb(color(d.group%nNetworks)).brighter(10);})
+				.duration(1500)
+			iellipses.transition()
+				.delay(1500)
+				.style("opacity",0)
+				.duration(3000)
+			ilabels.transition()
+				.delay(1500)
+				.style("opacity",0)
+				.duration(3000);
+		}
 	}
 
 	this.collide = function(alpha) {

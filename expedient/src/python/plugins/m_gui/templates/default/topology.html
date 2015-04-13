@@ -1,11 +1,11 @@
 <h2>Topology</h2>
 
-<link rel="stylesheet" href="/m_gui/static/media/default/static/media/default/css/tooltip.topology.css">
-<link rel="stylesheet" href="/m_gui/static/media/default/static/media/default/css/topology.css">
-<script src="/m_gui/static/media/default/static/media/default/js/tooltip.topology.js"></script>
-<script src="/m_gui/static/media/default/static/media/default/js/d3.v2.min.js"></script>
-<script src="/m_gui/static/media/default/static/media/default/js/topology.util.js"></script>
-<script src="/m_gui/static/media/default/static/media/default/js/topology.layer.js"></script>
+<link rel="stylesheet" href="{% url css_media_m_gui 'tooltip.topology.css' %}">
+<link rel="stylesheet" href="{% url css_media_m_gui 'topology.css' %}">
+<script src="{% url js_media_m_gui 'tooltip.topology.js' %}"></script>
+<script src="{% url js_media_m_gui 'd3.v2.min.js' %}"></script>
+<script src="{% url js_media_m_gui 'topology.util.js' %}"></script>
+<script src="{% url js_media_m_gui 'topology.layer.js' %}"></script>
 
 {#Render#}
 <div id="topologyContainer" class="expandable">
@@ -56,10 +56,13 @@ var nIslands = {{ n_islands }},
     height = 400,
     height_layer = height/2,	/* 2 layer display */
     sliceId = "{{ sliceid }}",
-	delibrach = 10;
+    delibrach = 10,
+    domains_num = {{ domains_num }},
+    allways_domain = "{{ allways_domain }}";
 
-if (nIslands > 3)	/* Island number to be displayed on one screen 3 */
-    width += (Math.floor(width_container / 3) * (nIslands - 3));
+// comment out for demo
+if (nIslands > domains_num)	/* Island number to be displayed on one screen 3 */
+    width += (Math.floor(width_container / domains_num) * (nIslands - domains_num));
 
 //Islands area generation
 var nx = nIslands,
@@ -73,7 +76,7 @@ param = {layername: "slice", networks: 1, height: height_layer, width: width,
 var layer_slice = new layer_object(param);
 
 param = {layername: "physical", networks: nIslands, height: height_layer, width: width, 
-         y: height_layer, foci: foci};
+         y: height_layer, foci: foci, tn: {height: height_layer*.2}};
 var layer_physical = new layer_object(param);
 
 function randomXToY(minVal,maxVal,floatVal)
@@ -151,18 +154,18 @@ var data_slice = {
         {% for node in slice.nodes %}
         {
             nodeValue: "{{ node.id }}", nodeName: "{{ node.name }}", image: "{{ node.image_url }}", color: "",
-            group: {{ node.group }}, location: "{{ node.location }}", locationName: "{{ node.location_name }}", type: "{{ node.type }}",  class: "", 
+            group: {{ node.group }}, location: "{{ node.location }}", locationName: "{{ node.location_name }}", type: "{{ node.type }}", 
             relation: {{ node.relation }}, relation_branch: {{ node.relation_branch }},
             description: makeDescription({type: "{{ node.type }}", name: "{{ node.name }}", status: "{{ node.status }}", 
                                           ports: [{%for interface in node.interfaces %}
-                                             { port: {{ interface.port }}, status: "{{ interface.status }}" }
+                                             { port: "{{ interface.port }}", status: "{{ interface.status }}" }
                                          {% if not forloop.last %},{% endif %}
                                          {% endfor %}
                                           ], 
                                           connections: [{%for connection in node.connections %}
-                                             { port: {{ connection.port }}, name: "{{ connection.name }}", 
+                                             { port: "{{ connection.port }}", name: "{{ connection.name }}", 
                                                dest: "{{ connection.dest }}", destkind: "{{ connection.destkind }}", 
-                                               destport: {{ connection.destport }} }
+                                               destport: "{{ connection.destport }}" }
                                          {% if not forloop.last %},{% endif %}
                                          {% endfor %}
                                           ], 
@@ -179,13 +182,32 @@ var data_slice = {
     ],
     links: [
         {% for link in slice.links %}
-            { source: {{ link.source.no }}, target: {{ link.target.no }}, value: "{{ link.value }}", status: "{{ link.status }}" }
+            { source: {{ link.source.no }}, target: {{ link.target.no }}, type: "{{ link.type }}", status: "{{ link.status }}" }
         {% if not forloop.last %},{% endif %}
         {% endfor %}
     ],
     relations: [
         {% for relation in slice.relations %}
             { slice: {{ relation.slice }}, physical: {{ relation.physical }}, value: "{{ relation.value }}" }
+        {% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ],
+    links_popup: [
+        {% for link in slice.links_popup %}
+            { linkName: "{{ link.name }} ", source: {{ link.source.no }}, target: {{ link.target.no }}, 
+              type: "{{ link.type }}", status: "{{ link.status }}", group: {{ link.group }}, locationName: "{{ link.location_name }}", 
+              linkItem: [{%for link_item in link.link_items %}
+                             { type: "{{ link_item.type }}", name: "{{ link_item.name }}", status: "{{ link_item.status }}", 
+                               aggre_link: [{%for aggre_link in link_item.aggre_links %}
+                                   { name: "{{ aggre_link.name }}", interface: "{{ aggre_link.interface }}", status: "{{ aggre_link.status }}" }
+                                   {% if not forloop.last %},{% endif %}
+                                   {% endfor %}
+                               ]
+                             }
+                         {% if not forloop.last %},{% endif %}
+                         {% endfor %}
+                        ]
+            }
         {% if not forloop.last %},{% endif %}
         {% endfor %}
     ],
@@ -196,17 +218,18 @@ var data = {
         {% for node in physical.nodes %}
         {
             nodeValue: "{{ node.id }}", nodeName: "{{ node.name }}", image: "{{ node.image_url }}", color: "",
-            group: {{ node.group }}, location: "{{ node.location }}", locationName: "{{ node.location_name }}", type: "{{ node.type }}", class: "", 
+            group: {{ node.group }}, location: "{{ node.location }}", locationName: "{{ node.location_name }}", 
+            type: "{{ node.type }}", base_group: "{{ node.base_group }}", 
             description: makeDescription({type: "{{ node.type }}", name: "{{ node.name }}", status: "{{ node.status }}", 
                                           ports: [{%for interface in node.interfaces %}
-                                             { port: {{ interface.port }}, status: "{{ interface.status }}" }
+                                             { port: "{{ interface.port }}", status: "{{ interface.status }}" }
                                          {% if not forloop.last %},{% endif %}
                                          {% endfor %}
                                           ], 
                                           connections: [{%for connection in node.connections %}
-                                             { port: {{ connection.port }}, name: "{{ connection.name }}", 
+                                             { port: "{{ connection.port }}", name: "{{ connection.name }}", 
                                                dest: "{{ connection.dest }}", destkind: "{{ connection.destkind }}", 
-                                               destport: {{ connection.destport }} }
+                                               destport: "{{ connection.destport }}" }
                                          {% if not forloop.last %},{% endif %}
                                          {% endfor %}
                                           ], 
@@ -223,7 +246,7 @@ var data = {
     ],
     links: [
         {% for link in physical.links %}
-            { source: {{ link.source.no }}, target: {{ link.target.no }}, value: "{{ link.value }}", status: "{{ link.status }}" }
+            { source: {{ link.source.no }}, target: {{ link.target.no }}, type: "{{ link.type }}", status: "{{ link.status }}" }
         {% if not forloop.last %},{% endif %}
         {% endfor %}
         ,
@@ -372,20 +395,6 @@ var svg = d3.select("#target")
 	.append("svg:g").on("zoom", redraw)
 		.attr("cursor", "move")
 
-function SetNodeColor(nodes)
-{
-	nodes.forEach(function(d) {
-		if (d.status == "DOWN") {
-		    d.color = "#FF0000";
-		}
-		else if (d.available != "False") {
-		    d.color = color(d.group%(nNetworks));
-		} else {
-		    d.color = "#CCC";
-		}
-	});
-};
-
 var relations = data_slice.relations;
 var relation = svg.selectAll(".relation")
 	.data(relations)
@@ -514,28 +523,25 @@ force.on("tick", function(e){
 */
         try {
 			// SE/TN/SDN SW
-			if (o.type == "switch")
+			switch (o.type)
 			{
-				switch (o.class)
-				{
-				case "":
-				    o.y += k * fact * qNodes[o.group] * ((dataislands[o.group].cy) - o.y);
-				    o.x += k * fact * qNodes[o.group] * ((dataislands[o.group].cx) - o.x);
-					break;
-				case "se":
-				    o.y = height_layer*.7;
-				    o.x += k * fact * qNodes[o.group] * ((dataislands[o.group].cx) - o.x);
-					break;
-				case "tn":
-				    o.y = height_layer*.9;
-				    o.x += k * fact * qNodes[o.island] * ((dataislands[o.island].cx) - o.x);
-					break;
-				}
-			}
-			else
-			{
-			    o.y += k * fact * qNodes[o.group] * ((dataislands[o.group].cy) - o.y);
-			    o.x += k * fact * qNodes[o.group] * ((dataislands[o.group].cx) - o.x);
+			case "switch":
+				o.y += k * fact * qNodes[o.group] * ((dataislands[o.group].cy) - o.y);
+				o.x += k * fact * qNodes[o.group] * ((dataislands[o.group].cx) - o.x);
+				break;
+			case "server":
+			case "vm":
+				o.y += k * fact * qNodes[o.group] * ((dataislands[o.group].cy) - o.y);
+				o.x += k * fact * qNodes[o.group] * ((dataislands[o.group].cx) - o.x);
+				break;
+			case "se":
+				o.y = height_layer*.7;
+				o.x += k * fact * qNodes[o.group] * ((dataislands[o.group].cx) - o.x);
+				break;
+			case "tn":
+				o.y = height_layer*.9;
+				o.x += k * fact * qNodes[o.baes_group] * ((dataislands[o.island].cx) - o.x);
+				break;
 			}
         } catch (err) {
         }
