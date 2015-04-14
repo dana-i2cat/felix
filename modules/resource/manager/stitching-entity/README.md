@@ -269,17 +269,24 @@ ryu.app.ofctl_rest provides REST APIs for retrieving the switch stats and Updati
 ##Example of use
 
 To add flowmod whitch translates VLAN_ID=333 on in_port=12 to VLAN_ID=555 on out_port=13:
-  ```% curl -X POST -d
-  '{"dpid":110533270894679, "cookie":1, "cookie_mask":1, "table_id":0, "idle_timeout":30, "hard_timeout":30, "priority":1, "flags":1,  
-  "match":   {"dl_vlan":333, "in_port":12}, 
-  "actions":[{"type":"SET_VLAN_VID","vlan_vid":555},{"type":"OUTPUT","port":13}]}' 
-  http://localhost:8080/stats/flowentry/add```
+```bash
+$ curl -X POST -d \
+  '{"dpid":110533270894679, "cookie":1, "cookie_mask":1, "table_id":0, "idle_timeout":30, \
+  "hard_timeout":30, "priority":1, "flags":1,  \
+  "match":   {"dl_vlan":333, "in_port":12}, \
+  "actions":[{"type":"SET_VLAN_VID","vlan_vid":555},{"type":"OUTPUT","port":13}]}' \
+  http://localhost:8080/stats/flowentry/add
+```
 
 To delete above flowmode:
-  ```% curl -X POST -d 
-  '{"dpid":110533270894679, "cookie":1, "cookie_mask":1, "table_id":0, "idle_timeout":30, "hard_timeout":30, "priority":1, "flags":1,  
-  "match":{"dl_vlan":333, "in_port":12},"actions":[{"type":"SET_VLAN_VID","vlan_vid":555},{"type":"OUTPUT","port":13}]}' 
-  http://localhost:8080/stats/flowentry/delete```
+```bash
+$ curl -X POST -d \
+ '{"dpid":110533270894679, "cookie":1, "cookie_mask":1, "table_id":0, "idle_timeout":30, \
+ "hard_timeout":30,  "priority":1, "flags":1, "match":{"dl_vlan":333, "in_port":12}, \
+ "actions":[{"type":"SET_VLAN_VID","vlan_vid":555},{"type":"OUTPUT","port":13}]}' \
+  http://localhost:8080/stats/flowentry/delete
+```
+
 ##Deployment
 
 SE-RM-OF-CTRL is deployed on VM(KVM) with ubuntu 13.04.
