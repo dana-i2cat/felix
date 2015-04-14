@@ -76,8 +76,8 @@ def se_job_release_resources(time, ports, slice_urn):
     # SESlices.remove_link_db(slice_urn)
 
 def se_job_unprovision(time, reservation_ports, slice_urn):
-    in_port = int(reservation_ports[0]["port"].rsplit(":", 1)[1])
-    out_port = int(reservation_ports[1]["port"].rsplit(":", 1)[1])
+    in_port = int(reservation_ports[0]["port"].rsplit("_", 1)[1])
+    out_port = int(reservation_ports[1]["port"].rsplit("_", 1)[1])
     in_vlan = int(reservation_ports[0]["vlan"])
     out_vlan = int(reservation_ports[1]["vlan"])
 
@@ -401,8 +401,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
             reservation_ports = self.SESlices._allocate_ports_in_slice(nodes)["ports"]
 
-            in_port = int(reservation_ports[0]["port"].rsplit(":", 1)[1])
-            out_port = int(reservation_ports[1]["port"].rsplit(":", 1)[1])
+            in_port = int(reservation_ports[0]["port"].rsplit("_", 1)[1])
+            out_port = int(reservation_ports[1]["port"].rsplit("_", 1)[1])
             in_vlan = int(reservation_ports[0]["vlan"])
             out_vlan = int(reservation_ports[1]["vlan"])
 
@@ -436,8 +436,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
             reservation_ports = self.SESlices._allocate_ports_in_slice(nodes)["ports"]
 
-            in_port = int(reservation_ports[0]["port"].rsplit(":", 1)[1])
-            out_port = int(reservation_ports[1]["port"].rsplit(":", 1)[1])
+            in_port = int(reservation_ports[0]["port"].rsplit("_", 1)[1])
+            out_port = int(reservation_ports[1]["port"].rsplit("_", 1)[1])
             in_vlan = int(reservation_ports[0]["vlan"])
             out_vlan = int(reservation_ports[1]["vlan"])
 

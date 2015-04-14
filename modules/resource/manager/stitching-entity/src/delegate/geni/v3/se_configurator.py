@@ -7,13 +7,11 @@ class seConfigurator:
     def __init__(self):
 
         # read from config file
-        #stream = open("../conf/se-config.yaml", 'r')
         current_path = os.path.dirname(os.path.abspath( __file__ ))
         conf_file_path = os.path.join(current_path, "../../../../conf/se-config.yaml")
         stream = open(conf_file_path, "r")
         initial_config = yaml.load(stream)
         print initial_config
-        # self.configured_interfaces = initial_config["interfaces"]
         self.configured_interfaces = self.convert_config_into_Resources_datamodel(initial_config["interfaces"])
         self.initial_configured_interfaces = initial_config["interfaces"]
 
@@ -21,11 +19,14 @@ class seConfigurator:
         # TODO: Add other rspec parameters to db
         db_sync_manager.update_resources(self.configured_interfaces, fromConfigFile=True)
 
-        self.component_id_prefix = initial_config["component_id"]
-        self.component_manager_prefix = initial_config["component_manager_id"]
+        self.component_id_prefix = "urn:publicid:IDN+fms:" + initial_config["organisation"] + ":serm"
+        print self.component_id_prefix
+        self.component_manager_prefix = "urn:publicid:IDN+fms:" + initial_config["organisation"] + ":serm:authority+cm"
+        print self.component_manager_prefix
         self.vlan_trans = initial_config["vlan_trans"]
         self.qinq = initial_config["qinq"]
         self.capacity = initial_config["capacity"]
+        self.dpid = initial_config["dpid"]
 
     def convert_config_into_Resources_datamodel(self, config):
         rm_datamodel = {}
@@ -66,13 +67,14 @@ class seConfigurator:
 
         for resource in resources:
             try:
-                r_splited = resource['port'].rsplit(":", 1)
+                r_splited = resource['port'].rsplit("_", 1)
                 vlan = resource['vlan']
                 component_id = r_splited[0]
                 port = r_splited[1]
                 vlans_result = self.get_concrete_port_status(port)
                 result = vlans_result[vlan]
-                if (result is False) or (component_id != self.component_id_prefix):
+                # if (result is False) or (component_id != self.component_id_prefix):
+                if (result is False) or (self.component_id_prefix not in resource["port"]):
                     return False
             except KeyError:
                 return False
@@ -80,7 +82,7 @@ class seConfigurator:
 
     def set_resource_reservation(self, resources):
         for resource in resources:
-            r_splited = resource['port'].rsplit(":", 1)
+            r_splited = resource['port'].rsplit("_", 1)
             vlan = resource['vlan']
             port = r_splited[1]
             self.set_concrete_port_status(port, vlan, False)
@@ -90,7 +92,7 @@ class seConfigurator:
 
     def free_resource_reservation(self, resources):
         for resource in resources:
-            r_splited = resource['port'].rsplit(":", 1)
+            r_splited = resource['port'].rsplit("_", 1)
             vlan = resource['vlan']
             port = r_splited[1]
             self.set_concrete_port_status(port, vlan, True)
@@ -107,15 +109,6 @@ class seConfigurator:
         self.configured_interfaces = db_sync_manager.get_resources()
 
         configured_interfaces = self.configured_interfaces
-        vlan_trans = self.vlan_trans
-        qinq = self.qinq
-
-        # Prepare link capability translations
-        link_trans_capability = 'urn:felix'
-        if vlan_trans:
-            link_trans_capability += '+vlan_trans'
-        if qinq:
-            link_trans_capability += '+QinQ'
 
         nodes = [
             {
@@ -134,7 +127,7 @@ class seConfigurator:
                 current_vlan_status = vlans_on_iface[vlan]
                 if current_vlan_status is not False:
                     available_iface = {
-                        'component_id': component_id_prefix + ':' + iface,
+                        'component_id': component_id_prefix + '+datapath+' + self.dpid + "_" + iface,
                         'vlan':[
                         ]
                     }
@@ -156,11 +149,8 @@ class seConfigurator:
         capacity = self.capacity
 
         # Prepare link capability translations
+        # TODO: Check if this should provide VLAN trans params or not
         link_trans_capability = 'urn:felix'
-        # if vlan_trans:
-        #     link_trans_capability += '+vlan_trans'
-        # if qinq:
-        #     link_trans_capability += '+QinQ'
 
         links_se = [
             {
@@ -186,23 +176,21 @@ class seConfigurator:
         ]
 
         # Prepare links
-        # TODO: add ports with vlan ranges in conf file
         config = self.initial_configured_interfaces
         for interface in config:
             endpoints = config[interface]["remote_endpoints"]
             for endpoint in endpoints:
-                # links_se_temp = []
                 found = False
                 for vlan in endpoint["vlans"]:
                     if found == False:
                         if isinstance(vlan, int ):
                             if configured_interfaces[interface][str(vlan)] == True:
                                 new_static_link =  {
-                                    'component_id':component_id_prefix + ':' + interface + "+" + endpoint["name"],
+                                    'component_id':component_id_prefix + '+link+' + self.dpid + "_" + interface + "_" + endpoint["name"].rsplit("+", 1)[1],
                                     'component_manager_name':None,
                                     'interface_ref':[
                                         {
-                                            'component_id': component_id_prefix + ':' + interface
+                                            'component_id': component_id_prefix + '+datapath+' + self.dpid + "_" + interface
                                         },
                                         {
                                             'component_id': endpoint["name"]
@@ -223,11 +211,11 @@ class seConfigurator:
                                 for v in v_range:
                                     if configured_interfaces[interface][str(v)] == True:
                                         new_static_link =  {
-                                            'component_id':component_id_prefix + ':' + interface + "+" + endpoint["name"],
+                                            'component_id':component_id_prefix + '+link+' + self.dpid + "_" + interface + "_" + endpoint["name"].rsplit("+", 1)[1],
                                             'component_manager_name':None,
                                             'interface_ref':[
                                                 {
-                                                    'component_id': component_id_prefix + ':' + interface
+                                                    'component_id': component_id_prefix + '+datapath+' + self.dpid + "_" + interface
                                                 },
                                                 {
                                                     'component_id': endpoint["name"]
