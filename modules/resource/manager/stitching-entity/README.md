@@ -63,8 +63,8 @@ The SE-RM configuration can be changed in set of files in ''conf/'' directory. B
 This configuration file contains a list of ports on Stitching Element that are under SE-RM management. For each port the VLANs that take part in translating can be specified or alternatively, the remote endpoint label of static link. Besides, the transport VLAN setting can be chosen (QinQ, VLAN translation). The configuration also contains SE-RM Rspec specific parameters like, URN identifiers or link capacity. Please note that this configuration is a YAML file and suggested syntax for YAML files is to use two spaces for indentation however YAML follows whatever indentation system is employed. In the following an example configuration file is presented.
 
 ```yaml
-component_id: urn:publicid:aist-se1
-component_manager_id: urn:publicid:IDN+AIST+authority+serm
+organisation: psnc
+dpid: 00:00:00:00:00:00:00:01
 
 vlan_trans: true
 qinq: false
@@ -75,27 +75,24 @@ interfaces:
     "1":
         remote_endpoints: 
             -
-                name: urn:publicid:psnc-nsi:if1
+                name: urn:publicid:IDN+fms:i2cat:tnrm+stp+urn:publicid:IDN+openflow:ocf:i2cat:ofam+datapath+00:10:00:00:00:00:00:05_10
                 type: vlan_trans
                 vlans:
                     - 1000
-                    - 2000
-                    - 3000-3005
             -
-                name: urn:publicid:psnc-nsi:if2
+                name: urn:publicid:IDN+fms:i2cat:tnrm+stp+urn:publicid:IDN+openflow:ocf:i2cat:ofam+datapath+00:10:00:00:00:00:00:05_11
                 type: vlan_trans
                 vlans:
-                    - 1000
-                    - 2000
-                    - 3000-3005
+                    - 2001
 
     "2":
         remote_endpoints:
             -
-                name: urn:publicid:psnc-dpid:if2
+                name: urn:publicid:IDN+openflow:ocf:i2cat:ofam+datapath+00:10:00:00:00:00:00:05_6
                 type: static_link
                 vlans:
-                    - 1000
+                    - 1001
+
 ```
 
 #### XML-RPC Server
