@@ -47,6 +47,7 @@ def monitoring_sdn_post():
             # upload all monitoring-data to DB.
             mon_data_dict = db_upld.cleate_monitoring_data_dict(param_string)
             if not mon_data_dict:
+                logger.warn('parse monitoring-data xml error.')
                 return HTTPResponse("POST monitoring-data({0}) error.(parse monitoring-data xml error.)"
                                     .format(const.TYPE_MON_SDN), status=400)
             val_dict_list = db_upld.cleate_upload_data_list(mon_data_dict)

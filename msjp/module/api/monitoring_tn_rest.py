@@ -42,6 +42,7 @@ def monitoring_tn_post():
         # upload all monitoring-data to DB.
         mon_data_dict = db_upld.upload_monitoring_data_all(param_string)
         if not mon_data_dict:
+            logger.warn('parse monitoring-data xml error.')
             return HTTPResponse("POST monitoring-data({0}) error.(parse monitoring-data xml error.)"
                                 .format(const.TYPE_MON_TN), status=400)
         

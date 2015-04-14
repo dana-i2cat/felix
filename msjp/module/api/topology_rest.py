@@ -708,19 +708,20 @@ def del_topol(topol_dict,md_flg=False):
                 #open DB connection.
                 tpldb_setup()
                 
+                #get all link in topology.
+                for link in Link.query.filter(Link.network_name == topol_dict[const.XML_ATTR_NAME]).all():
+                    ### delete link
+                    link.delete()
+
                 #get all node in topology.
                 for node in Node.query.filter(Node.network_name == topol_dict[const.XML_ATTR_NAME]).all():
                     #get all management details in node (should be only one)
                     for mgmt in NodeManagement.query.filter(NodeManagement.idNode == node.id).all():
                         ### delete management details
                         mgmt.delete()
+
                     #get all interface in node.
-                    for interface in InterFace.query.filter(InterFace.idNode == node.id).all():
-                        #get search all of the links that interface is involved.
-                        for link in Link.query.filter((Link.src_idIF == interface.id) | (Link.dst_idIF == interface.id)).all():
-                            ### delete link
-                            link.delete()
-        
+                    for interface in InterFace.query.filter(InterFace.idNode == node.id).all():       
                         ### delete interface
                         interface.delete()
         
@@ -904,6 +905,7 @@ def topology_post():
         # parse xml to dictionary.
         topol_dict_list = parse_topology_xml(param_string)
         if not topol_dict_list:
+            logger.warn('parse topology xml error.')
             return HTTPResponse("POST topology error.(parse topology xml error.)", status=400)
         logger.debug(topol_dict_list) 
         
