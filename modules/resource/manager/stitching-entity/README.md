@@ -292,3 +292,12 @@ In PSNC SDN testbed SE-RM-OF-CTRL provision OF resources into Juniper MX80 (Juno
                                           .....                        
 ```
 
+##Ryu SE-RM REST plugin
+The SE-RM component uses the Ryu REST application to install and delete the flows. The plugins' configuration file is located in: ```modules/resource/manager/stitching-entity/conf/ryu-config.yaml```  and looks like:
+
+```yaml
+host: 127.0.0.1
+rest_port: 8080
+dpid : 0000000000000001
+```
+After the proper configuration the plugin is connecting to Ryu controller using the REST API and provisions the flows.
