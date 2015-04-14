@@ -7,7 +7,7 @@ Stitching Entity Resource Manager
 This is the list of requirements and dependencies to install SE-RM. Basically, it needs a Linux-based operating system with installed Python runtime environment extended with Python libraries listed in this section. Moreover, it requires locally installed MongoDB database.
 
 ## Requirements
-The tested working environment ia a Debian-based distribution. Specifically, the module was tested both on <b>Debian 7 (Wheezy)</b>b> and <b>Ubuntu Ubuntu 14.04.1 LTS (Trusty Tahr)</b>. Althought, it should run on other Linux-based operation systems if all needed dependencies can be satisfied. SE-RM module needs the MongoDB database instance to be installed and configured to be available from the module by localhost interface and default port that is <i>27017</i>. The module connects to the MongoDB server and assumes a default database name of <i>felix_se</i>. A helper install and configuration scripts can be find in deploy directory (see section [[D33_Deployment_Stitching_Entity_Resource_Manager_Configuration_and_Installation | "Configuration and Installation"]]).
+The tested working environment ia a Debian-based distribution. Specifically, the module was tested both on <b>Debian 7 (Wheezy)</b> and <b>Ubuntu Ubuntu 14.04.1 LTS (Trusty Tahr)</b>. Althought, it should run on other Linux-based operation systems if all needed dependencies can be satisfied. SE-RM module needs the MongoDB database instance to be installed and configured to be available from the module by localhost interface and default port that is <i>27017</i>. The module connects to the MongoDB server and assumes a default database name of <i>felix_se</i>. A helper install and configuration scripts can be find in deploy directory (see section "Configuration and Installation").
 
 ## Dependencies
 There is a number of packages required for SE-RM to work. These are retrieved & installed by Debian's Advanced Packaging Tool (apt-get) or the Python version system (easy_install, pip).
@@ -247,16 +247,16 @@ The following prerequisites are needed priot to install Ryu:
 * python-webob
 * python-paramiko
 
-```% pip install ryu```
+```$ pip install ryu```
 
 Or install from the source code:
 
-```% git clone git://github.com/osrg/ryu.git```
-```% cd ryu; python ./setup.py install```
+```$ git clone git://github.com/osrg/ryu.git```
+```$ cd ryu; python ./setup.py install```
 
 ##How to run SE-RM-OF-CTRL
 
-```% ~/ryu\> PYTHONPATH=. ./bin/ryu-manager --verbose ryu/app/ofctl_rest.py```
+```$ ~/ryu\> PYTHONPATH=. ./bin/ryu-manager --verbose ryu/app/ofctl_rest.py```
 ofctl_rest is one of the built-in Ryu application.
 
 ###REST API interface
@@ -291,8 +291,8 @@ In PSNC SDN testbed SE-RM-OF-CTRL provision OF resources into Juniper MX80 (Juno
 
 ###Slice configuration 
 ```
-% fvctl add-slice {slice_name} tcp:{of_contorller_ipv4:port} admin@{slice_name}
-% fvctl add-flowspace {flowspace_name} {dpid} 1 in_port={number} {slice_name}=7
+$ fvctl add-slice {slice_name} tcp:{of_contorller_ipv4:port} admin@{slice_name}
+$ fvctl add-flowspace {flowspace_name} {dpid} 1 in_port={number} {slice_name}=7
                                           .....                        
 ```
 
