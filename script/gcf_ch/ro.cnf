@@ -25,4 +25,4 @@ subjectAltName          = @alternate_names
 ####################################################################
 [ alternate_names ]
 
-URI.1      = urn:publicid:IDN+cbas.eict.de+user+ro # ChangeMe
+URI.1      = urn:publicid:IDN+fms:eict:cbas+user+ro # ChangeMe

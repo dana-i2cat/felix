@@ -55,7 +55,7 @@ subjectAltName          = @alternate_names
 ####################################################################
 [ alternate_names ]
 
-URI.1       = urn:publicid:IDN+cbas.eict.de+authority+ca # ChangeMe
+URI.1       = urn:publicid:IDN+fms:eict:cbas+authority+ca # ChangeMe
 
 ####################################################################
 [ signing_policy ]
