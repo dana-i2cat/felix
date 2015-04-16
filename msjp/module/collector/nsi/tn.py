@@ -8,6 +8,7 @@ import pytz
 import dateutil.parser
 import module.collector.config as config
 import module.common.const as const
+import module.common.util as util
 from datetime import datetime
 from module.common.topologydb import *
 from module.common.md import post_md
@@ -70,13 +71,13 @@ class MonitoringDataTN():
             logger.warn('tag <{0}> is not specified.'.format(const.NST_TAG_RESERVE_MAP))
             return None
 
-        for xd_reservationIDMap in xd_reservationIDMaps[const.NST_TAG_RESERVE_MAP]:
+        for xd_reservationIDMap in util.to_array(xd_reservationIDMaps[const.NST_TAG_RESERVE_MAP]):
             # get <resourceSet>
             if not xd_reservationIDMap.has_key(const.NST_TAG_RESOURCE_SET):
                 logger.warn('tag <{0}> is not specified.'.format(const.NST_TAG_RESOURCE_SET))
                 continue
 
-            for xd_resourceSet in xd_reservationIDMap[const.NST_TAG_RESOURCE_SET]:
+            for xd_resourceSet in util.to_array(xd_reservationIDMap[const.NST_TAG_RESOURCE_SET]):
                 # get <networkResource>
                 if not xd_resourceSet.has_key(const.NST_TAG_NW_RESOURCE):
                     logger.warn('tag <{0}> is not specified.'.format(const.NST_TAG_NW_RESOURCE))
