@@ -21,7 +21,7 @@ class seConfigurator:
 
         self.component_id_prefix = "urn:publicid:IDN+fms:" + initial_config["organisation"] + ":serm"
         print self.component_id_prefix
-        self.component_manager_prefix = "urn:publicid:IDN+fms:" + initial_config["organisation"] + ":serm:authority+cm"
+        self.component_manager_prefix = "urn:publicid:IDN+fms:" + initial_config["organisation"] + ":serm+authority+cm"
         print self.component_manager_prefix
         self.vlan_trans = initial_config["vlan_trans"]
         self.qinq = initial_config["qinq"]
