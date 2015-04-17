@@ -21,6 +21,12 @@ class BaseMonitoring(object):
         self.domain_urn = ""
         self.domain_last_update = ""
         self.topology_list = ET.Element("topology_list")
+        # CRM config
+        self.config_crm = core.config.JSONParser("crm.json")
+        self.crm_mgmt_info = self.config_crm.get("device_management_info")
+        # SDNRM config
+        self.config_sdnrm = core.config.JSONParser("sdnrm.json")
+        self.sdnrm_mgmt_info = self.config_sdnrm.get("device_management_info")
 
     def _send(self, xml_data, peer=None):
         try:
@@ -66,23 +72,37 @@ class BaseMonitoring(object):
     # Helpers
     ##########
 
+    def _get_management_data_crm_sdnrm(self, parent_node):
+        configuration_data = {}
+        if "vtam" in parent_node.attrib["id"]:
+            configuration_data = self.crm_mgmt_info
+        elif "openflow" in parent_node.attrib["id"]:
+            configuration_data = self.sdnrm_mgmt_info
+        return configuration_data
+
     def _add_management_section(self, parent_node):
         management = ET.SubElement(parent_node, "management")
-        # TODO Set management information for resources in another table/collection
         # TODO Query database for management information per resource
-        # TODO Fill with retrieved information as needed
         # TODO Identify and update must/optional tags/attributes
 #        resource_management_info = db_sync_manager.get_management_info(
 #                                        component_id=parent_node.get("component_id"))
         management.attrib["type"] = "snmp"
         address = ET.SubElement(management, "address")
-        address.text = "102.168.2.1"
+        address.text = ""
         port = ET.SubElement(management, "port")
-        port.text = "161"
+        port.text = ""
         auth_id = ET.SubElement(management, "auth_id")
         auth_id.text = "public"
         auth_pass = ET.SubElement(management, "auth_pass")
         auth_pass.text = ""
+        try:
+            configuration_data = self._get_management_data_crm_sdnrm(parent_node)
+            address.text = configuration_data.get(parent_node.attrib["id"]).get("ip")
+            port.text = configuration_data.get(parent_node.attrib["id"]).get("port")
+            auth_id.text = configuration_data.get(parent_node.attrib["id"]).get("snmp").get("id")
+            auth_pass.text = configuration_data.get(parent_node.attrib["id"]).get("snmp").get("password")
+        except Exception as e:
+            logger.warning("Physical monitoring. Cannot add management data. Details: %s" % (e))
         return parent_node
 
     def _add_generic_node(self, parent_tag, node, node_type):
