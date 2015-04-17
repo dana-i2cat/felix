@@ -37,7 +37,12 @@ cp ro-key.pem alice-key.pem
 
 # Backup current .gcf environment
 BACKUP_DIR="$HOME_DIR/.gcf__"`date +%Y_%m_%d-%H_%M_%S`
-cp -Rp ~/.gcf $BACKUP_DIR
+if [ -d ~/.gcf ]; then
+    cp -Rp ~/.gcf $BACKUP_DIR
+else
+  mkdir -p ~/.gcf
+fi
+mkdir -p ~/.gcf/trusted_roots
 
 # Place files in appropriate folder
 cp -p alice-cert.pem ~/.gcf/alice-cert.pem
