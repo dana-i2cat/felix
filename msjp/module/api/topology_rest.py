@@ -647,12 +647,20 @@ def del_md(nw_name,regist_time,mon_data_db):
         if not regist_time :
             logger.warn('Target network can not be found.')
             return
+
+        db_con = None
+        try:
+            #connect to the database.
+            db_con = db_handle.connect(mon_data_db,config.db_addr
+                                       ,config.db_port,config.db_user,config.db_pass)
+        except Exception:
+            # It is not an error.
+            logger.debug('{0} is unknown database.'.format(mon_data_db))
+            return
+
+        #search target table name.
         tbl_name_list = search_target_table(logger,int(regist_time),int(now_time),mon_data_db)
 
-        #connect to the database.
-        db_con = db_handle.connect(mon_data_db,config.db_addr
-                                   ,config.db_port,config.db_user,config.db_pass)
-        
         #no data in the search time-range.
         if not tbl_name_list:
             logger.debug('no data in the search time-range.({0}-{1})'.format(regist_time,now_time))
