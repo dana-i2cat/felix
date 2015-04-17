@@ -128,12 +128,13 @@ class ResourceDetector(object):
                        (resource_cid,))
             # First part of the tuple
             resource_hrn = xrn.urn_to_hrn(resource_cid)[0]
-            # XXX Conversion from HRN to URN sometimes translates
+            # Conversion from HRN to URN sometimes translates
             # "." by "\.". Corrected here
             resource_hrn = resource_hrn.replace("\.", ".")
-            resource_auth = xrn.get_authority(resource_hrn)
+            # Auth URN is already there
+            #resource_auth = xrn.get_authority(resource_hrn)
+            resource_auth = resource_hrn
             resource_cid = xrn.hrn_to_urn(resource_auth, "authority")
-
             self.domain_urn = resource_cid
             self.info("The URN is well-formed, update domain-urn: %s" %
                       (self.domain_urn,))

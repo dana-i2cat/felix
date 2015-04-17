@@ -166,7 +166,7 @@ class DBManager(object):
                          "_ref_domain": domain.get("_id"), }
                 return table.insert(entry)
         except:
-            pass
+            raise Exception("Cannot store physical information for domain with URN: %s" % str(domain_urn)) 
         finally:
             self.__mutex.release()
 
