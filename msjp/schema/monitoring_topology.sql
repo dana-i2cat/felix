@@ -10,11 +10,11 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- DATABASE: `monTopologyDB`
+-- DATABASE: `fms__monitoring_topology`
 --
-DROP DATABASE IF EXISTS `monTopologyDB`;
-CREATE DATABASE `monTopologyDB` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-USE `monTopologyDB`;
+DROP DATABASE IF EXISTS `fms__monitoring_topology`;
+CREATE DATABASE `fms__monitoring_topology` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+USE `fms__monitoring_topology`;
 
 -- --------------------------------------------------------
 
@@ -74,14 +74,13 @@ CREATE TABLE IF NOT EXISTS `M_NODE_INFO` (
 DROP TABLE IF EXISTS `M_NODE_MGMT`;
 CREATE TABLE IF NOT EXISTS `M_NODE_MGMT` (
   `idNode` int(11) NOT NULL,
-  `vkey` varchar(255) NOT NULL,
   `type` varchar(10) NOT NULL,
   `address` varchar(48),
   `port` varchar(8),
   `auth_id` varchar(255),
   `auth_pass` varchar(255),
   `dbUpdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`idNode`,`vkey`)
+  PRIMARY KEY (`idNode`,`type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------

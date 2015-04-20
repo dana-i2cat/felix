@@ -10,11 +10,11 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- DATABASE: `monDataTNDB`
+-- DATABASE: `fms__monitoring_tnrm`
 --
-DROP DATABASE IF EXISTS `monDataTNDB`;
-CREATE DATABASE `monDataTNDB` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-USE `monDataTNDB`;
+DROP DATABASE IF EXISTS `fms__monitoring_tnrm`;
+CREATE DATABASE `fms__monitoring_tnrm` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+USE `fms__monitoring_tnrm`;
 
 -- --------------------------------------------------------
 

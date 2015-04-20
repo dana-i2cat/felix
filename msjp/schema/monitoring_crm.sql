@@ -10,11 +10,11 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- DATABASE: `monDataCPDB`
+-- DATABASE: `fms__monitoring_crm`
 --
-DROP DATABASE IF EXISTS `monDataCPDB`;
-CREATE DATABASE `monDataCPDB` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-USE `monDataCPDB`;
+DROP DATABASE IF EXISTS `fms__monitoring_crm`;
+CREATE DATABASE `fms__monitoring_crm` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+USE `fms__monitoring_crm`;
 
 -- --------------------------------------------------------
 

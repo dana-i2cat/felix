@@ -10,11 +10,11 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- DATABASE: `monDataSDNDB`
+-- DATABASE: `fms__monitoring_serm`
 --
-DROP DATABASE IF EXISTS `monDataSDNDB`;
-CREATE DATABASE `monDataSDNDB` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-USE `monDataSDNDB`;
+DROP DATABASE IF EXISTS `fms__monitoring_serm`;
+CREATE DATABASE `fms__monitoring_serm` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+USE `fms__monitoring_serm`;
 
 -- --------------------------------------------------------
 
