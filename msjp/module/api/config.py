@@ -11,7 +11,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # set default value.
 default_config = {
     'rest_host' : '0.0.0.0',
-    'rest_port' : '8080',
+    'rest_port' : '8448',
     'rest_base' : 'monitoring-system',
     'post_uri' : '',
     'sequel_service_uri' : 'http://127.0.0.1:8015/perfSONAR_PS/services/sequel',
