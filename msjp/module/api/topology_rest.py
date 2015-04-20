@@ -154,16 +154,18 @@ def parse_node_xml(xd_root):
             if len(mgmt_list) > 1:
                 logger.warn('more than one management definition. (node id={0})'.format(node_id))
             mgmt = mgmt_list[0]
-            if mgmt.has_key(const.XML_TAG_MGMT_TYPE):
-                mgmt_dict[const.XML_TAG_MGMT_TYPE] = mgmt[const.XML_TAG_MGMT_TYPE]
+            if mgmt.has_key('@'+const.XML_ATTR_MGMT_TYPE):
+                mgmt_dict[const.XML_ATTR_MGMT_TYPE] = mgmt['@'+const.XML_ATTR_MGMT_TYPE]
             else:
                 logger.warn('management definition has no type. (node id={0})'.format(node_id))
             if mgmt.has_key(const.XML_TAG_MGMT_ADDRESS):
                 mgmt_dict[const.XML_TAG_MGMT_ADDRESS] = mgmt[const.XML_TAG_MGMT_ADDRESS]
             if mgmt.has_key(const.XML_TAG_MGMT_PORT):
                 mgmt_dict[const.XML_TAG_MGMT_PORT] = mgmt[const.XML_TAG_MGMT_PORT]
-            if mgmt.has_key(const.XML_TAG_MGMT_AUTH):
-                mgmt_dict[const.XML_TAG_MGMT_AUTH] = mgmt[const.XML_TAG_MGMT_AUTH]
+            if mgmt.has_key(const.XML_TAG_MGMT_AUTH_ID):
+                mgmt_dict[const.XML_TAG_MGMT_AUTH_ID] = mgmt[const.XML_TAG_MGMT_AUTH_ID]
+            if mgmt.has_key(const.XML_TAG_MGMT_AUTH_PASS):
+                mgmt_dict[const.XML_TAG_MGMT_AUTH_PASS] = mgmt[const.XML_TAG_MGMT_AUTH_PASS]
 
         #add management
         node_dict[const.XML_TAG_MGMT] = mgmt_dict
@@ -513,25 +515,29 @@ def insert_node(node_list,db_nw,crrent_node=None):
             if db_mgmt:
                 logger.debug('management for node({0}) already exists.'.format(node[const.XML_ATTR_ID]))
                 continue
-            if not mgmt.has_key(const.XML_TAG_MGMT_TYPE):
+            if not mgmt.has_key(const.XML_ATTR_MGMT_TYPE):
                 logger.debug('management for node({0}) has no type.'.format(node[const.XML_ATTR_ID]))
             else:
-                mgmt_type = mgmt[const.XML_TAG_MGMT_TYPE]
+                mgmt_type = mgmt[const.XML_ATTR_MGMT_TYPE]
                 mgmt_address = None
                 mgmt_port = None
-                mgmt_auth = None
-                if mgmt.has_key(const.XML_ATTR_MGMT_ADDRESS):
-                    mgmt_address = mgmt[const.XML_ATTR_MGMT_ADDRESS]
-                if mgmt.has_key(const.XML_ATTR_MGMT_PORT):
-                    mgmt_port = mgmt[const.XML_ATTR_MGMT_PORT]
-                if mgmt.has_key(const.XML_ATTR_MGMT_AUTH):
-                    mgmt_auth = mgmt[const.XML_ATTR_MGMT_AUTH]
+                mgmt_auth_id = None
+                mgmt_auth_pass = None
+                if mgmt.has_key(const.XML_TAG_MGMT_ADDRESS):
+                    mgmt_address = mgmt[const.XML_TAG_MGMT_ADDRESS]
+                if mgmt.has_key(const.XML_TAG_MGMT_PORT):
+                    mgmt_port = mgmt[const.XML_TAG_MGMT_PORT]
+                if mgmt.has_key(const.XML_TAG_MGMT_AUTH_ID):
+                    mgmt_auth_id = mgmt[const.XML_TAG_MGMT_AUTH_ID]
+                if mgmt.has_key(const.XML_TAG_MGMT_AUTH_PASS):
+                    mgmt_auth_pass = mgmt[const.XML_TAG_MGMT_AUTH_PASS]
             
                 db_mgmt = NodeManagement(idNode=db_node.id
                                    ,type=mgmt_type
                                    ,address=mgmt_address
                                    ,port=mgmt_port
-                                   ,auth=mgmt_auth )
+                                   ,auth_id=mgmt_auth_id
+                                   ,auth_pass=mgmt_auth_pass )
                 session.commit()
 
         ### insert interface

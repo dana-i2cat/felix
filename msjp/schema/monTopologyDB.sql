@@ -78,7 +78,8 @@ CREATE TABLE IF NOT EXISTS `M_NODE_MGMT` (
   `type` varchar(10) NOT NULL,
   `address` varchar(48),
   `port` varchar(8),
-  `auth` varchar(255),
+  `auth_id` varchar(255),
+  `auth_pass` varchar(255),
   `dbUpdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`idNode`,`vkey`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

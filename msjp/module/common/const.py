@@ -58,8 +58,8 @@ XML_TAG_VAL             = 'value'
 XML_TAG_MGMT            = 'management'
 XML_TAG_MGMT_ADDRESS    = 'address'
 XML_TAG_MGMT_PORT       = 'port'
-XML_TAG_MGMT_AUTH       = 'auth'
-XML_TAG_MGMT_TYPE       = 'type'
+XML_TAG_MGMT_AUTH_ID    = 'auth_id'
+XML_TAG_MGMT_AUTH_PASS  = 'auth_pass'
 
 # xml attribute
 XML_ATTR_TYPE           = 'type'
