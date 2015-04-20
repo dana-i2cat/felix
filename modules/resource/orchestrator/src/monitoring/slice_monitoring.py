@@ -309,7 +309,13 @@ class SliceMonitoring(BaseMonitoring):
         slices = db_sync_manager.get_slice_monitoring_info()
         logger.debug("Slices: %d" % (len(slices),))
         for s in slices:
-            self.__topologies = etree.fromstring(s)
+            # XXX Tried to use the BaseMonitoring parameter, but shows problems
+            self.topology_list = etree.fromstring(s)
+            self._translate_generic_links()
+            # Check: remove any 'topology' without contents
+            self._remove_empty_topologies()
+            # FIXME Not storing the replacement of the generic links...
+            self.__topologies = etree.fromstring(self.get_topology_pretty())
             self.send()
 
     ##########

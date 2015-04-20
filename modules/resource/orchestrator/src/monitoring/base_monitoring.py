@@ -52,10 +52,19 @@ class BaseMonitoring(object):
             logger.error("Could not connect to %s. Exception: %s" % (url, e,))
 
 
-    ##################
-    # Return topology
-    ##################
+    ##########################
+    # Set and return topology
+    ##########################
 
+    def set_topology_tree(self, topology_list_tree):
+        # Return whole list of topologies
+        try:
+            # If the following line works, 'topology_list_tree' is a proper xml tree
+            topology_list_proper = ET.tostring(self.get_topology_tree())
+            self.topology_list = topology_list_tree
+        except:
+            pass
+            
     def get_topology_tree(self):
         # Return whole list of topologies
         return self.topology_list
@@ -72,6 +81,19 @@ class BaseMonitoring(object):
     # Helpers
     ##########
 
+    def _remove_empty_topologies(self, filter_name=None, filter_update_time=None):
+        filter_string = ""
+        if filter_name:
+            filter_string += "[@name='%s']" % str(filter_name)
+        if filter_update_time:
+            filter_string += "[@last_update_time='%s']" % str(filter_update_time)
+        topology_tree = etree.fromstring(self.get_topology())
+        filtered_nodes = topology_tree.xpath("//topology%s" % filter_string)
+        for filtered_node in filtered_nodes:
+            # Remove any node whose length is 0 (=> no content inside)
+            if list(filtered_node) == 0:
+                filtered_node.get_parent().remove(filtered_node)
+        
     def _get_management_data_crm_sdnrm(self, parent_node):
         configuration_data = {}
         if "vtam" in parent_node.attrib["id"]:
@@ -82,7 +104,6 @@ class BaseMonitoring(object):
 
     def _add_management_section(self, parent_node):
         management = ET.SubElement(parent_node, "management")
-        # TODO Query database for management information per resource
         # TODO Identify and update must/optional tags/attributes
 #        resource_management_info = db_sync_manager.get_management_info(
 #                                        component_id=parent_node.get("component_id"))
@@ -102,7 +123,7 @@ class BaseMonitoring(object):
             auth_id.text = configuration_data.get(parent_node.attrib["id"]).get("snmp").get("id")
             auth_pass.text = configuration_data.get(parent_node.attrib["id"]).get("snmp").get("password")
         except Exception as e:
-            logger.warning("Physical monitoring. Cannot add management data. Details: %s" % (e))
+            logger.warning("Physical monitoring. Cannot add management data on %s. Details: %s" % (etree.tostring(parent_node), e))
         return parent_node
 
     def _add_generic_node(self, parent_tag, node, node_type):
@@ -113,11 +134,32 @@ class BaseMonitoring(object):
         n = self._add_management_section(n)
         return n
 
+    def _translate_generic_links(self):
+        topology_tree = etree.fromstring(self.get_topology())    
+        filtered_links = topology_tree.xpath("//link")
+        for filtered_link in filtered_links:
+            if filtered_link.get("link_type"):
+                filtered_link.set("link_type", self._translate_generic_link(filtered_link))
+            elif filtered_link.get("type"):
+                filtered_link.set("type", self._translate_generic_link(filtered_link))
+        self.set_topology_tree(topology_tree)
+    
+    def _translate_generic_link(self, link):
+        # TODO - IMPORTANT FOR MS TO PARSE PROPERLY:
+        #   Add others as needed in the future!
+        ms_link_type_lan = "lan"
+        link_type_translation = {
+            "l2" : ms_link_type_lan,
+            "l2 link": ms_link_type_lan,
+        }
+        link_type = link.get("link_type", link.get("type", ""))
+        return link_type_translation.get(link_type.lower(), "")
+
     def _add_generic_link(self, link):
         logger.debug("com-links=%s" % (link,))
         l = ET.SubElement(self.topology, "link")
         # NOTE that this cannot be empty
-        l.attrib["type"] = link.get("link_type", "")
+        l.attrib["type"] = self._translate_generic_link(link)
         if not l.attrib["type"]:
             l.attrib["type"] = "lan"
         # TODO Change structure of data
@@ -147,7 +189,6 @@ class BaseMonitoring(object):
                 interface = ET.SubElement(n, "interface")
                 # NOTE this is extending the "interface" URN
                 interface.attrib["id"] = "%s+interface+%s" % (n.attrib["id"], iface)
-
         # 2. Links
         links = [ l for l in db_sync_manager.get_com_links_by_domain(self.domain_urn) ]
         logger.debug("com-links=%s" % (links,))
@@ -170,11 +211,9 @@ class BaseMonitoring(object):
                 iface.attrib["id"] = "%s_%s" % (switch.attrib["id"], p.get("num"))
                 port = ET.SubElement(iface, "port")
                 port.attrib["num"] = p.get("num")
-
         (sdn_links, fed_links) = [ l for l in db_sync_manager.get_sdn_links_by_domain(self.domain_urn) ]
         for sdnl in sdn_links:
             logger.debug("sdn-link=%s" % (sdnl,))
-
         for fedl in fed_links:
             logger.debug("fed-link=%s" % (fedl,))
 
