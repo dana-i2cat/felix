@@ -1,4 +1,29 @@
+import os
+import binascii
+
+import core
+logger = core.log.getLogger("utility-rspec")
+
 DEFAULT_SHARED_VLAN = "http://www.geni.net/resources/rspec/ext/shared-vlan/1"
+
+
+# TN Functions
+def generate_unique_link_id(component_id, src_stp, dst_stp):
+    logger.debug("generate_unique_link_id comp-id=%s, src_stp=%s, dst_stp=%s" %
+                 (component_id, src_stp, dst_stp,))
+    i = component_id.rfind('+')
+    if i > 0:
+        prefix = component_id[0:i]
+        suffix = component_id[i+1:len(component_id)]
+
+        logger.debug("prefix=%s, suffix=%s" % (prefix, suffix,))
+        ext = src_stp + '+' + dst_stp + '+' + suffix + '+' +\
+            binascii.b2a_hex(os.urandom(10))
+
+        component_id = prefix + '+' + ext
+
+    logger.debug("generate_unique_link_id egress: %s" % (component_id,))
+    return component_id
 
 
 # TN Data Models
