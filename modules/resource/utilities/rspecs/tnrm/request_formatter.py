@@ -1,6 +1,6 @@
 from rspecs.commons import DEFAULT_XMLNS, DEFAULT_XS, DEFAULT_SCHEMA_LOCATION,\
     DSL_PREFIX
-from rspecs.commons_tn import DEFAULT_SHARED_VLAN
+from rspecs.commons_tn import DEFAULT_SHARED_VLAN, generate_unique_link_id
 from rspecs.formatter_base import FormatterBase
 from lxml import etree
 
@@ -59,3 +59,10 @@ class TNRMv3RequestFormatter(FormatterBase):
             prop_.attrib["source_id"] = p.get("source_id")
             prop_.attrib["dest_id"] = p.get("dest_id")
             prop_.attrib["capacity"] = p.get("capacity")
+
+        if len(l.get("property")) > 0:
+            # Here we change the link-id attribute.
+            # It should be a unique value for the TNRM module!
+            p0 = l.get("property")[0]
+            link_.attrib["client_id"] = generate_unique_link_id(
+                l.get("component_id"), p0.get("source_id"), p0.get("dest_id"))
