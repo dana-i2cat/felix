@@ -18,7 +18,11 @@ class SliceMonitoring(BaseMonitoring):
     """
 
     PROVISIONED = "geni_provisioned"
-    DELETED = "geni_deleted"
+    DELETED = "geni_unallocated"
+
+    MS_LINK_TYPE = "lan"
+    TN2TN_LINK_TYPE = "virtual-link"
+    SDN2SDN_LINK_TYPE = "l2"
 
     def __init__(self):
         super(SliceMonitoring, self).__init__()
@@ -96,7 +100,15 @@ class SliceMonitoring(BaseMonitoring):
     def __create_link_id(self, datapath, portnumber):
         return datapath + "_" + str(portnumber)
 
+    def __translate_link_type(self, ltype):
+        # According to the MS definitions, we need to translate the link-type
+        # to "lan" for all the different resources types (for now)
+        logger.debug("Link-type: %s" % (ltype,))
+        return self.MS_LINK_TYPE
+
     def __add_link_info(self, topology_tag, link_type, ep_src, ep_dst):
+        link_type = self.__translate_link_type(link_type)
+
         link_ = etree.SubElement(topology_tag, "link", type=link_type)
         etree.SubElement(link_, "interface_ref", client_id=ep_src)
         etree.SubElement(link_, "interface_ref", client_id=ep_dst)
@@ -176,7 +188,8 @@ class SliceMonitoring(BaseMonitoring):
                     ep2 = self.__create_link_id(
                         sdn_link.get('dpids')[1].get('component_id'),
                         sdn_link.get('ports')[1].get('port_num'))
-                    self.__add_link_info(topology, "l2", ep1, ep2)
+                    self.__add_link_info(topology, self.SDN2SDN_LINK_TYPE,
+                                         ep1, ep2)
 
     def __add_rest_management(self, tag, address, port_num, protocol,
                               endpoint="/metrics/list/"):
@@ -227,7 +240,7 @@ class SliceMonitoring(BaseMonitoring):
             logger.debug("Link=%s" % (l,))
 
             for p in l.get('property'):
-                self.__add_link_info(topology, "virtual-link",
+                self.__add_link_info(topology, self.TN2TN_LINK_TYPE,
                                      p.get('source_id'), p.get('dest_id'))
 
     def add_se_resources(self, slice_urn, nodes, links, slivers):
@@ -283,7 +296,7 @@ class SliceMonitoring(BaseMonitoring):
             hs = {'content-type': "application/xml"}
             r = requests.post(url=self.__ms_url, headers=hs,
                               data=self.__get_topologies())
-            logger.info("Response=%s" % (r.text,))
+            logger.info("Response=%s, text=%s" % (r, r.text,))
 
         except Exception as e:
             logger.error("Unable to send slice-monitoring info to %s: %s" %
@@ -309,13 +322,7 @@ class SliceMonitoring(BaseMonitoring):
         slices = db_sync_manager.get_slice_monitoring_info()
         logger.debug("Slices: %d" % (len(slices),))
         for s in slices:
-            # XXX Tried to use the BaseMonitoring parameter, but shows problems
-            self.topology_list = etree.fromstring(s)
-            self._translate_generic_links()
-            # Check: remove any 'topology' without contents
-            self._remove_empty_topologies()
-            # FIXME Not storing the replacement of the generic links...
-            self.__topologies = etree.fromstring(self.get_topology_pretty())
+            self.__topologies = etree.fromstring(s)
             self.send()
 
     ##########
