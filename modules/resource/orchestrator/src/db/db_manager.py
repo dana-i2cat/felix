@@ -166,7 +166,9 @@ class DBManager(object):
                          "_ref_domain": domain.get("_id"), }
                 return table.insert(entry)
         except:
-            raise Exception("Cannot store physical information for domain with URN: %s" % str(domain_urn)) 
+            e = "Cannot store physical information for domain with URN: %s" %\
+                str(domain_urn)
+            raise Exception(e)
         finally:
             self.__mutex.release()
 
@@ -270,6 +272,16 @@ class DBManager(object):
             self.__mutex.acquire()
             return [i.get('slice_monitoring') for i in table.find()
                     if i.get('slice_monitoring') is not None]
+
+        finally:
+            self.__mutex.release()
+
+    def get_slice_monitoring_from_urn(self, slice_urn):
+        table = self.__get_table("topology.slice")
+        try:
+            self.__mutex.acquire()
+            row = table.find_one({"slice_urn": slice_urn})
+            return row.get("slice_monitoring") if row is not None else None
 
         finally:
             self.__mutex.release()

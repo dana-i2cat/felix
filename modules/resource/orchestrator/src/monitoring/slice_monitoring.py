@@ -325,6 +325,17 @@ class SliceMonitoring(BaseMonitoring):
             self.__topologies = etree.fromstring(s)
             self.send()
 
+    def delete_slice_topology(self, slice_urn):
+        logger.info("Slice URN: %s" % (slice_urn,))
+        sinfo = db_sync_manager.get_slice_monitoring_from_urn(slice_urn)
+        logger.debug("Monitoring Info: %s" % (sinfo,))
+
+        if sinfo is not None:
+            self.__topologies = etree.fromstring(sinfo)
+            for t in self.__topologies.findall("topology"):
+                t.attrib["status"] = self.DELETED
+            self.send()
+
     ##########
     # Helpers
     ##########
