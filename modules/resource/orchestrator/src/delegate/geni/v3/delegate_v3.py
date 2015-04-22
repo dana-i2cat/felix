@@ -659,9 +659,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
         # update MS to stop slice-monitoring collection
         slice_urn = db_sync_manager.get_slice_urn(urns)
         if slice_urn:
-            slice_monitor.add_topology(slice_urn, SliceMonitoring.DELETED,
-                                       client_urn)
-            slice_monitor.send()
+            # According to MS, we need to send the whole data
+            # for a delete operation! (at least for now)
+            slice_monitor.delete_slice_topology(slice_urn)
             db_sync_manager.delete_slice_sdn(slice_urn)
 
         db_sync_manager.delete_slice_urns(db_urns)
