@@ -311,7 +311,7 @@ class SliceMonitoring(BaseMonitoring):
         for s in slices:
             # XXX Tried to use the BaseMonitoring parameter, but shows problems
             self.topology_list = etree.fromstring(s)
-            self._translate_generic_links()
+            self._translate_link_types()
             # Check: remove any 'topology' without contents
             self._remove_empty_topologies()
             # FIXME Not storing the replacement of the generic links...

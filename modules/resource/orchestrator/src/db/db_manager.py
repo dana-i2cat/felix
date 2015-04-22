@@ -94,6 +94,12 @@ class DBManager(object):
         filter_params = {"_id": key}
         return self.get_configured_peer(filter_params)
 
+    def get_configured_peer_by_urn(self, domain_urn):
+        filter_params = {"domain_urn": domain_urn}
+        peer_domain_info = self.get_domain_info(filter_params)
+        peer_domain_ref = peer_domain_info.get("_ref_peer")
+        return self.get_configured_peer_by_routing_key(peer_domain_ref)
+
     def get_configured_peer_by_uri(self, rm_url):
         # Parse URL in order to filtering entry in domain.routing collection
         rm_url = urlparse.urlparse(rm_url)
@@ -150,6 +156,14 @@ class DBManager(object):
     def get_domain_urn(self, filter_params):
         return self.get_domain_info(filter_params).get("domain_urn")
 
+    def get_domain_authority(self, domain_urn):
+        # Domain URN = Domain authority
+        # Remove the bit of the authority,
+        # then create a RE that starts this way
+        domain_urn = domain_urn.split("+authority+")[0]
+        domain_authority = self.__get_regexp_for_query(domain_urn)
+        return domain_authority
+        
     # (felix_ro) topology.physical
     def store_physical_info(self, domain_urn, last_update):
         """
@@ -303,14 +317,9 @@ class DBManager(object):
         return self.__get_all(table, filter_params)
 
     def get_com_nodes_by_domain(self, domain_urn):
-        # Domain URN = Domain authority
-        # Remove the bit of the authority,
-        # then create a RE that starts this way
-        domain_urn = domain_urn.split("+authority+")[0]
-        domain_urn_re = self.__get_regexp_for_query(domain_urn)
-
+        domain_authority = self.get_domain_authority(domain_urn)
         # Look for all those resources that start with a given URN
-        filter_params = {"component_id": domain_urn_re, }
+        filter_params = {"component_id": domain_authority, }
         nodes = self.get_com_nodes(filter_params)
         return nodes
 
@@ -320,7 +329,6 @@ class DBManager(object):
         return self.__get_one(table, filter_params).get("routing_key")
 
     # (felix_ro) resource.com.link
-    # TODO Ensure correctness
     def store_com_links(self, routingKey, values):
         table = self.__get_table("resource.com.link")
         try:
@@ -345,14 +353,9 @@ class DBManager(object):
         return self.__get_all(table, filter_params)
 
     def get_com_links_by_domain(self, domain_urn):
-        # Domain URN = Domain authority
-        # Remove the bit of the authority,
-        # then create a RE that starts this way
-        domain_urn = domain_urn.split("+authority+")[0]
-        domain_urn_re = self.__get_regexp_for_query(domain_urn)
-
+        domain_authority = self.get_domain_authority(domain_urn)
         # Look for all those resources that start with a given URN
-        filter_params = {"component_id": domain_urn_re, }
+        filter_params = {"component_id": domain_authority, }
         links = self.get_com_links(filter_params)
         return links
 
@@ -391,14 +394,9 @@ class DBManager(object):
         return self.__get_all(table, filter_params)
 
     def get_sdn_datapaths_by_domain(self, domain_urn):
-        # Domain URN = Domain authority
-        # Remove the bit of the authority,
-        # then create a RE that starts this way
-        domain_urn = domain_urn.split("+authority+")[0]
-        domain_urn_re = self.__get_regexp_for_query(domain_urn)
-
+        domain_authority = self.get_domain_authority(domain_urn)
         # Look for all those resources that start with a given URN
-        filter_params = {"component_id": domain_urn_re, }
+        filter_params = {"component_id": domain_authority, }
         nodes = self.get_sdn_datapaths(filter_params)
         return nodes
 
@@ -445,14 +443,9 @@ class DBManager(object):
             self.__mutex.release()
 
     def get_sdn_links_by_domain(self, domain_urn):
-        # Domain URN = Domain authority
-        # Remove the bit of the authority,
-        # then create a RE that starts this way
-        domain_urn = domain_urn.split("+authority+")[0]
-        domain_urn_re = self.__get_regexp_for_query(domain_urn)
-
+        domain_authority = self.get_domain_authority(domain_urn)
         # Look for all those resources that start with a given URN
-        filter_params = {"component_id": domain_urn_re, }
+        filter_params = {"component_id": domain_authority, }
         links = self.get_sdn_links(filter_params)
         return links
 
@@ -494,10 +487,17 @@ class DBManager(object):
         return {'component_id': row.get('component_id'),
                 'component_manager_id': row.get('component_manager_id')}
 
-    def get_se_nodes(self):
+    def get_se_nodes(self, filter_params={}):
         table = self.__get_table("resource.se.node")
-        return self.__get_all(table)
+        return self.__get_all(table, filter_params)
 
+    def get_se_nodes_by_domain(self, domain_urn):
+        domain_authority = self.get_domain_authority(domain_urn)
+        # Look for all those resources that start with a given URN
+        filter_params = {"component_id": domain_authority, }
+        nodes = self.get_se_nodes(filter_params)
+        return nodes
+                
     def get_se_node_routing_key(self, cid):
         table = self.__get_table("resource.se.node")
         filter_params = {"component_id": cid}
@@ -554,10 +554,17 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
-    def get_se_links(self):
+    def get_se_links(self, filter_params={}):
         table = self.__get_table("resource.se.link")
-        return self.__get_all(table)
+        return self.__get_all(table, filter_params)
 
+    def get_se_links_by_domain(self, domain_urn):
+        domain_authority = self.get_domain_authority(domain_urn)
+        # Look for all those resources that start with a given URN
+        filter_params = {"component_id": domain_authority, }
+        links = self.get_se_links(filter_params)
+        return links
+            
     def get_direct_se_link_routing_key(self, cid, ifrefs):
         try:
             self.__mutex.acquire()
@@ -600,10 +607,17 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
-    def get_tn_nodes(self):
+    def get_tn_nodes(self, filter_params={}):
         table = self.__get_table("resource.tn.node")
-        return self.__get_all(table)
+        return self.__get_all(table, filter_params)
 
+    def get_tn_nodes_by_domain(self, domain_urn):
+        domain_authority = self.get_domain_authority(domain_urn)
+        # Look for all those resources that start with a given URN
+        filter_params = {"component_id": domain_authority, }
+        nodes = self.get_tn_nodes(filter_params)
+        return nodes
+            
     def get_tn_node_routing_key(self, cid):
         table = self.__get_table("resource.tn.node")
         filter_params = {"component_id": cid}
@@ -630,10 +644,17 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
-    def get_tn_links(self):
+    def get_tn_links(self, filter_params={}):
         table = self.__get_table("resource.tn.link")
-        return self.__get_all(table)
+        return self.__get_all(table, filter_params)
 
+    def get_tn_links_by_domain(self, domain_urn):
+        domain_authority = self.get_domain_authority(domain_urn)
+        # Look for all those resources that start with a given URN
+        filter_params = {"component_id": domain_authority, }
+        links = self.get_tn_links(filter_params)
+        return links
+            
     def get_tn_link_routing_key(self, cid, cmid, ifrefs):
         try:
             self.__mutex.acquire()
