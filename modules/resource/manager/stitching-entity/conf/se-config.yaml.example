@@ -1,6 +1,10 @@
 organisation: psnc
 dpid: 00:00:00:00:00:00:00:01
 
+provision_plugin: pox_xmlrpc_of # possible values:
+                                # * ryu_rest_of (default)
+                                # * pox_xmlrpc_of
+
 vlan_trans: true
 qinq: false
 capacity: 1G
@@ -10,20 +14,18 @@ interfaces:
     "1":
         remote_endpoints: 
             -
-                name: urn:publicid:IDN+fms:i2cat:tnrm+stp+urn:publicid:IDN+openflow:ocf:i2cat:ofam+datapath+00:10:00:00:00:00:00:05_10
-                type: vlan_trans
+                name: urn:publicid:IDN+fms:i2cat:tnrm+stp+urn:publicid:IDN+openflow:ocf:psnc:ofam+datapath+00:10:00:00:00:00:00:05_10
+                type: vlan_trans # possible values:
+                                 # * vlan_trans
+                                 # * QinQ
+                                 # * static_link+[vlan_trans|QinQ]
                 vlans:
-                    - 1000
-            -
-                name: urn:publicid:IDN+fms:i2cat:tnrm+stp+urn:publicid:IDN+openflow:ocf:i2cat:ofam+datapath+00:10:00:00:00:00:00:05_11
-                type: vlan_trans
-                vlans:
-                    - 2001
+                    - 1000-1001
 
     "2":
         remote_endpoints:
             -
-                name: urn:publicid:IDN+openflow:ocf:i2cat:ofam+datapath+00:10:00:00:00:00:00:05_6
-                type: static_link
+                name: urn:publicid:IDN+openflow:ocf:psnc:ofam+datapath+00:10:00:00:00:00:00:05_6
+                type: vlan_trans
                 vlans:
                     - 1001

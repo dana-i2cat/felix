@@ -3,6 +3,8 @@ import json
 import yaml
 import os
 
+print "Ryu plugin loaded"
+
 current_path = os.path.dirname(os.path.abspath( __file__ ))
 conf_file_path = os.path.join(current_path, "../../../../conf/ryu-config.yaml")
 stream = open(conf_file_path, "r")
