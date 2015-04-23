@@ -114,8 +114,9 @@ class seConfigurator:
             {
                 'component_manager_id': component_manager_prefix,
                 'exclusive':'false',
-                'interfaces':[],
-                'component_id': component_id_prefix,
+                'interfaces': [],
+#                'component_id': component_id_prefix,
+                'component_id': component_id_prefix + '+datapath+' + self.dpid,
                 'sliver_type_name':None
             }
         ]
