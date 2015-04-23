@@ -79,11 +79,6 @@ interfaces:
                 type: vlan_trans
                 vlans:
                     - 1000
-            -
-                name: urn:publicid:IDN+fms:i2cat:tnrm+stp+urn:publicid:IDN+openflow:ocf:i2cat:ofam+datapath+00:10:00:00:00:00:00:05_11
-                type: vlan_trans
-                vlans:
-                    - 2001
 
     "2":
         remote_endpoints:
