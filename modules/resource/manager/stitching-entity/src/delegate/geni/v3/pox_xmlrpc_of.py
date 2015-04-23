@@ -1,16 +1,52 @@
-import requests
-import json
+import xmlrpclib
 import yaml
 import os
 
+print "POX plugin loaded"
+
 current_path = os.path.dirname(os.path.abspath( __file__ ))
-conf_file_path = os.path.join(current_path, "../../../../conf/ryu-config.yaml")
+conf_file_path = os.path.join(current_path, "../../../../conf/pox-config.yaml")
 stream = open(conf_file_path, "r")
 config = yaml.load(stream)
 
 host = str(config["host"])
 port = str(config["rest_port"])
-dpid = config["dpid"]
+
+
+class i2catClient:
+
+    SERVER_URL = "http://" + host + ":" + port
+    
+    def __init__(self):
+        self.__channel = xmlrpclib.ServerProxy(self.SERVER_URL)
+        
+
+    def add_rule(self, src_port, src_vlan, dst_port, dst_vlan):
+        """ Retrieves the SRC and DST ports of the HP switch,
+            the SRC (FlowSpace) and DST (Transport) Vlans and
+            sets up a bi-directional circuit to link two islands 
+            by calling the NorthBound API of the i2CAT POX 
+            Controller  
+        """
+        return self.__channel.add_rule(src_port, src_vlan, dst_port, dst_vlan)
+
+    def remove_rule(self, src_port, src_vlan, dst_port, dst_vlan):
+       """ Retrieves the SRC and DST ports of the HP switch,
+           the SRC (FlowSpace) and DST (Transport) Vlans and
+           deletes the previously provisioned bi-directional 
+           circuit linking two islands by calling the NorthBound 
+           API of the i2CAT POX Controller  
+       """
+       return self.__channel.remove_rule(src_port, src_vlan, dst_port, dst_vlan)
+
+    def configure_vlan(self, *args, **kwargs):
+       """ Retrieves a transport VLAN and configures
+           the i2cat HP ProCurve Switch to work as 
+           aggreggate openflow instance 
+       """
+       pass
+
+PoxController = i2catClient()
 
 def addSwitchingRule(in_port, out_port, in_vlan, out_vlan):
     """
@@ -20,115 +56,17 @@ def addSwitchingRule(in_port, out_port, in_vlan, out_vlan):
             out_vlan (int)
     """
     print "install flows"
-    headers = {'content-type': 'application/json'}
-    payload = {
-                "dpid":dpid,
-                "cookie":1,
-                "cookie_mask":1,
-                "table_id":0,
-                "idle_timeout":0,
-                "hard_timeout":0,
-                "priority":1,
-                "flags":1,  
-                 "match": {
-                             "dl_vlan":in_vlan,
-                             "in_port":in_port
-                          }, 
-                 "actions":[
-                                 {
-                                     "type":"SET_VLAN_VID",
-                                     "vlan_vid":out_vlan
-                                },
-                                 {
-                                     "type":"OUTPUT",
-                                     "port":out_port
-                                }
-                             ]
-                }
-    r = requests.post("http://" + host + ":" + port + "/stats/flowentry/add", data=json.dumps(payload), headers=headers)
-    print r.status_code
-
-    payload = {
-                "dpid":dpid,
-                "cookie":1,
-                "cookie_mask":1,
-                "table_id":0,
-                "idle_timeout":0,
-                "hard_timeout":0,
-                "priority":1,
-                "flags":1,  
-                 "match": {
-                             "dl_vlan":out_vlan,
-                             "in_port":out_port
-                          }, 
-                 "actions":[
-                                 {
-                                     "type":"SET_VLAN_VID",
-                                     "vlan_vid":in_vlan
-                                },
-                                 {
-                                     "type":"OUTPUT",
-                                     "port":in_port
-                                }
-                             ]
-                }
-    r = requests.post("http://" + host + ":" + port + "/stats/flowentry/add", data=json.dumps(payload), headers=headers)
-    print r.status_code
+    response = PoxController.add_rule(in_port, in_vlan, out_port, out_vlan)
+    print response
 
 def deleteSwitchingRule(in_port, out_port, in_vlan, out_vlan):
+    """
+    params: in_port (int)
+            out_port (int)
+            in_vlan (int)
+            out_vlan (int)
+    """
     print "delete flows"
-    headers = {'content-type': 'application/json'}
-
-    payload = {
-                "dpid":dpid,
-                "cookie":1,
-                "cookie_mask":1,
-                "table_id":0,
-                "idle_timeout":0,
-                "hard_timeout":0,
-                "priority":1,
-                "flags":1,  
-                 "match": {
-                             "dl_vlan":in_vlan,
-                             "in_port":in_port
-                          }, 
-                 "actions":[
-                                 {
-                                     "type":"SET_VLAN_VID",
-                                     "vlan_vid":out_vlan
-                                },
-                                 {
-                                     "type":"OUTPUT",
-                                     "port":out_port
-                                }
-                             ]
-                }
-    r = requests.post("http://" + host + ":" + port + "/stats/flowentry/delete", data=json.dumps(payload), headers=headers)
-    print r.status_code
-
-    payload = {
-                "dpid":dpid,
-                "cookie":1,
-                "cookie_mask":1,
-                "table_id":0,
-                "idle_timeout":0,
-                "hard_timeout":0,
-                "priority":1,
-                "flags":1,  
-                 "match": {
-                             "dl_vlan":out_vlan,
-                             "in_port":out_port
-                          }, 
-                 "actions":[
-                                 {
-                                     "type":"SET_VLAN_VID",
-                                     "vlan_vid":in_vlan
-                                },
-                                 {
-                                     "type":"OUTPUT",
-                                     "port":in_port
-                                }
-                             ]
-                }
-    r = requests.post("http://" + host + ":" + port + "/stats/flowentry/delete", data=json.dumps(payload), headers=headers)
-    print r.status_code
+    response = PoxController.remove_rule(in_port, in_vlan, out_port, out_vlan)
+    print response
+    

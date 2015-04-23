@@ -15,6 +15,12 @@ class seConfigurator:
         self.configured_interfaces = self.convert_config_into_Resources_datamodel(initial_config["interfaces"])
         self.initial_configured_interfaces = initial_config["interfaces"]
 
+        # Dynamic import of provisioning plugin (default: ryu_rest_of)
+        try:
+            self.provision_plugin = initial_config["provision_plugin"]
+        except:
+            self.provision_plugin = "ryu_rest_of"
+
         # Push port status from configuration file into SE-db
         # TODO: Add other rspec parameters to db
         db_sync_manager.update_resources(self.configured_interfaces, fromConfigFile=True)
@@ -47,6 +53,9 @@ class seConfigurator:
                             pass
             rm_datamodel[interface] = avail_vlans
         return rm_datamodel
+
+    def get_provision_plugin(self):
+        return self.provision_plugin
 
     def get_ports_configuration(self):
         return self.configured_interfaces

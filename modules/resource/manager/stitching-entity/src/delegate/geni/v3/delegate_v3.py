@@ -1,3 +1,4 @@
+import importlib
 from dateutil import parser as dateparser
 from delegate.geni.v3.base import GENIv3DelegateBase
 
@@ -20,7 +21,11 @@ import core
 import se_configurator as SEConfigurator
 from se_slices import seSlicesWithSlivers
 
-import ryu_rest_of as se_provision
+
+# dynamic import of SE provision plugin depending on config settings
+# se_provision = importlib.import_module(SEConfigurator.seConfigurator().get_provision_plugin())
+se_provision = __import__(SEConfigurator.seConfigurator().get_provision_plugin(), globals(), locals(), [], -1)
+# import pox_xmlrpc_of as se_provision
 
 
 # TODO: Delete if no error occurs
@@ -348,7 +353,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     "geni_expires"         : end_time
                     }
                 ]
-        logger.info("provision successfully completed: %s", slice_urn)
+        # logger.info("provision successfully completed: %s", slice_urn)
 
         return str(se_manifest), slivers
 
