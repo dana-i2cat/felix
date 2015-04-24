@@ -204,8 +204,11 @@ class BaseMonitoring(object):
         # from each RO and send them to MMS
         if not self.mro_enabled:
             if node_type in self.management_type_resources.values():
-                management = self._add_management_section(n)
-                n.append(management)
+                try:
+                    management = self._add_management_section(n)
+                    n.append(management)
+                except Exception as e:
+                    logger.warning("Physical topology - Cannot add management section. Details: %s" % e)
         return n
 
     def _translate_link_types(self):
@@ -229,8 +232,10 @@ class BaseMonitoring(object):
         link_type_translation = {
             "l2" : ms_link_type_lan,
             "l2 link": ms_link_type_lan,
-            "urn:felix+static_link": ms_link_type_static_link,
-            "urn:felix+vlan_trans": ms_link_type_vlan_trans,
+            #"urn:felix+static_link": ms_link_type_static_link,
+            "urn:felix+static_link": ms_link_type_lan,
+#            "urn:felix+vlan_trans": ms_link_type_vlan_trans,
+            "urn:felix+vlan_trans": ms_link_type_lan,
         }
         # Tries to get some attributes
         link_type = link.get("link_type", "")
@@ -374,7 +379,8 @@ class BaseMonitoring(object):
                 # Parse the component_id to get URN of SE and the port per interface
                 component_id = iface.get("component_id")
                 try:
-                    interface.attrib["id"] = component_id.split("_")[0]
+                    interface.attrib["id"] = component_id
+#                    interface.attrib["id"] = component_id.split("_")[0]
                     port = ET.SubElement(interface, "port")
                     port.attrib["num"] = component_id.split("_")[1]
                 except Exception as e:
