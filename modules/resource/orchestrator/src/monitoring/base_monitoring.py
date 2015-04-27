@@ -71,9 +71,25 @@ class BaseMonitoring(object):
             domain_peer = db_sync_manager.get_domain_info(filter_params)
             peer_domain_urn = domain_peer.get("domain_urn")
             authority = self._get_authority_from_urn(peer_domain_urn)
+            # If authority (domain name) does not exist yet, create
             if not self.peers_by_domain.get(authority):
                 self.peers_by_domain[authority] = []
+            # Extend list of peers with new one
             self.peers_by_domain[authority].append(peer_domain_urn)
+        # XXX: TEMPORARY CODE FOR (M)MS
+        # TODO: REMOVE THIS IN DUE TIME
+        # Added so that (M)MS receives at least one TNRM per island
+        type_resource_peer_tnrm = self.urn_type_resources_variations.get("tnrm")
+        for peer in self.peers:
+            filter_params = {"_ref_peer": peer.get("_id"),}
+            domain_peer = db_sync_manager.get_domain_info(filter_params)
+            peer_domain_urn = domain_peer.get("domain_urn")
+            peer_is_tnrm = any([rt in peer_domain_urn for rt in type_resource_peer_tnrm])
+            if peer_is_tnrm:
+                # Add the TNRM peer to each authority that does not have it yet
+                for authority in self.peers_by_domain:
+                    if peer_domain_urn not in self.peers_by_domain.get(authority):
+                        self.peers_by_domain[authority].append(peer_domain_urn)
 
     def _send(self, xml_data, peer=None):
         try:
@@ -276,16 +292,25 @@ class BaseMonitoring(object):
         l = ET.SubElement(self.topology, "link")
         # NOTE that this cannot be empty
         l.attrib["type"] = self._translate_link_type(link)
-        # TODO Change structure of data
+        # Keep component_id for further processing
+        urn_split = link.get("component_id").split("+link+")[1]
         links = link.get("links")
         for link_i in links:
             # Source
-            iface = ET.SubElement(l, "interface_ref")
-            iface.attrib["client_id"] = link_i.get("source_id")
+            iface_source = ET.SubElement(l, "interface_ref")
+            iface_source.attrib["client_id"] = link_i.get("source_id")
             # Destination
-            iface = ET.SubElement(l, "interface_ref")
-            iface.attrib["client_id"] = link_i.get("dest_id")
-
+            iface_dest = ET.SubElement(l, "interface_ref")
+            iface_dest.attrib["client_id"] = link_i.get("dest_id")
+            # Retrieve the 2nd part of the link URN (with the resources)
+            # E.g. "eth1-00:10:00:00:00:00:00:01_1"
+            # And extract the DPID's port from there
+            if "datapath" in link_i.get("source_id"):
+                dpid_port = urn_split.split("-")[0].split("_")[1]
+                iface_source.attrib["client_id"] = "%s_%s" % (iface_source.attrib["client_id"], dpid_port)
+            elif "datapath" in link_i.get("dest_id"):
+                dpid_port = urn_split.split("-")[1].split("_")[1]
+                iface_dest.attrib["client_id"] = "%s_%s" % (iface_dest.attrib["client_id"], dpid_port)
 
     ###################
     # SDN-RM resources
@@ -315,30 +340,14 @@ class BaseMonitoring(object):
         l = ET.SubElement(self.topology, "link")
         # NOTE that this cannot be empty
         l.attrib["type"] = self._translate_link_type(link)
-#        links = link.get("dpids")
-#        for link in links:
-#            # Source
-#            iface = ET.SubElement(l, "interface_ref")
-#            iface.attrib["client_id"] = link.get("component_id")
-
-        # Parse the component_id to get URN of SDN and the port per interface
-        component_id = link.get("component_id")
-        tmp_urn_split = component_id.split("+link+")
-        auth_urn = tmp_urn_split[0]
-        sdn_datapath_urn = tmp_urn_split[0] + "+datapath+"
+        ports = link.get("ports")
+        dpids = link.get("dpids")
         try:
-            # Parse and recompose back datapath URNs
-            switch_src = sdn_datapath_urn + "_".join(tmp_urn_split[1].split("_")[:2])
-            iface = ET.SubElement(l, "interface_ref")
-#            iface.attrib["client_id"] = switch_src.split("_")[0]
-            iface.attrib["client_id"] = switch_src
-#            port = ET.SubElement(interface, "port")
-#            port.attrib["num"] = switch_src.split("_")[1]
-
-            switch_dst = sdn_datapath_urn + "_".join(tmp_urn_split[1].split("_")[2:4])
-            iface = ET.SubElement(l, "interface_ref")
-#            iface.attrib["client_id"] = switch_dst.split("_")[0]
-            iface.attrib["client_id"] = switch_dst
+            for dpid_port in zip(dpids, ports):
+                iface = ET.SubElement(l, "interface_ref")
+                dpid = dpid_port[0]["component_id"]
+                port = dpid_port[1]["port_num"]
+                iface.attrib["client_id"] = "%s_%s" % (dpid, port)
         except Exception as e:
             logger.warning("Physical topology - Cannot add SE interface %s. Details: %s" % (component_id,e))
 
@@ -349,7 +358,13 @@ class BaseMonitoring(object):
 
     def _add_tn_info(self):
         # 1. Nodes
-        nodes = [ d for d in db_sync_manager.get_tn_nodes_by_domain(self.domain_urn) ]
+        # XXX: TEMPORARY CODE FOR (M)MS
+        # TODO: UNCOMMENT THIS IN DUE TIME
+#        nodes = [ d for d in db_sync_manager.get_tn_nodes_by_domain(self.domain_urn) ]
+        # XXX: TEMPORARY CODE FOR (M)MS
+        # TODO: REMOVE THIS IN DUE TIME
+        # Added so that (M)MS receives at least one TNRM per island
+        nodes = [ d for d in db_sync_manager.get_tn_nodes() ]
         for node in nodes:
             logger.debug("tn-node=%s" % (node,))
             n = self._add_generic_node(self.topology, node, "tn")
@@ -358,8 +373,8 @@ class BaseMonitoring(object):
             for iface in node.get("interfaces"):
                 interface = ET.SubElement(n, "interface")
                 interface.attrib["id"] = iface.get("component_id")
-        # 2. Links
-        links = [ l for l in db_sync_manager.get_tn_links_by_domain(self.domain_urn) ]
+#        # 2. Links
+#        links = [ l for l in db_sync_manager.get_tn_links_by_domain(self.domain_urn) ]
 
 
     ##################
@@ -393,11 +408,14 @@ class BaseMonitoring(object):
             self._add_se_link(link)
 
     def _add_se_link(self, link):
-        l = ET.SubElement(self.topology, "link")
-        # NOTE that this cannot be empty
-        l.attrib["type"] = self._translate_link_type(link)
-        links = link.get("interface_ref")
-        for link in links:
-            # SE link
-            iface = ET.SubElement(l, "interface_ref")
-            iface.attrib["client_id"] = link.get("component_id")
+        # Special case: links to be filtered in POST {(M)RO -> (M)MS}
+        SE_FILTERED_LINKS = ["*"]
+        if link.get("component_id") not in SE_FILTERED_LINKS:
+            l = ET.SubElement(self.topology, "link")
+            # NOTE that this cannot be empty
+            l.attrib["type"] = self._translate_link_type(link)
+            links = link.get("interface_ref")
+            for link in links:
+                # SE link
+                iface = ET.SubElement(l, "interface_ref")
+                iface.attrib["client_id"] = link.get("component_id")

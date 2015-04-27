@@ -27,7 +27,7 @@ class PhysicalMonitoring(BaseMonitoring):
 #        # SE resources
 #        self._add_se_info()
 
-    def retrieve_topology_per_peer(self, peer_urn):
+    def retrieve_topology_by_peer(self, peer_urn):
         # Prepare list of allowed peers and resources
         type_resources_crm = ["crm"]
         type_resources_crm.extend(self.urn_type_resources_variations.get("crm"))
@@ -44,7 +44,8 @@ class PhysicalMonitoring(BaseMonitoring):
         type_resources.extend(type_resources_serm)
         type_resources.extend(type_resources_tnrm)
 
-        # If the URN contains one 
+        # If the URN belongs to one of those
+        # peers/domains, add the information
         type_resource_peer = None
         for type_resource in type_resources:
             if type_resource in peer_urn:
@@ -94,7 +95,7 @@ class PhysicalMonitoring(BaseMonitoring):
                 self.__add_general_info()
                 for db_peer in db_peers:
                     # Retrieve proper resources
-                    self.retrieve_topology_per_peer(db_peers.get(db_peer).get("domain_urn"))
+                    self.retrieve_topology_by_peer(db_peers.get(db_peer).get("domain_urn"))
             except Exception as e:
                 logger.warning("Physical topology - Cannot recover information for peer (id='%s'). Skipping to the next peer. Details: %s" % (peer.get("_id"), e))
         # Send topology after all peers are completed
