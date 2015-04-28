@@ -81,7 +81,9 @@ class SliceMonitoring(BaseMonitoring):
             # virtual machine (much more sense)
             nodekey = n.get('component_id').replace('+node', '')
             logger.debug("Node key=%s" % (nodekey,))
-            for i in db_sync_manager.get_com_interface_by_nodekey(nodekey):
+            interfaces = db_sync_manager.get_com_interface_by_nodekey(nodekey)
+            logger.info("Stored COM interfaces=%s" % (interfaces,))
+            for i in interfaces:
                 etree.SubElement(inner_node_, "interface", id=i)
 
             if len(n.get('services')) > 0:
