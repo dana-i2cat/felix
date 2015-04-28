@@ -133,8 +133,16 @@ key=~/.gcf/id_rsa_planetlab
 registry=http://www.planet-lab.org:12345
 slicemgr=http://www.planet-lab.org:12347
 
+[my_cbas]
+type=chapi
+speakv2=true
+default_project=default
+# (use the same authority you set up when configuring cbas)
+authority=cbas.eict.de
+ch=https://localhost:8008/reg/2
 
-
+cert=~/.gcf/bob-cert.pem
+key=~/.gcf/bob-key.pem
 
 [my_gcf]
 type=gcf
