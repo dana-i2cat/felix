@@ -103,7 +103,7 @@ class PhysicalMonitoring(BaseMonitoring):
             if self.__check_topology_is_correct():
                 self.topology_list.append(self.topology)
             else:
-                logger.warning("Physical topology - Invalid topology for peer with name=%s" % domain_name)
+                logger.warning("Physical topology - Topology for domain=%s does not contain the minimum SW modules required by MS" % domain_name)
         # Send topology after all peers are completed
         self._send(self.get_topology(), monitoring_server)
         logger.debug("Resulting RSpec=%s" % self.get_topology_pretty())
