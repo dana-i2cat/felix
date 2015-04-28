@@ -251,7 +251,7 @@ def user_cert_download(request, user_id):
 
         response = HttpResponse(user_cert,
                             mimetype='application/force-download')
-        response['Content-Disposition'] = 'attachment; filename=%s_cert.pem' % user.username
+        response['Content-Disposition'] = 'attachment; filename=%s-cert.pem' % user.username
         return response
     except:
         DatedMessage.objects.post_message_to_user(
@@ -294,7 +294,7 @@ def user_key_download(request, user_id):
 
         response = HttpResponse(user_cert_key,
                             mimetype='application/force-download')
-        response['Content-Disposition'] = 'attachment; filename=%s_cert.key' % user.username
+        response['Content-Disposition'] = 'attachment; filename=%s-key.pem' % user.username
         return response
     except:
         DatedMessage.objects.post_message_to_user(
@@ -336,7 +336,7 @@ def user_public_ssh_key_download(request, user_id):
 
         response = HttpResponse(user_pub_ssh_key,
                             mimetype='application/force-download')
-        response['Content-Disposition'] = 'attachment; filename=%s_ssh_key.pub' % user.username
+        response['Content-Disposition'] = 'attachment; filename=%s-ssh-key.pub' % user.username
         return response
     except:
         DatedMessage.objects.post_message_to_user(
@@ -360,7 +360,7 @@ def user_private_ssh_key_download(request, user_id):
 
         response = HttpResponse(user_priv_ssh_key,
                             mimetype='application/force-download')
-        response['Content-Disposition'] = 'attachment; filename=%s_ssh_key' % user.username
+        response['Content-Disposition'] = 'attachment; filename=%s-ssh-key' % user.username
         return response
     except:
         DatedMessage.objects.post_message_to_user(

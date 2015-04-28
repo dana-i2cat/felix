@@ -8,7 +8,7 @@ class OptinConfig(Settings):
        super(Settings, self).__init__()
 
     """Default Authority Settings"""
-    HRN = "ocf.i2cat"
+    HRN = "ocf.eict"
     SFA_INTERFACE_HRN = "ambase"
     
     TRUSTED_ROOTS_DIR = settings.SRC_DIR + "/python/openflow/optin_manager/geni/v3/trusted_roots/"
