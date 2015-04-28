@@ -49,9 +49,11 @@ class SliceMonitoring(BaseMonitoring):
 
     def add_topology(self, slice_urn, status, client_urn=None):
         owner_name = client_urn if client_urn else "not_certified_user"
+        # Convert the float number to an integer value as expected by MS!
+        cm_time = int(round(time.time() * 1000))
         topology = etree.SubElement(
             self.__topologies, "topology", type="slice",
-            last_update_time=str(time.time()), name=slice_urn,
+            last_update_time=str(cm_time), name=slice_urn,
             owner=owner_name, status=status)
         # store the currect slice topology identifier
         self.__stored[slice_urn] = topology
