@@ -163,7 +163,7 @@ class DBManager(object):
         domain_urn = domain_urn.split("+authority+")[0]
         domain_authority = self.__get_regexp_for_query(domain_urn)
         return domain_authority
-        
+
     # (felix_ro) topology.physical
     def store_physical_info(self, domain_urn, last_update):
         """
@@ -378,6 +378,19 @@ class DBManager(object):
                 return l
         return None
 
+    def get_com_interface_by_nodekey(self, com_node_key):
+        table = self.__get_table("resource.com.link")
+        ret = []
+        try:
+            self.__mutex.acquire()
+            for row in table.find():
+                if row.get("component_id").startswith(com_node_key):
+                    for l in row.get("links"):
+                        ret.append(l.get("source_id"))
+            return ret
+        finally:
+            self.__mutex.release()
+
     # (felix_ro) resource.of.node
     def store_sdn_datapaths(self, routingKey, values):
         table = self.__get_table("resource.of.node")
@@ -509,7 +522,7 @@ class DBManager(object):
         filter_params = {"component_id": domain_authority, }
         nodes = self.get_se_nodes(filter_params)
         return nodes
-                
+
     def get_se_node_routing_key(self, cid):
         table = self.__get_table("resource.se.node")
         filter_params = {"component_id": cid}
@@ -576,7 +589,7 @@ class DBManager(object):
         filter_params = {"component_id": domain_authority, }
         links = self.get_se_links(filter_params)
         return links
-            
+
     def get_direct_se_link_routing_key(self, cid, ifrefs):
         try:
             self.__mutex.acquire()
@@ -629,7 +642,7 @@ class DBManager(object):
         filter_params = {"component_id": domain_authority, }
         nodes = self.get_tn_nodes(filter_params)
         return nodes
-            
+
     def get_tn_node_routing_key(self, cid):
         table = self.__get_table("resource.tn.node")
         filter_params = {"component_id": cid}
@@ -666,7 +679,7 @@ class DBManager(object):
         filter_params = {"component_id": domain_authority, }
         links = self.get_tn_links(filter_params)
         return links
-            
+
     def get_tn_link_routing_key(self, cid, cmid, ifrefs):
         try:
             self.__mutex.acquire()

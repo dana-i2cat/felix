@@ -50,7 +50,7 @@ class SliceMonitoring(BaseMonitoring):
     def add_topology(self, slice_urn, status, client_urn=None):
         owner_name = client_urn if client_urn else "not_certified_user"
         # Convert the float number to an integer value as expected by MS!
-        cm_time = int(round(time.time() * 1000))
+        cm_time = int(round(time.time()))
         topology = etree.SubElement(
             self.__topologies, "topology", type="slice",
             last_update_time=str(cm_time), name=slice_urn,
@@ -75,6 +75,14 @@ class SliceMonitoring(BaseMonitoring):
             inner_node_ = etree.SubElement(
                 node_, "node", id=n.get('sliver_id'),
                 type=n.get('sliver_type_name'))
+
+            # Add the interface identifier of the server node here!
+            # In the future, it will be the vlan-tagged interface of the
+            # virtual machine (much more sense)
+            nodekey = n.get('component_id').replace('+node', '')
+            logger.debug("Node key=%s" % (nodekey,))
+            for i in db_sync_manager.get_com_interface_by_nodekey(nodekey):
+                etree.SubElement(inner_node_, "interface", id=i)
 
             if len(n.get('services')) > 0:
                 self.__add_snmp_management(
