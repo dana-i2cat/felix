@@ -26,7 +26,7 @@ class ProvisioningResponseDispatcher():
 			except Exception as e:
 				logging.error("No action in DB with the incoming uuid\n%s", e)
 				return
-
+				
 			'''
 			If the response is for an action only in QUEUED or ONGOING status, SUCCESS or FAILED actions are finished
 			'''
@@ -98,7 +98,7 @@ class ProvisioningResponseDispatcher():
 						actionModel.delete()
 				except Exception as e:
 					logging.error("Could not connect to Plugin in sendAsync\n%s",e)
-					return
+				return
 			
 			#If response is for a finished action
 			else:
@@ -108,7 +108,7 @@ class ProvisioningResponseDispatcher():
 					XmlRpcClient.callRPCMethod(vm.getCallBackURL(), "sendAsync", XmlHelper.getProcessingResponse(Action.FAILED_STATUS, action, "Received response for an action in wrong state"))
 				except Exception as e:
 					logging.error(e)
-					return
+				return
 
 	@staticmethod
 	def processresponseSync(rspec):
@@ -184,7 +184,7 @@ class ProvisioningResponseDispatcher():
 				XmlRpcClient.callRPCMethod(vm.getCallBackURL(), "sendSync", XmlHelper.getProcessingResponse(Action.FAILED_STATUS, action, "Received response for an action in wrong state"))
 			except Exception as e:
 				logging.error(e)
-				return
+			return
 
 	@staticmethod
 	def __updateVMafterSUCCESS(actionModel, vm):

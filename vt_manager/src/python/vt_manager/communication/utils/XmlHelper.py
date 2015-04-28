@@ -136,7 +136,7 @@ class XmlHelper(object):
     def craftSimpleActionQuery(SimpleRspec, status, description):
         SimpleRspec.query.provisioning.action[0].status = status
         SimpleRspec.query.provisioning.action[0].description = description
-        return craiftXmlClass(SimpleRspec)
+        return XmlCrafter.craftXML(SimpleRspec)
 
     @staticmethod
     def parseXmlString(xml):

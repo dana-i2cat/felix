@@ -79,9 +79,9 @@ class ProvisioningDispatcher():
 			Server, VMmodel = controller.getServerAndCreateVM(action)
 			ActionController.completeConfiguratorInActionRspec(action.server.virtual_machines[0].xen_configuration)
 			ActionController.PopulateNetworkingParams(action.server.virtual_machines[0].xen_configuration.interfaces.interface, VMmodel)
-		#XXX:Change action Model
+			#XXX:Change action Model
 			actionModel.objectUUID = VMmodel.getUUID()
-		#actionModel.callBackUrl = threading.currentThread().callBackURL
+			#actionModel.callBackUrl = threading.currentThread().callBackURL
 			actionModel.save()
 			return VMmodel
 		except:

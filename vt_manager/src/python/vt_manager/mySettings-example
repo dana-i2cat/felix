@@ -117,3 +117,23 @@ DEFAULT_FROM_EMAIL = "changeMe"
 # Subject (a prefix of it) for the e-mail.
 #
 EMAIL_SUBJECT_PREFIX = "changeMe"
+
+#
+# params for Zabbix
+#
+ZBX_SERVER_IP = '127.0.0.1'
+ZBX_SERVER_PORT = '10051'
+
+ZBX_ITEM_HOSTSTATUS = 'felix.host.status'
+ZBX_ITEM_USERVMSTATUS = 'felix.uservm.status'
+
+ZBX_ITEM_LOAD = 'system.cpu.load[percpu,avg1]'
+ZBX_ITEM_MEMTOTAL = 'vm.memory.size[total]'
+ZBX_ITEM_MEMAVAIL = 'vm.memory.size[available]'
+ZBX_ITEM_IF_IN = 'net.if.in'
+ZBX_ITEM_IF_OUT = 'net.if.out'
+
+ZBX_ITEM_VMLOAD = 'felix.uservm.load'
+ZBX_ITEM_VMMEMORY = 'felix.uservm.memory'
+ZBX_ITEM_VMIF_IN = 'felix.uservm.net.if.in'
+ZBX_ITEM_VMIF_OUT = 'felix.uservm.net.if.out'

@@ -1,17 +1,23 @@
 from threading import Thread
-import random 
-from vt_manager.models.VTServer import VTServer
+import random
+import logging
+import traceback
+import vt_manager.communication.utils.ZabbixHelper
 from vt_manager.communication.XmlRpcClient import XmlRpcClient
 from vt_manager.controller.monitoring.VMMonitor import VMMonitor
+from vt_manager.communication.utils.ZabbixHelper import ZabbixHelper
+from django.db import connection
+
 '''
 	author:msune
 	Agent monitoring thread
 '''
 
-MONITORING_INTERVAL_FACTOR=0.95
+MONITORING_INTERVAL_FACTOR=0.0
 
 class AgentMonitoringThread(Thread):
-	
+	logger = logging.getLogger("AgentMonitoringThread")
+
 	__method = None
 	__param = None
 
@@ -31,7 +37,8 @@ class AgentMonitoringThread(Thread):
 			print "Pinging Agent on server %s" % server.name
 			XmlRpcClient.callRPCMethod(server.getAgentURL(),"ping", "hola")
 			#Server is up
- 			print "Ping Agent on server %s was SUCCESSFUL!" % server.name
+			print "Ping Agent on server %s was SUCCESSFUL!" % server.name
+			ZabbixHelper.sendAgentStatus(server, True)
 			if self.periodicRefresh() or server.available == False:
 				#Call it 
 				VMMonitor.sendUpdateVMs(server)
@@ -44,9 +51,14 @@ class AgentMonitoringThread(Thread):
 			#If fails for some reason mark as unreachable
 			print "Could not reach server %s. Will be set as unavailable " % str(server.name)
 			print e
+			print traceback.format_exc()
 			server.setAvailable(False)
 			server.save()
-		
+			ZabbixHelper.sendAgentStatus(server, False)
+		finally:
+			connection.close()
+		return
+
 	@staticmethod
 	def monitorAgentInNewThread(param):
 		thread = AgentMonitoringThread()	

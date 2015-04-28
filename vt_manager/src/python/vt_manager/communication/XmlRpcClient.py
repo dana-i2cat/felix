@@ -22,7 +22,7 @@ class XmlRpcClient():
 		try:
 			result = XmlRpcClient.callRPCMethod(newUrl,methodName,*params)	
 		except Exception:
-                        raise
+			raise
 		return result
 
 	@staticmethod
@@ -32,7 +32,7 @@ class XmlRpcClient():
 			server = xmlrpclib.Server(url)
 			result = getattr(server,methodName)(*params)
 		except Exception as e:
-                        turl=url.split('@')
+			turl=url.split('@')
 			if len(turl)>1:
 				url = turl[0].split('//')[0]+'//'+turl[-1]
 			te =str(e)

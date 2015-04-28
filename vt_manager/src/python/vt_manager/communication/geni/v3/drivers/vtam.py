@@ -481,10 +481,19 @@ class VTAMDriver:
     def __generate_component_id(self, server):
         return hrn_to_urn(self.__config.CM_HRN+"."+str(server.name),"node")
 
+    def generate_component_id(self, server):
+        return hrn_to_urn(self.__config.CM_HRN+"."+str(server.name),"node")
+
     def __generate_component_name(self, server):
         return hrn_to_urn(self.__config.CM_HRN+"."+str(server.name),"node")
 
     def __generate_sliver_urn(self, vm, slice_leaf=None):
+        if slice_leaf:
+            return hrn_to_urn(self.__config.CM_HRN + "." + slice_leaf  + "." + str(vm.name), "sliver")
+        else:
+            return hrn_to_urn(self.__config.CM_HRN + "." + str(vm.name), "sliver")
+
+    def generate_sliver_urn(self, vm, slice_leaf=None):
         if slice_leaf:
             return hrn_to_urn(self.__config.CM_HRN + "." + slice_leaf  + "." + str(vm.name), "sliver")
         else:
@@ -867,3 +876,4 @@ class VTAMDriver:
     
     def set_config(self, value):
         self.__config = value
+        

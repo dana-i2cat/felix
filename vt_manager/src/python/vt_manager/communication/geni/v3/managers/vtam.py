@@ -144,4 +144,3 @@ class VTAMRM(ResourceManagerBase):
 
     def set_driver(self, value):
         self.__driver = value     
-        
