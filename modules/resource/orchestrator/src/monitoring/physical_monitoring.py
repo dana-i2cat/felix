@@ -98,6 +98,12 @@ class PhysicalMonitoring(BaseMonitoring):
                     self.retrieve_topology_by_peer(db_peers.get(db_peer).get("domain_urn"))
             except Exception as e:
                 logger.warning("Physical topology - Cannot recover information for peer (id='%s'). Skipping to the next peer. Details: %s" % (peer.get("_id"), e))
+            # Verify structure of the "topology" tag before
+            # constructing final XML to be sent to MS
+            if self.__check_topology_is_correct():
+                self.topology_list.append(self.topology)
+            else:
+                logger.warning("Physical topology - Invalid topology for peer with name=%s" % domain_name)
         # Send topology after all peers are completed
         self._send(self.get_topology(), monitoring_server)
         logger.debug("Resulting RSpec=%s" % self.get_topology_pretty())
@@ -111,11 +117,27 @@ class PhysicalMonitoring(BaseMonitoring):
         """
         Creates new RSpec from scratch.
         """
-        topo = ET.SubElement(self.topology_list, "topology")
-        # Milliseconds in UTC format
-        topo.attrib["last_update_time"] = self.domain_last_update
-        topo.attrib["type"] = "physical"
-        topo.attrib["name"] = self.domain_urn
-        # Set topology tag as root node for subsequent operations
-        self.topology = topo
+#        topo = ET.SubElement(self.topology_list, "topology")
+#        # Milliseconds in UTC format
+        self.topology.attrib["last_update_time"] = self.domain_last_update
+#        topo.attrib["last_update_time"] = self.domain_last_update
+        self.topology.attrib["type"] = "physical"
+#        topo.attrib["type"] = "physical"
+#        topo.attrib["name"] = self.domain_urn
+        self.topology.attrib["name"] = self.domain_urn
+#        # Set topology tag as root node for subsequent operations
+#        self.topology = topo
+
+    def __check_topology_is_correct(self):
+        """
+        Checks that the "<topology>" subtree contains all
+        the required "<node>" tags (i.e. types) expected by MS.
+        """
+        # Remove unexpected / non-required nodes
+        ms_expected_nodes = filter(lambda n: n, self.monitoring_expected_nodes.values())
+        for n in ms_expected_nodes:
+            # If any is not found, return false
+            if not self.topology.findall(".//node[@type='%s']" % n):
+                return False
+        return True
 

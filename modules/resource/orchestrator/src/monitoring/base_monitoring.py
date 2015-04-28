@@ -25,6 +25,7 @@ class BaseMonitoring(object):
         self.domain_urn = ""
         self.domain_last_update = ""
         self.topology_list = ET.Element("topology_list")
+        self.topology = ET.Element("topology")
         ## Operation mode
         self.config = ConfParser("ro.conf")
         master_ro = self.config.get("master_ro")
@@ -51,6 +52,12 @@ class BaseMonitoring(object):
                                 "crm": "server",
                                 "sdnrm": "switch",
                                 "serm": "se",
+                                }
+        self.monitoring_expected_nodes = {
+                                "crm": "",
+                                "sdnrm": "switch",
+                                "serm": "se",
+                                "tnrm": "tn",
                                 }
         self.peers_by_domain = {}
         self.__group_peers_by_domain()
@@ -228,15 +235,16 @@ class BaseMonitoring(object):
         return n
 
     def _translate_link_types(self):
-        topology_tree = etree.fromstring(self.get_topology())    
-        filtered_links = topology_tree.xpath("//link")
+#        topology_tree = etree.fromstring(self.get_topology())
+#        filtered_links = topology_tree.xpath("//link")
+        filtered_links = self.topology_tree.findall(".//link")
         for filtered_link in filtered_links:
             if filtered_link.get("link_type"):
                 filtered_link.set("link_type", self._translate_link_type(filtered_link))
             elif filtered_link.get("type"):
                 filtered_link.set("type", self._translate_link_type(filtered_link))
-        self.set_topology_tree(topology_tree)
-    
+#        self.set_topology_tree(topology_tree)
+
     def _translate_link_type(self, link):
         # TODO - IMPORTANT FOR MS TO PARSE PROPERLY:
         #   Add others as needed in the future!
@@ -410,7 +418,10 @@ class BaseMonitoring(object):
     def _add_se_link(self, link):
         # Special case: links to be filtered in POST {(M)RO -> (M)MS}
         SE_FILTERED_LINKS = ["*"]
-        if link.get("component_id") not in SE_FILTERED_LINKS:
+        interfaces_cid = [ i.get("component_id") for i in link.get("interface_ref") ]
+        interface_cid_in_filter = [ f for f in SE_FILTERED_LINKS if f in interfaces_cid ]
+
+        if not interface_cid_in_filter:
             l = ET.SubElement(self.topology, "link")
             # NOTE that this cannot be empty
             l.attrib["type"] = self._translate_link_type(link)
@@ -419,3 +430,4 @@ class BaseMonitoring(object):
                 # SE link
                 iface = ET.SubElement(l, "interface_ref")
                 iface.attrib["client_id"] = link.get("component_id")
+
