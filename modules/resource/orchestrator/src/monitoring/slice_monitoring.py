@@ -21,7 +21,7 @@ class SliceMonitoring(BaseMonitoring):
     DELETED = "geni_unallocated"
 
     MS_LINK_TYPE = "lan"
-    TN2TN_LINK_TYPE = "virtual-link"
+    TN2TN_LINK_TYPE = "tn"
     SDN2SDN_LINK_TYPE = "l2"
 
     def __init__(self):
@@ -115,7 +115,10 @@ class SliceMonitoring(BaseMonitoring):
     def __translate_link_type(self, ltype):
         # According to the MS definitions, we need to translate the link-type
         # to "lan" for all the different resources types (for now)
+        # except for TN-links, they have to be "tn"
         logger.debug("Link-type: %s" % (ltype,))
+        if ltype == self.TN2TN_LINK_TYPE:
+            return self.TN2TN_LINK_TYPE
         return self.MS_LINK_TYPE
 
     def __add_link_info(self, topology_tag, link_type, ep_src, ep_dst):
