@@ -376,13 +376,11 @@ class BaseMonitoring(object):
 
     def _add_tn_info(self):
         # 1. Nodes
-        # XXX: TEMPORARY CODE FOR (M)MS
-        # TODO: UNCOMMENT THIS IN DUE TIME
-#        nodes = [ d for d in db_sync_manager.get_tn_nodes_by_domain(self.domain_urn) ]
+        nodes = [ d for d in db_sync_manager.get_tn_nodes_by_domain(self.domain_urn) ]
         # XXX: TEMPORARY CODE FOR (M)MS
         # TODO: REMOVE THIS IN DUE TIME
         # Added so that (M)MS receives at least one TNRM per island
-        nodes = [ d for d in db_sync_manager.get_tn_nodes() ]
+#        nodes = [ d for d in db_sync_manager.get_tn_nodes() ]
         for node in nodes:
             logger.debug("tn-node=%s" % (node,))
             n = self._add_generic_node(self.topology, node, "tn")
