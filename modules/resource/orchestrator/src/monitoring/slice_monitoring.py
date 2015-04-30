@@ -186,7 +186,8 @@ class SliceMonitoring(BaseMonitoring):
                 logger.debug("COM link=%s" % (com_link,))
                 for eps in com_link.get('links'):
                     # Modify link on-the-fly to add the DPID port as needed
-                    eps = self._set_dpid_port_from_link(com_link.get("component_id"), eps)
+                    eps = self._set_dpid_port_from_link(
+                        com_link.get("component_id"), eps)
                     self.__add_link_info(
                         topology, com_link.get('link_type'),
                         eps.get('source_id'), eps.get('dest_id'))
@@ -264,6 +265,20 @@ class SliceMonitoring(BaseMonitoring):
                     self.__add_link_info(topology, self.TN2TN_LINK_TYPE,
                                          p.get('source_id'), p.get('dest_id'))
 
+    def __add_se_external_link_info(self, topo, ifs):
+        for i in ifs:
+            logger.debug("Searching EXTERNAL-IF from %s" % (i,))
+            extif = db_sync_manager.get_interface_ref_by_sekey(i)
+            logger.info("External-interface %s" % (extif,))
+
+            if extif is not None:
+                # Adding SE-to-SDN or SE-to-TN link
+                self.__add_link_info(topo, self.MS_LINK_TYPE, i, extif)
+
+                if extif.count("ofam") == 1:
+                    # Adding "abstract" link
+                    self.__add_link_info(topo, self.MS_LINK_TYPE, extif, "*")
+
     def add_se_resources(self, slice_urn, nodes, links, slivers):
         if slice_urn not in self.__stored:
             logger.error("Unable to find Topology info from %s!" % slice_urn)
@@ -305,9 +320,13 @@ class SliceMonitoring(BaseMonitoring):
             self.__add_link_info(topology, l.get('link_type'),
                                  l.get('interface_ref')[0].get('component_id'),
                                  l.get('interface_ref')[1].get('component_id'))
-            self.__add_link_info(topology, l.get('link_type'),
-                                 l.get('interface_ref')[1].get('component_id'),
-                                 l.get('interface_ref')[0].get('component_id'))
+            # is it really necessary to put bidirectional links?
+
+            # we need to add "special" links here: SE-to-SDN, SE-to-TN
+            # and an "abstract" link
+            self.__add_se_external_link_info(
+                topology, [l.get('interface_ref')[0].get('component_id'),
+                           l.get('interface_ref')[1].get('component_id')])
 
     def send(self):
         try:

@@ -609,6 +609,25 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
+    def get_interface_ref_by_sekey(self, se_if):
+        table = self.__get_table("resource.se.link")
+        try:
+            self.__mutex.acquire()
+            ret = []
+            for row in table.find():
+                for i in row.get("interface_ref"):
+                    if i.get("component_id") == se_if:
+                        ret = row.get("interface_ref")
+                        break
+
+            for i in ret:
+                if i.get("component_id") != se_if:
+                    return i.get("component_id")
+
+            return None
+        finally:
+            self.__mutex.release()
+
     # (felix_ro) resource.tn.node
     def store_tn_nodes(self, routingKey, values):
         table = self.__get_table("resource.tn.node")
