@@ -254,13 +254,15 @@ class SliceMonitoring(BaseMonitoring):
                 node_, peer_info.get('address'), peer_info.get('port'),
                 peer_info.get('protocol'))
 
-        logger.debug("add_tn_resources Links=%d" % (len(links),))
-        for l in links:
-            logger.debug("Link=%s" % (l,))
+        # The TN-links should be sent only in case of MRO
+        if self.mro_enabled:
+            logger.debug("add_tn_resources Links=%d" % (len(links),))
+            for l in links:
+                logger.debug("Link=%s" % (l,))
 
-            for p in l.get('property'):
-                self.__add_link_info(topology, self.TN2TN_LINK_TYPE,
-                                     p.get('source_id'), p.get('dest_id'))
+                for p in l.get('property'):
+                    self.__add_link_info(topology, self.TN2TN_LINK_TYPE,
+                                         p.get('source_id'), p.get('dest_id'))
 
     def add_se_resources(self, slice_urn, nodes, links, slivers):
         if slice_urn not in self.__stored:
