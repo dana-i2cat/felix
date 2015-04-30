@@ -181,8 +181,12 @@ class SliceMonitoring(BaseMonitoring):
         for l in link_ids:
             com_link = db_sync_manager.get_com_link_by_sdnkey(l)
             if com_link:
+                component_id = com_link.get("component_id")
+                urn_split = component_id.split("+link+")[1]
                 logger.debug("COM link=%s" % (com_link,))
                 for eps in com_link.get('links'):
+                    # Modify link on-the-fly to add the DPID port as needed
+                    eps = self._set_dpid_port_from_link(com_link.get("component_id"), eps)
                     self.__add_link_info(
                         topology, com_link.get('link_type'),
                         eps.get('source_id'), eps.get('dest_id'))

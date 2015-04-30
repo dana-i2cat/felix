@@ -5,6 +5,7 @@ from extensions.sfa.util.xrn import hrn_to_urn, urn_to_hrn
 from lxml import etree
 
 import ast
+import copy
 import core
 import re
 import requests
@@ -272,6 +273,23 @@ class BaseMonitoring(object):
             link_type = link_type_translation.get(link_type.lower(), default_type)
         return link_type
 
+    def _set_dpid_port_from_link(self, component_id, link):
+        mod_link = copy.deepcopy(link)
+        # Keep component_id for further processing and then
+        # retrieve the 2nd part of the link URN (with the resources)
+        # E.g. "eth1-00:10:00:00:00:00:00:01_1"
+        # And extract the DPID's port from there
+        urn_split = component_id.split("+link+")[1]
+        if "datapath" in mod_link.get("source_id"):
+            dpid_port = urn_split.split("-")[0].split("_")[1]
+            new_id = "%s_%s" % (mod_link.get("source_id"), dpid_port)
+            mod_link["source_id"] = new_id
+        elif "datapath" in mod_link.get("dest_id"):
+            dpid_port = urn_split.split("-")[1].split("_")[1]
+            new_id = "%s_%s" % (mod_link.get("dest_id"), dpid_port)
+            mod_link["dest_id"] = new_id
+        return mod_link
+
 
     #################
     # C-RM resources
@@ -300,25 +318,17 @@ class BaseMonitoring(object):
         l = ET.SubElement(self.topology, "link")
         # NOTE that this cannot be empty
         l.attrib["type"] = self._translate_link_type(link)
-        # Keep component_id for further processing
-        urn_split = link.get("component_id").split("+link+")[1]
         links = link.get("links")
         for link_i in links:
+            # Modify link on-the-fly to add the DPID port as needed
+            link_i = self._set_dpid_port_from_link(link.get("component_id"), link_i)
             # Source
             iface_source = ET.SubElement(l, "interface_ref")
             iface_source.attrib["client_id"] = link_i.get("source_id")
             # Destination
             iface_dest = ET.SubElement(l, "interface_ref")
             iface_dest.attrib["client_id"] = link_i.get("dest_id")
-            # Retrieve the 2nd part of the link URN (with the resources)
-            # E.g. "eth1-00:10:00:00:00:00:00:01_1"
-            # And extract the DPID's port from there
-            if "datapath" in link_i.get("source_id"):
-                dpid_port = urn_split.split("-")[0].split("_")[1]
-                iface_source.attrib["client_id"] = "%s_%s" % (iface_source.attrib["client_id"], dpid_port)
-            elif "datapath" in link_i.get("dest_id"):
-                dpid_port = urn_split.split("-")[1].split("_")[1]
-                iface_dest.attrib["client_id"] = "%s_%s" % (iface_dest.attrib["client_id"], dpid_port)
+
 
     ###################
     # SDN-RM resources
