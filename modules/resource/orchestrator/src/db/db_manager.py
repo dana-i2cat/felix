@@ -141,7 +141,9 @@ class DBManager(object):
         # Search in domain.routing for any RM matching the filtering parameters
         try:
             self.__mutex.acquire()
-            row = table.find_one({"_ref_peer": peer.get("_id")})
+#            row = table.find_one({"_ref_peer": peer.get("_id")})
+            # There may be: 1 domain URN per RO, N domain URNs per MRO
+            row = table.find_one({"_ref_peer": peer.get("_id"), "domain_urn": domain_urn})
             if not row:
                 entry = {"domain_urn": domain_urn,
                          "_ref_peer": peer.get("_id")}

@@ -42,13 +42,15 @@ class ResourceDetector(object):
 
     def do_action(self):
         self.debug("Configured peers=%d" % (len(self.peers)))
+        nodes = []
+        links = []
         for peer in self.peers:
             self.debug("Peer=%s" % (peer,))
             result, self.adaptor_uri = self.__get_resources(peer)
             if result is None:
                 self.error("Peer is not returning any resource via ListResources!")
                 continue
-            # Decode the Adv RSpec
+            # Decode the Adv RSpec per RM (RO level)
             if peer.get("type") == self.allowed_peers.get("PEER_CRM"):
                 (nodes, links) = self.__decode_com_rspec(result)
                 self.__store_com_resources(peer.get("_id"), nodes, links)
@@ -61,10 +63,11 @@ class ResourceDetector(object):
             elif peer.get("type") == self.allowed_peers.get("PEER_TNRM"):
                 (nodes, links) = self.__decode_tn_rspec(result)
                 self.__store_tn_resources(peer.get("_id"), nodes, links)
+            # Decode the Adv RSpec per RO (MRO level)
             elif peer.get("type") == self.allowed_peers.get("PEER_RO"):
                 # we need to manage different kind of resorces here,
                 # potentially c,sdn,se,tn in the same RSpec
-                self.__manage_ro_resources(result, peer.get("_id"))
+                (nodes, links) = self.__manage_ro_resources(result, peer.get("_id"))
             else:
                 self.error("Unknown peer type=%s" % (peer.get("type"),))
 
@@ -76,14 +79,21 @@ class ResourceDetector(object):
             # later on
             # The second is retrieved by examinining its resources (valid for RM only)
             try:
-                try:
-                    self.__set_domain_component_id(nodes[0].get("component_manager_id"))
-                except:
-                    self.__set_domain_component_id(nodes[0].get("component_id"))
-                db_sync_manager.store_domain_info(self.adaptor_uri,
-                                                  self.domain_urn)
-                self.debug("Storing mapping <%s:%s> for domain info" %
-                           (self.adaptor_uri, self.domain_urn))
+                # Nodes and links received for either RO and MRO levels.
+                # Use a set to expel the repeated URNs.
+                set_component_ids = set()
+                for node in nodes:
+                    if node.get("component_manager_id"):
+                        set_component_ids.add(node.get("component_manager_id"))
+                    elif node.get("component_id"):
+                        set_component_ids.add(node.get("component_id"))
+                list_urns = list(set_component_ids)
+                for urn in list_urns:
+                    self.__set_domain_component_id(urn)
+                    db_sync_manager.store_domain_info(self.adaptor_uri,
+                                                      self.domain_urn)
+                    self.debug("Storing mapping <%s:%s> for domain info" %
+                               (self.adaptor_uri, self.domain_urn))
             except Exception as e:
                 self.error("Error storing mapping domain_urn:resource_rm.")
                 self.error("Exception: %s" % e)
@@ -301,10 +311,11 @@ class ResourceDetector(object):
 
     def __manage_ro_resources(self, result, peerID):
         rspec = result.get("value", None)
+        nodes_all = []
+        links_all = []
         if rspec is None:
             self.error("Unable to get RSpec value from %s" % (result,))
-            return
-
+            return (nodes_all, links_all)
         try:
             ro_rspec = ROv3AdvertisementParser(from_string=rspec)
             self.debug("RORSpec=%s" % (ro_rspec,))
@@ -318,27 +329,44 @@ class ResourceDetector(object):
 
             nodes = ro_rspec.com_nodes()
             self.info("COM Nodes(%d)=%s" % (len(nodes), nodes,))
+            if nodes:
+                nodes_all.extend(nodes)
             links = ro_rspec.com_links()
             self.info("COM Links(%d)=%s" % (len(links), links,))
             self.__store_com_resources(peerID, nodes, links)
+            if links:
+                links_all.extend(links)
 
             nodes = ro_rspec.sdn_nodes()
             self.info("SDN Nodes(%d)=%s" % (len(nodes), nodes,))
+            if nodes:
+                nodes_all.extend(nodes)
             links = ro_rspec.sdn_links()
             self.info("SDN Links(%d)=%s" % (len(links), links,))
             self.__store_sdn_resources(peerID, nodes, links)
+            if links:
+                links_all.extend(links)
 
             nodes = ro_rspec.se_nodes()
             self.info("SE Nodes(%d)=%s" % (len(nodes), nodes,))
+            if nodes:
+                nodes_all.extend(nodes)
             links = ro_rspec.se_links()
             self.info("SE Links(%d)=%s" % (len(links), links,))
             self.__store_se_resources(peerID, nodes, links)
+            if links:
+                links_all.extend(links)
 
             nodes = ro_rspec.tn_nodes()
             self.info("TN Nodes(%d)=%s" % (len(nodes), nodes,))
+            if nodes:
+                nodes_all.extend(nodes)
             links = ro_rspec.tn_links()
             self.info("TN Links(%d)=%s" % (len(links), links,))
             self.__store_tn_resources(peerID, nodes, links)
-
+            if links:
+                links_all.extend(links)
         except Exception as e:
             self.error("Exception: %s" % str(e))
+        return (nodes_all, links_all)
+
