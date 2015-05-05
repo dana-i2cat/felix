@@ -158,7 +158,7 @@ class DBManager(object):
     def get_domain_urn(self, filter_params):
         return self.get_domain_info(filter_params).get("domain_urn")
 
-    def get_domain_authority(self, domain_urn):
+    def __get_domain_authority(self, domain_urn):
         # Domain URN = Domain authority
         # Remove the bit of the authority,
         # then create a RE that starts this way
@@ -331,7 +331,7 @@ class DBManager(object):
         return self.__get_all(table, filter_params)
 
     def get_com_nodes_by_domain(self, domain_urn):
-        domain_authority = self.get_domain_authority(domain_urn)
+        domain_authority = self.__get_domain_authority(domain_urn)
         # Look for all those resources that start with a given URN
         filter_params = {"component_id": domain_authority, }
         nodes = self.get_com_nodes(filter_params)
@@ -367,7 +367,7 @@ class DBManager(object):
         return self.__get_all(table, filter_params)
 
     def get_com_links_by_domain(self, domain_urn):
-        domain_authority = self.get_domain_authority(domain_urn)
+        domain_authority = self.__get_domain_authority(domain_urn)
         # Look for all those resources that start with a given URN
         filter_params = {"component_id": domain_authority, }
         links = self.get_com_links(filter_params)
@@ -421,7 +421,7 @@ class DBManager(object):
         return self.__get_all(table, filter_params)
 
     def get_sdn_datapaths_by_domain(self, domain_urn):
-        domain_authority = self.get_domain_authority(domain_urn)
+        domain_authority = self.__get_domain_authority(domain_urn)
         # Look for all those resources that start with a given URN
         filter_params = {"component_id": domain_authority, }
         nodes = self.get_sdn_datapaths(filter_params)
@@ -470,7 +470,7 @@ class DBManager(object):
             self.__mutex.release()
 
     def get_sdn_links_by_domain(self, domain_urn):
-        domain_authority = self.get_domain_authority(domain_urn)
+        domain_authority = self.__get_domain_authority(domain_urn)
         # Look for all those resources that start with a given URN
         filter_params = {"component_id": domain_authority, }
         links = self.get_sdn_links(filter_params)
@@ -519,7 +519,7 @@ class DBManager(object):
         return self.__get_all(table, filter_params)
 
     def get_se_nodes_by_domain(self, domain_urn):
-        domain_authority = self.get_domain_authority(domain_urn)
+        domain_authority = self.__get_domain_authority(domain_urn)
         # Look for all those resources that start with a given URN
         filter_params = {"component_id": domain_authority, }
         nodes = self.get_se_nodes(filter_params)
@@ -586,7 +586,7 @@ class DBManager(object):
         return self.__get_all(table, filter_params)
 
     def get_se_links_by_domain(self, domain_urn):
-        domain_authority = self.get_domain_authority(domain_urn)
+        domain_authority = self.__get_domain_authority(domain_urn)
         # Look for all those resources that start with a given URN
         filter_params = {"component_id": domain_authority, }
         links = self.get_se_links(filter_params)
@@ -658,7 +658,7 @@ class DBManager(object):
         return self.__get_all(table, filter_params)
 
     def get_tn_nodes_by_domain(self, domain_urn):
-        domain_authority = self.get_domain_authority(domain_urn)
+        domain_authority = self.__get_domain_authority(domain_urn)
         # Look for all those resources that start with a given URN
         filter_params = {"component_id": domain_authority, }
         nodes = self.get_tn_nodes(filter_params)
@@ -695,7 +695,7 @@ class DBManager(object):
         return self.__get_all(table, filter_params)
 
     def get_tn_links_by_domain(self, domain_urn):
-        domain_authority = self.get_domain_authority(domain_urn)
+        domain_authority = self.__get_domain_authority(domain_urn)
         # Look for all those resources that start with a given URN
         filter_params = {"component_id": domain_authority, }
         links = self.get_tn_links(filter_params)
