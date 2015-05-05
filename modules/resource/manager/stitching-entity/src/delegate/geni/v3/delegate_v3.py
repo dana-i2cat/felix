@@ -205,6 +205,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def allocate(self, slice_urn, client_cert, credentials,
                  rspec, end_time=None):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
+        # TODO: Check if sliver_urn is valid for RO
+        result = []
         #Default end time, 30 days
         default_end_time = datetime.now() + timedelta(days=30)
         if end_time == None:
@@ -260,17 +262,29 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
             s =  self.SESlices._allocate_ports_in_slice(nodes) 
             
-            logger.debug("requested SE-Sliver(%d)=%s" % (len(se_slivers), se_slivers,))
             #link_additional_info={}
             
             self.SESlices.set_link_db(slice_urn, end_time,links, nodes)
             
 
             links_db, nodes, links = self.SESlices.get_link_db(slice_urn)
-            se_slivers.append(links_db)
+            print "WWWWW: ", links_db
+            for sliver in links_db["geni_sliver_urn"]:
+                result.append( 
+                                {   
+                                    "geni_sliver_urn": sliver,
+                                    "geni_expires": links_db['geni_expires'],
+                                    "geni_allocation_status": links_db["geni_allocation_status"],
+                                    "geni_operational_status" : "geni_notready"
+                                }
+                            )
+
+            se_slivers = result
             #id_ = db_sync_manager.store_slice_info(slice_urn, se_db_slivers)
             logger.info("allocate successfully completed: %s", slice_urn)
             #self.__schedule_slice_release(end_time, se_db_slivers)
+            logger.debug("requested SE-Sliver(%d)=%s" % (len(se_slivers), se_slivers,))
+            print "PPPPPP: ", se_slivers
             return ("%s" % se_manifest, se_slivers)
 
         else:
@@ -299,18 +313,29 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
             logger.info("new expiration_time=%s" % (expiration_time,))
             
-            links_db['geni_expires'] = expiration_time
+            # links_db['geni_expires'] = expiration_time
             
-            expires_date = datetime.strptime(links_db['geni_expires'], RFC3339_FORMAT_STRING)
+            # expires_date = datetime.strptime(links_db['geni_expires'], RFC3339_FORMAT_STRING)
 
+            for sliver in links_db["geni_sliver_urn"]:
+                result.append( 
+                                {   
+                                    "geni_sliver_urn": sliver,
+                                    "geni_expires": expiration_time,
+                                    "geni_allocation_status": links_db["geni_allocation_status"],
+                                    "geni_operational_status" : "geni_notready"
+                                }
+                            )
 
-            result.append( 
-                            {   "geni_sliver_urn": links_db['geni_sliver_urn'],
-                                "geni_expires": expiration_time,
-                                "geni_allocation_status": links_db["geni_allocation_status"],
-                                "geni_operational_status" : "geni_notready"
-                            }
-                        )
+            # se_slivers = result
+
+            # result.append( 
+            #                 {   "geni_sliver_urn": links_db['geni_sliver_urn'],
+            #                     "geni_expires": expiration_time,
+            #                     "geni_allocation_status": links_db["geni_allocation_status"],
+            #                     "geni_operational_status" : "geni_notready"
+            #                 }
+            #             )
 
         return  slice_urn,result
 
@@ -319,6 +344,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         """Documentation see [geniv3rpc] GENIv3DelegateBase.
         {geni_users} is not relevant here."""
         se_manifest, se_slivers, last_slice = SERMv3ManifestFormatter(), [], ""
+        slivers=[]
 
         for urn in urns:
             if self._verify_users:
@@ -346,13 +372,17 @@ class GENIv3Delegate(GENIv3DelegateBase):
                                                             reservation_ports,
                                                             urn])
 
+            for sliver in links_db["geni_sliver_urn"]:
+                slivers.append( 
+                                {   
+                                    "geni_sliver_urn": sliver,
+                                    "geni_expires": end_time,
+                                    "geni_allocation_status": "geni_allocated",
+                                    "geni_operational_status" : "geni_notready"
+                                }
+                            )
 
-        slivers = [{'geni_sliver_urn' : urns[0],
-                    "geni_allocation_status"  : "geni_allocated",
-                    "geni_operational_status" : "geni_ready",
-                    "geni_expires"         : end_time
-                    }
-                ]
+
         # logger.info("provision successfully completed: %s", slice_urn)
 
         return str(se_manifest), slivers
@@ -360,7 +390,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def status(self, urns, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         slice_urn = urns[0]
-        result = []
+        slivers = []
 
         for urn in urns:
             if self._verify_users:
@@ -375,21 +405,23 @@ class GENIv3Delegate(GENIv3DelegateBase):
             # expires_date = datetime.strptime(links_db['geni_expires'], RFC3339_FORMAT_STRING)
             expires_date = links_db['geni_expires']
 
-            result.append( 
-                            {   
-                                "geni_sliver_urn": links_db["geni_sliver_urn"],
-                                "geni_expires": expires_date,
-                                "geni_allocation_status": links_db["geni_allocation_status"],
-                                "geni_operational_status" : "Ready"
-                            }
-                        )
+            for sliver in links_db["geni_sliver_urn"]:
+                slivers.append( 
+                                {   
+                                    "geni_sliver_urn": sliver,
+                                    "geni_expires": expires_date,
+                                    "geni_allocation_status": links_db["geni_allocation_status"],
+                                    "geni_operational_status" : "geni_ready"
+                                }
+                            )
 
 
-        return slice_urn, result
+        return slice_urn, slivers
 
     def perform_operational_action(self, urns, client_cert, credentials,
                                    action, best_effort):
         result = []
+        status = ""
 
         for urn in urns:
             if self._verify_users: ### TODO: Fix authentication
@@ -403,15 +435,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
             expires_date = links_db['geni_expires']
 
-            ### TODO: Add status updating
-            result.append( 
-                            {   
-                                "geni_sliver_urn": urn,
-                                "geni_expires": expires_date,
-                                "geni_allocation_status": links_db["geni_allocation_status"],
-                                "geni_operational_status" : "Ready"
-                            }
-                        )
 
             reservation_ports = self.SESlices._allocate_ports_in_slice(nodes)["ports"]
 
@@ -422,14 +445,26 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
             if action == "start":
                 se_provision.addSwitchingRule(in_port, out_port, in_vlan, out_vlan)
+                status = "geni_ready"
 
             elif action == "stop":
                 se_provision.deleteSwitchingRule(in_port, out_port, in_vlan, out_vlan)
+                status = "geni_notready"
                 
             elif action == "restart":
                 se_provision.deleteSwitchingRule(in_port, out_port, in_vlan, out_vlan)
                 se_provision.addSwitchingRule(in_port, out_port, in_vlan, out_vlan)
+                status = "geni_ready"
 
+            for sliver in links_db["geni_sliver_urn"]:
+                result.append( 
+                                {   
+                                    "geni_sliver_urn": sliver,
+                                    "geni_expires": expires_date,
+                                    "geni_allocation_status": links_db["geni_allocation_status"],
+                                    "geni_operational_status" : status
+                                }
+                            )
 
         return result
 
@@ -463,14 +498,15 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
                 logger.debug("unprovision SE-Slice-Urn=%s, in_port=%s , out_port=%s,  in_vlan=%s,  out_port=%s" % (urn,in_port, out_port, in_vlan, out_vlan))
 
-                result.append( 
-                   {   
-                        "geni_sliver_urn": urn,# links_db['geni_sliver_urn'][0].keys(),
-                        "geni_expires": expires_date,
-                        "geni_allocation_status": "geni_unallocated",
-                        "geni_operational_status" : "Not yet implemented"
-                   }
-                    )
+                for sliver in links_db["geni_sliver_urn"]:
+                    result.append( 
+                                    {   
+                                        "geni_sliver_urn": sliver,
+                                        "geni_expires": expires_date,
+                                        "geni_allocation_status": "geni_unallocated",
+                                        "geni_operational_status" : "geni_notready"
+                                    }
+                                )
 
 
                 # Mark resources as free

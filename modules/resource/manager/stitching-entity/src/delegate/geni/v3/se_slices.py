@@ -30,8 +30,11 @@ class seSlicesWithSlivers(object):
 
                 slice_resources=db_sync_manager.get_slices(slice_urn)
                 links_db = slice_resources["slivers"]
-                # Fix geni_sliver_urn to present just urn
-                links_db["geni_sliver_urn"] = links_db["geni_sliver_urn"][0].keys()[0]
+                sliver_tmp = []
+                for sliver in links_db["geni_sliver_urn"]:
+                    sliver_tmp.append(sliver.keys()[0])
+                links_db["geni_sliver_urn"] = sliver_tmp
+                # links_db["geni_sliver_urn"] = links_db["geni_sliver_urn"][0].keys()[0]
                 nodes = slice_resources["nodes"]
                 links = slice_resources["links"]
                 sliver_id = links[0]["sliver_id"]
@@ -68,6 +71,7 @@ class seSlicesWithSlivers(object):
         return s_temp
     
     def _create_manifest_from_req_n_and_l(self, se_manifest,nodes,links):
+        # TODO: Check if sliver_urn is valid for RO
         vlans = []
         for n in nodes:
             for vlan in n["interfaces"]:
@@ -77,11 +81,12 @@ class seSlicesWithSlivers(object):
 
         for l in links:
             l['vlantag'] = vlans[0] + "-" + vlans[1]
-            sliver_id_name = l["component_id"] + vlans[0] + vlans[1]
-            m = hashlib.md5()
-            m.update(sliver_id_name)
-            sliver_id = m.hexdigest()
-            l['sliver_id'] = sliver_id
+            sliver_id_name = l["component_id"] + "_" + vlans[0] + "_" + vlans[1]
+            sliver_id_name = sliver_id_name.replace("datapath", "sliver")
+            # m = hashlib.md5()
+            # m.update(sliver_id_name)
+            # sliver_id = m.hexdigest()
+            l['sliver_id'] = sliver_id_name
             se_manifest.link(l)
             
     def _allocate_ports_in_slice(self, nodes):
