@@ -648,7 +648,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") in self._allowed_peers.values():
-                slivers = self.__manage_delete(
+                slivers = CommonUtils().manage_delete(
                     peer, v, credentials, best_effort)
 
                 logger.debug("slivers=%s" % (slivers,))
@@ -1129,22 +1129,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
         ro_db_slivers.extend(db_slivers)
         logger.debug("RO-DB-Slivers(%d): %s" %
                      (len(ro_db_slivers), ro_db_slivers))
-
-    def __manage_delete(self, peer, urns, creds, beffort):
-        adaptor, uri = AdaptorFactory.create_from_db(peer)
-        logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
-        try:
-            return adaptor.delete(urns, creds[0]["geni_value"], beffort)
-        except Exception as e:
-            if beffort:
-                logger.error("manage_delete exception: %s" % (e,))
-                # FIXME Add output structure compliant with GENI expected
-                # result so that OMNI (or any other client) does not fail
-                # and the execution of the code can continue
-                return []
-            else:
-                logger.critical("manage_delete exception: %s" % (e,))
-                raise e
 
     def __validate_rspec(self, generic_rspec):
         (result, error) = validate(generic_rspec)

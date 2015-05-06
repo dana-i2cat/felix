@@ -61,3 +61,16 @@ class CommonUtils(object):
                 logger.critical("manage_operational_action exception: " +
                                 "action=%s, details: %s" % (action, e))
                 raise e
+
+    def manage_delete(self, peer, urns, creds, beffort):
+        try:
+            adaptor, uri = AdaptorFactory.create_from_db(peer)
+            logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
+            return adaptor.delete(urns, creds[0]["geni_value"], beffort)
+        except Exception as e:
+            if beffort:
+                logger.error("manage_delete exception: %s" % (e,))
+                return []
+            else:
+                logger.critical("manage_delete exception: %s" % (e,))
+                raise e
