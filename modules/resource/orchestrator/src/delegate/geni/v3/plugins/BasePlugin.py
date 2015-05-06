@@ -38,3 +38,26 @@ class BasePlugin(object):
         except Exception as e:
             logger.error("manage_status exception: %s", e)
             return []
+
+    def manage_operational_action(self, peer, urns, creds, action, beffort):
+        try:
+            adaptor, uri = AdaptorFactory.create_from_db(peer)
+            logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
+            return adaptor.perform_operational_action(
+                urns, creds[0]["geni_value"], action, beffort)
+        except Exception as e:
+            # It is possible that some RMs do not implement particular actions
+            # e.g. "geni_update_users", etc.
+            # http://groups.geni.net/geni/wiki/GAPI_AM_API_V3/
+            #  CommonConcepts#SliverOperationalActions
+            if beffort:
+                if action not in ["geni_start", "geni_stop", "geni_restart"]:
+                    raise e
+                else:
+                    logger.error("manage_operational_action exception: " +
+                                 "action=%s, details: %s" % (action, e))
+                    return []
+            else:
+                logger.critical("manage_operational_action exception: " +
+                                "action=%s, details: %s" % (action, e))
+                raise e

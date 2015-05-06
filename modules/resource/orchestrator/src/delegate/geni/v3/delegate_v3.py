@@ -627,7 +627,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") in self._allowed_peers.values():
-                slivers = self.__manage_operational_action(
+                plugin = BasePlugin()
+                slivers = plugin.manage_operational_action(
                     peer, v, credentials, action, best_effort)
 
                 logger.debug("slivers=%s" % (slivers,))
@@ -1141,34 +1142,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
         ro_db_slivers.extend(db_slivers)
         logger.debug("RO-DB-Slivers(%d): %s" %
                      (len(ro_db_slivers), ro_db_slivers))
-
-    def __manage_operational_action(self, peer, urns, creds, action, beffort):
-        adaptor, uri = AdaptorFactory.create_from_db(peer)
-        logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
-        try:
-            return adaptor.perform_operational_action(
-                urns, creds[0]["geni_value"], action, beffort)
-        except Exception as e:
-            # It is possible that some RMs do not implement particular actions
-            # e.g. "geni_update_users", etc.
-            # http://groups.geni.net/geni/wiki/GAPI_AM_API_V3/
-            #  CommonConcepts#SliverOperationalActions
-            if beffort:
-                if action not in ["geni_start", "geni_stop", "geni_restart"]:
-                    raise e
-                else:
-                    m = "manage_operational_action exception: "
-                    m += "action=%s, details: %s" % (action, e)
-                    logger.error(m)
-                    # FIXME Add output structure compliant with GENI expected
-                    # result so that OMNI (or any other client) does not fail
-                    # and the execution of the code can continue
-                    return []
-            else:
-                m = "manage_operational_action exception: "
-                m += "action=%s, details: %s" % (action, e)
-                logger.critical(m)
-                raise e
 
     def __manage_delete(self, peer, urns, creds, beffort):
         adaptor, uri = AdaptorFactory.create_from_db(peer)
