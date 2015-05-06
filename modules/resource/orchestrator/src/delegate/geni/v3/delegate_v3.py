@@ -26,6 +26,7 @@ from rspecs.tnrm.request_formatter import TNRMv3RequestFormatter
 from handler.geni.v3 import exceptions as geni_ex
 
 from monitoring.slice_monitoring import SliceMonitoring
+from plugins.BasePlugin import BasePlugin
 from plugins.SDNPlugin import SDNPlugin
 from plugins.TNPlugin import TNPlugin
 from plugins.SEPlugin import SEPlugin
@@ -423,7 +424,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") in self._allowed_peers.values():
-                slivers = self.__manage_renew(
+                plugin = BasePlugin()
+                slivers = plugin.manage_renew(
                     peer, v, credentials, etime_str, best_effort)
 
                 logger.debug("slivers=%s" % (slivers,))
@@ -1146,22 +1148,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
             # result so that OMNI (or any other client) does not fail
             # and the execution of the code can continue
             return []
-
-    def __manage_renew(self, peer, urns, creds, etime, beffort):
-        try:
-            adaptor, uri = AdaptorFactory.create_from_db(peer)
-            logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
-            return adaptor.renew(urns, creds[0]["geni_value"], etime, beffort)
-        except Exception as e:
-            if beffort:
-                logger.error("manage_renew exception: %s", e)
-                # FIXME Add output structure compliant with GENI expected
-                # result so that OMNI (or any other client) does not fail
-                # and the execution of the code can continue
-                return []
-            else:
-                logger.critical("manage_renew exception: %s", e)
-                raise e
 
     def __manage_operational_action(self, peer, urns, creds, action, beffort):
         adaptor, uri = AdaptorFactory.create_from_db(peer)
