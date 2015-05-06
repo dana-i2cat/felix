@@ -200,17 +200,29 @@ class GENIv3Client(SFAClient):
             err = "%s ListResources failure: %s" % (self.typee, str(e))
             raise exceptions.RPCError(err)
 
-    def __check_errors(self, result):
-        if result.get("output") is not None:
-            return False, "Error detected in the server (%s): %s" %\
-                (self.typee, result.get("output"))
+    ## Helpers
 
+    def __get_domain_urn_by_xmlrpcserver(self):
+        """
+        Prepare filter parameters to get the domain.info from the xmlrpcserver
+        """
+        domain_urn = ""
+        am_version = str(self.geni_api_version)
+        am_type = str(self.geni_type)
+        filter_params = {"am_version": am_version, "am_type": am_type}
+        domain_urn = db_sync_manager.get_domain_urn_from_uri(self.uri, filter_params)
+        return domain_urn
+
+    def __check_errors(self, result):
+        domain_urn = self.__get_domain_urn_by_xmlrpcserver()
+        if result.get("output") is not None:
+            return False, "Error detected in the server (%s @ %s): %s" %\
+                (self.typee, domain_urn, result.get("output"))
         if "geni_slivers" in result.get("value"):
             for s in result.get("value").get("geni_slivers"):
                 if s.get("geni_error"):
-                    return False, "Error detected in a sliver (%s): %s" %\
-                        (self.typee, s.get("geni_error"))
-
+                    return False, "Error detected in a sliver (%s @ %s): %s" %\
+                        (self.typee, domain_urn, s.get("geni_error"))
         return True, ""
 
     def allocate(self, slice_urn, credentials, rspec, end_time):
@@ -220,23 +232,21 @@ class GENIv3Client(SFAClient):
         logger.debug("%s Options: %s" % (self.typee, options,))
         # Credentials must be sent in the proper format
         credentials = self.format_credentials(credentials)
-#        try:
-#            params = [slice_urn, credentials, rspec, options, ]
-#            result = self.Allocate(*params)
-#            logger.info("\n\n\n%s Allocate result=%s\n\n\n" %
-#                        (self.typee, result,))
-#
-#            status, err = self.__check_errors(result)
-#            if status is True:
-#                return (result.get("value").get("geni_rspec"),
-#                        result.get("value").get("geni_slivers"))
-#        except Exception as e:
-#            err = "%s Allocate failure: %s" % (self.typee, str(e))
-#        raise exceptions.RPCError(err)
-        params = [slice_urn, credentials, rspec, options, ]
-        result = self.Allocate(*params)
-        logger.info("\n\n\n%s Allocate result=%s\n\n\n" % (self.typee, result,))
-        return (result, self.typee)
+        try:
+            params = [slice_urn, credentials, rspec, options, ]
+            result = self.Allocate(*params)
+            logger.info("\n\n\n%s Allocate result=%s\n\n\n" %
+                        (self.typee, result,))
+
+            status, err = self.__check_errors(result)
+            if status is True:
+                return (result.get("value").get("geni_rspec"),
+                        result.get("value").get("geni_slivers"))
+
+        except Exception as e:
+            err = "%s Allocate failure: %s" % (self.typee, str(e))
+
+        raise exceptions.RPCError(err)
 
     def describe(self, urns, credentials):
         options = self.format_options()

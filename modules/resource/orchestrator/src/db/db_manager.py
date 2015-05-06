@@ -100,7 +100,7 @@ class DBManager(object):
         peer_domain_ref = peer_domain_info.get("_ref_peer")
         return self.get_configured_peer_by_routing_key(peer_domain_ref)
 
-    def get_configured_peer_by_uri(self, rm_url):
+    def get_configured_peer_by_uri(self, rm_url, extra_filter={}):
         # Parse URL in order to filtering entry in domain.routing collection
         rm_url = urlparse.urlparse(rm_url)
         rm_endpoint = rm_url.path
@@ -115,8 +115,9 @@ class DBManager(object):
         rm_endpoint_re = self.__get_regexp_for_query(rm_endpoint)
         rm_address, rm_port = rm_url.netloc.split(":")
         rm_protocol = rm_url.scheme
-        filter_params = {"protocol": rm_protocol, "address": rm_address,
-                         "port": rm_port, "endpoint": rm_endpoint_re, }
+        filter_params = extra_filter
+        filter_params.update({"protocol": rm_protocol, "address": rm_address,
+                         "port": rm_port, "endpoint": {"$regex": rm_endpoint_re}, })
         peer = self.get_configured_peer(filter_params)
         return peer
 
@@ -157,6 +158,11 @@ class DBManager(object):
 
     def get_domain_urn(self, filter_params):
         return self.get_domain_info(filter_params).get("domain_urn")
+
+    def get_domain_urn_from_uri(self, url, filter_params={}):
+        peer = self.get_configured_peer_by_uri(url, filter_params)
+        peer_id = peer.get("_id")
+        return self.get_domain_info({"_ref_peer": peer_id}).get("domain_urn")
 
     def __get_domain_authority(self, domain_urn):
         # Domain URN = Domain authority
