@@ -1,14 +1,14 @@
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
-from rspecs.tnrm.manifest_parser import TNRMv3ManifestParser
-from BasePlugin import BasePlugin
+from rspecs.openflow.manifest_parser import OFv3ManifestParser
+from commons import CommonUtils
 
 import core
-logger = core.log.getLogger("tn-plugin")
+logger = core.log.getLogger("sdn-utils")
 
 
-class TNPlugin(BasePlugin):
+class SDNUtils(CommonUtils):
     def __init__(self):
-        super(TNPlugin, self).__init__()
+        super(SDNUtils, self).__init__()
 
     def manage_describe(self, peer, urns, creds):
         try:
@@ -16,16 +16,14 @@ class TNPlugin(BasePlugin):
             logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
             m, urn, ss = adaptor.describe(urns, creds[0]["geni_value"])
 
-            manifest = TNRMv3ManifestParser(from_string=m)
-            logger.debug("TNRMv3ManifestParser=%s" % (manifest,))
+            manifest = OFv3ManifestParser(from_string=m)
+            logger.debug("OFv3ManifestParser=%s" % (manifest,))
             self.validate_rspec(manifest.get_rspec())
 
-            nodes = manifest.nodes()
-            logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
-            links = manifest.links()
-            logger.info("Links(%d)=%s" % (len(links), links,))
+            slivers = manifest.slivers()
+            logger.info("Slivers(%d)=%s" % (len(slivers), slivers,))
 
-            return ({"nodes": nodes, "links": links}, urn, ss)
+            return ({"slivers": slivers}, urn, ss)
         except Exception as e:
             logger.critical("manage_describe exception: %s", e)
             raise e
@@ -37,21 +35,19 @@ class TNPlugin(BasePlugin):
             m, urn = adaptor.provision(
                 urns, creds[0]["geni_value"], beffort, etime, gusers)
 
-            manifest = TNRMv3ManifestParser(from_string=m)
-            logger.debug("TNRMv3ManifestParser=%s" % (manifest,))
+            manifest = OFv3ManifestParser(from_string=m)
+            logger.debug("OFv3ManifestParser=%s" % (manifest,))
             self.validate_rspec(manifest.get_rspec())
 
-            nodes = manifest.nodes()
-            logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
-            links = manifest.links()
-            logger.info("Links(%d)=%s" % (len(links), links,))
+            slivers = manifest.slivers()
+            logger.info("Slivers(%d)=%s" % (len(slivers), slivers,))
 
-            return ({"nodes": nodes, "links": links}, urn)
+            return ({"slivers": slivers}, urn)
         except Exception as e:
-            # It is possible that TNRM does not implement this method!
+            # It is possible that SDNRM does not implement this method!
             if beffort:
                 logger.error("manage_provision exception: %s", e)
-                return ({"nodes": [], "links": []}, [])
+                return ({"slivers": []}, [])
             else:
                 logger.critical("manage_provision exception: %s", e)
                 raise e

@@ -1,14 +1,14 @@
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
-from rspecs.serm.manifest_parser import SERMv3ManifestParser
-from BasePlugin import BasePlugin
+from rspecs.crm.manifest_parser import CRMv3ManifestParser
+from commons import CommonUtils
 
 import core
-logger = core.log.getLogger("se-plugin")
+logger = core.log.getLogger("com-utils")
 
 
-class SEPlugin(BasePlugin):
+class COMUtils(CommonUtils):
     def __init__(self):
-        super(SEPlugin, self).__init__()
+        super(COMUtils, self).__init__()
 
     def manage_describe(self, peer, urns, creds):
         try:
@@ -16,16 +16,14 @@ class SEPlugin(BasePlugin):
             logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
             m, urn, ss = adaptor.describe(urns, creds[0]["geni_value"])
 
-            manifest = SERMv3ManifestParser(from_string=m)
-            logger.debug("SERMv3ManifestParser=%s" % (manifest,))
+            manifest = CRMv3ManifestParser(from_string=m)
+            logger.debug("CRMv3ManifestParser=%s" % (manifest,))
             self.validate_rspec(manifest.get_rspec())
 
             nodes = manifest.nodes()
             logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
-            links = manifest.links()
-            logger.info("Links(%d)=%s" % (len(links), links,))
 
-            return ({"nodes": nodes, "links": links}, urn, ss)
+            return ({"nodes": nodes}, urn, ss)
         except Exception as e:
             logger.critical("manage_describe exception: %s", e)
             raise e
@@ -37,21 +35,19 @@ class SEPlugin(BasePlugin):
             m, urn = adaptor.provision(
                 urns, creds[0]["geni_value"], beffort, etime, gusers)
 
-            manifest = SERMv3ManifestParser(from_string=m)
-            logger.debug("SERMv3ManifestParser=%s" % (manifest,))
+            manifest = CRMv3ManifestParser(from_string=m)
+            logger.debug("CRMv3ManifestParser=%s" % (manifest,))
             self.validate_rspec(manifest.get_rspec())
 
             nodes = manifest.nodes()
             logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
-            links = manifest.links()
-            logger.info("Links(%d)=%s" % (len(links), links,))
 
-            return ({"nodes": nodes, "links": links}, urn)
+            return ({"nodes": nodes}, urn)
         except Exception as e:
-            # It is possible that SERM does not implement this method!
+            # It is possible that CRM does not implement this method!
             if beffort:
                 logger.error("manage_provision exception: %s", e)
-                return ({"nodes": [], "links": []}, [])
+                return ({"nodes": []}, [])
             else:
                 logger.critical("manage_provision exception: %s", e)
                 raise e

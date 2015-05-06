@@ -3,10 +3,10 @@ from handler.geni.v3 import exceptions as geni_ex
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
 
 import core
-logger = core.log.getLogger("base-plugin")
+logger = core.log.getLogger("common-utils")
 
 
-class BasePlugin(object):
+class CommonUtils(object):
     def __init__(self):
         pass
 

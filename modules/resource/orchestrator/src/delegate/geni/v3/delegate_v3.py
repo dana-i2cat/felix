@@ -25,12 +25,12 @@ from rspecs.tnrm.request_formatter import TNRMv3RequestFormatter
 from handler.geni.v3 import exceptions as geni_ex
 
 from monitoring.slice_monitoring import SliceMonitoring
-from plugins.BasePlugin import BasePlugin
-from plugins.SDNPlugin import SDNPlugin
-from plugins.TNPlugin import TNPlugin
-from plugins.SEPlugin import SEPlugin
-from plugins.COMPlugin import COMPlugin
-from plugins.ROPlugin import ROPlugin
+from utils.commons import CommonUtils
+from utils.com import COMUtils
+from utils.sdn import SDNUtils
+from utils.se import SEUtils
+from utils.tn import TNUtils
+from utils.ro import ROUtils
 
 from core.config import ConfParser
 import ast
@@ -170,9 +170,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") == self._allowed_peers.get("PEER_SDNRM"):
-                plugin = SDNPlugin()
                 of_m_info, last_slice, of_slivers =\
-                    plugin.manage_describe(peer, v, credentials)
+                    SDNUtils().manage_describe(peer, v, credentials)
 
                 logger.debug("of_m=%s, of_s=%s, urn=%s" %
                              (of_m_info, of_slivers, last_slice))
@@ -182,9 +181,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 ro_slivers.extend(of_slivers)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_TNRM"):
-                plugin = TNPlugin()
                 tn_m_info, last_slice, tn_slivers =\
-                    plugin.manage_describe(peer, v, credentials)
+                    TNUtils().manage_describe(peer, v, credentials)
 
                 logger.debug("tn_m=%s, tn_s=%s, urn=%s" %
                              (tn_m_info, tn_slivers, last_slice))
@@ -196,9 +194,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 ro_slivers.extend(tn_slivers)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_SERM"):
-                plugin = SEPlugin()
                 se_m_info, last_slice, se_slivers =\
-                    plugin.manage_describe(peer, v, credentials)
+                    SEUtils().manage_describe(peer, v, credentials)
 
                 logger.debug("se_m=%s, se_s=%s, urn=%s" %
                              (se_m_info, se_slivers, last_slice))
@@ -210,9 +207,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 ro_slivers.extend(se_slivers)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_CRM"):
-                plugin = COMPlugin()
                 com_m_info, last_slice, com_slivers =\
-                    plugin.manage_describe(peer, v, credentials)
+                    COMUtils().manage_describe(peer, v, credentials)
 
                 logger.debug("com_m=%s, com_s=%s, urn=%s" %
                              (com_m_info, com_slivers, last_slice))
@@ -222,9 +218,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 ro_slivers.extend(com_slivers)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_RO"):
-                plugin = ROPlugin()
                 ro_m_info, last_slice, ro_slivers =\
-                    plugin.manage_describe(peer, v, credentials)
+                    ROUtils().manage_describe(peer, v, credentials)
 
                 logger.debug("ro_m=%s, ro_s=%s, urn=%s" %
                              (ro_m_info, ro_slivers, last_slice))
@@ -423,8 +418,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") in self._allowed_peers.values():
-                plugin = BasePlugin()
-                slivers = plugin.manage_renew(
+                slivers = CommonUtils().manage_renew(
                     peer, v, credentials, etime_str, best_effort)
 
                 logger.debug("slivers=%s" % (slivers,))
@@ -463,8 +457,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") == self._allowed_peers.get("PEER_CRM"):
-                plugin = COMPlugin()
-                com_m_info, com_slivers = plugin.manage_provision(
+                com_m_info, com_slivers = COMUtils().manage_provision(
                     peer, v, credentials, best_effort, end_time, geni_users)
 
                 logger.debug("com_m=%s, com_s=%s" % (com_m_info, com_slivers,))
@@ -477,8 +470,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     slice_urn, com_m_info.get("nodes"), com_slivers)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_SDNRM"):
-                plugin = SDNPlugin()
-                of_m_info, of_slivers = plugin.manage_provision(
+                of_m_info, of_slivers = SDNUtils().manage_provision(
                     peer, v, credentials, best_effort, end_time, geni_users)
 
                 logger.debug("of_m=%s, of_s=%s" % (of_m_info, of_slivers,))
@@ -491,8 +483,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     slice_urn, of_m_info.get("slivers"), of_slivers)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_TNRM"):
-                plugin = TNPlugin()
-                tn_m_info, tn_slivers = plugin.manage_provision(
+                tn_m_info, tn_slivers = TNUtils().manage_provision(
                     peer, v, credentials, best_effort, end_time, geni_users)
 
                 logger.debug("tn_m=%s, tn_s=%s" % (tn_m_info, tn_slivers,))
@@ -508,8 +499,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     tn_slivers, peer)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_SERM"):
-                plugin = SEPlugin()
-                se_m_info, se_slivers = plugin.manage_provision(
+                se_m_info, se_slivers = SEUtils().manage_provision(
                     peer, v, credentials, best_effort, end_time, geni_users)
 
                 logger.debug("se_m=%s, se_s=%s" % (se_m_info, se_slivers,))
@@ -525,8 +515,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     se_slivers)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_RO"):
-                plugin = ROPlugin()
-                ro_m_info, ro_slivers = plugin.manage_provision(
+                ro_m_info, ro_slivers = ROUtils().manage_provision(
                     peer, v, credentials, best_effort, end_time, geni_users)
 
                 logger.debug("ro_m=%s, ro_s=%s" % (ro_m_info, ro_slivers,))
@@ -590,8 +579,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") in self._allowed_peers.values():
-                plugin = BasePlugin()
-                last_slice, slivers = plugin.manage_status(
+                last_slice, slivers = CommonUtils().manage_status(
                     peer, v, credentials)
 
                 logger.debug("slivers=%s, urn=%s" % (slivers, last_slice))
@@ -627,8 +615,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") in self._allowed_peers.values():
-                plugin = BasePlugin()
-                slivers = plugin.manage_operational_action(
+                slivers = CommonUtils().manage_operational_action(
                     peer, v, credentials, action, best_effort)
 
                 logger.debug("slivers=%s" % (slivers,))

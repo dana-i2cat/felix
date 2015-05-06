@@ -1,14 +1,14 @@
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
 from rspecs.ro.manifest_parser import ROManifestParser
-from BasePlugin import BasePlugin
+from commons import CommonUtils
 
 import core
-logger = core.log.getLogger("ro-plugin")
+logger = core.log.getLogger("ro-utils")
 
 
-class ROPlugin(BasePlugin):
+class ROUtils(CommonUtils):
     def __init__(self):
-        super(ROPlugin, self).__init__()
+        super(ROUtils, self).__init__()
 
     def manage_describe(self, peer, urns, creds):
         try:
