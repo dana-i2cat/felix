@@ -16,7 +16,6 @@ from rspecs.crm.request_formatter import CRMv3RequestFormatter
 from rspecs.openflow.request_formatter import OFv3RequestFormatter
 from rspecs.ro.advertisement_formatter import ROAdvertisementFormatter
 from rspecs.ro.manifest_formatter import ROManifestFormatter
-from rspecs.ro.manifest_parser import ROManifestParser
 from rspecs.ro.request_parser import RORequestParser
 from rspecs.openflow.manifest_parser import OFv3ManifestParser
 from rspecs.serm.manifest_parser import SERMv3ManifestParser
@@ -464,7 +463,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") == self._allowed_peers.get("PEER_CRM"):
-                com_m_info, com_slivers = self.__manage_com_provision(
+                plugin = COMPlugin()
+                com_m_info, com_slivers = plugin.manage_provision(
                     peer, v, credentials, best_effort, end_time, geni_users)
 
                 logger.debug("com_m=%s, com_s=%s" % (com_m_info, com_slivers,))
@@ -477,7 +477,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     slice_urn, com_m_info.get("nodes"), com_slivers)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_SDNRM"):
-                of_m_info, of_slivers = self.__manage_sdn_provision(
+                plugin = SDNPlugin()
+                of_m_info, of_slivers = plugin.manage_provision(
                     peer, v, credentials, best_effort, end_time, geni_users)
 
                 logger.debug("of_m=%s, of_s=%s" % (of_m_info, of_slivers,))
@@ -490,7 +491,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     slice_urn, of_m_info.get("slivers"), of_slivers)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_TNRM"):
-                tn_m_info, tn_slivers = self.__manage_tn_provision(
+                plugin = TNPlugin()
+                tn_m_info, tn_slivers = plugin.manage_provision(
                     peer, v, credentials, best_effort, end_time, geni_users)
 
                 logger.debug("tn_m=%s, tn_s=%s" % (tn_m_info, tn_slivers,))
@@ -506,7 +508,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     tn_slivers, peer)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_SERM"):
-                se_m_info, se_slivers = self.__manage_se_provision(
+                plugin = SEPlugin()
+                se_m_info, se_slivers = plugin.manage_provision(
                     peer, v, credentials, best_effort, end_time, geni_users)
 
                 logger.debug("se_m=%s, se_s=%s" % (se_m_info, se_slivers,))
@@ -522,7 +525,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     se_slivers)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_RO"):
-                ro_m_info, ro_slivers = self.__manage_ro_provision(
+                plugin = ROPlugin()
+                ro_m_info, ro_slivers = plugin.manage_provision(
                     peer, v, credentials, best_effort, end_time, geni_users)
 
                 logger.debug("ro_m=%s, ro_s=%s" % (ro_m_info, ro_slivers,))
@@ -1191,154 +1195,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 return []
             else:
                 logger.critical("manage_delete exception: %s" % (e,))
-                raise e
-
-    def __manage_tn_provision(self, peer, urns, creds,
-                              beffort, etime, gusers):
-        adaptor, uri = AdaptorFactory.create_from_db(peer)
-        logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
-        try:
-            m, urn = adaptor.provision(urns, creds[0]["geni_value"],
-                                       beffort, etime, gusers)
-            manifest = TNRMv3ManifestParser(from_string=m)
-            logger.debug("TNRMv3ManifestParser=%s" % (manifest,))
-            self.__validate_rspec(manifest.get_rspec())
-
-            nodes = manifest.nodes()
-            logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
-            links = manifest.links()
-            logger.info("Links(%d)=%s" % (len(links), links,))
-
-            return ({"nodes": nodes, "links": links}, urn)
-        except Exception as e:
-            # It is possible that TNRM does not implement this method!
-            if beffort:
-                logger.error("manage_tn_provision exception: %s", e)
-                return ({"nodes": [], "links": []}, [])
-            else:
-                logger.critical("manage_tn_provision exception: %s", e)
-                raise e
-
-    def __manage_sdn_provision(self, peer, urns, creds,
-                               beffort, etime, gusers):
-        adaptor, uri = AdaptorFactory.create_from_db(peer)
-        logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
-        try:
-            m, urn = adaptor.provision(urns, creds[0]["geni_value"],
-                                       beffort, etime, gusers)
-            manifest = OFv3ManifestParser(from_string=m)
-            logger.debug("OFv3ManifestParser=%s" % (manifest,))
-            self.__validate_rspec(manifest.get_rspec())
-
-            slivers = manifest.slivers()
-            logger.info("Slivers(%d)=%s" % (len(slivers), slivers,))
-
-            return ({"slivers": slivers}, urn)
-        except Exception as e:
-            # It is possible that SDNRM does not implement this method!
-            if beffort:
-                logger.error("manage_sdn_provision exception: %s", e)
-                return ({"slivers": []}, [])
-            else:
-                logger.critical("manage_sdn_provision exception: %s", e)
-                raise e
-
-    def __manage_com_provision(self, peer, urns, creds,
-                               beffort, etime, gusers):
-        adaptor, uri = AdaptorFactory.create_from_db(peer)
-        logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
-        try:
-            m, urn = adaptor.provision(urns, creds[0]["geni_value"],
-                                       beffort, etime, gusers)
-            manifest = CRMv3ManifestParser(from_string=m)
-            logger.debug("CRMv3ManifestParser=%s" % (manifest,))
-            self.__validate_rspec(manifest.get_rspec())
-
-            nodes = manifest.nodes()
-            logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
-
-            return ({"nodes": nodes}, urn)
-        except Exception as e:
-            # It is possible that CRM does not implement this method!
-            if beffort:
-                logger.error("manage_com_provision exception: %s", e)
-                return ({"nodes": []}, [])
-            else:
-                logger.critical("manage_com_provision exception: %s", e)
-                raise e
-
-    def __manage_se_provision(self, peer, urns, creds,
-                              beffort, etime, gusers):
-        adaptor, uri = AdaptorFactory.create_from_db(peer)
-        logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
-        try:
-            m, urn = adaptor.provision(urns, creds[0]["geni_value"],
-                                       beffort, etime, gusers)
-            manifest = SERMv3ManifestParser(from_string=m)
-            logger.debug("SERMv3ManifestParser=%s" % (manifest,))
-            self.__validate_rspec(manifest.get_rspec())
-
-            nodes = manifest.nodes()
-            logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
-            links = manifest.links()
-            logger.info("Links(%d)=%s" % (len(links), links,))
-
-            return ({"nodes": nodes, "links": links}, urn)
-        except Exception as e:
-            # It is possible that SERM does not implement this method!
-            if beffort:
-                logger.error("manage_se_provision exception: %s", e)
-                return ({"nodes": [], "links": []}, [])
-            else:
-                logger.critical("manage_se_provision exception: %s", e)
-                raise e
-
-    def __manage_ro_provision(self, peer, urns, creds, beffort, etime, gusers):
-        adaptor, uri = AdaptorFactory.create_from_db(peer)
-        logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
-
-        ret = {"com_nodes": [], "sdn_slivers": [],
-               "tn_nodes": [], "tn_links": [],
-               "se_nodes": [], "se_links": []}
-        try:
-            m, urn = adaptor.provision(urns, creds[0]["geni_value"],
-                                       beffort, etime, gusers)
-            manifest = ROManifestParser(from_string=m)
-            logger.debug("ROManifestParser=%s" % (manifest,))
-            self.__validate_rspec(manifest.get_rspec())
-
-            ret["com_nodes"] = manifest.com_nodes()
-            logger.info("COMNodes(%d)=%s" %
-                        (len(ret["com_nodes"]), ret["com_nodes"],))
-
-            ret["sdn_slivers"] = manifest.sdn_slivers()
-            logger.info("SDNSlivers(%d)=%s" %
-                        (len(ret["sdn_slivers"]), ret["sdn_slivers"],))
-
-            ret["tn_nodes"] = manifest.tn_nodes()
-            logger.info("TNNodes(%d)=%s" %
-                        (len(ret["tn_nodes"]), ret["tn_nodes"],))
-
-            ret["tn_links"] = manifest.tn_links()
-            logger.info("TNLinks(%d)=%s" %
-                        (len(ret["tn_links"]), ret["tn_links"],))
-
-            ret["se_nodes"] = manifest.se_nodes()
-            logger.info("SENodes(%d)=%s" %
-                        (len(ret["se_nodes"]), ret["se_nodes"],))
-
-            ret["se_links"] = manifest.se_links()
-            logger.info("SELinks(%d)=%s" %
-                        (len(ret["se_links"]), ret["se_links"],))
-
-            return (ret, urn)
-        except Exception as e:
-            # It is possible that RO does not implement this method!
-            if beffort:
-                logger.error("manage_se_provision exception: %s", e)
-                return (ret, [])
-            else:
-                logger.critical("manage_se_provision exception: %s", e)
                 raise e
 
     def __validate_rspec(self, generic_rspec):

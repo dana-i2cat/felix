@@ -29,3 +29,29 @@ class TNPlugin(BasePlugin):
         except Exception as e:
             logger.critical("manage_describe exception: %s", e)
             raise e
+
+    def manage_provision(self, peer, urns, creds, beffort, etime, gusers):
+        try:
+            adaptor, uri = AdaptorFactory.create_from_db(peer)
+            logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
+            m, urn = adaptor.provision(
+                urns, creds[0]["geni_value"], beffort, etime, gusers)
+
+            manifest = TNRMv3ManifestParser(from_string=m)
+            logger.debug("TNRMv3ManifestParser=%s" % (manifest,))
+            self.validate_rspec(manifest.get_rspec())
+
+            nodes = manifest.nodes()
+            logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
+            links = manifest.links()
+            logger.info("Links(%d)=%s" % (len(links), links,))
+
+            return ({"nodes": nodes, "links": links}, urn)
+        except Exception as e:
+            # It is possible that TNRM does not implement this method!
+            if beffort:
+                logger.error("manage_provision exception: %s", e)
+                return ({"nodes": [], "links": []}, [])
+            else:
+                logger.critical("manage_provision exception: %s", e)
+                raise e
