@@ -1160,35 +1160,3 @@ class GENIv3Delegate(GENIv3DelegateBase):
             urns = [s.get("geni_sliver_urn") for s in slivers]
             ROSchedulerService.get_scheduler().add_job(
                 slice_expiration, "date", run_date=end_time, args=[urns])
-
-    # Helper methods
-    def _get_sliver_status_hash(self, lease, include_allocation_status=False,
-                                include_operational_status=False,
-                                error_message=None):
-        """Helper method to create the sliver_status return
-        values of allocate and other calls."""
-        result = {"geni_sliver_urn": self._ip_to_urn(str(lease["ip_str"])),
-                  "geni_expires": lease["end_time"],
-                  "geni_allocation_status": self.ALLOCATION_STATE_ALLOCATED}
-
-        result["geni_allocation_status"] = self.ALLOCATION_STATE_UNALLOCATED\
-            if lease["available"] else self.ALLOCATION_STATE_PROVISIONED
-
-        # there is no state to an ip, so we always return ready
-        if (include_operational_status):
-            result["geni_operational_status"] = self.OPERATIONAL_STATE_READY
-
-        if (error_message):
-            result["geni_error"] = error_message
-
-        return result
-
-    def _get_manifest_rspec(self, leases):
-        E = self.lxml_manifest_element_maker("resource-orchestrator")
-        manifest = self.lxml_manifest_root()
-        for lease in leases:
-            # assemble manifest
-            r = E.resource()
-            r.append(E.ip(lease["ip_str"]))
-            # TODO add more info here
-        logger.debug("manifest=%s", (manifest,))
