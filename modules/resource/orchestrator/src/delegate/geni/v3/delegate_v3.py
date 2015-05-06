@@ -26,6 +26,11 @@ from rspecs.tnrm.request_formatter import TNRMv3RequestFormatter
 from handler.geni.v3 import exceptions as geni_ex
 
 from monitoring.slice_monitoring import SliceMonitoring
+from plugins.SDNPlugin import SDNPlugin
+from plugins.TNPlugin import TNPlugin
+from plugins.SEPlugin import SEPlugin
+from plugins.COMPlugin import COMPlugin
+from plugins.ROPlugin import ROPlugin
 
 from core.config import ConfParser
 import ast
@@ -165,8 +170,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") == self._allowed_peers.get("PEER_SDNRM"):
+                plugin = SDNPlugin()
                 of_m_info, last_slice, of_slivers =\
-                    self.__manage_sdn_describe(peer, v, credentials)
+                    plugin.manage_describe(peer, v, credentials)
 
                 logger.debug("of_m=%s, of_s=%s, urn=%s" %
                              (of_m_info, of_slivers, last_slice))
@@ -176,8 +182,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 ro_slivers.extend(of_slivers)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_TNRM"):
+                plugin = TNPlugin()
                 tn_m_info, last_slice, tn_slivers =\
-                    self.__manage_tn_describe(peer, v, credentials)
+                    plugin.manage_describe(peer, v, credentials)
 
                 logger.debug("tn_m=%s, tn_s=%s, urn=%s" %
                              (tn_m_info, tn_slivers, last_slice))
@@ -189,8 +196,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 ro_slivers.extend(tn_slivers)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_SERM"):
+                plugin = SEPlugin()
                 se_m_info, last_slice, se_slivers =\
-                    self.__manage_se_describe(peer, v, credentials)
+                    plugin.manage_describe(peer, v, credentials)
 
                 logger.debug("se_m=%s, se_s=%s, urn=%s" %
                              (se_m_info, se_slivers, last_slice))
@@ -202,8 +210,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 ro_slivers.extend(se_slivers)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_CRM"):
+                plugin = COMPlugin()
                 com_m_info, last_slice, com_slivers =\
-                    self.__manage_com_describe(peer, v, credentials)
+                    plugin.manage_describe(peer, v, credentials)
 
                 logger.debug("com_m=%s, com_s=%s, urn=%s" %
                              (com_m_info, com_slivers, last_slice))
@@ -213,8 +222,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 ro_slivers.extend(com_slivers)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_RO"):
+                plugin = ROPlugin()
                 ro_m_info, last_slice, ro_slivers =\
-                    self.__manage_ro_describe(peer, v, credentials)
+                    plugin.manage_describe(peer, v, credentials)
 
                 logger.debug("ro_m=%s, ro_s=%s, urn=%s" %
                              (ro_m_info, ro_slivers, last_slice))
@@ -680,18 +690,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.info("slice_urn=%s" % (slice_urn,))
         raise geni_ex.GENIv3GeneralError("Not implemented yet!")
 
-    ## Helpers
-
-#    def __ensure_operation_properly_processed(self, result, routing_key, peer_type):
-#        # No "value" implies an error condition: return "output" structure
-#        if not result.get("value") and result.get("output"):
-#            peer = db_sync_manager.get_configured_peer_by_routing_key(routing_key)
-#            adaptor, uri = AdaptorFactory.create_from_db(peer)
-#            domain_urn = db_sync_manager.get_domain_urn({"_ref_peer": routing_key})
-#            status, error = adaptor.__check_errors(result, peer_type, domain_urn)
-#            logger.critical(error)
-#            raise geni_ex.GENIv3Error.get_by_code(result.get("code").get("geni_code"), error)
-
+    # Helpers
     def __update_sdn_route(self, route, values):
         for v in values:
             for dpid in v.get("dpids"):
@@ -1136,125 +1135,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.debug("RO-DB-Slivers(%d): %s" %
                      (len(ro_db_slivers), ro_db_slivers))
 
-    def __manage_sdn_describe(self, peer, urns, creds):
-        try:
-            adaptor, uri = AdaptorFactory.create_from_db(peer)
-            logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
-            m, urn, ss = adaptor.describe(urns, creds[0]["geni_value"])
-
-            manifest = OFv3ManifestParser(from_string=m)
-            logger.debug("OFv3ManifestParser=%s" % (manifest,))
-            self.__validate_rspec(manifest.get_rspec())
-
-            slivers = manifest.slivers()
-            logger.info("Slivers(%d)=%s" % (len(slivers), slivers,))
-
-            return ({"slivers": slivers}, urn, ss)
-        except Exception as e:
-            logger.critical("manage_sdn_describe exception: %s", e)
-            raise e
-
-    def __manage_tn_describe(self, peer, urns, creds):
-        try:
-            adaptor, uri = AdaptorFactory.create_from_db(peer)
-            logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
-            m, urn, ss = adaptor.describe(urns, creds[0]["geni_value"])
-
-            manifest = TNRMv3ManifestParser(from_string=m)
-            logger.debug("TNRMv3ManifestParser=%s" % (manifest,))
-            self.__validate_rspec(manifest.get_rspec())
-
-            nodes = manifest.nodes()
-            logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
-            links = manifest.links()
-            logger.info("Links(%d)=%s" % (len(links), links,))
-
-            return ({"nodes": nodes, "links": links}, urn, ss)
-        except Exception as e:
-            logger.critical("manage_tn_describe exception: %s", e)
-            raise e
-
-    def __manage_se_describe(self, peer, urns, creds):
-        try:
-            adaptor, uri = AdaptorFactory.create_from_db(peer)
-            logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
-            m, urn, ss = adaptor.describe(urns, creds[0]["geni_value"])
-
-            manifest = SERMv3ManifestParser(from_string=m)
-            logger.debug("SERMv3ManifestParser=%s" % (manifest,))
-            self.__validate_rspec(manifest.get_rspec())
-
-            nodes = manifest.nodes()
-            logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
-            links = manifest.links()
-            logger.info("Links(%d)=%s" % (len(links), links,))
-
-            return ({"nodes": nodes, "links": links}, urn, ss)
-        except Exception as e:
-            logger.critical("manage_se_describe exception: %s", e)
-            raise e
-
-    def __manage_com_describe(self, peer, urns, creds):
-        try:
-            adaptor, uri = AdaptorFactory.create_from_db(peer)
-            logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
-            m, urn, ss = adaptor.describe(urns, creds[0]["geni_value"])
-
-            manifest = CRMv3ManifestParser(from_string=m)
-            logger.debug("CRMv3ManifestParser=%s" % (manifest,))
-            self.__validate_rspec(manifest.get_rspec())
-
-            nodes = manifest.nodes()
-            logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
-
-            return ({"nodes": nodes}, urn, ss)
-        except Exception as e:
-            logger.critical("manage_com_describe exception: %s", e)
-            raise e
-
-    def __manage_ro_describe(self, peer, urns, creds):
-        try:
-            adaptor, uri = AdaptorFactory.create_from_db(peer)
-            logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
-
-            ret = {"com_nodes": [], "sdn_slivers": [],
-                   "tn_nodes": [], "tn_links": [],
-                   "se_nodes": [], "se_links": []}
-            m, urn, ss = adaptor.describe(urns, creds[0]["geni_value"])
-
-            manifest = ROManifestParser(from_string=m)
-            logger.debug("ROManifestParser=%s" % (manifest,))
-            self.__validate_rspec(manifest.get_rspec())
-
-            ret["com_nodes"] = manifest.com_nodes()
-            logger.info("COMNodes(%d)=%s" %
-                        (len(ret["com_nodes"]), ret["com_nodes"],))
-
-            ret["sdn_slivers"] = manifest.sdn_slivers()
-            logger.info("SDNSlivers(%d)=%s" %
-                        (len(ret["sdn_slivers"]), ret["sdn_slivers"],))
-
-            ret["tn_nodes"] = manifest.tn_nodes()
-            logger.info("TNNodes(%d)=%s" %
-                        (len(ret["tn_nodes"]), ret["tn_nodes"],))
-
-            ret["tn_links"] = manifest.tn_links()
-            logger.info("TNLinks(%d)=%s" %
-                        (len(ret["tn_links"]), ret["tn_links"],))
-
-            ret["se_nodes"] = manifest.se_nodes()
-            logger.info("SENodes(%d)=%s" %
-                        (len(ret["se_nodes"]), ret["se_nodes"],))
-
-            ret["se_links"] = manifest.se_links()
-            logger.info("SELinks(%d)=%s" %
-                        (len(ret["se_links"]), ret["se_links"],))
-
-            return (ret, urn, ss)
-        except Exception as e:
-            logger.critical("manage_com_describe exception: %s", e)
-            raise e
-
     def __manage_status(self, peer, urns, creds):
         try:
             adaptor, uri = AdaptorFactory.create_from_db(peer)
@@ -1298,15 +1178,17 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 if action not in ["geni_start", "geni_stop", "geni_restart"]:
                     raise e
                 else:
-                    logger.error("manage_operational_action exception: action=%s, details: %s",
-                                 (action, e))
+                    m = "manage_operational_action exception: "
+                    m += "action=%s, details: %s" % (action, e)
+                    logger.error(m)
                     # FIXME Add output structure compliant with GENI expected
                     # result so that OMNI (or any other client) does not fail
                     # and the execution of the code can continue
                     return []
             else:
-                logger.critical("manage_operational_action exception: action=%s, details: %s",
-                             (action, e))
+                m = "manage_operational_action exception: "
+                m += "action=%s, details: %s" % (action, e)
+                logger.critical(m)
                 raise e
 
     def __manage_delete(self, peer, urns, creds, beffort):
