@@ -590,8 +590,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") in self._allowed_peers.values():
-                last_slice, slivers =\
-                    self.__manage_status(peer, v, credentials)
+                plugin = BasePlugin()
+                last_slice, slivers = plugin.manage_status(
+                    peer, v, credentials)
 
                 logger.debug("slivers=%s, urn=%s" % (slivers, last_slice))
                 ro_slivers.extend(slivers)
@@ -1140,18 +1141,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
         ro_db_slivers.extend(db_slivers)
         logger.debug("RO-DB-Slivers(%d): %s" %
                      (len(ro_db_slivers), ro_db_slivers))
-
-    def __manage_status(self, peer, urns, creds):
-        try:
-            adaptor, uri = AdaptorFactory.create_from_db(peer)
-            logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
-            return adaptor.status(urns, creds[0]["geni_value"])
-        except Exception as e:
-            logger.error("manage_status exception: %s", e)
-            # FIXME Add output structure compliant with GENI expected
-            # result so that OMNI (or any other client) does not fail
-            # and the execution of the code can continue
-            return []
 
     def __manage_operational_action(self, peer, urns, creds, action, beffort):
         adaptor, uri = AdaptorFactory.create_from_db(peer)

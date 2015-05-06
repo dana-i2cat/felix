@@ -29,3 +29,12 @@ class BasePlugin(object):
             else:
                 logger.critical("manage_renew exception: %s", e)
                 raise e
+
+    def manage_status(self, peer, urns, creds):
+        try:
+            adaptor, uri = AdaptorFactory.create_from_db(peer)
+            logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
+            return adaptor.status(urns, creds[0]["geni_value"])
+        except Exception as e:
+            logger.error("manage_status exception: %s", e)
+            return []
