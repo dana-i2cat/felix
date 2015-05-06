@@ -680,6 +680,19 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.info("slice_urn=%s" % (slice_urn,))
         raise geni_ex.GENIv3GeneralError("Not implemented yet!")
 
+    ## Helpers
+
+    def __ensure_operation_properly_processed(self, result, routing_key, peer_type):
+        # No "value" implies an error condition: return "output" structure
+        if not result.get("value") and result.get("output"):
+            domain_urn = db_sync_manager.get_domain_urn({"_ref_peer": routing_key})
+            status, error = self.__check_errors(result, peer_type, domain_urn)
+            logger.critical(error)
+            # TODO: PERFORM ROLLBACK ON PREVIOUSLY <OPERATED> <PEER_TYPE> RESOURCES
+            # USE "OUTPUT_MANAGE" FOR THIS. PROBABLY DO THIS DIRECTLY ON <OPERATION> METHOD,
+            # IN ORDER TO HAVE THE INFORMATION FOR EVERY ISLAND
+            raise geni_ex.GENIv3Error.get_by_code(result.get("code").get("geni_code"), error)
+
     def __update_sdn_route(self, route, values):
         for v in values:
             for dpid in v.get("dpids"):
@@ -719,6 +732,17 @@ class GENIv3Delegate(GENIv3DelegateBase):
                                  m.get("packet").get("tp_src"),
                                  m.get("packet").get("tp_dst"))
                 rspec.match(match.serialize())
+
+    def __check_errors(self, result, domain_server, domain_urn):
+        if result.get("output") is not None:
+            return False, "Error detected in the module (%s @ %s): %s" %\
+                (domain_server, domain_urn, result.get("output"))
+
+        if "geni_slivers" in result.get("value"):
+            for s in result.get("value").get("geni_slivers"):
+                if s.get("geni_error"):
+                    return False, "Error detected in a sliver (%s @ %s): %s" %\
+                        (domain_server, domain_urn, s.get("geni_error"))
 
     def __send_request_rspec(self, routing_key, req_rspec, slice_urn,
                              credentials, end_time):
@@ -792,20 +816,40 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.info("Route=%s" % (route,))
         manifests, slivers, db_slivers = [], [], []
 
+        output_manage = {}
         for k, v in route.iteritems():
-            try:
-                (m, ss) = self.__send_request_rspec(
-                    k, v, slice_urn, credentials, slice_expiration)
-                manifest = CRMv3ManifestParser(from_string=m)
-                logger.debug("CRMv3ManifestParser=%s" % (manifest,))
+            peer = None
+            peer_type = ""
+            result = {}
+            key = str(k)
+            output_manage[key] = {}
+            output_manage[key]["slice_urn"] = slice_urn
+            output_manage[key]["peer"] = ""
 
-                nodes = manifest.nodes()
-                logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
-                manifests.append({"nodes": nodes})
+#            try:
+#                (m, ss) = self.__send_request_rspec(
+#                    k, v, slice_urn, credentials, slice_expiration)
+#            except Exception as e:
+#                logger.critical(e)
 
-                self.__extend_slivers(ss, k, slivers, db_slivers)
-            except Exception as e:
-                logger.critical(e)
+            peer = db_sync_manager.get_configured_peer_by_routing_key(k)
+            output_manage[key]["peer"] = peer
+            result, peer_type = self.__send_request_rspec(
+                k, v, slice_urn, credentials, slice_expiration)
+
+            # No "value" implies an error condition: return "output" structure
+            self.__ensure_operation_properly_processed(result, k, peer_type)
+            m = result.get("value", {}).get("geni_rspec")
+            ss = result.get("value", {}).get("geni_slivers")
+
+            manifest = CRMv3ManifestParser(from_string=m)
+            logger.debug("CRMv3ManifestParser=%s" % (manifest,))
+
+            nodes = manifest.nodes()
+            logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
+            manifests.append({"nodes": nodes})
+
+            self.__extend_slivers(ss, k, slivers, db_slivers)
 
         return (manifests, slivers, db_slivers)
 

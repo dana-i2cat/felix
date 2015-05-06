@@ -215,27 +215,33 @@ class GENIv3Client(SFAClient):
 
     def allocate(self, slice_urn, credentials, rspec, end_time):
         options = self.format_options(end_time=end_time)
+        # By default: all or nothing
+        best_effort = False
         logger.debug("%s Options: %s" % (self.typee, options,))
         # Credentials must be sent in the proper format
         credentials = self.format_credentials(credentials)
-        try:
-            params = [slice_urn, credentials, rspec, options, ]
-            result = self.Allocate(*params)
-            logger.info("\n\n\n%s Allocate result=%s\n\n\n" %
-                        (self.typee, result,))
-
-            status, err = self.__check_errors(result)
-            if status is True:
-                return (result.get("value").get("geni_rspec"),
-                        result.get("value").get("geni_slivers"))
-
-        except Exception as e:
-            err = "%s Allocate failure: %s" % (self.typee, str(e))
-
-        raise exceptions.RPCError(err)
+#        try:
+#            params = [slice_urn, credentials, rspec, options, ]
+#            result = self.Allocate(*params)
+#            logger.info("\n\n\n%s Allocate result=%s\n\n\n" %
+#                        (self.typee, result,))
+#
+#            status, err = self.__check_errors(result)
+#            if status is True:
+#                return (result.get("value").get("geni_rspec"),
+#                        result.get("value").get("geni_slivers"))
+#        except Exception as e:
+#            err = "%s Allocate failure: %s" % (self.typee, str(e))
+#        raise exceptions.RPCError(err)
+        params = [slice_urn, credentials, rspec, options, ]
+        result = self.Allocate(*params)
+        logger.info("\n\n\n%s Allocate result=%s\n\n\n" % (self.typee, result,))
+        return (result, self.typee)
 
     def describe(self, urns, credentials):
         options = self.format_options()
+        # By default: all or nothing
+        best_effort = False
         logger.debug("%s Options: %s" % (self.typee, options,))
         # Credentials must be sent in the proper format
         credentials = self.format_credentials(credentials)
