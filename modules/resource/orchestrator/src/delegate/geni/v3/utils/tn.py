@@ -1,5 +1,7 @@
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
 from rspecs.tnrm.manifest_parser import TNRMv3ManifestParser
+from rspecs.tnrm.request_formatter import TNRMv3RequestFormatter
+from db.db_manager import db_sync_manager
 from commons import CommonUtils
 
 import core
@@ -55,3 +57,83 @@ class TNUtils(CommonUtils):
             else:
                 logger.critical("manage_provision exception: %s", e)
                 raise e
+
+    def __update_node_route(self, route, values):
+        for v in values:
+            k = db_sync_manager.get_tn_node_routing_key(v.get("component_id"))
+            v["routing_key"] = k
+            if k not in route:
+                route[k] = TNRMv3RequestFormatter()
+
+    def __update_link_route(self, route, values):
+        for v in values:
+            k = db_sync_manager.get_tn_link_routing_key(
+                v.get("component_id"), v.get("component_manager_name"),
+                [i.get("component_id") for i in v.get("interface_ref")])
+            v["routing_key"] = k
+            if k not in route:
+                route[k] = TNRMv3RequestFormatter()
+
+    def __update_route_rspec(self, route, nodes, links):
+        for key, rspec in route.iteritems():
+            for n in nodes:
+                if n.get("routing_key") == key:
+                    rspec.node(n)
+            for l in links:
+                if l.get("routing_key") == key:
+                    rspec.link(l)
+
+    def __extract_se_from_tn(self, nodes, links):
+        ret, ifref = [], set()
+        for l in links:
+            for p in l.get("property"):
+                ifref.add(p.get("source_id"))
+                ifref.add(p.get("dest_id"))
+
+        for n in nodes:
+            for i in n.get("interfaces"):
+                if i.get("component_id") in ifref:
+                    for v in i.get("vlan"):
+                        ret.append({"vlan": v.get("tag"),
+                                    "interface": i.get("component_id")})
+
+        return ret
+
+    def manage_allocate(self, surn, creds, end, nodes, links):
+        route = {}
+        self.__update_node_route(route, nodes)
+        logger.debug("Nodes(%d)=%s" % (len(nodes), nodes,))
+        self.__update_link_route(route, links)
+        logger.debug("Links(%d)=%s" % (len(links), links,))
+
+        self.__update_route_rspec(route, nodes, links)
+        logger.info("Route=%s" % (route,))
+
+        manifests, slivers, db_slivers, se_tn_info = [], [], [], []
+
+        for k, v in route.iteritems():
+            try:
+                (m, ss) =\
+                    self.send_request_allocate_rspec(k, v, surn, creds, end)
+                manifest = TNRMv3ManifestParser(from_string=m)
+                logger.debug("TNRMv3ManifestParser=%s" % (manifest,))
+                self.validate_rspec(manifest.get_rspec())
+
+                nodes = manifest.nodes()
+                logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
+                links = manifest.links()
+                logger.info("Links(%d)=%s" % (len(links), links,))
+
+                manifests.append({"nodes": nodes, "links": links})
+
+                self.extend_slivers(ss, k, slivers, db_slivers)
+
+                se_tn = self.__extract_se_from_tn(nodes, links)
+                logger.debug("SE-TN-INFO=%s" % (se_tn,))
+                if len(se_tn) > 0:
+                    se_tn_info.extend(se_tn)
+            except Exception as e:
+                logger.critical("manage_allocate exception: %s", e)
+                raise e
+
+        return (manifests, slivers, db_slivers, se_tn_info)

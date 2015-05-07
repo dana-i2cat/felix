@@ -2,26 +2,13 @@ from core import dates
 from core.peers import AllowedPeers
 from delegate.geni.v3.base import GENIv3DelegateBase
 from db.db_manager import db_sync_manager
-from delegate.geni.v3.rm_adaptor import AdaptorFactory
 # Following import cannot be ordered properly
 from delegate.geni.v3 import rm_adaptor
 from scheduler.jobs import slice_expiration
 from scheduler.ro_scheduler import ROSchedulerService
-from rspecs.commons import validate
-from rspecs.commons_of import Match
-from rspecs.commons_tn import Node, Interface
-from rspecs.commons_se import SELink
-from rspecs.crm.manifest_parser import CRMv3ManifestParser
-from rspecs.crm.request_formatter import CRMv3RequestFormatter
-from rspecs.openflow.request_formatter import OFv3RequestFormatter
 from rspecs.ro.advertisement_formatter import ROAdvertisementFormatter
 from rspecs.ro.manifest_formatter import ROManifestFormatter
 from rspecs.ro.request_parser import RORequestParser
-from rspecs.openflow.manifest_parser import OFv3ManifestParser
-from rspecs.serm.manifest_parser import SERMv3ManifestParser
-from rspecs.serm.request_formatter import SERMv3RequestFormatter
-from rspecs.tnrm.manifest_parser import TNRMv3ManifestParser
-from rspecs.tnrm.request_formatter import TNRMv3RequestFormatter
 from handler.geni.v3 import exceptions as geni_ex
 
 from monitoring.slice_monitoring import SliceMonitoring
@@ -147,7 +134,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             raise geni_ex.GENIv3GeneralError(str(e))
 
         logger.debug("ROAdvertisementFormatter=%s" % (rspec,))
-        self.__validate_rspec(rspec.get_rspec())
+        CommonUtils().validate_rspec(rspec.get_rspec())
         return "%s" % rspec
 
     @trace_method_inputs
@@ -266,7 +253,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             slice_urn, end_time, rspec,))
 
         req_rspec = RORequestParser(from_string=rspec)
-        self.__validate_rspec(req_rspec.get_rspec())
+        CommonUtils().validate_rspec(req_rspec.get_rspec())
 
         ro_manifest, ro_slivers, ro_db_slivers = ROManifestFormatter(), [], []
 
@@ -277,13 +264,15 @@ class GENIv3Delegate(GENIv3DelegateBase):
             logger.debug("Found a COM-slivers segment (%d): %s" %
                          (len(slivers), slivers,))
             (com_m_info, com_slivers, db_slivers) =\
-                self.__manage_com_allocate(slice_urn, credentials, end_time,
+                COMUtils().manage_allocate(slice_urn, credentials, end_time,
                                            slivers, req_rspec)
+
             logger.debug("com_m=%s, com_s=%s, com_s=%s" %
                          (com_m_info, com_slivers, db_slivers))
             for m in com_m_info:
                 for n in m.get("nodes"):
                     ro_manifest.com_node(n)
+
             ro_slivers.extend(com_slivers)
             # insert com-resources into slice table
             self.__insert_slice_info(
@@ -295,7 +284,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         if sliver is not None:
             logger.debug("Found an OF-sliver segment: %s", sliver)
             (of_m_info, of_slivers, db_slivers, se_sdn_info) =\
-                self.__manage_sdn_allocate(slice_urn, credentials, end_time,
+                SDNUtils().manage_allocate(slice_urn, credentials, end_time,
                                            sliver, req_rspec, slice_urn)
 
             logger.debug("of_m=%s, of_s=%s, db_s=%s" %
@@ -319,8 +308,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
             logger.debug("Found a TN-links segment (%d): %s" %
                          (len(links), links,))
             (tn_m_info, tn_slivers, db_slivers, se_tn_info) =\
-                self.__manage_tn_allocate(slice_urn, credentials, end_time,
+                TNUtils().manage_allocate(slice_urn, credentials, end_time,
                                           nodes, links)
+
             logger.debug("tn_m=%s, tn_s=%s, db_s=%s" %
                          (tn_m_info, tn_slivers, db_slivers))
             for m in tn_m_info:
@@ -342,7 +332,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             logger.debug("Found a SE-tn segment (%d): %s" %
                          (len(se_tn_info), se_tn_info,))
             (se_m_info, se_slivers, db_slivers) =\
-                self.__manage_se_allocate(slice_urn, credentials, end_time,
+                SEUtils().manage_allocate(slice_urn, credentials, end_time,
                                           se_sdn_info, se_tn_info)
             logger.debug("se_m=%s, se_s=%s, db_s=%s" %
                          (se_m_info, se_slivers, db_slivers))
@@ -367,7 +357,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             logger.debug("Found a SE-links segment (%d): %s" %
                          (len(links), links,))
             (se_m_info, se_slivers, db_slivers) =\
-                self.__manage_direct_se_allocate(
+                SEUtils().manage_direct_allocate(
                     slice_urn, credentials, end_time, nodes, links)
             logger.debug("se_m=%s, se_s=%s, db_s=%s" %
                          (se_m_info, se_slivers, db_slivers))
@@ -383,7 +373,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 "se-resources", slice_urn, db_slivers, ro_db_slivers)
 
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
-        self.__validate_rspec(ro_manifest.get_rspec())
+        CommonUtils().validate_rspec(ro_manifest.get_rspec())
 
         for s in ro_slivers:
             s["geni_expires"] = dates.rfc3339_to_datetime(s["geni_expires"])
@@ -686,441 +676,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
         raise geni_ex.GENIv3GeneralError("Not implemented yet!")
 
     # Helpers
-    def __update_sdn_route(self, route, values):
-        for v in values:
-            for dpid in v.get("dpids"):
-                k = db_sync_manager.get_sdn_datapath_routing_key(dpid)
-                dpid["routing_key"] = k
-                if k not in route:
-                    sl = "http://www.geni.net/resources/rspec/3/request.xsd"
-                    route[k] = OFv3RequestFormatter(schema_location=sl)
-
-    def __update_sdn_route_rspec(self, route, sliver, controllers,
-                                 groups, matches):
-        for key, rspec in route.iteritems():
-            rspec.sliver(sliver.get("description"),
-                         sliver.get("ref"),
-                         sliver.get("email"))
-            for c in controllers:
-                rspec.controller(c.get("url"), c.get("type"))
-            for g in groups:
-                rspec.group(g.get("name"))
-                for dpid in g.get("dpids"):
-                    if dpid.get("routing_key") == key:
-                        rspec.group_datapath(g.get("name"), dpid)
-            for m in matches:
-                match = Match()
-                for uf in m.get("use_groups"):
-                    match.add_use_group(uf.get("name"))
-                for dpid in m.get("dpids"):
-                    if dpid.get("routing_key") == key:
-                        match.add_datapath(dpid)
-                match.set_packet(m.get("packet").get("dl_src"),
-                                 m.get("packet").get("dl_dst"),
-                                 m.get("packet").get("dl_type"),
-                                 m.get("packet").get("dl_vlan"),
-                                 m.get("packet").get("nw_src"),
-                                 m.get("packet").get("nw_dst"),
-                                 m.get("packet").get("nw_proto"),
-                                 m.get("packet").get("tp_src"),
-                                 m.get("packet").get("tp_dst"))
-                rspec.match(match.serialize())
-
-    def __send_request_rspec(self, routing_key, req_rspec, slice_urn,
-                             credentials, end_time):
-        peer = db_sync_manager.get_configured_peer_by_routing_key(routing_key)
-        logger.debug("Peer=%s" % (peer,))
-        adaptor, uri = AdaptorFactory.create_from_db(peer)
-        logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
-        return adaptor.allocate(slice_urn, credentials[0]["geni_value"],
-                                str(req_rspec), end_time)
-
-    def __extend_slivers(self, values, routing_key, slivers, db_slivers):
-        logger.info("Slivers=%s" % (values,))
-        slivers.extend(values)
-        for dbs in values:
-            db_slivers.append({"geni_sliver_urn": dbs.get("geni_sliver_urn"),
-                               "routing_key": routing_key})
-
-    def __create_se_id(self, component_id, port_name):
-        return component_id + ":" + port_name
-
-    def __extract_se_from_sdn(self, groups, matches):
-        ret = []
-        for m in matches:
-            vlan_id = m.get("packet").get("dl_vlan")
-            if vlan_id is None:
-                continue
-
-            dpids = []
-            for mg in m.get("use_groups"):
-                for g in groups:
-                    if g.get("name") == mg.get("name"):
-                        for gds in g.get("dpids"):
-                            for p in gds.get("ports"):
-                                seid = self.__create_se_id(
-                                    gds.get("component_id"), p.get("name"))
-                                dpids.append(seid)
-
-            for mds in m.get("dpids"):
-                for p in mds.get("ports"):
-                    seid = self.__create_se_id(mds.get("component_id"),
-                                               p.get("name"))
-                    dpids.append(seid)
-
-            if len(dpids) > 0:
-                ret.append({"vlan": vlan_id, "dpids": dpids})
-
-        return ret
-
-    def __update_com_route(self, route, values):
-        for v in values:
-            cid = v.get("component_id")
-            k = db_sync_manager.get_com_node_routing_key(cid)
-            v["routing_key"] = k
-            if k not in route:
-                sl = "http://www.geni.net/resources/rspec/3/request.xsd"
-                route[k] = CRMv3RequestFormatter(schema_location=sl)
-
-    def __update_com_route_rspec(self, route, slivers):
-        for key, rspec in route.iteritems():
-            for s in slivers:
-                if s.get("routing_key") == key:
-                    rspec.node(s)
-
-    def __manage_com_allocate(self, slice_urn, credentials,
-                              slice_expiration, slivers, parser):
-        route = {}
-        self.__update_com_route(route, slivers)
-        logger.debug("Slivers=%s" % (slivers,))
-
-        self.__update_com_route_rspec(route, slivers)
-        logger.info("Route=%s" % (route,))
-        manifests, slivers, db_slivers = [], [], []
-
-        for k, v in route.iteritems():
-            try:
-                (m, ss) = self.__send_request_rspec(
-                    k, v, slice_urn, credentials, slice_expiration)
-                manifest = CRMv3ManifestParser(from_string=m)
-                logger.debug("CRMv3ManifestParser=%s" % (manifest,))
-
-                nodes = manifest.nodes()
-                logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
-                manifests.append({"nodes": nodes})
-
-                self.__extend_slivers(ss, k, slivers, db_slivers)
-            except Exception as e:
-                logger.critical("manage_com_allocate exception: %s", e)
-                raise e
-
-        return (manifests, slivers, db_slivers)
-
-    def __manage_sdn_allocate(self, surn, creds, end, sliver, parser,
-                              slice_urn):
-        route = {}
-        controllers = parser.of_controllers()
-        logger.debug("Controllers=%s" % (controllers,))
-
-        groups = parser.of_groups()
-        self.__update_sdn_route(route, groups)
-        logger.debug("Groups=%s" % (groups,))
-
-        matches = parser.of_matches()
-        self.__update_sdn_route(route, matches)
-        logger.debug("Matches=%s" % (matches,))
-
-        se_sdn_info = self.__extract_se_from_sdn(groups, matches)
-        logger.debug("SE-SDN-INFO=%s" % (se_sdn_info,))
-
-        self.__update_sdn_route_rspec(route, sliver, controllers, groups,
-                                      matches)
-        logger.info("Route=%s" % (route,))
-        manifests, slivers, db_slivers = [], [], []
-
-        for k, v in route.iteritems():
-            try:
-                (m, ss) = self.__send_request_rspec(k, v, surn, creds, end)
-                manifest = OFv3ManifestParser(from_string=m)
-                logger.debug("OFv3ManifestParser=%s" % (manifest,))
-
-                slivers_ = manifest.slivers()
-                logger.info("Slivers(%d)=%s" % (len(slivers_), slivers_,))
-                manifests.append({"slivers": slivers_})
-
-                self.__extend_slivers(ss, k, slivers, db_slivers)
-            except Exception as e:
-                logger.critical("manage_sdn_allocate exception: %s", e)
-                raise e
-
-        # insert sliver details (groups and matches) into the slice.sdn table
-        id_ = db_sync_manager.store_slice_sdn(slice_urn, groups, matches)
-        logger.info("Stored slice.sdn info: id=%s" % (id_,))
-
-        return (manifests, slivers, db_slivers, se_sdn_info)
-
-    def __update_tn_node_route(self, route, values):
-        for v in values:
-            k = db_sync_manager.get_tn_node_routing_key(v.get("component_id"))
-            v["routing_key"] = k
-            if k not in route:
-                sl = "http://www.geni.net/resources/rspec/3/request.xsd"
-                route[k] = TNRMv3RequestFormatter(schema_location=sl)
-
-    def __update_tn_link_route(self, route, values):
-        for v in values:
-            k = db_sync_manager.get_tn_link_routing_key(
-                v.get("component_id"), v.get("component_manager_name"),
-                [i.get("component_id") for i in v.get("interface_ref")])
-            v["routing_key"] = k
-            if k not in route:
-                sl = "http://www.geni.net/resources/rspec/3/request.xsd"
-                route[k] = TNRMv3RequestFormatter(schema_location=sl)
-
-    def __update_tn_route_rspec(self, route, nodes, links):
-        for key, rspec in route.iteritems():
-            for n in nodes:
-                if n.get("routing_key") == key:
-                    rspec.node(n)
-            for l in links:
-                if l.get("routing_key") == key:
-                    rspec.link(l)
-
-    def __extract_se_from_tn(self, nodes, links):
-        ret, ifref = [], set()
-        for l in links:
-            for p in l.get("property"):
-                ifref.add(p.get("source_id"))
-                ifref.add(p.get("dest_id"))
-
-        for n in nodes:
-            for i in n.get("interfaces"):
-                if i.get("component_id") in ifref:
-                    for v in i.get("vlan"):
-                        ret.append({"vlan": v.get("tag"),
-                                    "interface": i.get("component_id")})
-
-        return ret
-
-    def __manage_tn_allocate(self, surn, creds, end, nodes, links):
-        route = {}
-        self.__update_tn_node_route(route, nodes)
-        logger.debug("Nodes(%d)=%s" % (len(nodes), nodes,))
-        self.__update_tn_link_route(route, links)
-        logger.debug("Links(%d)=%s" % (len(links), links,))
-
-        self.__update_tn_route_rspec(route, nodes, links)
-        logger.info("Route=%s" % (route,))
-
-        manifests, slivers, db_slivers, se_tn_info = [], [], [], []
-
-        for k, v in route.iteritems():
-            try:
-                (m, ss) = self.__send_request_rspec(k, v, surn, creds, end)
-                manifest = TNRMv3ManifestParser(from_string=m)
-                logger.debug("TNRMv3ManifestParser=%s" % (manifest,))
-                self.__validate_rspec(manifest.get_rspec())
-
-                nodes = manifest.nodes()
-                logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
-                links = manifest.links()
-                logger.info("Links(%d)=%s" % (len(links), links,))
-
-                manifests.append({"nodes": nodes, "links": links})
-
-                self.__extend_slivers(ss, k, slivers, db_slivers)
-
-                se_tn = self.__extract_se_from_tn(nodes, links)
-                logger.debug("SE-TN-INFO=%s" % (se_tn,))
-                if len(se_tn) > 0:
-                    se_tn_info.extend(se_tn)
-            except Exception as e:
-                logger.critical("manage_tn_allocate exception: %s", e)
-                raise e
-
-        return (manifests, slivers, db_slivers, se_tn_info)
-
-    def __update_se_info_route(self, route, values, key):
-        for v in values:
-            k, ifs = db_sync_manager.get_se_link_routing_key(v.get(key))
-            if k is None:
-                logger.warning("%s (%s) is unknown for this SERM!" %
-                               (key, v.get(key),))
-                continue
-
-            logger.info("Found a match with key=%s, ifs=%s" % (k, ifs,))
-
-            v['routing_key'] = k
-            v['internal_ifs'] = ifs
-            node = db_sync_manager.get_se_node_info(k)
-            v['node'] = node
-            if (k is not None) and (k not in route):
-                route[k] = SERMv3RequestFormatter()
-
-        # remove all the elements that not have internal_ifs as key!
-        values[:] = [v for v in values if 'internal_ifs' in v]
-
-    def __update_se_nodes(self, nodes, values):
-        for v in values:
-            if v.get("node") is not None:
-                cid = v.get("node").get("component_id")
-                cmid = v.get("node").get("component_manager_id")
-                if len(nodes) > 0:
-                    for i in nodes:
-                        if (i.serialize().get("component_id") != cid) and\
-                           (i.serialize().get("component_manager_id") != cmid):
-                            n = Node(cid, cmid,
-                                     sliver_type_name=v.get("routing_key"))
-                            nodes.append(n)
-                else:
-                    n = Node(cid, cmid, sliver_type_name=v.get("routing_key"))
-                    nodes.append(n)
-
-        for v in values:
-            if v.get("node") is not None:
-                for n in nodes:
-                    scid = v.get("node").get("component_id")
-                    scmid = v.get("node").get("component_manager_id")
-                    ncid = n.serialize().get("component_id")
-                    ncmid = n.serialize().get("component_manager_id")
-                    if (scid == ncid) and (scmid == ncmid):
-                        for i in v.get("internal_ifs"):
-                            intf = Interface(i.get("component_id"))
-                            intf.add_vlan(v.get("vlan"), "")
-                            n.add_interface(intf.serialize())
-
-    def __create_selink(self, if1, if2, sliver_id):
-        i = if1.rindex(":")
-        n1, name1 = if1[0:i], if1[i+1:len(if1)]
-        i = if2.rindex(":")
-        n2, name2 = if2[0:i], if2[i+1:len(if1)]
-
-        if n1 != n2:
-            raise Exception("SELink: differs node cid (%s,%s)" % (n1, n2))
-
-        cid = n1 + ":" + name1 + "-" + name2
-        typee, cm_name = db_sync_manager.get_se_link_info(n1)
-
-        l = SELink(cid, typee, cm_name, sliver=sliver_id)
-        l.add_interface_ref(if1)
-        l.add_interface_ref(if2)
-        return l
-
-    def __update_se_link(self, links, svalues, tvalues):
-        for s in svalues:
-            for sintf in s.get("internal_ifs"):
-                for t in tvalues:
-                    for tintf in t.get("internal_ifs"):
-                        if s.get("routing_key") == t.get("routing_key"):
-                            l = self.__create_selink(sintf.get("component_id"),
-                                                     tintf.get("component_id"),
-                                                     s.get("routing_key"))
-                            links.append(l)
-
-    def __extract_se_info(self, sdn, tn):
-        nodes, links = [], []
-        self.__update_se_nodes(nodes, sdn)
-        self.__update_se_nodes(nodes, tn)
-        self.__update_se_link(links, sdn, tn)
-
-        return [n.serialize() for n in nodes], [l.serialize() for l in links]
-
-    def __update_se_route_rspec(self, route, sdn_info, tn_info):
-        nodes, links = self.__extract_se_info(sdn_info, tn_info)
-        logger.debug("SE-Nodes=%s" % (nodes,))
-        logger.debug("SE-Links=%s" % (links,))
-
-        for key, rspec in route.iteritems():
-            for n in nodes:
-                if n.get("sliver_type_name") == key:
-                    n["sliver_type_name"] = None
-                    rspec.node(n)
-            for l in links:
-                if l.get("sliver_id") == key:
-                    l["sliver"] = None
-                    rspec.link(l)
-
-    def __manage_se_allocate(self, surn, creds, end, sdn_info, tn_info):
-        route = {}
-        self.__update_se_info_route(route, sdn_info, "dpids")
-        logger.debug("SE-SdnInfo(%d)=%s" % (len(sdn_info), sdn_info,))
-        self.__update_se_info_route(route, tn_info, "interface")
-        logger.debug("SE-TnInfo(%d)=%s" % (len(tn_info), tn_info,))
-
-        self.__update_se_route_rspec(route, sdn_info, tn_info)
-        logger.info("Route=%s" % (route,))
-
-        manifests, slivers, db_slivers = [], [], []
-
-        for k, v in route.iteritems():
-            try:
-                (m, ss) = self.__send_request_rspec(k, v, surn, creds, end)
-                manifest = SERMv3ManifestParser(from_string=m)
-                logger.debug("SERMv3ManifestParser=%s" % (manifest,))
-                self.__validate_rspec(manifest.get_rspec())
-
-                nodes = manifest.nodes()
-                logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
-                links = manifest.links()
-                logger.info("Links(%d)=%s" % (len(links), links,))
-
-                manifests.append({"nodes": nodes, "links": links})
-
-                self.__extend_slivers(ss, k, slivers, db_slivers)
-            except Exception as e:
-                logger.critical("manage_se_allocate exception: %s", e)
-                raise e
-
-        return (manifests, slivers, db_slivers)
-
-    def __update_se_node_route(self, route, values):
-        for v in values:
-            k = db_sync_manager.get_se_node_routing_key(v.get("component_id"))
-            v["routing_key"] = k
-            if k not in route:
-                route[k] = SERMv3RequestFormatter()
-
-    def __update_se_link_route(self, route, values):
-        for v in values:
-            k = db_sync_manager.get_direct_se_link_routing_key(
-                v.get("component_id"),
-                [i.get("component_id") for i in v.get("interface_ref")])
-            v["routing_key"] = k
-            if k not in route:
-                route[k] = SERMv3RequestFormatter()
-
-    def __manage_direct_se_allocate(self, surn, creds, end, nodes, links):
-        route = {}
-        self.__update_se_node_route(route, nodes)
-        logger.debug("Nodes(%d)=%s" % (len(nodes), nodes,))
-        self.__update_se_link_route(route, links)
-        logger.debug("Links(%d)=%s" % (len(links), links,))
-        # Note: we can reuse the same template of tn here! (it is NOT an error)
-        self.__update_tn_route_rspec(route, nodes, links)
-        logger.info("Route=%s" % (route,))
-
-        manifests, slivers, db_slivers = [], [], []
-
-        for k, v in route.iteritems():
-            try:
-                (m, ss) = self.__send_request_rspec(k, v, surn, creds, end)
-                manifest = SERMv3ManifestParser(from_string=m)
-                logger.debug("SERMv3ManifestParser=%s" % (manifest,))
-                self.__validate_rspec(manifest.get_rspec())
-
-                nodes = manifest.nodes()
-                logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
-                links = manifest.links()
-                logger.info("Links(%d)=%s" % (len(links), links,))
-
-                manifests.append({"nodes": nodes, "links": links})
-
-                self.__extend_slivers(ss, k, slivers, db_slivers)
-            except Exception as e:
-                logger.critical("manage_direct_se_allocate exception: %s", e)
-                raise e
-        return (manifests, slivers, db_slivers)
-
     def __insert_slice_info(self, rtype, slice_urn, db_slivers, ro_db_slivers):
         logger.debug("Insert %s slice info: slice_urn=%s, slivers=%s" %
                      (rtype, slice_urn, db_slivers,))
@@ -1129,13 +684,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
         ro_db_slivers.extend(db_slivers)
         logger.debug("RO-DB-Slivers(%d): %s" %
                      (len(ro_db_slivers), ro_db_slivers))
-
-    def __validate_rspec(self, generic_rspec):
-        (result, error) = validate(generic_rspec)
-        if result is not True:
-            raise geni_ex.GENIv3GeneralError("RSpec validation failure: %s" % (
-                                             error,))
-        logger.info("Validation success!")
 
     def __translate_action(self, geni_action):
         actions_to_permissions = {

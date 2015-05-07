@@ -1,5 +1,7 @@
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
 from rspecs.crm.manifest_parser import CRMv3ManifestParser
+from rspecs.crm.request_formatter import CRMv3RequestFormatter
+from db.db_manager import db_sync_manager
 from commons import CommonUtils
 
 import core
@@ -51,3 +53,45 @@ class COMUtils(CommonUtils):
             else:
                 logger.critical("manage_provision exception: %s", e)
                 raise e
+
+    def __update_route(self, route, values):
+        for v in values:
+            cid = v.get("component_id")
+            k = db_sync_manager.get_com_node_routing_key(cid)
+            v["routing_key"] = k
+            if k not in route:
+                route[k] = CRMv3RequestFormatter()
+
+    def __update_route_rspec(self, route, slivers):
+        for key, rspec in route.iteritems():
+            for s in slivers:
+                if s.get("routing_key") == key:
+                    rspec.node(s)
+
+    def manage_allocate(self, slice_urn, credentials, slice_expiration,
+                        slivers, parser):
+        route = {}
+        self.__update_route(route, slivers)
+        logger.debug("Slivers=%s" % (slivers,))
+
+        self.__update_route_rspec(route, slivers)
+        logger.info("Route=%s" % (route,))
+        manifests, slivers, db_slivers = [], [], []
+
+        for k, v in route.iteritems():
+            try:
+                (m, ss) = self.send_request_allocate_rspec(
+                    k, v, slice_urn, credentials, slice_expiration)
+                manifest = CRMv3ManifestParser(from_string=m)
+                logger.debug("CRMv3ManifestParser=%s" % (manifest,))
+
+                nodes = manifest.nodes()
+                logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
+                manifests.append({"nodes": nodes})
+
+                self.extend_slivers(ss, k, slivers, db_slivers)
+            except Exception as e:
+                logger.critical("manage_allocate exception: %s", e)
+                raise e
+
+        return (manifests, slivers, db_slivers)
