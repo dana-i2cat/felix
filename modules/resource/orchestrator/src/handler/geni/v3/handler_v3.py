@@ -26,7 +26,7 @@ from server.flask.flaskserver import FlaskServer
 flaskserver = FlaskServer()
 from server.flask.flaskxmlrpc import FlaskXMLRPC
 xmlrpc = FlaskXMLRPC(flaskserver)
-#from SimpleXMLRPCServer import SimpleXMLRPCDispatcher as Dispatcher
+# from SimpleXMLRPCServer import SimpleXMLRPCDispatcher as Dispatcher
 
 
 class GENIv3Handler(xmlrpc.Dispatcher):
@@ -75,18 +75,17 @@ class GENIv3Handler(xmlrpc.Dispatcher):
 
         return self._successReturn(
             {"geni_api": "3",
-             "geni_api_versions": {"3": "/xmlrpc/geni/3/"},  # should be absolute URL
+             "geni_api_versions": {"3": "/xmlrpc/geni/3/"},  # absolute URL
              "geni_request_rspec_versions": request_rspec_versions,
              "geni_ad_rspec_versions": ad_rspec_versions,
              "geni_credential_types": credential_types,
              "geni_single_allocation": is_single_allocation,
-             "geni_allocate": allocation_mode,
-#             "felix_domain_urn": "",
-            })
+             "geni_allocate": allocation_mode, })
 
     def ListResources(self, credentials, options):
         """Delegates the call and unwraps the needed parameter.
         Also takes care of the compression option."""
+        logger.debug("ListResources options=%s" % (options,))
         # interpret options
         geni_available = self._option(options, "geni_available")
         geni_compress = self._option(options, "geni_compress")
@@ -108,6 +107,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
     def Describe(self, urns, credentials, options):
         """Delegates the call and unwraps the needed parameter.
         Also takes care of the compression option."""
+        logger.debug("Describe urns=%s, options=%s" % (urns, options,))
         # some duplication with above
         geni_compress = self._option(options, "geni_compress")
 
@@ -116,7 +116,8 @@ class GENIv3Handler(xmlrpc.Dispatcher):
             result = self._delegate.describe(urns, self.requestCertificate(),
                                              credentials)
             # change datetimes to strings
-            result["geni_slivers"] = self._convertExpiresDate(result["geni_slivers"])
+            result["geni_slivers"] =\
+                self._convertExpiresDate(result["geni_slivers"])
 
         except Exception as e:
             return self._errorReturn(e)
@@ -130,6 +131,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         """Delegates the call and unwraps the needed parameter.
         Also converts the incoming timestamp to python and the outgoing
         to geni compliant date format."""
+        logger.debug("Allocate urn=%s, options=%s" % (slice_urn, options,))
         geni_end_time = None
         if "geni_end_time" in options:
             geni_end_time = dates.rfc3339_to_datetime(options["geni_end_time"])
@@ -153,7 +155,8 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         return self._successReturn(result)
 
     def Renew(self, urns, credentials, expiration_time_str, options):
-        geni_best_effort = self._option(options, "geni_best_effort", ret=True)
+        logger.debug("Renew urns=%s, options=%s" % (urns, options,))
+        geni_best_effort = self._option(options, "geni_best_effort")
         expiration_time = dates.rfc3339_to_datetime(expiration_time_str)
         try:
             # delegate
@@ -169,7 +172,8 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         return self._successReturn(result)
 
     def Provision(self, urns, credentials, options):
-        geni_best_effort = self._option(options, "geni_best_effort", ret=True)
+        logger.debug("Provision urns=%s, options=%s" % (urns, options,))
+        geni_best_effort = self._option(options, "geni_best_effort")
         geni_users = options.get("geni_users", [])
         geni_end_time = None
         if "geni_end_time" in options:
@@ -191,6 +195,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         return self._successReturn(result)
 
     def Status(self, urns, credentials, options):
+        logger.debug("Status urns=%s, options=%s" % (urns, options,))
         try:
             r_sliceurn, r_sliver_list = self._delegate.status(
                 urns, self.requestCertificate(), credentials)
@@ -204,6 +209,8 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         return self._successReturn(result)
 
     def PerformOperationalAction(self, urns, credentials, action, options):
+        logger.debug("PerformOperationalAction urns=%s, options=%s" %
+                     (urns, options,))
         geni_best_effort = self._option(options, "geni_best_effort")
         try:
             result = self._delegate.perform_operational_action(
@@ -218,6 +225,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         return self._successReturn(result)
 
     def Delete(self, urns, credentials, options):
+        logger.debug("Delete urns=%s, options=%s" % (urns, options,))
         geni_best_effort = self._option(options, "geni_best_effort")
         try:
             result = self._delegate.delete(urns,
@@ -232,6 +240,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         return self._successReturn(result)
 
     def Shutdown(self, slice_urn, credentials, options):
+        logger.debug("Shutdown urn=%s, options=%s" % (slice_urn, options,))
         try:
             result = bool(self._delegate.shutdown(slice_urn,
                                                   self.requestCertificate(),
@@ -252,15 +261,19 @@ class GENIv3Handler(xmlrpc.Dispatcher):
             if slhash["geni_expires"] is None:
                 continue
 
-            logger.info("xxxxx __convertExpiresDate before xxxx: %s, type: %s" % (str(slhash["geni_expires"]), str(type(slhash["geni_expires"]))))
+            logger.info("xxx __convertExpiresDate before xxx: %s, type: %s" %
+                        (str(slhash["geni_expires"]),
+                         str(type(slhash["geni_expires"]))))
             if not dates.is_date(slhash["geni_expires"]):
                 raise ValueError("Given geni_expires in sliver_list hash " +
                                  "retrieved from delegate's method is not " +
                                  "a python datetime object.")
 
-            slhash["geni_expires"] = dates.datetime_to_rfc3339(slhash["geni_expires"])
-            logger.info("xxxxx __convertExpiresDate after xxxx %s, type: %s" % (str(slhash["geni_expires"]), type(slhash["geni_expires"])))
-
+            slhash["geni_expires"] =\
+                dates.datetime_to_rfc3339(slhash["geni_expires"])
+            logger.info("xxx __convertExpiresDate after xxx %s, type: %s" %
+                        (str(slhash["geni_expires"]),
+                         type(slhash["geni_expires"])))
         return sliver_list
 
     def _checkRSpecVersion(self, rspec_version_option):
