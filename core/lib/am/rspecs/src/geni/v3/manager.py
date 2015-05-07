@@ -9,6 +9,9 @@ class RSpecManager(RSpecManagerBase):
         self.__parser = ParserManager()
     
     def compose_advertisement(self, resources):
+        import logging
+        logger = logging.getLogger("ZabbixHelper")
+        logger.debug("compose_advertisement start")
         return self.__crafter.get_advertisement(resources)
     
     def compose_manifest(self, slivers):
