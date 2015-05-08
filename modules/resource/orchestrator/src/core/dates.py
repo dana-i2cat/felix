@@ -72,3 +72,20 @@ def is_date(dt):
         return True
     return False
 
+def is_rfc3339(dt):
+    try:
+        date_form = re.sub(r'[\+|\.].+', "", dt)
+        formatted_date = datetime.strptime(
+            date_form.replace("T", " ").
+            replace("Z", ""), "%Y-%m-%d %H:%M:%S")
+        return True
+    except Exception:
+        return False
+
+def is_date_or_rfc3339(dt):
+    # Check if date is instance of "datetime.datetime"
+    is_dt_a_date = is_date(dt)
+    # Check if date complies with rfc3339
+    is_dt_a_rfc3339 = is_rfc3339(dt)
+    return is_dt_a_date or is_dt_a_rfc3339
+

@@ -264,13 +264,14 @@ class GENIv3Handler(xmlrpc.Dispatcher):
             logger.info("xxx __convertExpiresDate before xxx: %s, type: %s" %
                         (str(slhash["geni_expires"]),
                          str(type(slhash["geni_expires"]))))
-            if not dates.is_date(slhash["geni_expires"]):
+            if not dates.is_date_or_rfc3339(slhash["geni_expires"]):
                 raise ValueError("Given geni_expires in sliver_list hash " +
                                  "retrieved from delegate's method is not " +
                                  "a python datetime object.")
-
-            slhash["geni_expires"] =\
-                dates.datetime_to_rfc3339(slhash["geni_expires"])
+            # If date received is "datetime.datetime", convert to rfc3339
+            if dates.is_date(slhash["geni_expires"]):
+                slhash["geni_expires"] =\
+                    dates.datetime_to_rfc3339(slhash["geni_expires"])
             logger.info("xxx __convertExpiresDate after xxx %s, type: %s" %
                         (str(slhash["geni_expires"]),
                          type(slhash["geni_expires"])))
