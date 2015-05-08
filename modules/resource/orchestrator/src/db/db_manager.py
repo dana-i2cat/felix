@@ -113,7 +113,12 @@ class DBManager(object):
         # Prepare "rm_endpoint" for "like" query (as regexp)
         # rm_endpoint = rm_endpoint.replace("/","\/")
         rm_endpoint_re = self.__get_regexp_for_query(rm_endpoint)
-        rm_address, rm_port = rm_url.netloc.split(":")
+        url_port = rm_url.netloc
+        # NOTE: The following is a corner-case for non-standard RMs
+        # using basic-auth (user:password)
+        if "@" in rm_url.netloc:
+            auth, url_port = rm_url.netloc.split("@")
+        rm_address, rm_port = url_port.split(":")
         rm_protocol = rm_url.scheme
         filter_params = extra_filter
         filter_params.update({"protocol": rm_protocol, "address": rm_address,
