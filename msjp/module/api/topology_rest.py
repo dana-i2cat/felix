@@ -44,44 +44,35 @@ def parse_link_xml(xd_root):
                         .format(const.XML_TAG_LINK,const.XML_ATTR_TYPE))
             return None
 
-        if link_type == const.TYPE_LINK_LAN or \
-            link_type == const.TYPE_LINK_TN or \
-            link_type == const.TYPE_LINK_SE or \
-            link_type == const.TYPE_LINK_ABST_SDN:
-            # get interface_ref<interface_ref>
-            if link.has_key(const.XML_TAG_IF_REF):
-                ifref_list = util.to_array(link[const.XML_TAG_IF_REF])
-            else:
-                logger.warn('tag <{0}> is not specified.'.format(const.XML_TAG_IF_REF))
-                return None
-
-            # interface_ref exist two always
-            if len(ifref_list) != 2:
-                logger.warn('tag <{0}> exist two always.({1})'
-                            .format(const.XML_TAG_IF_REF),len(ifref_list))
-                return None
-
-            ifref_client_list = []
-            link_dict[const.XML_TAG_IF_REF] = ifref_client_list       
-            for ifref in ifref_list:
-                #get link type<link type=xxx>
-                if ifref.has_key('@'+const.XML_ATTR_CLIENT_ID):
-                    ifref_client_id = ifref['@'+const.XML_ATTR_CLIENT_ID]
-                else:
-                    logger.warn('attribute <{0} {1}> is not specified.'\
-                                .format(const.XML_TAG_IF_REF,const.XML_ATTR_CLIENT_ID))
-                    return None
-
-                #add client id.
-                ifref_client_list.append( ifref_client_id)
-   
-            #append link dictionary list.
-            link_dict_list.append(link_dict)
-
+        # get interface_ref<interface_ref>
+        if link.has_key(const.XML_TAG_IF_REF):
+            ifref_list = util.to_array(link[const.XML_TAG_IF_REF])
         else:
-            logger.warn('attribute <{0} {1}={2}> is invalid value.'\
-                        .format(const.XML_TAG_LINK,const.XML_ATTR_TYPE,link_type))
+            logger.warn('tag <{0}> is not specified.'.format(const.XML_TAG_IF_REF))
             return None
+        
+        # interface_ref exist two always
+        if len(ifref_list) != 2:
+            logger.warn('tag <{0}> exist two always.({1})'
+                        .format(const.XML_TAG_IF_REF),len(ifref_list))
+            return None
+        
+        ifref_client_list = []
+        link_dict[const.XML_TAG_IF_REF] = ifref_client_list       
+        for ifref in ifref_list:
+            #get link type<link type=xxx>
+            if ifref.has_key('@'+const.XML_ATTR_CLIENT_ID):
+                ifref_client_id = ifref['@'+const.XML_ATTR_CLIENT_ID]
+            else:
+                logger.warn('attribute <{0} {1}> is not specified.'\
+                            .format(const.XML_TAG_IF_REF,const.XML_ATTR_CLIENT_ID))
+                return None
+        
+            #add client id.
+            ifref_client_list.append( ifref_client_id)
+        
+        #append link dictionary list.
+        link_dict_list.append(link_dict)
 
         #add link type.
         link_dict[const.XML_ATTR_TYPE] = link_type
