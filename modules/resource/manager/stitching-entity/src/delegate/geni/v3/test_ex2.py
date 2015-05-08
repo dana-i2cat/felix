@@ -239,6 +239,18 @@ def allocate_teardown_function3():
     #se_scheduler 
     rspec = ""
     end_time = ""
+
+def allocate_teardown_function4():
+    se_scheduler.stop()
+    slice_urn = ""
+    client_cert = ""
+    credentials = ""
+    rspec = ""
+    se_manifest =""
+    se_slivers = ""
+    #se_scheduler 
+    rspec = ""
+    end_time = ""
       
 @with_setup(allocate_setup_function, allocate_teardown_function1)   
 def test_manifest_after_allocate_with_two_link():
@@ -265,6 +277,12 @@ def test_sliver_after_allocate_with_two_vlan_on_same_interface():
                  rspec, end_time) 
     assert  sliv == se_slivers
                  
+@with_setup(allocate_vlan_case_setup_function, allocate_teardown_function4)   
+def test_manifest_after_allocate_with_two_vlan_on_same_interface():
+    geni= GENIv3Delegate()
+    man,sliv = geni.allocate(slice_urn, client_cert, credentials,
+                 rspec, end_time) 
+    assert  man == se_manifest
     
                  
                  
