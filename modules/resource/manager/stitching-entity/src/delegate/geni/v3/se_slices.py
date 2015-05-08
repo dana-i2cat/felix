@@ -47,6 +47,7 @@ class seSlicesWithSlivers(object):
     def _create_sliver_from_req_n_and_l( self, end_time, links, nodes):
         s_temp={}
         for l in links:
+            print "QQQQQQQQQQQQ: ", l
             
             temp =[]
            
@@ -74,13 +75,24 @@ class seSlicesWithSlivers(object):
     def _create_manifest_from_req_n_and_l(self, se_manifest,nodes,links):
         # TODO: Check if sliver_urn is valid for RO
         vlans = []
+        vlanOnPort = []
         for n in nodes:
             for vlan in n["interfaces"]:
+                print "LLLL: ", vlan
                 for vlan_tag  in vlan["vlan"]:
                     vlans.append(vlan_tag["tag"])
+                    vlanOnPort.append({vlan["component_id"]:vlan_tag["tag"]})
+            print "GGGGGGG: ", vlanOnPort
             se_manifest.node(n)
 
         for l in links:
+            print "XXXXXX: ", l
+            # l['vlantag'] = vlans[0] + "-" + vlans[1]
+            # sliver_id_name = l["component_id"] + "_" + vlans[0] + "_" + vlans[1]
+
+            for iface in l["interface_ref"]:
+                print "WWWWW: ", iface["component_id"]
+
             l['vlantag'] = vlans[0] + "-" + vlans[1]
             sliver_id_name = l["component_id"] + "_" + vlans[0] + "_" + vlans[1]
             sliver_id_name = sliver_id_name.replace("datapath", "sliver")
