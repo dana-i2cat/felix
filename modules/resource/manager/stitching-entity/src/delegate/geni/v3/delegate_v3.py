@@ -71,7 +71,9 @@ RFC3339_FORMAT_STRING = "%Y-%m-%d %H:%M:%S.%fZ"
 
 def se_job_release_resources(time, ports, slice_urn):
 
+    
     SEResources = SEConfigurator.seConfigurator()
+    
     SESlices = seSlicesWithSlivers()
 
     print('Release! This was scheduled at %s Resources: %s Slice URN: %s' % (time, ports, slice_urn))
@@ -95,10 +97,12 @@ class GENIv3Delegate(GENIv3DelegateBase):
     """
 
     
-    def __init__(self):
+    def __init__(self,path=None):
         super(GENIv3Delegate, self).__init__()
         # self._resource_manager = rm_adaptor
+       
         self.SEResources = SEConfigurator.seConfigurator()
+        
         self.SESlices = seSlicesWithSlivers()
         self._verify_users =\
             ast.literal_eval(ConfParser("geniv3.conf").get("certificates").get("verify_users"))        
@@ -275,7 +279,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                                     "geni_sliver_urn": sliver,
                                     "geni_expires": links_db['geni_expires'],
                                     "geni_allocation_status": links_db["geni_allocation_status"],
-                                    "geni_operational_status" : "geni_notready"
+                                    "geni_operational_status" : links_db["geni_operational_status"]
                                 }
                             )
 

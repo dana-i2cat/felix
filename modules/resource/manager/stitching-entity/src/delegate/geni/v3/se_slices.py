@@ -67,6 +67,7 @@ class seSlicesWithSlivers(object):
                 
         s_temp["geni_expires"] = end_time
         s_temp["geni_allocation_status"] = base.GENIv3DelegateBase.ALLOCATION_STATE_ALLOCATED   #ALLOCATION_STATE_UNALLOCATED
+        s_temp["geni_operational_status"] = "geni_notready"
             
         return s_temp
     
