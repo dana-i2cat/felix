@@ -4,11 +4,14 @@ import os
 import yaml
 
 class seConfigurator:
-    def __init__(self):
+    def __init__(self,path=None):
 
         # read from config file
         current_path = os.path.dirname(os.path.abspath( __file__ ))
-        conf_file_path = os.path.join(current_path, "../../../../conf/se-config.yaml")
+        if path is None:
+            conf_file_path = os.path.join(current_path, "../../../../conf/se-config.yaml")
+        else:
+            conf_file_path = os.path.join(current_path, path)
         stream = open(conf_file_path, "r")
         initial_config = yaml.load(stream)
         print initial_config
