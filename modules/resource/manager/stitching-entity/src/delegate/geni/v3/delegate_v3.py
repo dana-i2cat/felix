@@ -123,8 +123,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
         print "listresources invoked"
         rspec = SERMv3AdvertisementFormatter(schema_location=sl)
 
-        links = self.SEResources.get_links_dict_for_rspec()
-        nodes = self.SEResources.get_nodes_dict_for_rspec()
+        links = self.SEResources.get_links_dict_for_rspec(geni_available)
+        nodes = self.SEResources.get_nodes_dict_for_rspec(geni_available)
 
         try:
              print "ALL LINKS: ", links

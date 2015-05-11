@@ -113,7 +113,8 @@ class seConfigurator:
         db_sync_manager.update_resources(self.configured_interfaces)
 
 
-    def get_nodes_dict_for_rspec(self):
+    def get_nodes_dict_for_rspec(self, geni_available):
+        print "+++++++++++ GENI AVAIL: ", geni_available
         component_id_prefix = self.component_id_prefix
         component_manager_prefix = self.component_manager_prefix
 
@@ -138,7 +139,7 @@ class seConfigurator:
             vlans_on_iface = configured_interfaces[iface]
             for vlan in vlans_on_iface:
                 current_vlan_status = vlans_on_iface[vlan]
-                if current_vlan_status is not False:
+                if current_vlan_status is not False or geni_available is False:
                     available_iface = {
                         'component_id': component_id_prefix + '+datapath+' + self.dpid + "_" + iface,
                         'vlan':[
@@ -149,7 +150,7 @@ class seConfigurator:
 
         return nodes
 
-    def get_links_dict_for_rspec(self):
+    def get_links_dict_for_rspec(self, geni_available):
         component_id_prefix = self.component_id_prefix
         component_manager_prefix = self.component_manager_prefix
 
@@ -197,7 +198,7 @@ class seConfigurator:
                 for vlan in endpoint["vlans"]:
                     if found == False:
                         if isinstance(vlan, int ):
-                            if configured_interfaces[interface][str(vlan)] == True:
+                            if configured_interfaces[interface][str(vlan)] == True or geni_available is False:
                                 new_static_link =  {
                                     'component_id':component_id_prefix + '+link+' + self.dpid + "_" + interface + "_" + endpoint["name"].rsplit("+", 1)[1],
                                     'component_manager_name':None,
@@ -222,7 +223,7 @@ class seConfigurator:
                                 v_start, v_end = vlan.split("-")
                                 v_range = range(int(v_start), int(v_end)+1, 1)
                                 for v in v_range:
-                                    if configured_interfaces[interface][str(v)] == True:
+                                    if configured_interfaces[interface][str(v)] == True or geni_available is False:
                                         new_static_link =  {
                                             'component_id':component_id_prefix + '+link+' + self.dpid + "_" + interface + "_" + endpoint["name"].rsplit("+", 1)[1],
                                             'component_manager_name':None,
