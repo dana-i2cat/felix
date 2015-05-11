@@ -31,3 +31,21 @@ class SERMv3RequestParser(TNRMv3RequestParser):
             links_.append(l_.serialize())
 
         return links_
+
+    def getVlanPairs(self):
+        try:
+            sliceVlanPairs=[]
+            for l in self.rspec.findall(".//{%s}link" % (self.none)):
+                client_id = l.attrib["client_id"]
+                vlanPairs=[]
+                vlanPairs.append(client_id)
+                for i in l.iterfind("{%s}interface_ref" % (self.none)):
+                    singleVlanPair={}
+                    singleVlanPair["vlan"] = i.attrib["{http://ict-felix.eu/serm_request}vlan"] # felix:vlan param
+                    # singleVlanPair["port_id"] = i.attrib["client_id"].split("_")[-1]
+                    singleVlanPair["port_id"] = i.attrib["client_id"]
+                    vlanPairs.append(singleVlanPair)
+                sliceVlanPairs.append(vlanPairs)
+            return sliceVlanPairs
+        except:
+            return None

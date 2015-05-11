@@ -213,15 +213,14 @@ class GENIv3Delegate(GENIv3DelegateBase):
         links = req_rspec.links()
         nodes = req_rspec.nodes()
 
-        # print "\n\n\n\n\n------------------BBBBBBBB >>> ", req_rspec.getVlanPairs()
+        # Workaround for "1:n" case: Get Vlan pairs from link->felix:vlan param
+        sliceVlansPairs = req_rspec.getVlanPairs()
 
         # check if the requested resources (ports, vlans) are available
         reservation_ports = self.SESlices._allocate_ports_in_slice(nodes)
         availability_result = self.SEResources.check_available_resources(reservation_ports['ports'])
 
         if availability_result != False:
-
-            print "Ports take part: " , reservation_ports
 
             # Mark resources as reserved
             self.SEResources.set_resource_reservation(reservation_ports['ports'])
@@ -234,12 +233,12 @@ class GENIv3Delegate(GENIv3DelegateBase):
                                                             reservation_ports['ports'],
                                                             slice_urn])
 
-            self.SESlices._create_manifest_from_req_n_and_l(se_manifest, nodes,links)
+            self.SESlices._create_manifest_from_req_n_and_l(se_manifest, nodes,links, sliceVlansPairs)
             logger.debug("SE-ManifestFormatter=%s" % (se_manifest,))
 
             s =  self.SESlices._allocate_ports_in_slice(nodes) 
                         
-            self.SESlices.set_link_db(slice_urn, end_time,links, nodes)
+            self.SESlices.set_link_db(slice_urn, end_time,links, nodes, sliceVlansPairs)
             
 
             links_db, nodes, links = self.SESlices.get_link_db(slice_urn)
@@ -280,7 +279,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             logger.info("current expiration_time=%s, best_effort=%s" % (expiration_time, best_effort,))
 
             links_db, nodes, links = self.SESlices.get_link_db(urn)
-            self.SESlices.set_link_db(urn,expiration_time,links,nodes)
+            self.SESlices.set_link_db(urn,expiration_time,links,nodes,sliceVlansPairs=None) # TODO: Fix missing sliceVlansPairs
 
             logger.info("new expiration_time=%s" % (expiration_time,))
             
@@ -317,7 +316,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 urn, best_effort, end_time, geni_users,))
 
             links_db, nodes, links = self.SESlices.get_link_db(urn)
-            self.SESlices._create_manifest_from_req_n_and_l(se_manifest, nodes,links)
+            sliceVlansPairs = self.SESlices.get_slice_vlan_pairs(urn)
+            self.SESlices._create_manifest_from_req_n_and_l(se_manifest, nodes,links, sliceVlansPairs)
 
             reservation_ports = self.SESlices._allocate_ports_in_slice(nodes)["ports"]
 
