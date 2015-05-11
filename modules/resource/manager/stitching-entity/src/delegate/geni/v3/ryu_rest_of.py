@@ -75,6 +75,8 @@ def addSwitchingRule(in_port, out_port, in_vlan, out_vlan):
                                 }
                              ]
                 }
+    print "http://" + host + ":" + port + "/stats/flowentry/add", payload
+
     r = requests.post("http://" + host + ":" + port + "/stats/flowentry/add", data=json.dumps(payload), headers=headers)
     result.append(r.status_code)
 
@@ -82,6 +84,7 @@ def addSwitchingRule(in_port, out_port, in_vlan, out_vlan):
 
 def deleteSwitchingRule(in_port, out_port, in_vlan, out_vlan):
     print "delete flows"
+    result = []
     headers = {'content-type': 'application/json'}
 
     payload = {
@@ -108,6 +111,7 @@ def deleteSwitchingRule(in_port, out_port, in_vlan, out_vlan):
                                 }
                              ]
                 }
+    print "http://" + host + ":" + port + "/stats/flowentry/delete", payload
     r = requests.post("http://" + host + ":" + port + "/stats/flowentry/delete", data=json.dumps(payload), headers=headers)
     result.append(r.status_code)
 

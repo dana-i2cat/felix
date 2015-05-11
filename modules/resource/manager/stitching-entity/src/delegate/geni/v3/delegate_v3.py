@@ -405,8 +405,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     (in_port, out_port, in_vlan, out_vlan) = portVlanItem
                     print in_port, in_vlan, out_port, out_vlan
                     try:
-                        call_result = se_provision.addSwitchingRule(in_port, out_port, in_vlan, out_vlan)
-                    except:
+                        se_provision.addSwitchingRule(in_port, out_port, in_vlan, out_vlan)
+                    except e:
+                        print e
                         raise geni_ex.GENIv3GeneralError("Error in communication with SE.")
                     logger.debug("Cross-connection added: %s[%s]<->%s[%s]" % (in_port, in_vlan, out_port, out_vlan))
                 status = "geni_ready"
