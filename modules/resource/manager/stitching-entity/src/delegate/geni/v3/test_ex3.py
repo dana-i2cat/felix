@@ -83,14 +83,14 @@ def get_links_dict_for_rspec_teardown_function1():
 @with_setup(get_nodes_dict_for_rspec_setup_function, get_nodes_dict_for_rspec_teardown_function1)   
 def test_node_generation_from_configuration():
     se_conf = SEConfigurator.seConfigurator("../../../../conf/se-config.yaml") # put testing conf to proper dir
-    nodes = se_conf.get_nodes_dict_for_rspec()
+    nodes = se_conf.get_nodes_dict_for_rspec(False)
     
     assert  nodes == all_nodes
     
 @with_setup(get_links_dict_for_rspec_setup_function, get_links_dict_for_rspec_teardown_function1)   
 def test_links_generation_from_configuration():
     se_conf = SEConfigurator.seConfigurator("../../../../conf/se-config_test.yaml") # put testing conf to proper dir
-    links = se_conf.get_links_dict_for_rspec()
+    links = se_conf.get_links_dict_for_rspec(False)
     
     assert  links == all_links
 

@@ -31,6 +31,7 @@ def allocate_setup_function():
        xmlns="http://www.geni.net/resources/rspec/3"
        xmlns:sharedvlan="http://www.geni.net/resources/rspec/ext/shared-vlan/1"
        xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:felix="http://ict-felix.eu/serm_request"
        xs:schemaLocation="http://www.geni.net/resources/rspec/3/request.xsd
             http://www.geni.net/resources/rspec/ext/shared-vlan/1/request.xsd">
 
@@ -57,14 +58,14 @@ def allocate_setup_function():
     <link client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1_00:00:00:00:00:00:00:01_2">
         <component_manager name="urn:publicid:IDN+AIST+authority+serm"/>
         <link_type name="urn:felix+vlan_trans"/>
-        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1"/>
-        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_2"/>
+        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1" felix:vlan="1000"/>
+        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_2" felix:vlan="2000"/>
      </link>
         <link client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_3_00:00:00:00:00:00:00:01_4">
         <component_manager name="urn:publicid:IDN+AIST+authority+serm"/>
         <link_type name="urn:felix+vlan_trans"/>
-        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_3"/>
-        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_4"/>
+        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_3" felix:vlan="3000"/>
+        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_4" felix:vlan="4000"/>
     </link>
 </rspec>
 """
@@ -129,6 +130,7 @@ def allocate_vlan_case_setup_function():
        xmlns="http://www.geni.net/resources/rspec/3"
        xmlns:sharedvlan="http://www.geni.net/resources/rspec/ext/shared-vlan/1"
        xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:felix="http://ict-felix.eu/serm_request"
        xs:schemaLocation="http://www.geni.net/resources/rspec/3/request.xsd
             http://www.geni.net/resources/rspec/ext/shared-vlan/1/request.xsd">
 
@@ -155,14 +157,14 @@ def allocate_vlan_case_setup_function():
     <link client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1_00:00:00:00:00:00:00:01_2">
         <component_manager name="urn:publicid:IDN+AIST+authority+serm"/>
         <link_type name="urn:felix+vlan_trans"/>
-        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1"/>
-        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_2"/>
+        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1" felix:vlan="1100"/>
+        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_2" felix:vlan="2100"/>
      </link>
         <link client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1_00:00:00:00:00:00:00:01_4">
         <component_manager name="urn:publicid:IDN+AIST+authority+serm"/>
         <link_type name="urn:felix+vlan_trans"/>
-        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1"/>
-        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_4"/>
+        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1" felix:vlan="3100"/>
+        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_4" felix:vlan="4100"/>
     </link>
 </rspec>
 """
