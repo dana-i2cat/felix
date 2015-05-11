@@ -7,6 +7,7 @@
 ## Organization: i2CAT
 
 # chkconfig: 2345 80 20
+# processname: felix-ro
 # description: startup script for FELIX Resource Orchestrator
 
 ### BEGIN INIT INFO
@@ -31,7 +32,6 @@ FELIX_RO_USER=root
 #FELIX_RO_USER=i2cat
 
 # In which directory is the shell script that this service will execute
-#FELIX_RO_HOME=/opt/felix/felix-dev/modules/resource/orchestrator
 FELIX_RO_HOME=/opt/felix/resource-orchestrator/modules/resource/orchestrator
 
 # Where to write the process identifier - this is used to track if the service is already running 
@@ -62,145 +62,125 @@ RET_FAILURE=1
 export FELIX_RO_HOME
 
 if [ -e /etc/redhat-release ]; then
-	. /etc/init.d/functions
+  . /etc/init.d/functions
 fi
 
 # Is the service already running? If so, capture the process id 
 if [ -f $PID_FILE ]; then
-	PID=`cat $PID_FILE`
+  PID=`cat $PID_FILE`
 else
-	PID=""
+  PID=""
 fi
 
 create_log() {
-	# Create symlink to log within Resource Orchestrator if not previously there
-	if [ ! -L /var/log/$FELIX_RO_NAME ]; then
-		ln -sf $LOG_FOLDER/ /var/log/$FELIX_RO_NAME
-	fi
+  # Create symlink to log within Resource Orchestrator if not previously there
+  if [ ! -L /var/log/$FELIX_RO_NAME ]; then
+   ln -sf $LOG_FOLDER/ /var/log/$FELIX_RO_NAME
+  fi
 }
 
-do_start() {
-	if [ "$PID" != "" ]; then
-		# Check to see if the /proc dir for this process exists
-		if [ -f "/proc/$PID" ]]; then
-			# Check to make sure this is likely the running service
-			ps aux | grep $PID | grep $PROCESS_TYPE >> /dev/null
-			# If process of the right type, then is daemon and exit 
-			if [ "$?" = "0" ]; then
-				return $RET_SUCCESS
-			else
-				# Otherwise remove the subsys lock file and start daemon 
-				echo "$FELIX_RO_TITLE is already running." 
-				rm -f $LOCK_FILE
-			fi
-		else
-			# The process running as pid $PID is not a process
-			# of the right type; remove lock file
-			rm -f $LOCK_FILE
-		fi
-	fi
-
-	create_log
-
-	# RedHat-based distros do not help too much with pidfiles creation, so it
-	# is done manually by retrieving and killing the last created process (tail).
-	if [ -e /etc/redhat-release ]; then
-#		daemon $EXEC --pidfile $PID_FILE --user $FELIX_RO_USER start > \
-#		/dev/null 2> /dev/null &
-#		PID=`ps xaww | grep "$PROCESS_TYPE" | grep "$EXEC" | grep "pidfile $PID_FILE" | tail -1 | awk '{print $1}'`
-
-		# Daemon opens N processes for Resource Orchestrator (shell, bash, python).
-		# Using something more adequate, then retrieving its PID
-		$EXEC > /dev/null 2> /dev/null &
-		PID=`ps xaww | grep "$PROCESS_TYPE" | grep "$EXEC" | grep -v "grep" | tail -1 | awk '{print $1}'`
-		echo $PID > $PID_FILE
-	else
-		#start-stop-daemon --start --chuid $FELIX_RO_USER --user $FELIX_RO_USER \
-		#--name $FELIX_RO_USER -b --make-pidfile --pidfile $PID_FILE --exec $EXEC
-		start-stop-daemon --start -b --make-pidfile --pidfile $PID_FILE --exec $EXEC
-	fi
-
-	touch $LOCK_FILE
-	echo
-	return $RET_SUCCESS
+do_start()
+{
+  # Return
+  #  0 if daemon has been started
+  #  1 if daemon was already running
+  #  2 if daemon could not be started
+  start-stop-daemon --start --quiet -b --pidfile $PID_FILE --exec $EXEC --test > /dev/null \
+    || return 1
+  start-stop-daemon --start --quiet -b -m --pidfile $PID_FILE --exec $EXEC -- \
+    || return 2
+  # Add code here, if necessary, that waits for the process to be ready
+  # to handle requests from services started subsequently which depend
+  # on this one.  As a last resort, sleep for some time.
 }
 
-do_stop() {
-#	daemon $EXEC --pidfile $PID_FILE --user $FELIX_RO_USER stop > /dev/null 2> /dev/null &
+do_stop()
+{
+  # Return
+  #  0 if daemon has been stopped
+  #  1 if daemon was already stopped
+  #  2 if daemon could not be stopped
+  #  other if a failure occurred
+  start-stop-daemon --stop --quiet --retry=TERM/3/KILL/5 --pidfile $PID_FILE --pidfile $PID_FILE
+  RETVAL="$?"
+  [ "$RETVAL" = 2 ] && return 2
+  # Wait for children to finish too if this is a daemon that forks
+  # and if the daemon is only ever run from this initscript.
+  # If the above conditions are not satisfied then add some other code
+  # that waits for the process to drop all resources that could be
+  # needed by services started subsequently.  A last resort is to
+  # sleep for some time.
+  start-stop-daemon --stop --quiet --oknodo --retry=0/3/KILL/5 --exec $EXEC --pidfile $PID_FILE
+  [ "$?" = 2 ] && return 2
+  # Many daemons don't delete their pidfiles when they exit.
+  rm -f $PID_FILE
 
-	# Always remove control files on stop
-	rm -f $LOCK_FILE
-	rm -f $PID_FILE
-	if [ "$PID" != "" ]; then
-        # Ubuntu
-        #PIDS=`ps xaww | grep "$PROCESS_TYPE" | grep "$EXEC" | grep -v "grep" | cut -d " " -f2`
-        # Debian 7
-        PIDS=`ps xaww | grep "$PROCESS_TYPE" | grep "$EXEC" | grep -v "grep" | cut -d " " -f2`
-        # XXX: Several processes are being initialised! Take care of them.
-        for PID in "${PIDS##*:}"; do
-            kill -QUIT $PID
-        done
-#		kill $PID
-		for i in {1..30}
-		do
-			if [ -n "`ps aux | grep $PROCESS_TYPE | grep $FELIX_RO_NAME `" ]; then
-				sleep 1 # Still running, wait a second
-				echo -n . 
-			else
-				# Already stopped 
-				echo 
-				return $RET_SUCCESS
-			fi
-		done
-	else
-		echo "$FELIX_RO_TITLE is already NOT running."
-		return $RET_SUCCESS
-	fi
-	# Should never reach this...?
-	kill -QUIT $PID | return $RET_FAILURE # Instant death. If THAT fails, return error
-	return $RET_SUCCESS
+  # Kill the other process
+  ro_p_id=$(ps ax | grep "resource-orchestrator" | grep -v "grep" | cut -d" " -f1)
+  if [ ! -z $ro_p_id ]; then
+    kill -s KILL $ro_p_id || :
+  fi
+  return "$RETVAL"
 }
 
 do_restart() {
-	do_stop
-	sleep 1
-	do_start
+  do_stop
+  sleep 1
+  do_start
+}
+
+do_force_reload() {
+  backup_domain_peers_path=/tmp/${FELIX_RO_NAME}_peers_dump
+  # Do a backup of the domain peers
+  mongodump --collection domain.routing --db felix_ro --out $backup_domain_peers_path
+  mongo < $FELIX_RO_HOME/deploy/bin/clean_db/drop_ro_db.js
+  # Restore backup of the domain peers
+  mongorestore $backup_domain_peers_path
+  rm -rf $backup_domain_peers_path
 }
 
 do_check_status() {
-	if [ "$PID" != "" ]; then
-		STATUS="running (pid $PID)"
-	else
-		STATUS="NOT running"
-	fi
-	echo "$FELIX_RO_TITLE is $STATUS."
+  if [ "$PID" != "" ]; then
+   STATUS="running (pid $PID)"
+  else
+   STATUS="NOT running"
+  fi
+  echo "$FELIX_RO_TITLE is $STATUS."
 }
 
 case "$1" in
-	start)
-		action="Starting $FELIX_RO_TITLE.";
-		echo $action;
-		do_start;
-		exit $?
-	;;
-	stop)
-		action="Stopping $FELIX_RO_TITLE.";
-		echo $action;
-		do_stop;
-		exit $?
-	;;
-	restart|force-reload)
-		action="Restarting $FELIX_RO_TITLE.";
-		echo $action;
-		do_restart;
-		exit $?
-	;;
-	status)
-		do_check_status;
-		exit $?
-	;;
-	*)
-		echo "Usage: service $FELIX_RO_NAME {start|stop|restart|force-reload|config|status}";
-		exit $RET_SUCCESS
-	;;
+  start)
+    action="Starting $FELIX_RO_TITLE.";
+    echo $action;
+    do_start;
+    exit $?
+  ;;
+  stop)
+    action="Stopping $FELIX_RO_TITLE.";
+    echo $action;
+    do_stop;
+    exit $?
+  ;;
+  restart)
+    action="Restarting $FELIX_RO_TITLE.";
+    echo $action;
+    do_restart;
+    exit $?
+  ;;
+  status)
+    do_check_status;
+    exit $?
+  ;;
+  force-reload)
+    action="Cleaning internal database and restarting $FELIX_RO_TITLE.";
+    echo $action;
+    do_stop;
+    do_force_reload;
+    do_start;
+    exit $?
+  ;;   
+  *)
+    echo "Usage: service $FELIX_RO_NAME {start|stop|restart|force-reload|config|status}";
+    exit $RET_SUCCESS
+  ;;
 esac
