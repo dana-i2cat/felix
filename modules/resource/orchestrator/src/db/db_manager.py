@@ -121,8 +121,9 @@ class DBManager(object):
         rm_address, rm_port = url_port.split(":")
         rm_protocol = rm_url.scheme
         filter_params = extra_filter
-        filter_params.update({"protocol": rm_protocol, "address": rm_address,
-                         "port": rm_port, "endpoint": {"$regex": rm_endpoint_re}, })
+        filter_params.update(
+            {"protocol": rm_protocol, "address": rm_address,
+             "port": rm_port, "endpoint": {"$regex": rm_endpoint_re}, })
         peer = self.get_configured_peer(filter_params)
         return peer
 
@@ -149,7 +150,8 @@ class DBManager(object):
             self.__mutex.acquire()
 #            row = table.find_one({"_ref_peer": peer.get("_id")})
             # There may be: 1 domain URN per RO, N domain URNs per MRO
-            row = table.find_one({"_ref_peer": peer.get("_id"), "domain_urn": domain_urn})
+            row = table.find_one({"_ref_peer": peer.get("_id"),
+                                  "domain_urn": domain_urn})
             if not row:
                 entry = {"domain_urn": domain_urn,
                          "_ref_peer": peer.get("_id")}
@@ -678,7 +680,8 @@ class DBManager(object):
     def get_tn_node_routing_key(self, cid):
         table = self.__get_table("resource.tn.node")
         filter_params = {"component_id": cid}
-        return self.__get_one(table, filter_params).get("routing_key")
+        return [r.get("routing_key")
+                for r in self.__get_all(table, filter_params)]
 
     # (felix_ro) resource.tn.link
     def store_tn_links(self, routingKey, values):
@@ -716,20 +719,25 @@ class DBManager(object):
         try:
             self.__mutex.acquire()
             table = self.__get_table("resource.tn.link")
-            row = table.find_one({"component_id": cid})
-            if row is not None:
-                return row.get("routing_key")
+            ret = [r.get("routing_key")
+                   for r in table.find({"component_id": cid})]
+            if ret:
+                return ret
 
             table = self.__get_table("resource.tn.node")
-            row = table.find_one({"component_manager_id": cmid})
-            if row is not None:
-                return row.get("routing_key")
+            ret = [r.get("routing_key")
+                   for r in table.find({"component_manager_id": cmid})]
+            if ret:
+                return ret
 
+            ret = []
             for row in table.find():
                 for i in row.get("interfaces"):
                     if i.get("component_id") in ifrefs:
-                        return row.get("routing_key")
+                        ret.append(row.get("routing_key"))
 
+            if ret:
+                return ret
             raise Exception("Link (%s,%s,%s) owner is not found into RO-DB!" %
                             (cid, cmid, ifrefs))
         finally:

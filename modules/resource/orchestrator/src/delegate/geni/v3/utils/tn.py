@@ -59,20 +59,38 @@ class TNUtils(CommonUtils):
                 raise e
 
     def __update_node_route(self, route, values):
+        ret = []
         for v in values:
-            k = db_sync_manager.get_tn_node_routing_key(v.get("component_id"))
-            v["routing_key"] = k
-            if k not in route:
-                route[k] = TNRMv3RequestFormatter()
+            # This is a special case of the TNRM module and our deployment in
+            # the FELIX testbed in which we have only 1 instance of TNRM and
+            # all the islands refer to it. So, the MRO can have the same
+            # resources but with different keys (out peers).
+            keys = db_sync_manager.get_tn_node_routing_key(
+                v.get("component_id"))
+            logger.info("Node keys=%s" % (keys,))
+            for k in keys:
+                tmp = dict(v)
+                tmp["routing_key"] = k
+                ret.append(tmp)
+                if k not in route:
+                    route[k] = TNRMv3RequestFormatter()
+        return ret
 
     def __update_link_route(self, route, values):
+        ret = []
         for v in values:
-            k = db_sync_manager.get_tn_link_routing_key(
+            # please refer to the previous comment!
+            keys = db_sync_manager.get_tn_link_routing_key(
                 v.get("component_id"), v.get("component_manager_name"),
                 [i.get("component_id") for i in v.get("interface_ref")])
-            v["routing_key"] = k
-            if k not in route:
-                route[k] = TNRMv3RequestFormatter()
+            logger.info("Link keys=%s" % (keys,))
+            for k in keys:
+                tmp = dict(v)
+                tmp["routing_key"] = k
+                ret.append(tmp)
+                if k not in route:
+                    route[k] = TNRMv3RequestFormatter()
+        return ret
 
     def __update_route_rspec(self, route, nodes, links):
         for key, rspec in route.iteritems():
@@ -99,11 +117,11 @@ class TNUtils(CommonUtils):
 
         return ret
 
-    def manage_allocate(self, surn, creds, end, nodes, links):
+    def manage_allocate(self, surn, creds, end, nodes_in, links_in):
         route = {}
-        self.__update_node_route(route, nodes)
+        nodes = self.__update_node_route(route, nodes_in)
         logger.debug("Nodes(%d)=%s" % (len(nodes), nodes,))
-        self.__update_link_route(route, links)
+        links = self.__update_link_route(route, links_in)
         logger.debug("Links(%d)=%s" % (len(links), links,))
 
         self.__update_route_rspec(route, nodes, links)
