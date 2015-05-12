@@ -181,50 +181,47 @@ request_rspec_example.xml - example Rspec request slivers
 
 ```xml
     <?xml version="1.1" encoding="UTF-8"?>
-    <rspec type="request"
-           xmlns="http://www.geni.net/resources/rspec/3"
-           xmlns:sharedvlan="http://www.geni.net/resources/rspec/ext/shared-vlan/1"
-           xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
-           xs:schemaLocation="http://www.geni.net/resources/rspec/3/request.xsd
-                http://www.geni.net/resources/rspec/ext/shared-vlan/1/request.xsd">
+<rspec type="request"
+       xmlns="http://www.geni.net/resources/rspec/3"
+       xmlns:sharedvlan="http://www.geni.net/resources/rspec/ext/shared-vlan/1"
+       xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:felix="http://ict-felix.eu/serm_request"
+       xs:schemaLocation="http://www.geni.net/resources/rspec/3/request.xsd
+            http://www.geni.net/resources/rspec/ext/shared-vlan/1/request.xsd">
 
-        <node client_id="urn:publicid:aist-se1"
-              component_manager_id="urn:publicid:IDN+AIST+authority+serm">
-            <interface client_id="urn:publicid:aist-se1:if2">
-                <sharedvlan:link_shared_vlan name="urn:publicid:aist-se1:if2+vlan"
-                                             vlantag="25"/>
-            </interface>
-            <interface client_id="urn:publicid:aist-se1:if3">
-                <sharedvlan:link_shared_vlan name="urn:publicid:aist-se1:if3+vlan"
-                                             vlantag="1983"/>
-            </interface>
-            
-            <interface client_id="urn:publicid:aist-se1:if5">
-                <sharedvlan:link_shared_vlan name="urn:publicid:aist-se1:if5+vlan"
-                                             vlantag="55"/>
-            </interface>
-            <interface client_id="urn:publicid:aist-se1:if6">
-                <sharedvlan:link_shared_vlan name="urn:publicid:aist-se1:if6+vlan"
-                                             vlantag="1986"/>
-            </interface> 
-            
-        </node>
+    <node client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01"
+          component_manager_id="urn:publicid:IDN+fms:psnc:serm+authority+cm">
+        <interface client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1">
+            <sharedvlan:link_shared_vlan name="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1+vlan"
+                                         vlantag="1000"/>
+        </interface>
+        <interface client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_2">
+            <sharedvlan:link_shared_vlan name="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_2+vlan"
+                                         vlantag="2000"/>
+         </interface>
+        <interface client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1">
+            <sharedvlan:link_shared_vlan name="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1+vlan"
+                                         vlantag="3100"/>
+        </interface>
+        <interface client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_4">
+            <sharedvlan:link_shared_vlan name="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_4+vlan"
+                                         vlantag="4000"/>
+        </interface>
+    </node>
 
-        <link client_id="urn:publicid:aist-se1:if2-if3">
-            <component_manager name="urn:publicid:IDN+AIST+authority+serm"/>
-            <link_type name="urn:felix+vlan_trans"/>
-            <interface_ref client_id="urn:publicid:aist-se1:if2"/>
-            <interface_ref client_id="urn:publicid:aist-se1:if3"/>
-        </link>
-        
-        <link client_id="urn:publicid:aist-se1:if5-if6">
-            <component_manager name="urn:publicid:IDN+AIST+authority+serm"/>
-            <link_type name="urn:felix+vlan_trans"/>
-            <interface_ref client_id="urn:publicid:aist-se1:if5"/>
-            <interface_ref client_id="urn:publicid:aist-se1:if6"/>
-        </link> 
-        
-    </rspec>
+    <link client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1_00:00:00:00:00:00:00:01_2">
+        <component_manager name="urn:publicid:IDN+AIST+authority+serm"/>
+        <link_type name="urn:felix+vlan_trans"/>
+        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1" felix:vlan="1000"/>
+        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_2" felix:vlan="2000"/>
+     </link>
+      <link client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1_00:00:00:00:00:00:00:01_4">
+        <component_manager name="urn:publicid:IDN+AIST+authority+serm"/>
+        <link_type name="urn:felix+vlan_trans"/>
+        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1" felix:vlan="3100"/>
+        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_4" felix:vlan="4000"/>
+    </link>
+</rspec>
 
 ```
 
