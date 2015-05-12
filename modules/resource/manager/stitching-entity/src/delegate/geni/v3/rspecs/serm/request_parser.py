@@ -48,4 +48,32 @@ class SERMv3RequestParser(TNRMv3RequestParser):
                 sliceVlanPairs.append(vlanPairs)
             return sliceVlanPairs
         except:
-            return None
+            try:
+                sliceVlanPairs=[]
+                for l in self.rspec.findall(".//{%s}link" % (self.none)):
+                    client_id = l.attrib["client_id"]
+                    vlanPairs=[]
+                    vlanPairs.append(client_id)
+                    
+                    for i in l.iterfind("{%s}interface_ref" % (self.none)):
+                        singleVlanPair={}
+                        port_id = i.attrib["client_id"]
+                        singleVlanPair["port_id"] = port_id
+
+                        for n in self.rspec.findall(".//{%s}node" % (self.none)):
+                            for i in n.findall(".//{%s}interface[@client_id='%s']" % (self.none, port_id)):
+                                vlan_element = i.find(".//{http://www.geni.net/resources/rspec/ext/shared-vlan/1}link_shared_vlan")
+                                singleVlanPair["vlan"] = vlan_element.attrib["vlantag"]
+                                vlanPairs.append(singleVlanPair)                
+
+                    # for i in l.iterfind("{%s}interface_ref" % (self.none)):
+                    #     singleVlanPair={}
+                    #     singleVlanPair["vlan"] = i.attrib["{http://ict-felix.eu/serm_request}vlan"] # felix:vlan param
+                    #     # singleVlanPair["port_id"] = i.attrib["client_id"].split("_")[-1]
+                    #     singleVlanPair["port_id"] = i.attrib["client_id"]
+                    #     vlanPairs.append(singleVlanPair)
+                    sliceVlanPairs.append(vlanPairs)
+                return sliceVlanPairs
+
+            except:
+                return None

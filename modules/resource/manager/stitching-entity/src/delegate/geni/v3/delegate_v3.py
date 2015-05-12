@@ -210,8 +210,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
         print "\n\n\n\n\n------------------se_manifest >>> ", se_manifest
         print "\n\n\n\n\n------------------se_slivers >>> ", se_slivers
         
-        # vlanPairsResult = self.__getVlanPairs(req_rspec)
-
         print "\n\n\n\n\n------------------req_rspec >>> ", req_rspec
 
         links = req_rspec.links()
@@ -532,29 +530,3 @@ class GENIv3Delegate(GENIv3DelegateBase):
             result = result - result.utcoffset()
             result = result.replace(tzinfo=None)
         return result
-
-    # def __getVlanPairs(self, req_rspec):
-    #     links_ = []
-    #     for l in self.rspec.findall(".//{%s}link" % (self.none)):
-    #         manager_ = l.find("{%s}component_manager" % (self.none))
-    #         if manager_ is None:
-    #             self.raise_exception("Component-Mgr tag not found in link!")
-
-    #         type_ = l.find("{%s}link_type" % (self.none))
-    #         if type_ is None:
-    #             self.raise_exception("Link-Type tag not found in link!")
-
-    #         l_ = SELink(l.attrib.get("client_id"), type_.attrib.get("name"),
-    #                     manager_.attrib.get("name"))
-
-    #         [l_.add_interface_ref(i.attrib.get("client_id"))
-    #          for i in l.iterfind("{%s}interface_ref" % (self.none))]
-
-    #         [l_.add_property(p.attrib.get("source_id"),
-    #                          p.attrib.get("dest_id"),
-    #                          p.attrib.get("capacity"))
-    #          for p in l.iterfind("{%s}property" % (self.none))]
-
-    #         links_.append(l_.serialize())
-
-    #     return links_

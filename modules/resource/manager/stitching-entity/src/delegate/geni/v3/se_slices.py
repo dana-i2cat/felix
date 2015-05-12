@@ -113,7 +113,7 @@ class seSlicesWithSlivers(object):
 
                 se_manifest.link(l)
             else:
-                raise Exception("Slice has been created. Error in creating Manifest. Missing 'felix:vlan' parameter in RSpec request.")
+                raise Exception("Slice has been created. Error in creating Manifest. Missing 'felix:vlan' parameter or no VLAN parameter in RSpec request.")
             
     def _allocate_ports_in_slice(self, nodes):
         ports_take_part_info={'ports':[]}
