@@ -55,6 +55,7 @@ class ProvisioningDispatcher():
 				else :
 					ProvisioningDispatcher.__deleteStartStopRebootVM(controller, actionModel, action)
 				XmlRpcClient.callRPCMethod(server.getAgentURL() ,"send", UrlUtils.getOwnCallbackURL(), 1, server.getAgentPassword(),XmlHelper.craftXmlClass(XmlHelper.getSimpleActionQuery(action)) )
+				logging.debug("PROVISIONING FINISHED...")
 				return
 			except Exception as e:
 				if actionModel.getType() == Action.PROVISIONING_VM_CREATE_TYPE:
@@ -70,6 +71,7 @@ class ProvisioningDispatcher():
 						print "Could not delete VM. Exception: %s" % str(e)
 				#XmlRpcClient.callRPCMethod(threading.currentThread().callBackURL,"sendAsync",XmlHelper.craftXmlClass(XmlHelper.getProcessingResponse(Action.FAILED_STATUS, action, str(e))))
 		logging.debug("PROVISIONING FINISHED...")
+		return
 
 	@staticmethod
 	@transaction.commit_on_success
@@ -89,7 +91,6 @@ class ProvisioningDispatcher():
 
 	@staticmethod
 	def __deleteStartStopRebootVM(controller, actionModel, action):
-
 		try:
 			actionModel.checkActionIsPresentAndUnique()
 			VMmodel =  controller.getVMbyUUID(action.server.virtual_machines[0].uuid)

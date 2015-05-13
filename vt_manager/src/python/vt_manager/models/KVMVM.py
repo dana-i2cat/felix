@@ -56,7 +56,8 @@ class KVMVM(VirtualMachine):
 	virtualizationSetupType = models.CharField(max_length = 1024, default="",validators=[validateVirtualizationSetupType])
 	virttech = VirtTechClass.VIRT_TECH_TYPE_KVM
 
-	@staticmethod	
+
+	@staticmethod
 	def constructor(name,uuid,projectId,projectName,sliceId,sliceName,osType,osVersion,osDist,memory,discSpaceGB,numberOfCPUs,callBackUrl,interfaces,hdSetupType,hdOriginPath,virtSetupType,save=True):
 		self =  KVMVM()
 		try:

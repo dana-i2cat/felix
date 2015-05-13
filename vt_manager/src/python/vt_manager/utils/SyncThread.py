@@ -1,5 +1,6 @@
 from django.db import connection
 from threading import Thread
+from django.db import connection
 
 class SyncThread(Thread):
 

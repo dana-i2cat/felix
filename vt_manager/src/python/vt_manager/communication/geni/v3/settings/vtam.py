@@ -8,7 +8,7 @@ class VTAMConfig(Settings):
        super(Settings, self).__init__() 
     
     """Default Authority Settings"""
-    HRN = "ocf.eict"
+    HRN = "ocf.aist"
     SFA_INTERFACE_HRN = "ambase"
     
     TRUSTED_ROOTS_DIR = settings.SRC_DIR + "python/vt_manager/communication/geni/v3/trusted_roots/"

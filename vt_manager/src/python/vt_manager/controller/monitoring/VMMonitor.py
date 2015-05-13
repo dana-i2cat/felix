@@ -54,7 +54,6 @@ class VMMonitor():
 
 	@staticmethod
 	def processUpdateVMsListFromCallback(vmUUID,state,rspec):
-		VMMonitor.logger.debug("XXX state = " + state)
 		from vt_manager.models.VirtualMachine import VirtualMachine
 		try:
 			VM = VirtualMachine.objects.get(uuid = vmUUID)
