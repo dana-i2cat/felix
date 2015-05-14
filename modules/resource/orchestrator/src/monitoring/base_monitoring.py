@@ -214,7 +214,10 @@ class BaseMonitoring(object):
             auth_id.text = configuration_data.get(parent_node.attrib["id"]).get("snmp").get("id")
             auth_pass.text = configuration_data.get(parent_node.attrib["id"]).get("snmp").get("password")
         except Exception as e:
-            logger.warning("Physical monitoring. Cannot add management data on %s. Details: %s" % (etree.tostring(parent_node), e))
+            try:
+                logger.warning("Physical monitoring. Cannot add management data on %s. Details: %s" % (ET.tostring(parent_node), e))
+            except:
+                logger.warning("Physical monitoring. Cannot add management data on %s. Details: %s" % (etree.tostring(parent_node), e))
         return management
 
     def _add_generic_node(self, parent_tag, node, node_type):
