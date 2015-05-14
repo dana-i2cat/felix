@@ -123,7 +123,9 @@ class DBManager(object):
         filter_params = extra_filter
         filter_params.update(
             {"protocol": rm_protocol, "address": rm_address,
-             "port": rm_port, "endpoint": {"$regex": rm_endpoint_re}, })
+             # Port is stored as an integer, but the query looks for a string...
+             #"port": rm_port, "endpoint": {"$regex": rm_endpoint_re}, })
+             "endpoint": {"$regex": rm_endpoint_re}, })
         peer = self.get_configured_peer(filter_params)
         return peer
 
@@ -755,7 +757,7 @@ class DBManager(object):
                          "matches": matches_info}
                 return table.insert(value)
 
-            logger.warning("A row with %s already exist!" % slice_urn)
+            logger.warning("The slice '%s' already exists!" % slice_urn)
             return None
         finally:
             self.__mutex.release()
