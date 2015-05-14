@@ -49,6 +49,10 @@ class CommandMgr(object):
                 self.__get_table("topology.slice.sdn"),
             "scheduler.jobs":
                 self.__get_table("scheduler.jobs"),
+            "domain.info":
+                self.__get_table("domain.info"),
+            "topology.physical":
+                self.__get_table("topology.physical"),
         }
 
     def __get_table(self, table_name):
