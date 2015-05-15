@@ -4,6 +4,8 @@ from rspecs.tnrm.request_formatter import TNRMv3RequestFormatter
 from db.db_manager import db_sync_manager
 from commons import CommonUtils
 
+from core.config import ConfParser
+import ast
 import core
 logger = core.log.getLogger("tn-utils")
 
@@ -11,6 +13,9 @@ logger = core.log.getLogger("tn-utils")
 class TNUtils(CommonUtils):
     def __init__(self):
         super(TNUtils, self).__init__()
+        w_ = ConfParser("ro.conf").get("tnrm")
+        self.__workaround_split_allocation =\
+            ast.literal_eval(w_.get("split_workaround"))
 
     def manage_describe(self, peer, urns, creds):
         try:
@@ -117,12 +122,55 @@ class TNUtils(CommonUtils):
 
         return ret
 
+    def __manage_allocate_split_workaround(self, surn, creds, end, ns, ls):
+        manifests, slivers, db_slivers, se_tn_info = [], [], [], []
+        route = [(n.get("routing_key"), TNRMv3RequestFormatter()) for n in ns]
+        for i in xrange(0, len(ns)):
+            route[i][1].node(ns[i])
+            route[i][1].link(ls[i])
+
+        logger.info("(SPLIT_WORKAROUND)Route: %s" % (route,))
+        for r in route:
+            try:
+                (m, ss) = self.send_request_allocate_rspec(
+                    r[0], r[1], surn, creds, end)
+                manifest = TNRMv3ManifestParser(from_string=m)
+                logger.debug("(SPLIT_WORKAROUND)TNRMv3ManifestParser=%s" %
+                             (manifest,))
+                self.validate_rspec(manifest.get_rspec())
+
+                nodes = manifest.nodes()
+                logger.info("(SPLIT_WORKAROUND)Nodes(%d)=%s" %
+                            (len(nodes), nodes,))
+                links = manifest.links()
+                logger.info("(SPLIT_WORKAROUND)Links(%d)=%s" %
+                            (len(links), links,))
+
+                manifests.append({"nodes": nodes, "links": links})
+
+                self.extend_slivers(ss, r[0], slivers, db_slivers)
+
+                se_tn = self.__extract_se_from_tn(nodes, links)
+                logger.debug("(SPLIT_WORKAROUND)SE-TN-INFO=%s" % (se_tn,))
+                if len(se_tn) > 0:
+                    se_tn_info.extend(se_tn)
+            except Exception as e:
+                logger.critical("(SPLIT_WORKAROUND)exception: %s", e)
+                raise e
+
+        return (manifests, slivers, db_slivers, se_tn_info)
+
     def manage_allocate(self, surn, creds, end, nodes_in, links_in):
         route = {}
         nodes = self.__update_node_route(route, nodes_in)
         logger.debug("Nodes(%d)=%s" % (len(nodes), nodes,))
         links = self.__update_link_route(route, links_in)
         logger.debug("Links(%d)=%s" % (len(links), links,))
+
+        if self.__workaround_split_allocation:
+            # This is a (very)ugly workaround that we MUST remove ASAP!!!
+            return self.__manage_allocate_split_workaround(surn, creds, end,
+                                                           nodes, links)
 
         self.__update_route_rspec(route, nodes, links)
         logger.info("Route=%s" % (route,))
