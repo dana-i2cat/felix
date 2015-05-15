@@ -41,7 +41,7 @@ PID_FILE=/var/run/$FELIX_RO_NAME.pid
 # File to handle instances of the program
 LOCK_FILE=/var/lock/$FELIX_RO_NAME
 
-# Where to write the spreader log file
+# Where to write the contents
 LOG_FOLDER=$FELIX_RO_HOME/log
 LOG_FILE=$LOG_FOLDER/resource-orchestrator.log
 
@@ -178,7 +178,7 @@ case "$1" in
     exit $?
   ;;   
   *)
-    echo "Usage: service $FELIX_RO_NAME {start|stop|restart|force-reload|config|status}";
+    echo "Usage: service $FELIX_RO_NAME {start|stop|restart|force-reload|status}";
     exit $RET_SUCCESS
   ;;
 esac
