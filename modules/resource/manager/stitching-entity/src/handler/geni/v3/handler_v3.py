@@ -60,7 +60,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
             return self._errorReturn(e)
 
         request_rspec_versions = [
-            {"type": "geni", "version": int("3"),
+            {"type": "geni", "version": 3,
              "schema": "http://www.geni.net/resources/rspec/3/request.xsd",
              "namespace": "http://www.geni.net/resources/rspec/3",
 #             "extensions": request_extensions,
@@ -68,17 +68,17 @@ class GENIv3Handler(xmlrpc.Dispatcher):
             },
         ]
         ad_rspec_versions = [
-            {"type": "geni", "version": int("3"),
+            {"type": "geni", "version": 3,
              "schema": "http://www.geni.net/resources/rspec/3/ad.xsd",
              "namespace": "http://www.geni.net/resources/rspec/3",
 #             "extensions": ad_extensions,
              "extensions": [],
             },
         ]
-        credential_types = {"geni_type": "geni_sfa", "geni_version": int("3")}
+        credential_types = [ {"geni_type": "geni_sfa", "geni_version": 3} ]
 
         return self._getVersionReturn(
-            {"geni_api": int("3"),
+            {"geni_api": 3,
              "geni_api_versions": {"3": "/xmlrpc/geni/3/"},  # should be absolute URL
              "geni_request_rspec_versions": request_rspec_versions,
              "geni_ad_rspec_versions": ad_rspec_versions,
