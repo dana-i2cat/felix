@@ -178,7 +178,6 @@ var data_slice = {
         }
         {% if not forloop.last %},{% endif %}
         {% endfor %}
-        , 
     ],
     links: [
         {% for link in slice.links %}
@@ -244,14 +243,12 @@ var data = {
         }
         {% if not forloop.last %},{% endif %}
         {% endfor %}
-        , 
     ],
     links: [
         {% for link in physical.links %}
             { source: {{ link.source.no }}, target: {{ link.target.no }}, type: "{{ link.type }}", status: "{{ link.status }}" }
         {% if not forloop.last %},{% endif %}
         {% endfor %}
-        ,
     ],
 }
 
