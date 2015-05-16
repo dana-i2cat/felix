@@ -254,7 +254,12 @@ function showLinkTooltip(param)
 		}
     id += gt + selectedResource["link"].linkItem[cnt].name + lt + "/option" + gt;
 	}
-	id += lt + "/select" + gt + br + br;
+	id += lt + "/select" + gt + br;
+	id += "id:" + br + linkitem.id + br + br;
+
+	var con = "Connections:" + br;
+	var con1 = linkitem.source.name + " at port " + linkitem.source.port + " to " + br;
+	var con2 = linkitem.target.name + " at port " + linkitem.target.port + br + br;
 
 	var div2_s = lt + "div id=\"grid_data_link\"" + gt;
 	var tbl_th = lt + "thead" + gt + lt + "tr" + gt + 
@@ -296,7 +301,7 @@ function showLinkTooltip(param)
 		demo_tbl_data += lt + "/tr" + gt;
 	}
 
-	ret = id + 
+	ret = id + con + con1 + con2 +
 	      div1_s + div2_s + tbl_s + tbl_th + tbl_body_s + tbl_data + tbl_body_e + tbl_e + div_e + 
 	      demo + demo_div2_s + tbl_s + demo_tbl_th + tbl_body_s + demo_tbl_data + tbl_body_e + div_e;
 

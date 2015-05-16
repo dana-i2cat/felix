@@ -165,10 +165,8 @@ class MSRestClient(object):
         name = ''
         if type == 'sdn':
             # ex. link's id is urn:publicid:IDN+ocf:jgnx+slice+mytestslice:link1
-            # split on :
-            idlist = id.split(':')
-            # last item of splitdata
-            name = idlist[len(idlist)-1]
+            # Fixed string 'IDL-x'
+            name = 'IDL-'
         elif type == 'se':
             # ex. link's id is urn:publicid:IDN+ocf:jgnx+slice+mytestslice:link1
             # split on :
@@ -370,6 +368,13 @@ class MSRestClient(object):
             status_array = []
             status_array.append(link['status'])
             link_exist = 0
+            if link['type'] == 'sdn':
+                no, node_source, interface_source = self.interface_to_nodeno(detail[network], link['source']['id'])
+                no, node_target, interface_target = self.interface_to_nodeno(detail[network], link['target']['id'])
+                link['source']['name'] = node_source['name']
+                link['source']['port'] = interface_source['port']
+                link['target']['name'] = node_target['name']
+                link['target']['port'] = interface_target['port']
             for aggre_link in aggre_links:
                 if ((link['source']['no'] == aggre_link['source']['no'] and link['target']['no'] == aggre_link['target']['no']) or
                     (link['source']['no'] == aggre_link['target']['no'] and link['target']['no'] == aggre_link['source']['no'])):
@@ -542,11 +547,11 @@ class MSRestClient(object):
 #        logger.debug("mds=%s" % str(mds))
         return mds
 
-    def interface_to_nodeno(self, detail, search, id):
-#        logger.debug("search=%s, id=%s" % (str(detail[search]['nodes']), id))
+    def interface_to_nodeno(self, topology, id):
+#        logger.debug("search=%s, id=%s" % (str(topology['nodes']), id))
 
         # interfaces searching
-        for node in detail[search]['nodes']:
+        for node in topology['nodes']:
             for interface in node['interfaces']:
                 if id == interface['id']:
                     return node['no'], node, interface
@@ -673,7 +678,7 @@ class MSRestClient(object):
                     'status': nest_link['status']}
                 link['aggre_links'].append(aggre_link)
             elif nest_link['type'] == 'se':
-                no, node_source, interface_source = self.interface_to_nodeno(admin_data, network, nest_link['source']['id'])
+                no, node_source, interface_source = self.interface_to_nodeno(admin_data[network], nest_link['source']['id'])
                 status = MSRestClient.get_node_status(node_source, interface_source)
                 status_array.append(status)
                 aggre_link = {
@@ -682,7 +687,7 @@ class MSRestClient(object):
                     'status': status}
                 link['aggre_links'].append(aggre_link)
 
-                no, node_target, interface_target = self.interface_to_nodeno(admin_data, network, nest_link['target']['id'])
+                no, node_target, interface_target = self.interface_to_nodeno(admin_data[network], nest_link['target']['id'])
                 status = MSRestClient.get_node_status(node_target, interface_target)
                 status_array.append(status)
                 aggre_link = {
@@ -703,8 +708,8 @@ class MSRestClient(object):
         for link in detail[network]['links']:
 #            logger.debug("link is %s %s" % (link['source']['id'], link['target']['id']))
             # convert id to no
-            link['source']['no'], node_source, interface_source = self.interface_to_nodeno(detail, network, link['source']['id'])
-            link['target']['no'], node_target, interface_target = self.interface_to_nodeno(detail, network, link['target']['id'])
+            link['source']['no'], node_source, interface_source = self.interface_to_nodeno(detail[network], link['source']['id'])
+            link['target']['no'], node_target, interface_target = self.interface_to_nodeno(detail[network], link['target']['id'])
 
             # connection info setting
             connection_data = dict()
@@ -780,6 +785,21 @@ class MSRestClient(object):
                     break
 
         return group_no
+
+    def ignore_link(self, topology_data, interface_ref):
+
+        # interface exist?
+        ignore = False
+        try:
+            no, node, interface = self.interface_to_nodeno(topology_data, MSRestClient.encode_utf8(interface_ref[0]['@client_id']))
+            no = no
+            no, node, interface = self.interface_to_nodeno(topology_data, MSRestClient.encode_utf8(interface_ref[1]['@client_id']))
+            no = no
+        except TypeError:
+            logger.warn("link's interface is not exist interface_ref=%s" % (str(interface_ref)))
+            ignore = True
+
+        return ignore
 
     def get_topology(self, uri, network, islands=None):
         logger.debug("get_topology uri=%s" % (uri))
@@ -858,7 +878,13 @@ class MSRestClient(object):
                 node_no += 1
 
             # link information setting
+            idlno = 1
             for link in MSRestClient.to_array(topology, 'link'):
+
+                # ignore link?
+                if self.ignore_link(topology_data, link['interface_ref']) == True:
+                    continue
+
                 link_data = dict()
                 link_data['type'] = MSRestClient.encode_utf8(link['@type'])
                 link_data['location'] = MSRestClient.encode_utf8(topology['@name'])
@@ -879,9 +905,15 @@ class MSRestClient(object):
                 link_data['status'] = MonitoringUtility.get_default_value(link_status)
                 if link_data['type'] == 'sdn':
                     link_data['id'] = MSRestClient.encode_utf8(link['@id'])
-                    link_data['name'] = MSRestClient.linkid_to_name(link['@id'], link_data['type'])
+                    link_data['name'] = MSRestClient.linkid_to_name(link['@id'], link_data['type']) + str(idlno)
+                    idlno += 1
                     link_data['status'] = MonitoringUtility.get_default_value(tn_status)
                     for nest_link in MSRestClient.to_array(link, 'link'):
+
+                        # ignore link?
+                        if self.ignore_link(topology_data, nest_link['interface_ref']) == True:
+                            continue
+
                         nest_link_data = dict()
                         nest_link_data['type'] = MSRestClient.encode_utf8(nest_link['@type'])
                         nest_link_data['id'] = ''

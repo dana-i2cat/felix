@@ -178,7 +178,6 @@ var data_slice = {
         }
         {% if not forloop.last %},{% endif %}
         {% endfor %}
-        , 
     ],
     links: [
         {% for link in slice.links %}
@@ -197,7 +196,9 @@ var data_slice = {
             { linkName: "{{ link.name }} ", source: {{ link.source.no }}, target: {{ link.target.no }}, 
               type: "{{ link.type }}", status: "{{ link.status }}", group: {{ link.group }}, locationName: "{{ link.location_name }}", 
               linkItem: [{%for link_item in link.link_items %}
-                             { type: "{{ link_item.type }}", name: "{{ link_item.name }}", status: "{{ link_item.status }}", 
+                             { type: "{{ link_item.type }}", name: "{{ link_item.name }}", id: "{{ link_item.id }}", status: "{{ link_item.status }}", 
+                               source: {name: "{{ link_item.source.name }}", port: "{{ link_item.source.port }}"}, 
+                               target: {name: "{{ link_item.target.name }}", port: "{{ link_item.target.port }}"}, 
                                aggre_link: [{%for aggre_link in link_item.aggre_links %}
                                    { name: "{{ aggre_link.name }}", interface: "{{ aggre_link.interface }}", status: "{{ aggre_link.status }}" }
                                    {% if not forloop.last %},{% endif %}
@@ -242,14 +243,12 @@ var data = {
         }
         {% if not forloop.last %},{% endif %}
         {% endfor %}
-        , 
     ],
     links: [
         {% for link in physical.links %}
             { source: {{ link.source.no }}, target: {{ link.target.no }}, type: "{{ link.type }}", status: "{{ link.status }}" }
         {% if not forloop.last %},{% endif %}
         {% endfor %}
-        ,
     ],
 }
 
