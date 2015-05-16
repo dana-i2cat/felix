@@ -116,7 +116,7 @@ do_stop()
   rm -f $PID_FILE
 
   # Kill the other process
-  ro_p_id=`ps ax | grep "resource-orchestrator" | grep "main.py" | grep -v "grep" | awk '{print $1}'`
+  ro_p_id=`ps ax | grep "resource-orchestrator" | grep -v "mro" | grep "main.py" | grep -v "grep" | awk '{print $1}'`
   [ "$ro_p_id" != "" ] && kill -s KILL $ro_p_id || :
   return "$RETVAL"
 }
