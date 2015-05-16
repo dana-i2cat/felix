@@ -77,7 +77,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         ]
         credential_types = [ {"geni_type": "geni_sfa", "geni_version": 3} ]
 
-        return self._getVersionReturn(
+        return self._successReturn(
             {"geni_api": 3,
              "geni_api_versions": {"3": "/xmlrpc/geni/3/"},  # should be absolute URL
              "geni_request_rspec_versions": request_rspec_versions,
@@ -92,7 +92,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         Also takes care of the compression option."""
         # interpret options
         geni_available = self._option(options, "geni_available")
-        geni_compress = self._option(options, "geni_compress")
+        geni_compress = self._option(options, "geni_compressed")
 
         # check version and delegate
         try:
@@ -112,7 +112,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         """Delegates the call and unwraps the needed parameter.
         Also takes care of the compression option."""
         # some duplication with above
-        geni_compress = self._option(options, "geni_compress")
+        geni_compress = self._option(options, "geni_compressed")
 
         try:
             self._checkRSpecVersion(options["geni_rspec_version"])
@@ -285,12 +285,6 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         logger.error(traceback.format_exc())
         return {"geni_api": 3,
                 "code": {"geni_code": e.code}, "output": str(e)}
-
-    def _getVersionReturn(self, result):
-        """Assembles a GENI compliant return result for GetVersion."""
-        return {"geni_api": 3,
-                "code": {"geni_code": 0},
-                "value": result}
 
     def _successReturn(self, result):
         """Assembles a GENI compliant return result for successful methods."""
