@@ -130,7 +130,7 @@ do_restart() {
 do_force_reload() {
   backup_domain_peers_path=/tmp/${FELIX_RO_NAME}_peers_dump
   # Do a backup of the domain peers
-  mongodump --collection domain.routing --db felix_ro --out $backup_domain_peers_path
+  mongodump --collection domain.routing --db felix_mro --out $backup_domain_peers_path
   mongo < $FELIX_RO_HOME/deploy/bin/clean_db/drop_mro_db.js
   # Restore backup of the domain peers
   mongorestore $backup_domain_peers_path
