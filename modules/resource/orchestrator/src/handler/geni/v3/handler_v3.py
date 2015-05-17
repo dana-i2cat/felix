@@ -60,27 +60,32 @@ class GENIv3Handler(xmlrpc.Dispatcher):
             return self._errorReturn(e)
 
         request_rspec_versions = [
-            {"type": "geni", "version": "3",
+            {"type": "geni", "version": 3,
              "schema": "http://www.geni.net/resources/rspec/3/request.xsd",
              "namespace": "http://www.geni.net/resources/rspec/3",
-             "extensions": request_extensions},
+#             "extensions": request_extensions},
+             "extensions": [],
+            },
         ]
         ad_rspec_versions = [
-            {"type": "geni", "version": "3",
+            {"type": "geni", "version": 3,
              "schema": "http://www.geni.net/resources/rspec/3/ad.xsd",
              "namespace": "http://www.geni.net/resources/rspec/3",
-             "extensions": ad_extensions},
+#             "extensions": ad_extensions,
+             "extensions": [],
+            },
         ]
-        credential_types = {"geni_type": "geni_sfa", "geni_version": "3"}
+        credential_types = [ {"geni_type": "geni_sfa", "geni_version": 3} ]
 
         return self._successReturn(
-            {"geni_api": "3",
+            {"geni_api": 3,
              "geni_api_versions": {"3": "/xmlrpc/geni/3/"},  # absolute URL
              "geni_request_rspec_versions": request_rspec_versions,
              "geni_ad_rspec_versions": ad_rspec_versions,
              "geni_credential_types": credential_types,
-             "geni_single_allocation": is_single_allocation,
-             "geni_allocate": allocation_mode, })
+#             "geni_single_allocation": is_single_allocation,
+#             "geni_allocate": allocation_mode,
+            })
 
     def ListResources(self, credentials, options):
         """Delegates the call and unwraps the needed parameter.
@@ -88,7 +93,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         logger.debug("ListResources options=%s" % (options,))
         # interpret options
         geni_available = self._option(options, "geni_available")
-        geni_compress = self._option(options, "geni_compress")
+        geni_compress = self._option(options, "geni_compressed")
 
         # check version and delegate
         try:
@@ -109,7 +114,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         Also takes care of the compression option."""
         logger.debug("Describe urns=%s, options=%s" % (urns, options,))
         # some duplication with above
-        geni_compress = self._option(options, "geni_compress")
+        geni_compress = self._option(options, "geni_compressed")
 
         try:
             self._checkRSpecVersion(options["geni_rspec_version"])
@@ -292,14 +297,15 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         logger.error(e)
         logger.error(traceback.format_exc())
         return {"geni_api": 3,
-                "code": {"geni_code": e.code}, "output": str(e)}
+                "code": {"geni_code": e.code},
+                "output": str(e)}
 
     def _successReturn(self, result):
         """Assembles a GENI compliant return result for successful methods."""
         return {"geni_api": 3,
                 "code": {"geni_code": 0},
                 "value": result,
-                "output": None}
+                }
 
     def _option(self, options, key, ret=False):
         return bool(options[key]) if (key in options) else ret
