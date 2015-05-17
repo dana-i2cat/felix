@@ -10,6 +10,8 @@ from werkzeug import serving
 from OpenSSL import SSL, crypto
 
 import ast
+import os
+import sys
 
 class ClientCertHTTPRequestHandler(serving.WSGIRequestHandler):
     """Overwrite the werkzeug handler, so we can extract the client cert and put it into the request's environment."""
@@ -120,8 +122,24 @@ class FlaskServer(object):
                 from werkzeug.debug import DebuggedApplication
                 import socket
                 application = DebuggedApplication(self._app, True)
+                
+                # Set up an SSL context
+                from OpenSSL import SSL
+                context = SSL.Context(SSL.SSLv23_METHOD)
+                certs_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../..", "cert"))
+                context_crt = os.path.join(certs_path, "server.crt")
+                context_key = os.path.join(certs_path, "server.key")
+                try:
+                    context.use_certificate_file(context_crt)
+                    context.use_privatekey_file(context_key)
+                except Exception as e:
+                    logger.critical("error starting flask server. Cert or key is missing under %s", certs_path)
+                    sys.exit(e)
+                
                 def inner():
-                    server = serving.make_server(host, app_port, self._app, False, 1, ClientCertHTTPRequestHandler, False, 'adhoc')
+                    #server = serving.make_server(host, app_port, self._app, False, 1, ClientCertHTTPRequestHandler, False, 'adhoc')
+                    server = serving.make_server(host, app_port, self._app, False, 1, ClientCertHTTPRequestHandler, False, ssl_context=context)
+                    #server = serving.make_server(host, app_port, self._app, False, 1, ClientCertHTTPRequestHandler, False, ssl_context=(context_crt, context_key))
                     # The following line is the reason why I copied all that code!
                     if must_have_client_cert:
                         # FIXME: what works with web app does not work with cli. Check this out
