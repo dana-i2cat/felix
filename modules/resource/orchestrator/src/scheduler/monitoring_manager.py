@@ -4,6 +4,7 @@ from monitoring.slice_monitoring import SliceMonitoring
 from resource_detector import ResourceDetector
 
 import core
+import traceback
 
 logger = core.log.getLogger("monitoring-manager")
 
@@ -28,8 +29,11 @@ class MonitoringManager(ResourceDetector):
                                 }
 
     def physical_topology(self):
-        return PhysicalMonitoring().send_topology(self.monitoring_server)
-
+        try:
+            return PhysicalMonitoring().send_topology(self.monitoring_server)
+        except Exception as e:
+            logger.error("Physical topology - Could not send topology. Details: %s" % e)
+            print traceback.format_exc()
     def slice_topology(self):
         return SliceMonitoring().send_topology(self.monitoring_server)
 

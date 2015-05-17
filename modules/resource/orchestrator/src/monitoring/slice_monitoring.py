@@ -6,7 +6,6 @@ import time
 
 import core
 from lxml import etree
-import xml.etree.ElementTree as ET
 
 logger = core.log.getLogger("monitoring-slice")
 
@@ -381,14 +380,14 @@ class SliceMonitoring(BaseMonitoring):
     ##########
 
     def __add_general_info(self):
-        topo = ET.SubElement(self.topology_list, "topology")
+        topo = etree.SubElement(self.topology_list, "topology")
         # Milliseconds in UTC format
-        topo.attrib["last_update_time"] = self.domain_last_update
-        topo.attrib["type"] = "slice"
+        topo.set("last_update_time", self.domain_last_update)
+        topo.set("type", "slice")
         # TODO Retrieve from config OR from slice!
         # TODO Filter topology based on this!
-        topo.attrib["name"] = "urn_of_slice"
+        topo.set("name", "urn_of_slice")
         # TODO Retrieve owner from credentials
-        topo.attrib["owner"] = "owner_of_slice"
+        topo.set("owner", "owner_of_slice")
         # Set topology tag as root node for subsequent operations
         self.topology = topo

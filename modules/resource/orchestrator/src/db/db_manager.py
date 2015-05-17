@@ -124,8 +124,8 @@ class DBManager(object):
         filter_params.update(
             {"protocol": rm_protocol, "address": rm_address,
              # Port is stored as an integer, but the query looks for a string...
-             #"port": rm_port, "endpoint": {"$regex": rm_endpoint_re}, })
-             "endpoint": {"$regex": rm_endpoint_re}, })
+             #"endpoint": {"$regex": rm_endpoint_re}, })
+             "port": rm_port, "endpoint": {"$regex": rm_endpoint_re}, })
         peer = self.get_configured_peer(filter_params)
         return peer
 

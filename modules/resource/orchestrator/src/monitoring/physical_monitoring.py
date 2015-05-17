@@ -2,7 +2,7 @@ from db.db_manager import db_sync_manager
 from monitoring.base_monitoring import BaseMonitoring
 
 import core
-import xml.etree.ElementTree as ET
+from lxml import etree
 
 logger = core.log.getLogger("monitoring-physical")
 
@@ -15,18 +15,6 @@ class PhysicalMonitoring(BaseMonitoring):
     def __init__(self):
         super(PhysicalMonitoring, self).__init__()
 
-#    def retrieve_topology(self, peer):
-#        # General information
-#        self.__add_general_info()
-#        # COM resources
-#        self._add_com_info()
-#        # SDN resources
-#        self._add_sdn_info()
-#        # TN resources
-#        self._add_tn_info()
-#        # SE resources
-#        self._add_se_info()
-
     def retrieve_topology_by_peer(self, peer_urn):
         # Prepare list of allowed peers and resources
         type_resources_crm = ["crm"]
@@ -38,12 +26,12 @@ class PhysicalMonitoring(BaseMonitoring):
         type_resources_tnrm = ["tnrm"]
         type_resources_tnrm.extend(self.urn_type_resources_variations.get("tnrm"))
 
-        type_resources = []        
+        type_resources = []
         type_resources.extend(type_resources_crm)
         type_resources.extend(type_resources_sdnrm)
         type_resources.extend(type_resources_serm)
         type_resources.extend(type_resources_tnrm)
-
+        
         # If the URN belongs to one of those
         # peers/domains, add the information
         type_resource_peer = None
@@ -93,17 +81,32 @@ class PhysicalMonitoring(BaseMonitoring):
                         self.domain_last_update = domain_last_update
                 # Add general information to the topology
                 self.__add_general_info()
+                                
                 for db_peer in db_peers:
                     # Retrieve proper resources
                     self.retrieve_topology_by_peer(db_peers.get(db_peer).get("domain_urn"))
             except Exception as e:
-                logger.warning("Physical topology - Cannot recover information for peer (id='%s'). Skipping to the next peer. Details: %s" % (peer.get("_id"), e))
-            # Verify structure of the "topology" tag before
-            # constructing final XML to be sent to MS
-            if self.__check_topology_is_correct():
+                logger.warning("Physical topology - Cannot recover information for peer='%s'. Skipping to the next peer. Details: %s" % (peer, e))
+                
+            # XXX: BEGIN TEMPORARY CODE FOR (M)MS
+            # TODO: REMOVE THIS IN DUE TIME
+            # Added so that (M)MS receives at least one TNRM per island (at RO level)
+            if not self.__check_node_in_topology("tn"):
+                # Use dummy data to fill TN node
+                dummy_node = {"component_id": "urn:publicid:IDN+fms:dummy_org:tnrm+node+tnrm"}
+                n = self._add_generic_node(self.topology, dummy_node, "tn")
+                interface = etree.SubElement(n, "interface")
+                interface.set("id", "dummy_tn_iface_for_ms")
+                # XXX: END TEMPORARY CODE FOR (M)MS
+            
+            # Verify structure of the "topology" tag before constructing final XML to be sent to MS
+            ## Note: on SUCCESS return, it returns a boolean. On FAILURE return, it returns (boolean, string)
+            check_topology = self.__check_topology_is_correct()
+            if check_topology == True:
                 self.topology_list.append(self.topology)
-            else:
-                logger.warning("Physical topology - Topology for domain=%s does not contain the minimum SW modules required by MS" % domain_name)
+            else:                    
+                logger.warning("Physical topology - Topology for domain=%s does not contain the minimum SW modules required by MS: missing '%s' node." % (domain_name, check_topology[1]))
+
         # Send topology after all peers are completed
         self._send(self.get_topology(), monitoring_server)
         logger.debug("Resulting RSpec=%s" % self.get_topology_pretty())
@@ -117,17 +120,19 @@ class PhysicalMonitoring(BaseMonitoring):
         """
         Creates new RSpec from scratch.
         """
-#        topo = ET.SubElement(self.topology_list, "topology")
-#        # Milliseconds in UTC format
-        self.topology.attrib["last_update_time"] = self.domain_last_update
-#        topo.attrib["last_update_time"] = self.domain_last_update
-        self.topology.attrib["type"] = "physical"
-#        topo.attrib["type"] = "physical"
-#        topo.attrib["name"] = self.domain_urn
-        self.topology.attrib["name"] = self.domain_urn
-#        # Set topology tag as root node for subsequent operations
-#        self.topology = topo
+        # Milliseconds in UTC format
+        self.topology.set("last_update_time", self.domain_last_update)
+        self.topology.set("type", "physical")
+        self.topology.set("name", self.domain_urn)
 
+    def __check_node_in_topology(self, node_name):
+        """
+        Checks that the "<topology>" subtree contains a given node.
+        """
+        if not self.topology.findall(".//node[@type='%s']" % node_name):
+            return False
+        return True
+    
     def __check_topology_is_correct(self):
         """
         Checks that the "<topology>" subtree contains all
@@ -138,6 +143,6 @@ class PhysicalMonitoring(BaseMonitoring):
         for n in ms_expected_nodes:
             # If any is not found, return false
             if not self.topology.findall(".//node[@type='%s']" % n):
-                return False
+                return (False, n)
         return True
 
