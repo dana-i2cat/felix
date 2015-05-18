@@ -105,7 +105,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
 
         # compress and return
         if geni_compress:
-            result = base64.b64encode(zlib.compress(result))
+            result = base64.b64encode(zlib.compress(str(result)))
 
         return self._successReturn(result)
 
@@ -128,7 +128,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
             return self._errorReturn(e)
 
         if geni_compress:
-            result = base64.b64encode(zlib.compress(result))
+            result = base64.b64encode(zlib.compress(str(result)))
 
         return self._successReturn(result)
 
