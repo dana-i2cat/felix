@@ -101,12 +101,14 @@ class SliceMonitoring(BaseMonitoring):
 
     def __add_packet_info(self, node_tag, packet_detail):
         m = etree.SubElement(node_tag, "match")
-        vlans = packet_detail.get('dl_vlan').split(',', 1)
-        if len(vlans) == 2:
-            etree.SubElement(m, "vlan", start=vlans[0], end=vlans[1])
-        else:
-            etree.SubElement(m, "vlan", start=packet_detail.get('dl_vlan'),
-                             end=packet_detail.get('dl_vlan'))
+        vlans = packet_detail.get('dl_vlan')
+        if vlans is not None:
+            vlans = vlans.split(',', 1)
+            if len(vlans) == 2:
+                etree.SubElement(m, "vlan", start=vlans[0], end=vlans[1])
+            else:
+                etree.SubElement(m, "vlan", start=packet_detail.get('dl_vlan'),
+                                end=packet_detail.get('dl_vlan'))
 
     def __create_link_id(self, datapath, portnumber):
         return datapath + "_" + str(portnumber)
