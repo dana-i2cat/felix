@@ -143,6 +143,14 @@ class DBManager(object):
         self.__set_update(table, object_id, fields_dict)
 
     # (felix_ro) domain.info
+    def get_info_peers(self, filter_params={}):
+        table = self.__get_table("domain.info")
+        return self.__get_all(table, filter_params)
+    
+    def get_domain_info(self, filter_params):
+        table = self.__get_table("domain.info")
+        return self.__get_one(table, filter_params)
+    
     def store_domain_info(self, rm_url, domain_urn):
         table = self.__get_table("domain.info")
         # Search for entry in domain.routing first
@@ -160,11 +168,6 @@ class DBManager(object):
                 return table.insert(entry)
         finally:
             self.__mutex.release()
-
-    def get_domain_info(self, filter_params):
-        table = self.__get_table("domain.info")
-        return self.__get_one(table, filter_params)
-
     def get_domain_urn(self, filter_params):
         return self.get_domain_info(filter_params).get("domain_urn")
 

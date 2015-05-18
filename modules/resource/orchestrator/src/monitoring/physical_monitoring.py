@@ -2,6 +2,8 @@ from db.db_manager import db_sync_manager
 from monitoring.base_monitoring import BaseMonitoring
 
 import core
+import traceback
+
 from lxml import etree
 
 logger = core.log.getLogger("monitoring-physical")
@@ -54,7 +56,8 @@ class PhysicalMonitoring(BaseMonitoring):
 
     def send_topology(self, monitoring_server):
         logger.debug("Configured peers=%d" % (len(self.peers)))
-        for domain_name, peers in self.peers_by_domain.iteritems():
+        for domain_name in self.peers_by_domain:
+            peers = self.peers_by_domain[domain_name]
             try:
                 # Update domain URN with name
                 self.domain_urn = domain_name
@@ -64,21 +67,24 @@ class PhysicalMonitoring(BaseMonitoring):
                     # Looks for referred domain through peer ID; retrieve URN and last update
                     filter_params = {"_ref_peer": db_peer.get("_id"),}
                     domain_peer = db_sync_manager.get_domain_info(filter_params)
-                    domain_peer_urn = domain_peer.get("domain_urn")
-                    physical_topology = db_sync_manager.get_physical_info_from_domain(domain_peer.get("_id"))
-                    domain_last_update = physical_topology.get("last_update")
-                    db_peers[peer] = {
-                        "db_peer": db_peer,
-                        "domain_urn": domain_peer_urn,
-                        "domain_last_update": domain_last_update,
-                    }
-                    self.domain_peer_urn = domain_peer_urn
-                    # Choose less recent time of last update
-                    if self.domain_last_update:
-                        if domain_last_update < self.domain_last_update:
-                            self.domain_last_update = domain_last_update
-                    else:
-                        self.domain_last_update = domain_last_update
+                    try:
+                        domain_peer_urn = domain_peer.get("domain_urn")
+                        physical_topology = db_sync_manager.get_physical_info_from_domain(domain_peer.get("_id"))
+                        domain_last_update = physical_topology.get("last_update")
+                        db_peers[peer] = {
+                            "db_peer": db_peer,
+                            "domain_urn": domain_peer_urn,
+                            "domain_last_update": domain_last_update,
+                            }
+                        self.domain_peer_urn = domain_peer_urn
+                        # Choose less recent time of last update
+                        if not self.domain_last_update:
+                            if domain_last_update < self.domain_last_update:
+                                self.domain_last_update = domain_last_update
+                    except Exception as e:
+                        logger.warning("Physical topology - Cannot recover information for peer='%s'. Skipping to the next peer. Details: %s" % (peer, e))
+                        logger.warning(traceback.format_exc())
+                
                 # Add general information to the topology
                 self.__add_general_info()
                                 
@@ -86,7 +92,8 @@ class PhysicalMonitoring(BaseMonitoring):
                     # Retrieve proper resources
                     self.retrieve_topology_by_peer(db_peers.get(db_peer).get("domain_urn"))
             except Exception as e:
-                logger.warning("Physical topology - Cannot recover information for peer='%s'. Skipping to the next peer. Details: %s" % (peer, e))
+                logger.warning("Physical topology - Cannot recover information for domain='%s'. Skipping to the next domain. Details: %s" % (domain_name, e))
+                logger.warning(traceback.format_exc())
                 
             # XXX: BEGIN TEMPORARY CODE FOR (M)MS
             # TODO: REMOVE THIS IN DUE TIME

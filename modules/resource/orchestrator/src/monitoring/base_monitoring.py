@@ -9,6 +9,7 @@ import copy
 import core
 import re
 import requests
+import time
 
 logger = core.log.getLogger("monitoring-base")
 
@@ -21,6 +22,7 @@ class BaseMonitoring(object):
     def __init__(self):
         super(BaseMonitoring, self).__init__()
         self.peers = [p for p in db_sync_manager.get_configured_peers()]
+        self.peers_info = [p for p in db_sync_manager.get_info_peers()]
         self.domain_urn = ""
         self.domain_last_update = ""
         self.topology_list = etree.Element("topology_list")
@@ -71,9 +73,13 @@ class BaseMonitoring(object):
         self.config_serm = core.config.JSONParser("serm.json")
         self.serm_mgmt_info = self.config_serm.get("device_management_info")
 
+    def __get_timestamp(self):
+        # Return integer part as a string
+        return str(int(time.time()))
+    
     def __group_peers_by_domain(self):
-        for peer in self.peers:
-            filter_params = {"_ref_peer": peer.get("_id"),}
+        for peer in self.peers_info:
+            filter_params = {"_id": peer.get("_id"),}
             domain_peer = db_sync_manager.get_domain_info(filter_params)
             peer_domain_urn = domain_peer.get("domain_urn")
             authority = self._get_authority_from_urn(peer_domain_urn)
@@ -82,6 +88,17 @@ class BaseMonitoring(object):
                 self.peers_by_domain[authority] = []
             # Extend list of peers with new one
             self.peers_by_domain[authority].append(peer_domain_urn)
+            
+            # Stores last_update_time for the physical topology
+            # on a given domain
+            try:
+                last_update_time = self.__get_timestamp()
+                db_sync_manager.store_physical_info(peer_domain_urn,
+                                                    last_update_time)
+            except Exception as e:
+                logger.error("Error storing last_update_time for phy-topology.")
+                logger.error("Exception: %s" % e)
+            
         # XXX: BEGIN TEMPORARY CODE FOR (M)MS
         # TODO: REMOVE THIS IN DUE TIME
         # Added so that (M)MS receives at least one TNRM per island
