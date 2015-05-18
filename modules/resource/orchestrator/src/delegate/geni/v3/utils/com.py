@@ -44,6 +44,11 @@ class COMUtils(CommonUtils):
             nodes = manifest.nodes()
             logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
 
+            # XXX Begin: temporal correction (defaul: geni_best_effort)
+            # TODO Remove after CRM-KVM returns proper structure with geni_slivers
+            # XXX End: temporal hack
+            urn = urn or []
+            # XXX End: temporal correction
             return ({"nodes": nodes}, urn)
         except Exception as e:
             # It is possible that CRM does not implement this method!
