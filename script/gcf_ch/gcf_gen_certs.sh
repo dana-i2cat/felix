@@ -7,6 +7,8 @@ else
   HOME_DIR="/home/$USER"
 fi
 OPENSSL_LOCAL_DIR="$HOME_DIR/.gcf.openssl"
+#Set cert expiry in days
+TEN_YEARS=3650
 
 # Create environment
 mkdir -p $OPENSSL_LOCAL_DIR
@@ -21,7 +23,7 @@ touch index.txt
 echo "01" > serial.txt
 
 # Create selfsigned certificate and key for CA
-openssl req -x509 -config ca.cnf -newkey rsa:1024 -sha256 -nodes -out ca-cert.pem -outform PEM
+openssl req -x509 -config ca.cnf -newkey rsa:1024 -sha256 -nodes -out ca-cert.pem -outform PEM -days $TEN_YEARS
 
 # Create Alice's key and certificate signed by MA
 openssl req -config ro.cnf -newkey rsa:1024 -sha256 -nodes -out ro-cert.csr -outform PEM
