@@ -56,7 +56,8 @@ def addSwitchingRule(in_port, out_port, in_vlan, out_vlan):
             out_vlan (int)
     """
     print "install flows"
-    response = PoxController.add_rule(in_port, in_vlan, out_port, out_vlan)
+    response = PoxController.add_rule(int(in_port), int(in_vlan), int(out_port), int(out_vlan))
+    response = PoxController.add_rule(int(out_port), int(out_vlan), int(in_port), int(in_vlan))
     print response
 
 def deleteSwitchingRule(in_port, out_port, in_vlan, out_vlan):
@@ -67,6 +68,6 @@ def deleteSwitchingRule(in_port, out_port, in_vlan, out_vlan):
             out_vlan (int)
     """
     print "delete flows"
-    response = PoxController.remove_rule(in_port, in_vlan, out_port, out_vlan)
+    response = PoxController.remove_rule(int(in_port), int(in_vlan), int(out_port), int(out_vlan))
+    response = PoxController.remove_rule(int(out_port), int(out_vlan), int(in_port), int(in_vlan))
     print response
-    
