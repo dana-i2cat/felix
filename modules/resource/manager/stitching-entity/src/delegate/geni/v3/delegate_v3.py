@@ -398,7 +398,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
             portsVlansPairs = getPortsVlansPairs(links_db)
 
-            if action == "start":
+            if action == "geni_start":
                 for portVlanItem in portsVlansPairs:
                     (in_port, out_port, in_vlan, out_vlan) = portVlanItem
                     print in_port, in_vlan, out_port, out_vlan
@@ -409,7 +409,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     logger.debug("Cross-connection added: %s[%s]<->%s[%s]" % (in_port, in_vlan, out_port, out_vlan))
                 status = "geni_ready"
 
-            elif action == "stop":
+            elif action == "geni_stop":
                 for portVlanItem in portsVlansPairs:
                     (in_port, out_port, in_vlan, out_vlan) = portVlanItem
                     try:
@@ -420,7 +420,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
                 status = "geni_notready"
                 
-            elif action == "restart":
+            elif action == "geni_restart":
                 for portVlanItem in portsVlansPairs:
                     (in_port, out_port, in_vlan, out_vlan) = portVlanItem
                     try:
