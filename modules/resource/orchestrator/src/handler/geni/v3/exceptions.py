@@ -18,8 +18,6 @@ class GENIv3BadArgsError(GENIv3BaseError):
 class GENIv3GeneralError(GENIv3BaseError):
     def __init__(self, comment):
         super(self.__class__, self).__init__( 2, 'ERROR', "General Error", comment)
-        print "--------------- ERROR GENERAL ERROR......... ", self
-        print "type gen error by code: ", type(self)
 
 class GENIv3ForbiddenError(GENIv3BaseError):
     def __init__(self, comment):
@@ -111,6 +109,5 @@ class_by_code = {
 class GENIv3Error():
     @staticmethod
     def get_by_code(code, comment):
-        print "type exc error by code: ", type(class_by_code[code](comment))
         return class_by_code[code](comment)
 
