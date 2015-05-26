@@ -1,7 +1,8 @@
-from rspecs.commons import validate
-from handler.geni.v3 import exceptions as geni_ex
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
 from db.db_manager import db_sync_manager
+from extensions.sfa.util import xrn
+from handler.geni.v3 import exceptions as geni_ex
+from rspecs.commons import validate
 
 import core
 logger = core.log.getLogger("common-utils")
@@ -11,7 +12,31 @@ class CommonUtils(object):
     def __init__(self):
         pass
 
+    @staticmethod
+    def fetch_user_name_from_geni_users(geni_users):
+        """
+        Given the GENI 'geni_users' structure, retrieves the proper
+        client or user identifier (may be a name, hrn or urn).
+        
+        @param geni_users geni_users structure, passed from handler
+        @return user identifier
+        """
+        client_urn = None
+        if len(geni_users) >= 1:
+            # Any could be used
+            #client_urn = geni_users[0]["urn"]
+            client_urn = xrn.urn_to_hrn(geni_users[0]["urn"])[0].replace("\\","")
+            #client_urn = xrn.get_leaf(xrn.urn_to_hrn(geni_users[0]["urn"])[0])
+        return client_urn
+
     def validate_rspec(self, rspec):
+        """
+        Given an RSpec (XML structure), this method validates the
+        structure of the document, according to the GENI resource schemas.
+        
+        @param rspec RSpec defining resources
+        @throws GENIv3GeneralError when RSpec format is invalid
+        """
         (result, error) = validate(rspec)
         if result is not True:
             m = "RSpec validation failure: %s" % (error,)

@@ -31,6 +31,7 @@ class SliceMonitoring(BaseMonitoring):
              ms.get("port"), ms.get("endpoint"))
         self.__topologies = etree.Element("topology_list")
         self.__stored = {}
+        self.__mapping_c_interface = {}
 
     def __get_topologies(self):
         return etree.tostring(self.__topologies, pretty_print=True)
@@ -69,46 +70,49 @@ class SliceMonitoring(BaseMonitoring):
             logger.debug("Node=%s" % (n,))
 
             node_ = etree.SubElement(
-                topology, "node", id=n.get('component_id'), type="server")
+                topology, "node", id=n.get("component_id"), type="server")
 
             inner_node_ = etree.SubElement(
-                node_, "node", id=n.get('sliver_id'),
-                type=n.get('sliver_type_name'))
+                node_, "node", id=n.get("sliver_id"),
+                type=n.get("sliver_type_name"))
 
             # Add the interface identifier of the server node here!
             # In the future, it will be the vlan-tagged interface of the
             # virtual machine (much more sense)
-            nodekey = n.get('component_id').replace('+node+', ':')
+            nodekey = n.get("component_id").replace("+node+', ':")
             logger.debug("Node key=%s" % (nodekey,))
             interfaces = db_sync_manager.get_com_interface_by_nodekey(nodekey)
             logger.info("Stored COM interfaces=%s" % (interfaces,))
             for i in interfaces:
-                etree.SubElement(inner_node_, "interface", id=i)
+                if_index = i.rfind("interface")
+                if_name = n.get("sliver_id") + "+" + i[if_index:len(i)]
+                etree.SubElement(inner_node_, "interface", id=if_name)
+                self.__mapping_c_interface[i] = if_name
 
-            if len(n.get('services')) > 0:
+            if len(n.get("services")) > 0:
                 self.__add_snmp_management(
                     inner_node_,
-                    n.get('services')[0].get('login').get('hostname'))
+                    n.get("services")[0].get("login").get("hostname"))
 
     def __update_match_with_groups(self, match, groups):
-        for mg in match.get('use_groups'):
+        for mg in match.get("use_groups"):
             for g in groups:
-                if g.get('name') == mg.get('name'):
-                    match.get('dpids').extend(g.get('dpids'))
+                if g.get("name") == mg.get("name"):
+                    match.get("dpids").extend(g.get("dpids"))
                     break
 
         logger.debug("Updated Match=%s" % (match,))
 
     def __add_packet_info(self, node_tag, packet_detail):
         m = etree.SubElement(node_tag, "match")
-        vlans = packet_detail.get('dl_vlan')
+        vlans = packet_detail.get("dl_vlan")
         if vlans is not None:
-            vlans = vlans.split(',', 1)
+            vlans = vlans.split(",", 1)
             if len(vlans) == 2:
                 etree.SubElement(m, "vlan", start=vlans[0], end=vlans[1])
             else:
-                etree.SubElement(m, "vlan", start=packet_detail.get('dl_vlan'),
-                                end=packet_detail.get('dl_vlan'))
+                etree.SubElement(m, "vlan", start=packet_detail.get("dl_vlan"),
+                                end=packet_detail.get("dl_vlan"))
 
     def __create_link_id(self, datapath, portnumber):
         return datapath + "_" + str(portnumber)
@@ -143,7 +147,7 @@ class SliceMonitoring(BaseMonitoring):
         # We can look into the db-table containing the requested dpids
         # and matches.
         if slice_urn not in self.__stored:
-            logger.error("Unable to find Topology info from %s!" % slice_urn)
+            logger.error("Slice monitoring: unable to find topology info from %s!" % slice_urn)
             return
 
         topology = self.__stored.get(slice_urn)
@@ -158,23 +162,23 @@ class SliceMonitoring(BaseMonitoring):
             logger.debug("Match=%s" % (m,))
             self.__update_match_with_groups(m, groups)
 
-            for dpid in m.get('dpids'):
+            for dpid in m.get("dpids"):
                 logger.debug("Dpid=%s" % (dpid,))
 
                 node_ = etree.SubElement(
-                    topology, "node", id=dpid.get('component_id'),
+                    topology, "node", id=dpid.get("component_id"),
                     type="switch")
 
-                for p in dpid.get('ports'):
-                    ifid = dpid.get('component_id') + "_" + str(p.get('num'))
+                for p in dpid.get("ports"):
+                    ifid = dpid.get("component_id") + "_" + str(p.get("num"))
                     if_ = etree.SubElement(node_, "interface", id=ifid)
 
-                    etree.SubElement(if_, "port", num=str(p.get('num')))
+                    etree.SubElement(if_, "port", num=str(p.get("num")))
 
                     link_ids.append(
-                        self.__create_link_id(dpid.get('dpid'), p.get('num')))
+                        self.__create_link_id(dpid.get("dpid"), p.get("num")))
 
-                self.__add_packet_info(node_, m.get('packet'))
+                self.__add_packet_info(node_, m.get("packet"))
 
         logger.info("add_sdn_resources Link identifiers(%d)=%s" %
                     (len(link_ids), link_ids,))
@@ -185,13 +189,20 @@ class SliceMonitoring(BaseMonitoring):
                 component_id = com_link.get("component_id")
                 urn_split = component_id.split("+link+")[1]
                 logger.debug("COM link=%s" % (com_link,))
-                for eps in com_link.get('links'):
+                for eps in com_link.get("links"):
                     # Modify link on-the-fly to add the DPID port as needed
                     eps = self._set_dpid_port_from_link(
                         com_link.get("component_id"), eps)
+
+                    eps_src_id, eps_dst_id = eps.get("source_id"), eps.get("dest_id")
+                    if self.__mapping_c_interface.get(eps.get("source_id")) is not None:
+                        eps_src_id = self.__mapping_c_interface.get(eps.get("source_id"))
+                    if self.__mapping_c_interface.get(eps.get("dest_id")) is not None:
+                        eps_dst_id = self.__mapping_c_interface.get(eps.get("dest_id"))
+
+                    logger.info("eps_src_id=%s, eps_dst_id=%s" % (eps_src_id, eps_dst_id,))
                     self.__add_link_info(
-                        topology, com_link.get('link_type'),
-                        eps.get('source_id'), eps.get('dest_id'))
+                        topology, com_link.get("link_type"), eps_src_id, eps_dst_id)
 
         # SDN-SDN link info
         ext_link_ids = self.__extend_link_ids(link_ids)
@@ -201,16 +212,18 @@ class SliceMonitoring(BaseMonitoring):
             sdn_link = db_sync_manager.get_sdn_link_by_sdnkey(l)
             if sdn_link:
                 logger.debug("SDN link=%s" % (sdn_link,))
-                if len(sdn_link.get('dpids')) == 2 and\
-                   len(sdn_link.get('ports')) == 2:
+                if len(sdn_link.get("dpids")) == 2 and\
+                   len(sdn_link.get("ports")) == 2:
                     ep1 = self.__create_link_id(
-                        sdn_link.get('dpids')[0].get('component_id'),
-                        sdn_link.get('ports')[0].get('port_num'))
+                        sdn_link.get("dpids")[0].get("component_id"),
+                        sdn_link.get("ports")[0].get("port_num"))
                     ep2 = self.__create_link_id(
-                        sdn_link.get('dpids')[1].get('component_id'),
-                        sdn_link.get('ports')[1].get('port_num'))
+                        sdn_link.get("dpids")[1].get("component_id"),
+                        sdn_link.get("ports")[1].get("port_num"))
                     self.__add_link_info(topology, self.SDN2SDN_LINK_TYPE,
                                          ep1, ep2)
+            else:
+                logger.info("Slice monitoring: cannot find link that ends with %s" % l)
 
     def __add_rest_management(self, tag, address, port_num, protocol,
                               endpoint="/metrics/list/"):
@@ -238,14 +251,14 @@ class SliceMonitoring(BaseMonitoring):
             logger.debug("Node=%s" % (n,))
 
             node_ = etree.SubElement(
-                topology, "node", id=n.get('component_id'), type="tn")
+                topology, "node", id=n.get("component_id"), type="tn")
 
             vlan_ids = set()
-            for ifs in n.get('interfaces'):
+            for ifs in n.get("interfaces"):
                 etree.SubElement(
-                    node_, "interface", id=ifs.get('component_id'))
-                for v in ifs.get('vlan'):
-                    vlan_ids.add(v.get('tag'))
+                    node_, "interface", id=ifs.get("component_id"))
+                for v in ifs.get("vlan"):
+                    vlan_ids.add(v.get("tag"))
 
             logger.debug("Vlan-ids=%s" % vlan_ids)
             for vlan in vlan_ids:
@@ -253,8 +266,8 @@ class SliceMonitoring(BaseMonitoring):
                 etree.SubElement(m_, "vlan", start=vlan, end=vlan)
 
             self.__add_rest_management(
-                node_, peer_info.get('address'), peer_info.get('port'),
-                peer_info.get('protocol'))
+                node_, peer_info.get("address"), peer_info.get("port"),
+                peer_info.get("protocol"))
 
         # The TN-links should be sent only in case of MRO
         if self.mro_enabled:
@@ -262,9 +275,9 @@ class SliceMonitoring(BaseMonitoring):
             for l in links:
                 logger.debug("Link=%s" % (l,))
 
-                for p in l.get('property'):
+                for p in l.get("property"):
                     self.__add_link_info(topology, self.TN2TN_LINK_TYPE,
-                                         p.get('source_id'), p.get('dest_id'))
+                                         p.get("source_id"), p.get("dest_id"))
 
     def __add_se_external_link_info(self, topo, ifs):
         for i in ifs:
@@ -292,17 +305,17 @@ class SliceMonitoring(BaseMonitoring):
             logger.debug("Node=%s" % (n,))
 
             node_ = etree.SubElement(
-                topology, "node", id=n.get('component_id'), type="se")
+                topology, "node", id=n.get("component_id"), type="se")
 
-            if n.get('host_name'):
-                self.__add_snmp_management(node_, n.get('host_name'))
+            if n.get("host_name"):
+                self.__add_snmp_management(node_, n.get("host_name"))
 
             vlan_ids = set()
-            for ifs in n.get('interfaces'):
+            for ifs in n.get("interfaces"):
                 etree.SubElement(
-                    node_, "interface", id=ifs.get('component_id'))
-                for v in ifs.get('vlan'):
-                    vlan_ids.add(v.get('tag'))
+                    node_, "interface", id=ifs.get("component_id"))
+                for v in ifs.get("vlan"):
+                    vlan_ids.add(v.get("tag"))
 
             logger.debug("Vlan-ids=%s" % vlan_ids)
             for vlan in vlan_ids:
@@ -313,21 +326,21 @@ class SliceMonitoring(BaseMonitoring):
         for l in links:
             logger.debug("Link=%s" % (l,))
 
-            if len(l.get('interface_ref')) != 2:
+            if len(l.get("interface_ref")) != 2:
                 logger.warning("Unable to manage extra-list of info (%d)!" %
-                               len(l.get('interface_ref')))
+                               len(l.get("interface_ref")))
                 continue
 
-            self.__add_link_info(topology, l.get('link_type'),
-                                 l.get('interface_ref')[0].get('component_id'),
-                                 l.get('interface_ref')[1].get('component_id'))
+            self.__add_link_info(topology, l.get("link_type"),
+                                 l.get("interface_ref")[0].get("component_id"),
+                                 l.get("interface_ref")[1].get("component_id"))
             # is it really necessary to put bidirectional links?
 
             # we need to add "special" links here: SE-to-SDN, SE-to-TN
             # and an "abstract" link
             self.__add_se_external_link_info(
-                topology, [l.get('interface_ref')[0].get('component_id'),
-                           l.get('interface_ref')[1].get('component_id')])
+                topology, [l.get("interface_ref")[0].get("component_id"),
+                           l.get("interface_ref")[1].get("component_id")])
 
     def send(self):
         try:

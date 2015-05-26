@@ -205,7 +205,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 ro_slivers.extend(com_slivers)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_RO"):
-                ro_m_info, last_slice, ro_slivers =\
+                ro_m_info, last_slice, ro_slivers_ro =\
                     ROUtils().manage_describe(peer, v, credentials)
 
                 logger.debug("ro_m=%s, ro_s=%s, urn=%s" %
@@ -223,7 +223,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 for l in ro_m_info.get("se_links"):
                     ro_manifest.se_link(l)
 
-                ro_slivers.extend(ro_slivers)
+                ro_slivers.extend(ro_slivers_ro)
 
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
         logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
@@ -232,7 +232,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
             # Extra conversion added tp return string
             s["geni_expires"] = dates.rfc3339_to_datetime(s["geni_expires"])
         logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
-
         return {"geni_rspec": "%s" % ro_manifest,
                 "geni_urn": last_slice,
                 "geni_slivers": ro_slivers}
@@ -425,7 +424,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         """Documentation see [geniv3rpc] GENIv3DelegateBase.
         {geni_users} is relevant here."""
         ro_manifest, ro_slivers = ROManifestFormatter(), []
-        client_urn = None
+        client_urn = CommonUtils.fetch_user_name_from_geni_users(geni_users)
         if self._verify_users:
             for urn in urns:
                 logger.debug("provision: authenticate the user for %s" % (urn))
@@ -520,7 +519,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     logger.warning("Delegate could not monitor SE resources upon Provision. Details: ", e)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_RO"):
-                ro_m_info, ro_slivers = ROUtils().manage_provision(
+                ro_m_info, ro_slivers_ro = ROUtils().manage_provision(
                     peer, v, credentials, best_effort, end_time, geni_users)
 
                 logger.debug("ro_m=%s, ro_s=%s" % (ro_m_info, ro_slivers,))
@@ -537,7 +536,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 for l in ro_m_info.get("se_links"):
                     ro_manifest.se_link(l)
 
-                ro_slivers.extend(ro_slivers)
+                ro_slivers.extend(ro_slivers_ro)
                 # introduce slice-monitoring info for ALL the resource types!
                 try:
                     slice_monitor.add_c_resources(
@@ -558,14 +557,24 @@ class GENIv3Delegate(GENIv3DelegateBase):
             slice_monitor.send()
             # add slice_monitoring object to the slice table
             db_sync_manager.store_slice_monitoring_info(slice_urn,
-                                                        slice_monitor.serialize())
+                                                    slice_monitor.serialize())
         except Exception as e:
             logger.warning("Delegate could not send or store slice monitoring information upon Provision. Details: ", e)
 
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
 
+
+	valid_geni_expires = None
+	for s in ro_slivers:
+		if s["geni_expires"]:
+			valid_geni_expires = s["geni_expires"]
+			break
+
         for s in ro_slivers:
-            s["geni_expires"] = dates.rfc3339_to_datetime(s["geni_expires"])
+	    if s["geni_expires"] is None:
+		s["geni_expires"] = dates.rfc3339_to_datetime(valid_geni_expires)
+	    else:
+		s["geni_expires"] = dates.rfc3339_to_datetime(s["geni_expires"])
         logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
 
         return ("%s" % ro_manifest, ro_slivers)
@@ -599,6 +608,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         for s in ro_slivers:
             s["geni_expires"] = dates.rfc3339_to_datetime(s["geni_expires"])
         logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
+
         return last_slice, ro_slivers
 
     @trace_method_inputs
