@@ -34,7 +34,7 @@
         {% for interface in vm.xen_configuration.interfaces.interface %}
         <interface type='bridge'>
             <mac address='{{interface.mac}}'/>
-            <source bridge='virbr0'/>
+            <source bridge='brx0'/>
             <model type='virtio'/>
         </interface>
         {% endfor %}

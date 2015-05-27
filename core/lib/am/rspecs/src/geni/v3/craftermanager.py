@@ -101,7 +101,7 @@ class CrafterManager:
     
     def manifest_services_template_root(self):
         # BasicAuth for root; PKI for others
-        template = """<login authentication="ssh" hostname="%s" port="22" username="root:openflow"/>\n"""
+        template = """<login authentication="ssh" hostname="%s" port="22" username="root"/>\n"""
         return template
         
     def manifest_slivers(self, resources):
@@ -118,8 +118,8 @@ class CrafterManager:
                 services = sliver.get_services()
                 result += "<services>\n"
                 for service in services:
-                    if service["login"]["username"].startswith("root:"):
-                        result += self.manifest_services_template_root() % service["login"]["hostname"]
+                    if service["login"]["username"].startswith("root"):
+                        result += self.manifest_services_template_root() % (service["login"]["hostname"])
                     else:
                         result += self.manifest_services_template() % (service["login"]["hostname"], service["login"]["username"])
                 result += "</services>\n"

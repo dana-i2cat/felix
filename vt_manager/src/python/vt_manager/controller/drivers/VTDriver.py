@@ -213,3 +213,4 @@ class VTDriver():
 		rspec = XmlHelper.getSimpleActionSpecificQuery(action, serverUUID)
 		ActionController.PopulateNewActionWithVM(rspec.query.provisioning.action[0], vm)
 		ServiceThread.startMethodInNewThread(DispatcherLauncher.processXmlQuery, rspec)
+		return

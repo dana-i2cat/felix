@@ -73,7 +73,7 @@ xmldesc="""<domain type='xen'>
       <target dev='sda1'/>
     </disk>
     <interface type='bridge'>
-      <source bridge='virbr0'/>
+      <source bridge='brx0'/>
       <mac address='aa:00:00:00:00:12'/>
       <script path='/etc/xen/scripts/vif-bridge'/>
     </interface>

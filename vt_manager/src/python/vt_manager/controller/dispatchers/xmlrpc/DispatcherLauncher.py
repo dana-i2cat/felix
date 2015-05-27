@@ -13,9 +13,11 @@ import threading
 import multiprocessing
 #XXX: Sync Thread for VTPlanner
 from vt_manager.utils.SyncThread import *
+import logging
 
 class DispatcherLauncher():
-	
+    logger = logging.getLogger("DispatcherLauncher")
+    
     @staticmethod
     def processXmlResponse(rspec):
 		if not rspec.response.provisioning == None:
@@ -25,10 +27,15 @@ class DispatcherLauncher():
 
     @staticmethod
     def processXmlQuery(rspec):
-		#check if provisioning / monitoring / etc
-		if not rspec.query.provisioning == None :
-			ServiceThread.startMethodInNewThread(ProvisioningDispatcher.processProvisioning,rspec.query.provisioning, threading.currentThread().callBackURL)
-	
+        #check if provisioning / monitoring / etc
+        if not rspec.query.provisioning == None :
+            DispatcherLauncher.logger.debug("XXX start provision thread")
+            ServiceThread.startMethodInNewThread(ProvisioningDispatcher.processProvisioning,rspec.query.provisioning, threading.currentThread().callBackURL)
+        else:
+            DispatcherLauncher.logger.debug("XXX skip starting provision thread")
+            pass
+        return
+
     @staticmethod    
     def processXmlQuerySync(rspec,url=None):
 	    #check if provisioning / monitoring / etc

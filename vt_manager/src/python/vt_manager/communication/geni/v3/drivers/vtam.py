@@ -33,6 +33,7 @@ import random
 from datetime import datetime
 from datetime import timedelta
 import dateutil.parser
+import traceback
 
 class VTAMDriver:
     logger = logging.getLogger("vtam")
@@ -57,10 +58,52 @@ class VTAMDriver:
     def get_version(self):
         return None
 
+    def get_specific_server_and_vms1(self, urn, geni_available=False):
+        """
+        When 'available' is False or unspecified, all resources must be retrieved.
+        """
+        VTAMDriver.logger.debug("XXX urn = " + urn)
+        params =  self.__urn_to_vm_params(urn)
+        servers = VTServer.objects.all()
+        resources = list() 
+        vms = list()
+        for server in servers:
+            if not server.available and geni_available:
+                continue
+            VTAMDriver.logger.debug("virttech = " + server.getVirtTech())
+            # Look for provisioned VMs
+            vms_provisioned = list()
+            child = server.getChildObject()
+            if child:
+                VTAMDriver.logger.debug("child = " + child.__class__.__name__)
+                vms_provisioned.extend(child.getVMs(**params))
+            else:
+                continue
+            vms_provisioned = child.getVMs(**params)
+            vm_names = self.__return_vm_names(vms_provisioned)
+            vms_allocated = Reservation.objects.filter(server__id=server.id, **params)
+            if len(vms_allocated) == 0:
+                continue
+            for vm1 in vms_allocated:
+                pass
+            vms.extend(vms_provisioned)
+            # ... Also for reserved VMs
+            vms.extend(vms_provisioned)
+            # NOTE: if there are VMs provisioned, these are the ones to be returned
+            # Explanation: when a VM is provisioned, the reservation for the
+            # VM may still be active, but it is of no interest to the user
+            #if not vms_provisioned:
+            vms.extend(vms_allocated)
+            if vms:
+                converted_resources = self.__convert_to_resources_with_slivers(server, vms)
+                resources.extend(converted_resources)
+        return resources
+
     def get_specific_server_and_vms(self, urn, geni_available=False):
         """
         When 'available' is False or unspecified, all resources must be retrieved.
         """
+        VTAMDriver.logger.debug("XXX urn = " + urn)
         params =  self.__urn_to_vm_params(urn)
         servers = VTServer.objects.all()
         resources = list() 
@@ -142,6 +185,7 @@ class VTAMDriver:
                 # Update vm_params to get the exact, corresponding VM for each reservation
                 vm_params.update({"name": r.name})
                 vms = VirtualMachine.objects.filter(**vm_params)
+                VTAMDriver.logger.debug("XXX vms.len = " + str(len(vms)))
                 self.__store_user_keys(users, vms)
                 # When reservation (allocation) is fulfilled, mark appropriately
                 r.set_provisioned(True)
@@ -173,9 +217,11 @@ class VTAMDriver:
         if not reservation.get_component_id() == None:
             server_hrn, hrn_type = urn_to_hrn(reservation.get_component_id())
             server_name = server_hrn.split(".")[-1]
+            VTAMDriver.logger.debug("server_name = " + server_name + ", server_hrn = " + server_hrn)
         else:
             server_name = self.__get_best_server()
             server_hrn = self.__config.CM_HRN + "." + server_name
+            VTAMDriver.logger.debug("server_name = " + server_name + ", server_hrn = " + server_hrn)
         server = VTServer.objects.get(name=server_name).getChildObject()
         server_id = server.id 
         if reservation.get_id():
@@ -186,7 +232,7 @@ class VTAMDriver:
             reservation_name = str(random.randint(0,1000*1000))
         
         if expiration == None:
-            expiration = datetime.utcnow() + timedelta(hours=1) 
+            expiration = datetime.utcnow() + timedelta(hours=168) 
 
         reserved_vm = Reservation()
         #reserved_vm.reservation_id = random.randint(0,1000)
@@ -202,7 +248,9 @@ class VTAMDriver:
             reservation.set_sliver(Sliver())
          
         # Set information for sliver
-        reservation.get_sliver().set_urn(hrn_to_urn(server_hrn+"." + slice_hrn.split(".")[-1] + "." +str(reservation_name), "sliver"))
+        sliver_urn = hrn_to_urn(server_hrn+"." + slice_hrn.split(".")[-1] + "." +str(reservation_name), "sliver")
+        VTAMDriver.logger.debug("XXX sliver_urn = " + sliver_urn)
+        reservation.get_sliver().set_urn(sliver_urn)
         reservation.get_sliver().set_allocation_status(self.GENI_ALLOCATED)
         reservation.get_sliver().set_expiration(expiration)
         reservation.get_sliver().set_operational_status(self.GENI_NOT_READY)
@@ -317,6 +365,7 @@ class VTAMDriver:
                     self.__validate_precondition_states(vm, action)
                     # Return "BUSY" exception if sliver is in incorrect operational state
                     if self.__translate_to_operational_state(vm) == self.GENI_UPDATING_USERS:
+                        VTAMDriver.logger.warn("BUSY sliver in state '%s'" % self.GENI_UPDATING_USERS)
                         raise Exception("BUSY sliver in state '%s'" % self.GENI_UPDATING_USERS)
                     vm_params = {"server_uuid":server.uuid, "vm_id":vm.id}
                     if vm_params not in vm_server_pairs:
@@ -324,8 +373,8 @@ class VTAMDriver:
                     try:
                         with self.__mutex_thread:
                             VTDriver.PropagateActionToProvisioningDispatcher(vm.id, server.uuid, action)
-                            
                     except Exception as e:
+                        VTAMDriver.logger.exception("")
                         try:
                             if self.get_geni_best_effort_mode():
                                 resource = self.__convert_to_resources_with_slivers(server, [vm])[0]
@@ -466,7 +515,8 @@ class VTAMDriver:
         used_user_names = []
         for key in keys:
             if not key.user_name in used_user_names:
-                login_services.append({"login":{"authentication":"ssh-keys", "hostname":vm_ip, "port": "22", "username":key.user_name}})
+                #login_services.append({"login":{"authentication":"ssh-keys", "hostname":vm_ip, "port": "22", "username":key.user_name}})
+                login_services.append({"login":{"authentication":"ssh", "hostname":vm_ip, "port": "22", "username":"root"}})
                 used_user_names.append(key.user_name)
         return login_services
 
@@ -593,19 +643,19 @@ class VTAMDriver:
             iface["ip"] = None
             iface["mask"] = None               
             iface_list.append(iface)
-	for iface in iface_list:
- 	    iface_class_empty = copy.deepcopy(iface_class.interface[0])
- 	    iface_class_empty.gw = iface["gw"]
- 	    iface_class_empty.mac = iface["mac"]
- 	    iface_class_empty.name = iface["name"]
- 	    iface_class_empty.dns1 = iface["dns1"]
- 	    iface_class_empty.dns2 = iface["dns2"]
- 	    iface_class_empty.ip = iface["ip"]
- 	    iface_class_empty.mask = iface["mask"]
- 	    if "ismgmt" in iface.keys():
- 	    	iface_class_empty.ismgmt = iface["ismgmt"]
- 	    else:
- 		iface_class_empty.ismgmt = "false"
+        for iface in iface_list:
+            iface_class_empty = copy.deepcopy(iface_class.interface[0])
+            iface_class_empty.gw = iface["gw"]
+            iface_class_empty.mac = iface["mac"]
+            iface_class_empty.name = iface["name"]
+            iface_class_empty.dns1 = iface["dns1"]
+            iface_class_empty.dns2 = iface["dns2"]
+            iface_class_empty.ip = iface["ip"]
+            iface_class_empty.mask = iface["mask"]
+            if "ismgmt" in iface.keys():
+                iface_class_empty.ismgmt = iface["ismgmt"]
+            else:
+                iface_class_empty.ismgmt = "false"
             iface_class.interface.append(iface_class_empty)
         iface_class.interface.pop(0) # Deleting the empty interface instance
 
@@ -801,7 +851,7 @@ class VTAMDriver:
         params = {
             "vm_address": str(ip) ,
             "vm_user": "root",
-            "vm_password": "openflow",
+            "vm_password": "password",
         }
         vm_context = VMContextualize(**params)
         try:

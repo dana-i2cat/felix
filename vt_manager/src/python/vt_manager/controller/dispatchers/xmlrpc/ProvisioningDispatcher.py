@@ -34,6 +34,7 @@ class ProvisioningDispatcher():
 				controller = VTDriver.getDriver(action.server.virtualization_type)
 				
 				#XXX:Change this when xml schema is updated
+				ProvisioningDispatcher.logger.debug("XXX action.server.uuid = " + str(action.server.uuid))
 				server = VTDriver.getServerByUUID(action.server.uuid)
 				ProvisioningDispatcher.logger.debug("server.id = " + str(server.id))
 				#if actionModel.getType() == Action.PROVISIONING_VM_CREATE_TYPE:

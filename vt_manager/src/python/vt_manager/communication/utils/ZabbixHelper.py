@@ -45,8 +45,8 @@ class ZabbixHelper():
 	def sendVMStatusDiscovery(vms):
 		timestamp = int(time.time())
 		driver = HandlerConfigurator.get_vt_am_driver()
-		discoveryList = []
 		for vm in vms:
+			discoveryList = []
 			vm_urn = driver.generate_sliver_urn(vm)
 			discovery = {"{#USERVM.URN}": vm_urn}
 			discoveryList.append(discovery)
