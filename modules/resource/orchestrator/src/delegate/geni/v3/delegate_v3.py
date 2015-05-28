@@ -440,7 +440,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
             slice_monitor.add_topology(slice_urn, SliceMonitoring.PROVISIONED,
                                        client_urn)
         except Exception as e:
-            logger.warning("Delegate could not send Provision trigger to MS. Details: ", e)
+            logger.warning("Delegate could not send Provision trigger" +
+                           " to MS. Details: %s", (e,))
 
         route = db_sync_manager.get_slice_routing_keys(urns)
         logger.debug("Route=%s" % (route,))
@@ -462,7 +463,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     slice_monitor.add_c_resources(
                         slice_urn, com_m_info.get("nodes"), com_slivers)
                 except Exception as e:
-                    logger.warning("Delegate could not monitor COM resources upon Provision. Details: ", e)
+                    logger.warning("Delegate could not monitor COM resources" +
+                                   " upon Provision. Details: %s", (e,))
 
             elif peer.get("type") == self._allowed_peers.get("PEER_SDNRM"):
                 of_m_info, of_slivers = SDNUtils().manage_provision(
@@ -478,7 +480,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     slice_monitor.add_sdn_resources(
                         slice_urn, of_m_info.get("slivers"), of_slivers)
                 except Exception as e:
-                    logger.warning("Delegate could not monitor SDN resources upon Provision. Details: ", e)
+                    logger.warning("Delegate could not monitor SDN resources" +
+                                   " upon Provision. Details: %s", (e,))
 
             elif peer.get("type") == self._allowed_peers.get("PEER_TNRM"):
                 tn_m_info, tn_slivers = TNUtils().manage_provision(
@@ -494,10 +497,11 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 # introduce slice-monitoring info for TN resources
                 try:
                     slice_monitor.add_tn_resources(
-                        slice_urn, tn_m_info.get("nodes"), tn_m_info.get("links"),
-                        tn_slivers, peer)
+                        slice_urn, tn_m_info.get("nodes"),
+                        tn_m_info.get("links"), tn_slivers, peer)
                 except Exception as e:
-                    logger.warning("Delegate could not monitor TN resources upon Provision. Details: ", e)
+                    logger.warning("Delegate could not monitor TN resources" +
+                                   " upon Provision. Details: %s", (e,))
 
             elif peer.get("type") == self._allowed_peers.get("PEER_SERM"):
                 se_m_info, se_slivers = SEUtils().manage_provision(
@@ -513,10 +517,11 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 # introduce slice-monitoring info for SE resources
                 try:
                     slice_monitor.add_se_resources(
-                        slice_urn, se_m_info.get("nodes"), se_m_info.get("links"),
-                        se_slivers)
+                        slice_urn, se_m_info.get("nodes"),
+                        se_m_info.get("links"), se_slivers)
                 except Exception as e:
-                    logger.warning("Delegate could not monitor SE resources upon Provision. Details: ", e)
+                    logger.warning("Delegate could not monitor SE resources" +
+                                   " upon Provision. Details: %s", (e,))
 
             elif peer.get("type") == self._allowed_peers.get("PEER_RO"):
                 ro_m_info, ro_slivers_ro = ROUtils().manage_provision(
@@ -550,33 +555,38 @@ class GENIv3Delegate(GENIv3DelegateBase):
                         slice_urn, ro_m_info.get("se_nodes"),
                         ro_m_info.get("se_links"), ro_slivers)
                 except Exception as e:
-                    logger.warning("Delegate could not monitor resources of given RO upon Provision. Details: ", e)
+                    logger.warning("Delegate could not monitor RO resources" +
+                                   " upon Provision. Details: %s", (e,))
 
         # send slice-monitoring info to the monitoring system
         try:
             slice_monitor.send()
             # add slice_monitoring object to the slice table
-            db_sync_manager.store_slice_monitoring_info(slice_urn,
-                                                    slice_monitor.serialize())
+            db_sync_manager.store_slice_monitoring_info(
+                slice_urn, slice_monitor.serialize())
         except Exception as e:
-            logger.warning("Delegate could not send or store slice monitoring information upon Provision. Details: ", e)
+            logger.warning("Delegate could not send (store) slice monitoring" +
+                           " information upon Provision. Details: %s", (e,))
 
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
 
-
-	valid_geni_expires = None
-	for s in ro_slivers:
-		if s["geni_expires"]:
-			valid_geni_expires = s["geni_expires"]
-			break
+        # In order to prevent data conversion error, we manipulate the
+        # geni-expires parameter. At least 1 parameter should be not null!
+        valid_geni_expires = None
+        for s in ro_slivers:
+            if s["geni_expires"]:
+                valid_geni_expires = s["geni_expires"]
+                break
 
         for s in ro_slivers:
-	    if s["geni_expires"] is None:
-		s["geni_expires"] = dates.rfc3339_to_datetime(valid_geni_expires)
-	    else:
-		s["geni_expires"] = dates.rfc3339_to_datetime(s["geni_expires"])
-        logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
+            if s["geni_expires"] is None:
+                s["geni_expires"] =\
+                    dates.rfc3339_to_datetime(valid_geni_expires)
+            else:
+                s["geni_expires"] =\
+                    dates.rfc3339_to_datetime(s["geni_expires"])
 
+        logger.debug("RO-Slivers(%d)=%s" % (len(ro_slivers), ro_slivers,))
         return ("%s" % ro_manifest, ro_slivers)
 
     @trace_method_inputs
@@ -692,7 +702,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 slice_monitor = SliceMonitoring()
                 slice_monitor.delete_slice_topology(slice_urn)
             except Exception as e:
-                logger.warning("Delegate could not send or delete slice monitoring information upon Delete. Details: ", e)
+                logger.warning("Delegate could not send slice monitoring" +
+                               " information upon Delete. Details: %s", (e,))
             db_sync_manager.delete_slice_sdn(slice_urn)
 
         db_sync_manager.delete_slice_urns(db_urns)
