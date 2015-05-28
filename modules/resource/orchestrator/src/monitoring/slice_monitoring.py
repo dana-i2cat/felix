@@ -343,7 +343,11 @@ class SliceMonitoring(BaseMonitoring):
                     # Adding "abstract" link
                     self.__add_link_info(topo, self.MS_LINK_TYPE, extif, "*")
 
-<<<<<<< HEAD
+    def __add_se_port_from_interface(self, if_id, if_tag):
+        index = if_id.rfind("_")
+        if index != -1:
+            etree.SubElement(if_tag, "port", num=if_id[index+1:len(if_id)])
+
     def add_se_resources(self, slice_urn, nodes, links):
         """
         Inserts one or more nodes with SERM resources information.
@@ -352,14 +356,6 @@ class SliceMonitoring(BaseMonitoring):
         @param nodes Structure containing a list of SERM nodes and its attributes
         @param links Structure containing a list of SERM links and its attributes
         """
-=======
-    def __add_se_port_from_interface(self, if_id, if_tag):
-        index = if_id.rfind("_")
-        if index != -1:
-            etree.SubElement(if_tag, "port", num=if_id[index+1:len(if_id)])
-
-    def add_se_resources(self, slice_urn, nodes, links, slivers):
->>>>>>> 62b339b4712b244db6330945e5b97328b734cece
         if slice_urn not in self.__stored:
             logger.error("Unable to find Topology info from %s!" % slice_urn)
             return
