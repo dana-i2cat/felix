@@ -256,7 +256,6 @@ class DBManager(object):
                 for r in table.find():
                     if r.get("slice_urn") == u:
                         return u
-
                     for s in r.get("slivers"):
                         if s.get("geni_sliver_urn") == u:
                             return r.get("slice_urn")
@@ -268,12 +267,22 @@ class DBManager(object):
         table = self.__get_table("topology.slice")
         try:
             self.__mutex.acquire()
+            # Keep track of the slice containing any of the slivers passed
+            # This is done in order to remove the slice once it is empty
+            containing_slice = {}
+            containing_slice_urn = None
+            if len(urns) > 0:
+                containing_slice = table.find_one({"slivers.geni_sliver_urn": urns[0]}) or {}
+                if "slice_urn" in containing_slice:
+                    containing_slice_urn = containing_slice.get("slice_urn", None)
             for u in urns:
                 for r in table.find():
+                    # Passed URN belongs to a slice
                     if r.get("slice_urn") == u:
                         table.remove({"slice_urn": u})
                         logger.info("Removed slice entry: %s" % (u,))
                     else:
+                        # Passed URN belongs to a sliver (inside slice)
                         for s in r.get("slivers"):
                             if s.get("geni_sliver_urn") == u:
                                 # remove the element from the list
@@ -284,6 +293,10 @@ class DBManager(object):
                                     "Removed sliver from slice entry: %s" %
                                     (u,))
                                 break
+            # Remove slice when it does not contain slivers anymore
+            containing_slice = table.find_one({"slice_urn": containing_slice_urn}) or {}
+            if len(containing_slice.get("slivers", [])) == 0 and containing_slice_urn is not None:
+                table.remove({"slice_urn": containing_slice_urn})
         finally:
             self.__mutex.release()
 

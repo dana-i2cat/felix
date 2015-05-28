@@ -1,5 +1,6 @@
-from delegate.geni.v3.rm_adaptor import AdaptorFactory
+from core import dates
 from db.db_manager import db_sync_manager
+from delegate.geni.v3.rm_adaptor import AdaptorFactory
 from extensions.sfa.util import xrn
 from handler.geni.v3 import exceptions as geni_ex
 from rspecs.commons import validate
@@ -28,6 +29,25 @@ class CommonUtils(object):
             client_urn = xrn.urn_to_hrn(geni_users[0]["urn"])[0].replace("\\","")
             #client_urn = xrn.get_leaf(xrn.urn_to_hrn(geni_users[0]["urn"])[0])
         return client_urn
+
+    @staticmethod
+    def convert_sliver_dates_to_datetime(geni_slivers, geni_expires_value=None):
+        """
+        Given the GENI slivers structure, converts every 'geni_expires'
+        field inside (in rfc3339) format to a datetime object. This is the 
+        expected output by CLI clients (e.g. OMNI).
+        
+        @param geni_slivers slivers structure, generated in delegate
+        @param geni_expires_value valid rfc3339 date
+        @return geni_slivers slivers structure, with date format modified
+        """
+        for s in geni_slivers:
+            # The 'geni_expires_value' has precedence over the current value
+            geni_expires = geni_expires_value or s["geni_expires"]
+            if geni_expires is not None:
+                s["geni_expires"] = dates.rfc3339_to_datetime(geni_expires)
+        logger.debug("RO-Slivers(%d)=%s" % (len(geni_slivers), geni_slivers))
+        return geni_slivers
 
     def validate_rspec(self, rspec):
         """
