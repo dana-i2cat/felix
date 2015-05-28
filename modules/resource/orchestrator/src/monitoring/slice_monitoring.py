@@ -74,12 +74,12 @@ class SliceMonitoring(BaseMonitoring):
 
             inner_node_ = etree.SubElement(
                 node_, "node", id=n.get("sliver_id"),
-                type=n.get("sliver_type_name"))
+                type=n.get("sliver_type_name").lower())
 
             # Add the interface identifier of the server node here!
             # In the future, it will be the vlan-tagged interface of the
             # virtual machine (much more sense)
-            nodekey = n.get("component_id").replace("+node+', ':")
+            nodekey = n.get("component_id").replace("+node+", ":")
             logger.debug("Node key=%s" % (nodekey,))
             interfaces = db_sync_manager.get_com_interface_by_nodekey(nodekey)
             logger.info("Stored COM interfaces=%s" % (interfaces,))
