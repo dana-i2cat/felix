@@ -64,17 +64,17 @@ class SEUtils(CommonUtils):
         for v in values:
             k, ifs = db_sync_manager.get_se_link_routing_key(v.get(key))
             if k is None:
-                logger.warning("%s (%s) is unknown for this SERM!" %
-                               (key, v.get(key),))
+                logger.warning("The key (%s) for (%s) is unknown for " %
+                               (key, v.get(key),) + "this SERM!")
                 continue
 
-        logger.info("Found a match with key=%s, ifs=%s" % (k, ifs,))
-        v['routing_key'] = k
-        v['internal_ifs'] = ifs
-        node = db_sync_manager.get_se_node_info(k)
-        v['node'] = node
-        if (k is not None) and (k not in route):
-            route[k] = SERMv3RequestFormatter()
+            logger.info("Found a match with key=%s, ifs=%s" % (k, ifs,))
+            v['routing_key'] = k
+            v['internal_ifs'] = ifs
+            node = db_sync_manager.get_se_node_info(k)
+            v['node'] = node
+            if (k is not None) and (k not in route):
+                route[k] = SERMv3RequestFormatter()
 
         # remove all the elements that not have internal_ifs as key!
         values[:] = [v for v in values if 'internal_ifs' in v]

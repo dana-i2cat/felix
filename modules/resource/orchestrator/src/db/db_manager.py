@@ -123,8 +123,8 @@ class DBManager(object):
         filter_params = extra_filter
         filter_params.update(
             {"protocol": rm_protocol, "address": rm_address,
-             # Port is stored as an integer, but the query looks for a string...
-             #"endpoint": {"$regex": rm_endpoint_re}, })
+             # Port is stored as an integer, but the query looks for a string..
+             # "endpoint": {"$regex": rm_endpoint_re}, })
              "port": rm_port, "endpoint": {"$regex": rm_endpoint_re}, })
         peer = self.get_configured_peer(filter_params)
         return peer
@@ -146,11 +146,11 @@ class DBManager(object):
     def get_info_peers(self, filter_params={}):
         table = self.__get_table("domain.info")
         return self.__get_all(table, filter_params)
-    
+
     def get_domain_info(self, filter_params):
         table = self.__get_table("domain.info")
         return self.__get_one(table, filter_params)
-    
+
     def store_domain_info(self, rm_url, domain_urn):
         table = self.__get_table("domain.info")
         # Search for entry in domain.routing first
@@ -168,6 +168,7 @@ class DBManager(object):
                 return table.insert(entry)
         finally:
             self.__mutex.release()
+
     def get_domain_urn(self, filter_params):
         return self.get_domain_info(filter_params).get("domain_urn")
 
@@ -748,11 +749,11 @@ class DBManager(object):
             if ret:
                 return ret
 
-            ret = []
+            ret = set()
             for row in table.find():
                 for i in row.get("interfaces"):
                     if i.get("component_id") in ifrefs:
-                        ret.append(row.get("routing_key"))
+                        ret.add(row.get("routing_key"))
 
             if ret:
                 return ret
