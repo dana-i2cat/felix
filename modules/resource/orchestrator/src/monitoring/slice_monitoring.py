@@ -34,20 +34,42 @@ class SliceMonitoring(BaseMonitoring):
         self.__mapping_c_interface = {}
 
     def __get_topologies(self):
+        """
+        Returns a pretty version of the whole tree (list of topologies).
+        @return topologies tree in a pretty format
+        """
         return etree.tostring(self.__topologies, pretty_print=True)
 
     def __add_snmp_management(self, tag, address,
                               port_num="161", auth_string="community"):
-        manag = etree.SubElement(tag, "management", type="snmp")
-
-        addr = etree.SubElement(manag, "address")
+        """
+        Inserts a new node (subelement) inside an lxml.etree
+        with access information to retrieve monitoring metrics.
+        Currently set to retrieve data through SNMP.
+        
+        @param tag tree node from where to insert the management section
+        @param address IP adress used to access a device
+        @param port_num port number used to access a device
+        @param auth_string identifier, token, password... used to access a device
+        """
+        manage = etree.SubElement(tag, "management", type="snmp")
+        addr = etree.SubElement(manage, "address")
         addr.text = address
-        port = etree.SubElement(manag, "port")
+        port = etree.SubElement(manage, "port")
         port.text = port_num
-        auth = etree.SubElement(manag, "auth")
+        auth = etree.SubElement(manage, "auth")
         auth.text = auth_string
 
     def add_topology(self, slice_urn, status, client_urn=None):
+        """
+        Inserts a new node (subelement) inside an lxml.etree
+        with a topology for a given domain or island.
+        
+        @param slice_urn URN identifier of a given slice
+        @param status Status of the resources, as in GENI
+                      Possible values: {geni_allocated|geni_unallocated|geni_provisioned}
+        @param client_urn URN identifier of the client originating the request
+        """
         owner_name = client_urn if client_urn else "not_certified_user"
         # Convert the float number to an integer value as expected by MS!
         cm_time = int(round(time.time()))
@@ -55,10 +77,16 @@ class SliceMonitoring(BaseMonitoring):
             self.__topologies, "topology", type="slice",
             last_update_time=str(cm_time), name=slice_urn,
             owner=owner_name, status=status)
-        # store the currect slice topology identifier
+        # Store the currect slice topology identifier
         self.__stored[slice_urn] = topology
 
-    def add_c_resources(self, slice_urn, nodes, slivers):
+    def add_c_resources(self, slice_urn, nodes):
+        """
+        Inserts one or more nodes with CRM resources information.
+        
+        @param slice_urn URN identifier of a given slice
+        @param nodes Structure containing a list of CRM nodes and its attributes
+        """
         if slice_urn not in self.__stored:
             logger.error("Unable to find Topology info from %s!" % slice_urn)
             return
@@ -142,10 +170,15 @@ class SliceMonitoring(BaseMonitoring):
                 ret.append(i + "_" + t)
         return ret
 
-    def add_sdn_resources(self, slice_urn, nodes, slivers):
-        # We cannot use information extracted from the manifest here!
-        # We can look into the db-table containing the requested dpids
-        # and matches.
+    def add_sdn_resources(self, slice_urn, nodes):
+        """
+        Inserts one or more nodes with SDNRM resources information.
+        
+        @param slice_urn URN identifier of a given slice
+        @param nodes Structure containing a list of SDNRM nodes and its attributes
+        """
+        # Cannot use information extracted from the manifest here!
+        # Look into the db-table containing the requested dpids and matches.
         if slice_urn not in self.__stored:
             logger.error("Slice monitoring: unable to find topology info from %s!" % slice_urn)
             return
@@ -238,7 +271,15 @@ class SliceMonitoring(BaseMonitoring):
         endp = etree.SubElement(manag, "endpoint")
         endp.text = endpoint
 
-    def add_tn_resources(self, slice_urn, nodes, links, slivers, peer_info):
+    def add_tn_resources(self, slice_urn, nodes, links, peer_info):
+        """
+        Inserts one or more nodes with TNRM resources information.
+        
+        @param slice_urn URN identifier of a given slice
+        @param nodes Structure containing a list of TNRM nodes and its attributes
+        @param links Structure containing a list of TNRM links and its attributes
+        @param peer_info Structure containing a number of specific attributes of a given peer
+        """
         if slice_urn not in self.__stored:
             logger.error("Unable to find Topology info from %s!" % slice_urn)
             return
@@ -293,14 +334,21 @@ class SliceMonitoring(BaseMonitoring):
                     # Adding "abstract" link
                     self.__add_link_info(topo, self.MS_LINK_TYPE, extif, "*")
 
-    def add_se_resources(self, slice_urn, nodes, links, slivers):
+    def add_se_resources(self, slice_urn, nodes, links):
+        """
+        Inserts one or more nodes with SERM resources information.
+        
+        @param slice_urn URN identifier of a given slice
+        @param nodes Structure containing a list of SERM nodes and its attributes
+        @param links Structure containing a list of SERM links and its attributes
+        """
         if slice_urn not in self.__stored:
             logger.error("Unable to find Topology info from %s!" % slice_urn)
             return
 
         topology = self.__stored.get(slice_urn)
 
-        logger.debug("add_se_resources Nodes=%d" % (len(nodes),))
+        logger.debug("dd_se_resources Nodes=%d" % (len(nodes),))
         for n in nodes:
             logger.debug("Node=%s" % (n,))
 
