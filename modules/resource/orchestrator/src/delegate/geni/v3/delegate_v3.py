@@ -82,13 +82,17 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def list_resources(self, client_cert, credentials, geni_available):
         """
         Shows a list with the slivers managed or seen by the resource manager.
-        
+
         @param client_cert client certificate (X509)
-        @param credentials client credential(s), provided by the ClearingHouse and generated after the certificates
-        @param geni_available flag to describe which slivers are expected to be shown
-                                * geni_available = True : only available (non-allocated, non-provisioned) will be shown
-                                * geni_available = False : every slivers will be shown
-        @return rspec RSpec document containing a list of the slivers, formatted in accordance to GENI schemas
+        @param credentials client credential(s), provided by the ClearingHouse
+            and generated after the certificates
+        @param geni_available flag to describe which slivers are expected
+            to be shown
+                * geni_available = True : only available (non-allocated,
+                                          non-provisioned) will be shown
+                * geni_available = False : every slivers will be shown
+        @return rspec RSpec document containing a list of the slivers,
+            formatted in accordance to GENI schemas
         """
 
         if self._verify_users:
@@ -393,17 +397,25 @@ class GENIv3Delegate(GENIv3DelegateBase):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         """
         Renews the sliver(s) requested to a given date, passed by the user.
-        The new expiration date for the sliver(s) must be less or equal to the expiration date of the user's credential.
-        When best_effort is enabled, renewal will be attempted on every resource.
-        
-        @param urns list of URNs with the identifiers of the resources to be treated
+        The new expiration date for the sliver(s) must be less or equal to the
+        expiration date of the user's credential.
+        When best_effort is enabled, renewal will be attempted on every
+        resource.
+
+        @param urns list of URNs with the identifiers of the resources
+            to be treated
         @param client_cert client certificate (X509)
-        @param credentials client credential(s), provided by the ClearingHouse and generated after the certificates
-        @param expiration_time new expiration date for the selected sliver(s). Must comply to rfr3339 format
+        @param credentials client credential(s), provided by the ClearingHouse
+            and generated after the certificates
+        @param expiration_time new expiration date for the selected sliver(s).
+            Must comply to rfr3339 format
         @param best_effort flag to describe the behaviour upon a failure
-                            * best_effort = True : as much operations as possible are performed upon an error condition
-                            * best_effort = False : the set of operations will be stopped if an error occurs
-        @return ro_slivers structure containing information of slivers (URN, expiration date, etc)
+                * best_effort = True : as much operations as possible are
+                                       performed upon an error condition
+                * best_effort = False : the set of operations will be stopped
+                                        if an error occurs
+        @return ro_slivers structure containing information of slivers
+            (URN, expiration date, etc)
         """
         ro_slivers = []
 
@@ -479,7 +491,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 # introduce slice-monitoring info for C resources
                 try:
                     slice_monitor.add_c_resources(
-                        slice_urn, com_m_info.get("nodes"), com_slivers)
+                        slice_urn, com_m_info.get("nodes"))
                 except Exception as e:
                     logger.warning("Delegate could not monitor COM resources" +
                                    " upon Provision. Details: %s", (e,))
@@ -496,7 +508,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 # introduce slice-monitoring info for SDN resources
                 try:
                     slice_monitor.add_sdn_resources(
-                        slice_urn, of_m_info.get("slivers"), of_slivers)
+                        slice_urn, of_m_info.get("slivers"))
                 except Exception as e:
                     logger.warning("Delegate could not monitor SDN resources" +
                                    " upon Provision. Details: %s", (e,))
@@ -516,7 +528,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 try:
                     slice_monitor.add_tn_resources(
                         slice_urn, tn_m_info.get("nodes"),
-                        tn_m_info.get("links"), tn_slivers, peer)
+                        tn_m_info.get("links"), peer)
                 except Exception as e:
                     logger.warning("Delegate could not monitor TN resources" +
                                    " upon Provision. Details: %s", (e,))
@@ -536,7 +548,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 try:
                     slice_monitor.add_se_resources(
                         slice_urn, se_m_info.get("nodes"),
-                        se_m_info.get("links"), se_slivers)
+                        se_m_info.get("links"))
                 except Exception as e:
                     logger.warning("Delegate could not monitor SE resources" +
                                    " upon Provision. Details: %s", (e,))
@@ -563,21 +575,24 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 # introduce slice-monitoring info for ALL the resource types!
                 try:
                     slice_monitor.add_c_resources(
-                        slice_urn, ro_m_info.get("com_nodes"), ro_slivers)
+                        slice_urn, ro_m_info.get("com_nodes"))
                     slice_monitor.add_sdn_resources(
-                        slice_urn, ro_m_info.get("sdn_slivers"), ro_slivers)
+                        slice_urn, ro_m_info.get("sdn_slivers"))
                     slice_monitor.add_tn_resources(
                         slice_urn, ro_m_info.get("tn_nodes"),
-                        ro_m_info.get("tn_links"), ro_slivers, peer)
+                        ro_m_info.get("tn_links"), peer)
                     slice_monitor.add_se_resources(
                         slice_urn, ro_m_info.get("se_nodes"),
-                        ro_m_info.get("se_links"), ro_slivers)
+                        ro_m_info.get("se_links"))
                 except Exception as e:
                     logger.warning("Delegate could not monitor RO resources" +
                                    " upon Provision. Details: %s", (e,))
 
         # send slice-monitoring info to the monitoring system
         try:
+            # Before sending the slice info, we need to add some "virtual"
+            # links (island-to-island)!
+            slice_monitor.add_island_to_island_links(slice_urn)
             slice_monitor.send()
             # add slice_monitoring object to the slice table
             db_sync_manager.store_slice_monitoring_info(
@@ -593,9 +608,10 @@ class GENIv3Delegate(GENIv3DelegateBase):
         valid_geni_expires = None
         for s in ro_slivers:
             if s["geni_expires"] is not None:
-               valid_geni_expires = s["geni_expires"]
-               break
-        ro_slivers = CommonUtils.convert_sliver_dates_to_datetime(ro_slivers, valid_geni_expires)
+                valid_geni_expires = s["geni_expires"]
+                break
+        ro_slivers = CommonUtils.convert_sliver_dates_to_datetime(
+            ro_slivers, valid_geni_expires)
         return ("%s" % ro_manifest, ro_slivers)
 
     @trace_method_inputs
@@ -632,18 +648,26 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def perform_operational_action(self, urns, client_cert, credentials,
                                    action, best_effort):
         """
-        Performs a GENI operational action the requested resources, identified each by an URN.
-        When best_effort is enabled, deletion will be attempted on every resource.
-        
-        @param urns list of URNs with the identifiers of the resources to be treated
+        Performs a GENI operational action the requested resources, identified
+        each by an URN.
+        When best_effort is enabled, deletion will be attempted on every
+        resource.
+
+        @param urns list of URNs with the identifiers of the resources to
+            be treated
         @param client_cert client certificate (X509)
-        @param credentials client credential(s), provided by the ClearingHouse and generated after the certificates
+        @param credentials client credential(s), provided by the ClearingHouse
+            and generated after the certificates
         @param action name of the GENI action to be processed.
-                        Typical values are { geni_start, geni_stop, geni_restart }, but others may be allowed
+            Typical values are { geni_start, geni_stop, geni_restart }, but
+            others may be allowed
         @param best_effort flag to describe the behaviour upon a failure
-                            * best_effort = True : as much operations as possible are performed upon an error condition
-                            * best_effort = False : the set of operations will be stopped if an error occurs
-        @return ro_slivers structure containing information of slivers (URN, expiration date, etc)
+                * best_effort = True : as much operations as possible are
+                                       performed upon an error condition
+                * best_effort = False : the set of operations will be stopped
+                                        if an error occurs
+        @return ro_slivers structure containing information of slivers (URN,
+            expiration date, etc)
         """
         ro_slivers = []
 
@@ -680,15 +704,21 @@ class GENIv3Delegate(GENIv3DelegateBase):
     def delete(self, urns, client_cert, credentials, best_effort):
         """
         Deletes the requested resources, identified each by an URN.
-        When best_effort is enabled, deletion will be attempted on every resource.
-        
-        @param urns list of URNs with the identifiers of the resources to be treated
+        When best_effort is enabled, deletion will be attempted on every
+        resource.
+
+        @param urns list of URNs with the identifiers of the resources to
+            be treated
         @param client_cert client certificate (X509)
-        @param credentials client credential(s), provided by the ClearingHouse and generated after the certificates
+        @param credentials client credential(s), provided by the ClearingHouse
+            and generated after the certificates
         @param best_effort flag to describe the behaviour upon a failure
-                            * best_effort = True : as much operations as possible are performed upon an error condition
-                            * best_effort = False : the set of operations will be stopped if an error occurs
-        @return ro_slivers structure containing information of slivers (URN, expiration date, etc)
+                * best_effort = True : as much operations as possible are
+                                       performed upon an error condition
+                * best_effort = False : the set of operations will be stopped
+                                        if an error occurs
+        @return ro_slivers structure containing information of slivers (URN,
+            expiration date, etc)
         """
         ro_slivers = []
         client_urn = None
@@ -727,7 +757,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         if slice_urn:
             try:
-                # MS needs to be sent the whole slice data in order to delete it
+                # MS needs to be sent the whole slice data in order to
+                # delete it
                 slice_monitor = SliceMonitoring()
                 slice_monitor.delete_slice_topology(slice_urn)
             except Exception as e:

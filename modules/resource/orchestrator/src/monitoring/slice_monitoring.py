@@ -32,6 +32,9 @@ class SliceMonitoring(BaseMonitoring):
         self.__topologies = etree.Element("topology_list")
         self.__stored = {}
         self.__mapping_c_interface = {}
+        self.__se_links = []
+        self.__tn_links = []
+        self.__hybrid_links = []
 
     def __get_topologies(self):
         """
@@ -46,11 +49,12 @@ class SliceMonitoring(BaseMonitoring):
         Inserts a new node (subelement) inside an lxml.etree
         with access information to retrieve monitoring metrics.
         Currently set to retrieve data through SNMP.
-        
+
         @param tag tree node from where to insert the management section
         @param address IP adress used to access a device
         @param port_num port number used to access a device
-        @param auth_string identifier, token, password... used to access a device
+        @param auth_string identifier, token, password... used to access
+                           a device
         """
         manage = etree.SubElement(tag, "management", type="snmp")
         addr = etree.SubElement(manage, "address")
@@ -64,10 +68,11 @@ class SliceMonitoring(BaseMonitoring):
         """
         Inserts a new node (subelement) inside an lxml.etree
         with a topology for a given domain or island.
-        
+
         @param slice_urn URN identifier of a given slice
         @param status Status of the resources, as in GENI
-                      Possible values: {geni_allocated|geni_unallocated|geni_provisioned}
+                      Possible values: {geni_allocated|geni_unallocated|
+                                        geni_provisioned}
         @param client_urn URN identifier of the client originating the request
         """
         owner_name = client_urn if client_urn else "not_certified_user"
@@ -83,9 +88,10 @@ class SliceMonitoring(BaseMonitoring):
     def add_c_resources(self, slice_urn, nodes):
         """
         Inserts one or more nodes with CRM resources information.
-        
+
         @param slice_urn URN identifier of a given slice
-        @param nodes Structure containing a list of CRM nodes and its attributes
+        @param nodes Structure containing a list of CRM nodes and
+                     its attributes
         """
         if slice_urn not in self.__stored:
             logger.error("Unable to find Topology info from %s!" % slice_urn)
@@ -183,9 +189,10 @@ class SliceMonitoring(BaseMonitoring):
     def add_sdn_resources(self, slice_urn, nodes):
         """
         Inserts one or more nodes with SDNRM resources information.
-        
+
         @param slice_urn URN identifier of a given slice
-        @param nodes Structure containing a list of SDNRM nodes and its attributes
+        @param nodes Structure containing a list of SDNRM nodes and
+                     its attributes
         """
         # Cannot use information extracted from the manifest here!
         # Look into the db-table containing the requested dpids and matches.
@@ -283,11 +290,14 @@ class SliceMonitoring(BaseMonitoring):
     def add_tn_resources(self, slice_urn, nodes, links, peer_info):
         """
         Inserts one or more nodes with TNRM resources information.
-        
+
         @param slice_urn URN identifier of a given slice
-        @param nodes Structure containing a list of TNRM nodes and its attributes
-        @param links Structure containing a list of TNRM links and its attributes
-        @param peer_info Structure containing a number of specific attributes of a given peer
+        @param nodes Structure containing a list of TNRM nodes and
+                     its attributes
+        @param links Structure containing a list of TNRM links and
+                     its attributes
+        @param peer_info Structure containing a number of specific attributes
+                         of a given peer
         """
         if slice_urn not in self.__stored:
             logger.error("Unable to find Topology info from %s!" % slice_urn)
@@ -324,10 +334,17 @@ class SliceMonitoring(BaseMonitoring):
             logger.debug("add_tn_resources Links=%d" % (len(links),))
             for l in links:
                 logger.debug("Link=%s" % (l,))
-
-                for p in l.get("property"):
+                # In order to avoid duplication in case of bidirectional links
+                # we use the attributes of the first "property" here!
+                if len(l.get("property")) >= 1:
+                    p = l.get("property")[0]
                     self.__add_link_info(topology, self.TN2TN_LINK_TYPE,
                                          p.get("source_id"), p.get("dest_id"))
+                    # store the values for the virtual island-to-island link
+                    self.__tn_links.append(
+                        {'id': l.get("component_id"),
+                         'source': p.get("source_id"),
+                         'destination': p.get("dest_id")})
 
     def __add_se_external_link_info(self, topo, ifs):
         for i in ifs:
@@ -338,6 +355,8 @@ class SliceMonitoring(BaseMonitoring):
             if extif is not None:
                 # Adding SE-to-SDN or SE-to-TN link
                 self.__add_link_info(topo, self.MS_LINK_TYPE, i, extif)
+                # store the values for the virtual island-to-island link
+                self.__hybrid_links.append({'source': i, 'destination': extif})
 
                 if extif.count("ofam") == 1:
                     # Adding "abstract" link
@@ -351,10 +370,12 @@ class SliceMonitoring(BaseMonitoring):
     def add_se_resources(self, slice_urn, nodes, links):
         """
         Inserts one or more nodes with SERM resources information.
-        
+
         @param slice_urn URN identifier of a given slice
-        @param nodes Structure containing a list of SERM nodes and its attributes
-        @param links Structure containing a list of SERM links and its attributes
+        @param nodes Structure containing a list of SERM nodes and
+                     its attributes
+        @param links Structure containing a list of SERM links and
+                     its attributes
         """
         if slice_urn not in self.__stored:
             logger.error("Unable to find Topology info from %s!" % slice_urn)
@@ -397,16 +418,126 @@ class SliceMonitoring(BaseMonitoring):
                                len(l.get("interface_ref")))
                 continue
 
+            # is it really necessary to put bidirectional links?
             self.__add_link_info(topology, l.get("link_type"),
                                  l.get("interface_ref")[0].get("component_id"),
                                  l.get("interface_ref")[1].get("component_id"))
-            # is it really necessary to put bidirectional links?
+
+            # store the values for the virtual island-to-island link
+            self.__se_links.append(
+                {'id': l.get("component_id"),
+                 'source': l.get("interface_ref")[0].get("component_id"),
+                 'destination': l.get("interface_ref")[1].get("component_id")})
 
             # we need to add "special" links here: SE-to-SDN, SE-to-TN
             # and an "abstract" link
             self.__add_se_external_link_info(
                 topology, [l.get("interface_ref")[0].get("component_id"),
                            l.get("interface_ref")[1].get("component_id")])
+
+    def __add_island2island_tnlink(self, info, tag):
+        tn_ = etree.SubElement(tag, "link", type="tn", id=info.get("id"))
+        etree.SubElement(tn_, "interface_ref", client_id=info.get("source"))
+        etree.SubElement(
+            tn_, "interface_ref", client_id=info.get("destination"))
+
+    def __find_hybrid_endpoint(self, value):
+        logger.debug("Finding the remote endpoint of %s" % (value,))
+        for hybrid_link in self.__hybrid_links:
+            logger.debug("HYBRID-link=%s" % (hybrid_link,))
+            if hybrid_link.get("source") == value:
+                return hybrid_link.get("destination")
+            elif hybrid_link.get("destination") == value:
+                return hybrid_link.get("source")
+
+        return None
+
+    def __add_island2island_lanlink(self, src, dst, tag):
+        logger.info("Lan link between %s and %s" % (src, dst,))
+        if (src is not None) and (dst is not None):
+            lan_ = etree.SubElement(tag, "link", type="lan")
+            etree.SubElement(lan_, "interface_ref", client_id=src)
+            etree.SubElement(lan_, "interface_ref", client_id=dst)
+        else:
+            logger.error("Un-terminated lan link!")
+
+    def __find_se_endpoint(self, value):
+        logger.debug("Finding the remote endpoint of %s" % (value,))
+        for se_link in self.__se_links:
+            logger.debug("SE-link=%s" % (se_link,))
+            if se_link.get("source") == value:
+                return se_link.get("destination"), se_link.get("id")
+            elif se_link.get("destination") == value:
+                return se_link.get("source"), se_link.get("id")
+
+        return None, None
+
+    def __add_island2island_selink(self, ident, src, dst, tag):
+        logger.info("Se link (%s) between %s and %s" % (ident, src, dst,))
+        if (ident is not None) and (src is not None) and (dst is not None):
+            se_ = etree.SubElement(tag, "link", type="se", id=ident)
+            etree.SubElement(se_, "interface_ref", client_id=src)
+            etree.SubElement(se_, "interface_ref", client_id=dst)
+        else:
+            logger.error("Un-terminated or Unknown se link!")
+
+    def __add_island2island_sdnif(self, src, dst, tag):
+        logger.info("Sdn interfaces %s and %s" % (src, dst,))
+        if (src is not None) and (dst is not None):
+            etree.SubElement(tag, "interface_ref", client_id=src)
+            etree.SubElement(tag, "interface_ref", client_id=dst)
+        else:
+            logger.error("Unknown sdn interfaces!")
+
+    def add_island_to_island_links(self, slice_urn):
+        if slice_urn not in self.__stored:
+            logger.error("Unable to find Topology info from %s!" % slice_urn)
+            return
+
+        topology = self.__stored.get(slice_urn)
+        logger.info("TN-links (%d), SE-links (%d), HYBRID-links (%d)" %
+                    (len(self.__tn_links), len(self.__se_links),
+                     len(self.__hybrid_links),))
+
+        for tn_link in self.__tn_links:
+            logger.info("TN-link=%s" % (tn_link,))
+            virtual_ = etree.SubElement(topology, "link", type="sdn")
+
+            # Add the tn link info into the virtual island2island info
+            self.__add_island2island_tnlink(tn_link, virtual_)
+
+            # Add the hybrid link between the source tn and se interface
+            se_if_src = self.__find_hybrid_endpoint(tn_link.get("source"))
+            self.__add_island2island_lanlink(
+                tn_link.get("source"), se_if_src, virtual_)
+
+            # Add the hybrid link between the destination tn and se interface
+            se_if_dst = self.__find_hybrid_endpoint(tn_link.get("destination"))
+            self.__add_island2island_lanlink(
+                tn_link.get("destination"), se_if_dst, virtual_)
+
+            # Add the se link in the "source" island
+            se_internal_src, se_id_src = self.__find_se_endpoint(se_if_src)
+            self.__add_island2island_selink(
+                se_id_src, se_if_src, se_internal_src, virtual_)
+
+            # Add the se link in the "destination" island
+            se_internal_dst, se_id_dst = self.__find_se_endpoint(se_if_dst)
+            self.__add_island2island_selink(
+                se_id_dst, se_if_dst, se_internal_dst, virtual_)
+
+            # Add the hybrid link between "source" se and sdn interface
+            sdn_if_src = self.__find_hybrid_endpoint(se_internal_src)
+            self.__add_island2island_lanlink(
+                se_internal_src, sdn_if_src, virtual_)
+
+            # Add the hybrid link between "destination" se and sdn interface
+            sdn_if_dst = self.__find_hybrid_endpoint(se_internal_dst)
+            self.__add_island2island_lanlink(
+                se_internal_dst, sdn_if_dst, virtual_)
+
+            # Finally, add the sdn interfaces
+            self.__add_island2island_sdnif(sdn_if_src, sdn_if_dst, virtual_)
 
     def send(self):
         try:
@@ -472,3 +603,47 @@ class SliceMonitoring(BaseMonitoring):
         topo.set("owner", "owner_of_slice")
         # Set topology tag as root node for subsequent operations
         self.topology = topo
+
+    def __fake_tn_se_hybrid_links(self):
+        self.__tn_links = [
+            {'id': "urn:publicid:IDN+fms:aist:tnrm+link+fms:aist:tnrm+stp+" +
+                   "urn:ogf:network:aist.go.jp:2013:topology:bi-se1+fms:" +
+                   "aist:tnrm+stp+urn:ogf:network:pionier.net.pl:2013:" +
+                   "topology:felix-ge-1-1-7",
+             'source': "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:" +
+                       "aist.go.jp:2013:topology:bi-se2",
+             'destination': "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:" +
+                            "network:pionier.net.pl:2013:topology:" +
+                            "felix-ge-1-1-7"}
+        ]
+        self.__se_links = [
+            {'id': "urn:publicid:aist-sedp4-1",
+             'source': "urn:publicid:IDN+fms:aist:serm+datapath+" +
+                       "00:00:00:00:00:00:00:10_4",
+             'destination': "urn:publicid:IDN+fms:aist:serm+datapath+" +
+                            "00:00:00:00:00:00:00:10_1"},
+            {'id': "urn:publicid:i2cat-sedp22-1",
+             'source': "urn:publicid:IDN+fms:i2cat:serm+datapath+" +
+                       "10:00:78:ac:c0:15:19:c0_22",
+             'destination': "urn:publicid:IDN+fms:i2cat:serm+datapath+" +
+                            "10:00:78:ac:c0:15:19:c0_1"}
+        ]
+        self.__hybrid_links = [
+            {'source': "urn:publicid:IDN+openflow:ocf:aist:ofam+datapath+" +
+                       "00:00:00:00:00:00:00:01_6",
+             'destination': "urn:publicid:IDN+fms:aist:serm+datapath+" +
+                            "00:00:00:00:00:00:00:10_4"},
+            {'source': "urn:publicid:IDN+fms:aist:serm+datapath+" +
+                       "00:00:00:00:00:00:00:10_1",
+             'destination': "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:" +
+                            "network:aist.go.jp:2013:topology:bi-se2"},
+            {'source': "urn:publicid:IDN+fms:i2cat:serm+datapath+" +
+                       "10:00:78:ac:c0:15:19:c0_1",
+             'destination': "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:" +
+                            "network:pionier.net.pl:2013:topology:" +
+                            "felix-ge-1-1-7"},
+            {'source': "urn:publicid:IDN+fms:i2cat:serm+datapath+" +
+                       "10:00:78:ac:c0:15:19:c0_22",
+             'destination': "urn:publicid:IDN+openflow:ocf:i2cat:ofam+" +
+                            "datapath+00:10:00:00:00:00:00:01_6"}
+        ]
