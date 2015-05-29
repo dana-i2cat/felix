@@ -276,15 +276,14 @@ class SliceMonitoring(BaseMonitoring):
 
     def __add_rest_management(self, tag, address, port_num, protocol,
                               endpoint="/metrics/list/"):
-        manag = etree.SubElement(tag, "management", type="rest")
-
-        addr = etree.SubElement(manag, "address")
+        manage = etree.SubElement(tag, "management", type="rest")
+        addr = etree.SubElement(manage, "address")
         addr.text = address
-        port = etree.SubElement(manag, "port")
+        port = etree.SubElement(manage, "port")
         port.text = port_num
-        proto = etree.SubElement(manag, "protocol")
+        proto = etree.SubElement(manage, "protocol")
         proto.text = protocol
-        endp = etree.SubElement(manag, "endpoint")
+        endp = etree.SubElement(manage, "endpoint")
         endp.text = endpoint
 
     def add_tn_resources(self, slice_urn, nodes, links, peer_info):
@@ -300,13 +299,14 @@ class SliceMonitoring(BaseMonitoring):
                          of a given peer
         """
         if slice_urn not in self.__stored:
-            logger.error("Unable to find Topology info from %s!" % slice_urn)
+            logger.error("Slice monitoring: unable to find Topology info from %s!" % slice_urn)
             return
 
         topology = self.__stored.get(slice_urn)
 
         logger.debug("add_tn_resources Nodes=%d, PeerInfo=%s" %
                      (len(nodes), peer_info,))
+        # Iterate over the TN nodes to fetch its component ID, interface and associated VLAN tag
         for n in nodes:
             logger.debug("Node=%s" % (n,))
 
@@ -329,7 +329,7 @@ class SliceMonitoring(BaseMonitoring):
                 node_, peer_info.get("address"), peer_info.get("port"),
                 peer_info.get("protocol"))
 
-        # The TN-links should be sent only in case of MRO
+        # The TN links should be sent only in case of MRO
         if self.mro_enabled:
             logger.debug("add_tn_resources Links=%d" % (len(links),))
             for l in links:

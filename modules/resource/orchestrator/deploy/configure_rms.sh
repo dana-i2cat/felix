@@ -41,6 +41,7 @@ fi
 # Fill the database with dummy entries (if required)
 cd $dbmanage_path
 if [[ $dummy != "no" ]]; then
+    # Discontinued. Folder 'dummy_rms' deleted on 29th May, 2015
     echo "Filling database with dummy entries..."
     ./dummy_install.sh
     echo "Filling database with dummy entries... Done"
