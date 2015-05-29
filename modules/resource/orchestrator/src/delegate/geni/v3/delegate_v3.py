@@ -563,15 +563,15 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 # introduce slice-monitoring info for ALL the resource types!
                 try:
                     slice_monitor.add_c_resources(
-                        slice_urn, ro_m_info.get("com_nodes"), ro_slivers)
+                        slice_urn, ro_m_info.get("com_nodes"))
                     slice_monitor.add_sdn_resources(
-                        slice_urn, ro_m_info.get("sdn_slivers"), ro_slivers)
+                        slice_urn, ro_m_info.get("sdn_slivers"))
                     slice_monitor.add_tn_resources(
                         slice_urn, ro_m_info.get("tn_nodes"),
-                        ro_m_info.get("tn_links"), ro_slivers, peer)
+                        ro_m_info.get("tn_links"), peer)
                     slice_monitor.add_se_resources(
                         slice_urn, ro_m_info.get("se_nodes"),
-                        ro_m_info.get("se_links"), ro_slivers)
+                        ro_m_info.get("se_links"))
                 except Exception as e:
                     logger.warning("Delegate could not monitor RO resources" +
                                    " upon Provision. Details: %s", (e,))
