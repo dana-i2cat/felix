@@ -1,9 +1,0 @@
-{
-  "name" : "Scheduling Plugin (Manages reservations)",
-  "author" : "Tom Rothe",
-  "author-email" : "tom.rothe@eict.de",
-  "version" : 1,
-  "implements" : ["schedule", "scheduleexceptions"],
-  "loads-after" : ["config"],
-  "requires" : []
-}
