@@ -2,8 +2,11 @@ import requests
 import json
 import yaml
 import os
+import core
 
-print "Ryu plugin loaded"
+logger = core.log.getLogger("ryu-rest-plugin")
+
+logger.debug("Ryu plugin loaded")
 
 current_path = os.path.dirname(os.path.abspath( __file__ ))
 conf_file_path = os.path.join(current_path, "../../../../conf/ryu-config.yaml")
@@ -21,7 +24,7 @@ def addSwitchingRule(in_port, out_port, in_vlan, out_vlan):
             in_vlan (int)
             out_vlan (int)
     """
-    print "install flows"
+    logger.debug("installing flows")
     result = []
     headers = {'content-type': 'application/json'}
     payload = {
@@ -75,7 +78,6 @@ def addSwitchingRule(in_port, out_port, in_vlan, out_vlan):
                                 }
                              ]
                 }
-    print "http://" + host + ":" + port + "/stats/flowentry/add", payload
 
     r = requests.post("http://" + host + ":" + port + "/stats/flowentry/add", data=json.dumps(payload), headers=headers)
     result.append(r.status_code)
@@ -83,7 +85,7 @@ def addSwitchingRule(in_port, out_port, in_vlan, out_vlan):
     return result
 
 def deleteSwitchingRule(in_port, out_port, in_vlan, out_vlan):
-    print "delete flows"
+    logger.debug("deleting flows")
     result = []
     headers = {'content-type': 'application/json'}
 
@@ -111,7 +113,6 @@ def deleteSwitchingRule(in_port, out_port, in_vlan, out_vlan):
                                 }
                              ]
                 }
-    print "http://" + host + ":" + port + "/stats/flowentry/delete", payload
     r = requests.post("http://" + host + ":" + port + "/stats/flowentry/delete", data=json.dumps(payload), headers=headers)
     result.append(r.status_code)
 

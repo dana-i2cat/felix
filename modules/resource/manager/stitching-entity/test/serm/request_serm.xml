@@ -17,26 +17,26 @@
             <sharedvlan:link_shared_vlan name="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_2+vlan"
                                          vlantag="2000"/>
          </interface>
-        <interface client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1">
+        <interface client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_3">
             <sharedvlan:link_shared_vlan name="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1+vlan"
-                                         vlantag="3100"/>
+                                         vlantag="3000"/>
         </interface>
         <interface client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_4">
             <sharedvlan:link_shared_vlan name="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_4+vlan"
                                          vlantag="4000"/>
-        </interface>
-    </node>
+        </interface
+>    </node>
 
     <link client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1_00:00:00:00:00:00:00:01_2">
         <component_manager name="urn:publicid:IDN+AIST+authority+serm"/>
         <link_type name="urn:felix+vlan_trans"/>
-        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1" felix:vlan="1000"/>
-        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_2" felix:vlan="2000"/>
+        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1" felix:vlanww="1000"/>
+        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_2" felix:vlanww="2000"/>
      </link>
-      <link client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1_00:00:00:00:00:00:00:01_4">
+      <link client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_3_00:00:00:00:00:00:00:01_4">
         <component_manager name="urn:publicid:IDN+AIST+authority+serm"/>
         <link_type name="urn:felix+vlan_trans"/>
-        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_1" felix:vlan="3100"/>
-        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_4" felix:vlan="4000"/>
+        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_3" felix:vlanww="3000"/>
+        <interface_ref client_id="urn:publicid:IDN+fms:psnc:serm+datapath+00:00:00:00:00:00:00:01_4" felix:vlanww="4000"/>
     </link>
 </rspec>

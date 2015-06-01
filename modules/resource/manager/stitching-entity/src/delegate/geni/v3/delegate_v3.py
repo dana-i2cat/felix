@@ -120,24 +120,19 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.info("geni_available=%s", geni_available)
 
         sl = "http://www.geni.net/resources/rspec/3/ad.xsd"
-        print "listresources invoked"
         rspec = SERMv3AdvertisementFormatter(schema_location=sl)
 
         links = self.SEResources.get_links_dict_for_rspec(geni_available)
         nodes = self.SEResources.get_nodes_dict_for_rspec(geni_available)
 
         try:
-             print "ALL LINKS: ", links
-             print "ALL NODES: ", nodes
              logger.debug("SE resources: se-links")
              for l in links:
-                 logger.error("SE-LINK=%s" % l)
-                 print "link se",l
+                 logger.debug("SE-LINK=%s" % l)
                  rspec.link(l)
              logger.debug("SE resources: se-node")
              for n in nodes:
-                 logger.error("SE-NODE=%s" % n)
-                 print "node se",n
+                 logger.debug("SE-NODE=%s" % n)
                  rspec.node(n)
         except Exception as e:
              raise geni_ex.GENIv3GeneralError(str(e))
@@ -189,8 +184,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
         #Default end time = 30 days
         default_end_time = datetime.now() + timedelta(days=30)
         if end_time == None:
-
-            print "###################################    time default   ", default_end_time
             end_time = default_end_time
         if self._verify_users:
             logger.debug("allocate: authenticate the user...")
@@ -203,15 +196,10 @@ class GENIv3Delegate(GENIv3DelegateBase):
             slice_urn, end_time, rspec,))
         req_rspec = SERMv3RequestParser(from_string=rspec)
         
-        print "\n\n\n\n\n------------------req_rspec >>> ", req_rspec
         self.__validate_rspec(req_rspec.get_rspec())
 
         se_manifest, se_slivers, se_db_slivers = SERMv3ManifestFormatter(), [], []
-        print "\n\n\n\n\n------------------se_manifest >>> ", se_manifest
-        print "\n\n\n\n\n------------------se_slivers >>> ", se_slivers
         
-        print "\n\n\n\n\n------------------req_rspec >>> ", req_rspec
-
         links = req_rspec.links()
         nodes = req_rspec.nodes()
 
@@ -401,7 +389,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
             if action == "geni_start":
                 for portVlanItem in portsVlansPairs:
                     (in_port, out_port, in_vlan, out_vlan) = portVlanItem
-                    print in_port, in_vlan, out_port, out_vlan
                     try:
                         se_provision.addSwitchingRule(in_port, out_port, in_vlan, out_vlan)
                     except Exception as e:

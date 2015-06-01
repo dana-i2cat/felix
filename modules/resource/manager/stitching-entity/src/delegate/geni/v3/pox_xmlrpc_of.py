@@ -1,8 +1,11 @@
 import xmlrpclib
 import yaml
 import os
+import core
 
-print "POX plugin loaded"
+logger = core.log.getLogger("pox-xmlrpc-plugin")
+
+logger.debug("POX plugin loaded")
 
 current_path = os.path.dirname(os.path.abspath( __file__ ))
 conf_file_path = os.path.join(current_path, "../../../../conf/pox-config.yaml")
@@ -11,7 +14,6 @@ config = yaml.load(stream)
 
 host = str(config["host"])
 port = str(config["rest_port"])
-
 
 class i2catClient:
 
@@ -55,10 +57,10 @@ def addSwitchingRule(in_port, out_port, in_vlan, out_vlan):
             in_vlan (int)
             out_vlan (int)
     """
-    print "install flows"
+    logger.debug("installing flows")
     response = PoxController.add_rule(int(in_port), int(in_vlan), int(out_port), int(out_vlan))
     response = PoxController.add_rule(int(out_port), int(out_vlan), int(in_port), int(in_vlan))
-    print response
+    logger.debug(response)
 
 def deleteSwitchingRule(in_port, out_port, in_vlan, out_vlan):
     """
@@ -67,7 +69,7 @@ def deleteSwitchingRule(in_port, out_port, in_vlan, out_vlan):
             in_vlan (int)
             out_vlan (int)
     """
-    print "delete flows"
+    logger.debug("deleting flows")
     response = PoxController.remove_rule(int(in_port), int(in_vlan), int(out_port), int(out_vlan))
     response = PoxController.remove_rule(int(out_port), int(out_vlan), int(in_port), int(in_vlan))
-    print response
+    logger.debug(response)
