@@ -546,7 +546,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     peer, v, credentials, best_effort, end_time, geni_users)
 
                 logger.debug("ro_m=%s, ro_s=%s" % (ro_m_info, ro_slivers,))
-                ro_manifest = ROUtils.generate_manifest(ro_manifest, ro_m_info)
+                ro_manifest = ROUtils.generate_describe_manifest(ro_manifest, ro_m_info)
 
                 ro_slivers.extend(ro_slivers_ro)
                 # introduce slice-monitoring info for ALL the resource types!
