@@ -91,9 +91,8 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         """Delegates the call and unwraps the needed parameter.
         Also takes care of the compression option."""
         logger.debug("ListResources options=%s" % (options,))
-        # interpret options
+        # Interpret options
         geni_available = self._option(options, "geni_available")
-        geni_compress = self._option(options, "geni_compressed")
 
         # check version and delegate
         try:
@@ -103,9 +102,8 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         except Exception as e:
             return self._errorReturn(e)
 
-        # compress and return
-        if geni_compress:
-            result = base64.b64encode(zlib.compress(str(result)))
+        # Interpret geni_compress option and return compressed (if requested)
+        result = self._interpret_geni_compress(result, options)
 
         return self._successReturn(result)
 
@@ -113,8 +111,6 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         """Delegates the call and unwraps the needed parameter.
         Also takes care of the compression option."""
         logger.debug("Describe urns=%s, options=%s" % (urns, options,))
-        # some duplication with above
-        geni_compress = self._option(options, "geni_compressed")
 
         try:
             self._checkRSpecVersion(options["geni_rspec_version"])
@@ -127,8 +123,8 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         except Exception as e:
             return self._errorReturn(e)
 
-        if geni_compress:
-            result = base64.b64encode(zlib.compress(str(result)))
+        # Interpret geni_compress option and return compressed (if requested)
+        result = self._interpret_geni_compress(result, options)
 
         return self._successReturn(result)
 
@@ -256,6 +252,14 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         return self._successReturn(result)
 
     # ---- helper methods
+
+    def _interpret_geni_compress(self, result, options):
+        # Read options to look for the value of geni_compress
+        geni_compress = self._option(options, "geni_compressed") 
+        # Compress result if client requests it
+        if geni_compress:
+            result = base64.b64encode(zlib.compress(str(result)))
+        return result
 
     def _convertExpiresDate(self, sliver_list):
         """
