@@ -14,84 +14,20 @@ class ROUtils(CommonUtils):
         try:
             adaptor, uri = AdaptorFactory.create_from_db(peer)
             logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
-
-            ret = {"com_nodes": [], "sdn_slivers": [],
-                   "tn_nodes": [], "tn_links": [],
-                   "se_nodes": [], "se_links": []}
             m, urn, ss = adaptor.describe(urns, creds[0]["geni_value"])
-
-            manifest = ROManifestParser(from_string=m)
-            logger.debug("ROManifestParser=%s" % (manifest,))
-            self.validate_rspec(manifest.get_rspec())
-
-            ret["com_nodes"] = manifest.com_nodes()
-            logger.info("COMNodes(%d)=%s" %
-                        (len(ret["com_nodes"]), ret["com_nodes"],))
-
-            ret["sdn_slivers"] = manifest.sdn_slivers()
-            logger.info("SDNSlivers(%d)=%s" %
-                        (len(ret["sdn_slivers"]), ret["sdn_slivers"],))
-
-            ret["tn_nodes"] = manifest.tn_nodes()
-            logger.info("TNNodes(%d)=%s" %
-                        (len(ret["tn_nodes"]), ret["tn_nodes"],))
-
-            ret["tn_links"] = manifest.tn_links()
-            logger.info("TNLinks(%d)=%s" %
-                        (len(ret["tn_links"]), ret["tn_links"],))
-
-            ret["se_nodes"] = manifest.se_nodes()
-            logger.info("SENodes(%d)=%s" %
-                        (len(ret["se_nodes"]), ret["se_nodes"],))
-
-            ret["se_links"] = manifest.se_links()
-            logger.info("SELinks(%d)=%s" %
-                        (len(ret["se_links"]), ret["se_links"],))
-
+            ret = ROUtils.generate_internal_r1eturn(m)
             return (ret, urn, ss)
         except Exception as e:
             logger.critical("manage_describe exception: %s", e)
             raise e
 
     def manage_provision(self, peer, urns, creds, beffort, etime, gusers):
-        ret = {"com_nodes": [], "sdn_slivers": [],
-               "tn_nodes": [], "tn_links": [],
-               "se_nodes": [], "se_links": []}
         try:
             adaptor, uri = AdaptorFactory.create_from_db(peer)
             logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
-
             m, urn = adaptor.provision(
                 urns, creds[0]["geni_value"], beffort, etime, gusers)
-
-            manifest = ROManifestParser(from_string=m)
-            logger.debug("ROManifestParser=%s" % (manifest,))
-            self.validate_rspec(manifest.get_rspec())
-
-            ret["com_nodes"] = manifest.com_nodes()
-            logger.info("COMNodes(%d)=%s" %
-                        (len(ret["com_nodes"]), ret["com_nodes"],))
-
-            ret["sdn_slivers"] = manifest.sdn_slivers()
-            logger.info("SDNSlivers(%d)=%s" %
-                        (len(ret["sdn_slivers"]), ret["sdn_slivers"],))
-
-            ret["tn_nodes"] = manifest.tn_nodes()
-            logger.info("TNNodes(%d)=%s" %
-                        (len(ret["tn_nodes"]), ret["tn_nodes"],))
-
-            ret["tn_links"] = manifest.tn_links()
-            logger.info("TNLinks(%d)=%s" %
-                        (len(ret["tn_links"]), ret["tn_links"],))
-
-            ret["se_nodes"] = manifest.se_nodes()
-            logger.info("SENodes(%d)=%s" %
-                        (len(ret["se_nodes"]), ret["se_nodes"],))
-
-            ret["se_links"] = manifest.se_links()
-            logger.info("SELinks(%d)=%s" %
-                        (len(ret["se_links"]), ret["se_links"],))
-
+            ret = ROUtils.generate_internal_return(m)
             return (ret, urn)
         except Exception as e:
             # It is possible that RO does not implement this method!
@@ -103,7 +39,42 @@ class ROUtils(CommonUtils):
                 raise e
 
     @staticmethod
-    def generate_manifest(ro_manifest, ro_m_info):
+    def generate_internal_return(m):
+        ret = {"com_nodes": [], "sdn_slivers": [],
+            "tn_nodes": [], "tn_links": [],
+            "se_nodes": [], "se_links": []}
+
+        manifest = ROManifestParser(from_string=m)
+        logger.debug("ROManifestParser=%s" % (manifest,))
+        self.validate_rspec(manifest.get_rspec())
+
+        ret["com_nodes"] = manifest.com_nodes()
+        logger.info("COMNodes(%d)=%s" %
+                    (len(ret["com_nodes"]), ret["com_nodes"],))
+
+        ret["sdn_slivers"] = manifest.sdn_slivers()
+        logger.info("SDNSlivers(%d)=%s" %
+                    (len(ret["sdn_slivers"]), ret["sdn_slivers"],))
+
+        ret["tn_nodes"] = manifest.tn_nodes()
+        logger.info("TNNodes(%d)=%s" %
+                    (len(ret["tn_nodes"]), ret["tn_nodes"],))
+
+        ret["tn_links"] = manifest.tn_links()
+        logger.info("TNLinks(%d)=%s" %
+                    (len(ret["tn_links"]), ret["tn_links"],))
+
+        ret["se_nodes"] = manifest.se_nodes()
+        logger.info("SENodes(%d)=%s" %
+                    (len(ret["se_nodes"]), ret["se_nodes"],))
+
+        ret["se_links"] = manifest.se_links()
+        logger.info("SELinks(%d)=%s" %
+                    (len(ret["se_links"]), ret["se_links"],))
+        return ret
+
+    @staticmethod
+    def generate_describe_manifest(ro_manifest, ro_m_info):
         for n in ro_m_info.get("com_nodes"):
             ro_manifest.com_node(n)
         for s in ro_m_info.get("sdn_slivers"):

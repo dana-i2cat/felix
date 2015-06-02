@@ -224,7 +224,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
                 logger.debug("ro_m=%s, ro_s=%s, urn=%s" %
                              (ro_m_info, ro_slivers, last_slice))
-                ro_manifest = ROUtils.generate_manifest(ro_manifest, ro_m_info)
+                ro_manifest = ROUtils.generate_describe_manifest(ro_manifest, ro_m_info)
                 ro_slivers.extend(ro_slivers_ro)
 
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
