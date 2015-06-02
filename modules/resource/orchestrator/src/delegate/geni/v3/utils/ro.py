@@ -101,3 +101,19 @@ class ROUtils(CommonUtils):
             else:
                 logger.critical("manage_provision exception: %s", e)
                 raise e
+
+    @staticmethod
+    def generate_manifest(ro_manifest, ro_m_info):
+        for n in ro_m_info.get("com_nodes"):
+            ro_manifest.com_node(n)
+        for s in ro_m_info.get("sdn_slivers"):
+            ro_manifest.of_sliver(s)
+        for n in ro_m_info.get("tn_nodes"):
+            ro_manifest.tn_node(n)
+        for l in ro_m_info.get("tn_links"):
+            ro_manifest.tn_link(l)
+        for n in ro_m_info.get("se_nodes"):
+            ro_manifest.se_node(n)
+        for l in ro_m_info.get("se_links"):
+            ro_manifest.se_link(l)
+        return ro_manifest

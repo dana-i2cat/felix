@@ -13,6 +13,7 @@ from handler.geni.v3 import exceptions as geni_ex
 
 from monitoring.slice_monitoring import SliceMonitoring
 from utils.commons import CommonUtils
+# Import utils to parse/format specific resources
 from utils.com import COMUtils
 from utils.sdn import SDNUtils
 from utils.se import SEUtils
@@ -215,7 +216,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
                              (com_m_info, com_slivers, last_slice))
                 for n in com_m_info.get("nodes"):
                     ro_manifest.com_node(n)
-
                 ro_slivers.extend(com_slivers)
 
             elif peer.get("type") == self._allowed_peers.get("PEER_RO"):
@@ -224,19 +224,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
                 logger.debug("ro_m=%s, ro_s=%s, urn=%s" %
                              (ro_m_info, ro_slivers, last_slice))
-                for n in ro_m_info.get("com_nodes"):
-                    ro_manifest.com_node(n)
-                for s in ro_m_info.get("sdn_slivers"):
-                    ro_manifest.of_sliver(s)
-                for n in ro_m_info.get("tn_nodes"):
-                    ro_manifest.tn_node(n)
-                for l in ro_m_info.get("tn_links"):
-                    ro_manifest.tn_link(l)
-                for n in ro_m_info.get("se_nodes"):
-                    ro_manifest.se_node(n)
-                for l in ro_m_info.get("se_links"):
-                    ro_manifest.se_link(l)
-
+                ro_manifest = ROUtils.generate_manifest(ro_manifest, ro_m_info)
                 ro_slivers.extend(ro_slivers_ro)
 
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
@@ -558,18 +546,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     peer, v, credentials, best_effort, end_time, geni_users)
 
                 logger.debug("ro_m=%s, ro_s=%s" % (ro_m_info, ro_slivers,))
-                for n in ro_m_info.get("com_nodes"):
-                    ro_manifest.com_node(n)
-                for s in ro_m_info.get("sdn_slivers"):
-                    ro_manifest.of_sliver(s)
-                for n in ro_m_info.get("tn_nodes"):
-                    ro_manifest.tn_node(n)
-                for l in ro_m_info.get("tn_links"):
-                    ro_manifest.tn_link(l)
-                for n in ro_m_info.get("se_nodes"):
-                    ro_manifest.se_node(n)
-                for l in ro_m_info.get("se_links"):
-                    ro_manifest.se_link(l)
+                ro_manifest = ROUtils.generate_manifest(ro_manifest, ro_m_info)
 
                 ro_slivers.extend(ro_slivers_ro)
                 # introduce slice-monitoring info for ALL the resource types!
