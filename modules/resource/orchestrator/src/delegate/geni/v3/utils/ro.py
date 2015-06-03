@@ -15,7 +15,7 @@ class ROUtils(CommonUtils):
             adaptor, uri = AdaptorFactory.create_from_db(peer)
             logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
             m, urn, ss = adaptor.describe(urns, creds[0]["geni_value"])
-            ret = ROUtils.generate_internal_r1eturn(m)
+            ret = self.generate_internal_return(m)
             return (ret, urn, ss)
         except Exception as e:
             logger.critical("manage_describe exception: %s", e)
@@ -27,7 +27,7 @@ class ROUtils(CommonUtils):
             logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
             m, urn = adaptor.provision(
                 urns, creds[0]["geni_value"], beffort, etime, gusers)
-            ret = ROUtils.generate_internal_return(m)
+            ret = self.generate_internal_return(m)
             return (ret, urn)
         except Exception as e:
             # It is possible that RO does not implement this method!
@@ -38,8 +38,7 @@ class ROUtils(CommonUtils):
                 logger.critical("manage_provision exception: %s", e)
                 raise e
 
-    @staticmethod
-    def generate_internal_return(m):
+    def generate_internal_return(self, m):
         ret = {"com_nodes": [], "sdn_slivers": [],
             "tn_nodes": [], "tn_links": [],
             "se_nodes": [], "se_links": []}
