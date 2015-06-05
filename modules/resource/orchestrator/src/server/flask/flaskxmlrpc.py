@@ -1,5 +1,5 @@
-from flup.server.fcgi import WSGIServer
-from flaskext.xmlrpc import XMLRPCHandler, Fault
+#from flup.server.fcgi import WSGIServer
+from flaskext.xmlrpc import XMLRPCHandler#, Fault
 
 from xmlrpcdispatcher import XMLRPCDispatcher
 

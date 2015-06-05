@@ -53,8 +53,8 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         try:
             request_extensions = self._delegate.get_request_extensions_list()
             ad_extensions = self._delegate.get_ad_extensions_list()
-            allocation_mode = self._delegate.get_allocation_mode()
-            is_single_allocation = self._delegate.is_single_allocation()
+#            allocation_mode = self._delegate.get_allocation_mode()
+#            is_single_allocation = self._delegate.is_single_allocation()
 
         except Exception as e:
             return self._errorReturn(e)
@@ -63,16 +63,16 @@ class GENIv3Handler(xmlrpc.Dispatcher):
             {"type": "geni", "version": 3,
              "schema": "http://www.geni.net/resources/rspec/3/request.xsd",
              "namespace": "http://www.geni.net/resources/rspec/3",
-#             "extensions": request_extensions},
-             "extensions": [],
+             "extensions": request_extensions,
+#             "extensions": [],
             },
         ]
         ad_rspec_versions = [
             {"type": "geni", "version": 3,
              "schema": "http://www.geni.net/resources/rspec/3/ad.xsd",
              "namespace": "http://www.geni.net/resources/rspec/3",
-#             "extensions": ad_extensions,
-             "extensions": [],
+             "extensions": ad_extensions,
+#             "extensions": [],
             },
         ]
         credential_types = [ {"geni_type": "geni_sfa", "geni_version": 3} ]

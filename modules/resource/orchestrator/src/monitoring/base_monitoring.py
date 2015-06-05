@@ -1,7 +1,7 @@
 from db.db_manager import db_sync_manager
 from core.config import ConfParser
 from core.organisations import AllowedOrganisations
-from extensions.sfa.util.xrn import hrn_to_urn, urn_to_hrn
+from extensions.sfa.util.xrn import urn_to_hrn
 from lxml import etree
 
 import ast
@@ -148,7 +148,7 @@ class BaseMonitoring(object):
         # Return whole list of topologies
         try:
             ## If the following line works, 'topology_list_tree' is a proper xml tree
-            topology_list_proper = etree.tostring(topology_list_tree)
+            etree.tostring(topology_list_tree)
             self.topology_list = topology_list_tree
         except:
             pass
@@ -276,8 +276,8 @@ class BaseMonitoring(object):
         default_type = "lan"
         
         ms_link_type_lan = "lan"
-        ms_link_type_static_link = "static_link"
-        ms_link_type_vlan_trans = "vlan_translation"
+#        ms_link_type_static_link = "static_link"
+#        ms_link_type_vlan_trans = "vlan_translation"
         link_type_translation = {
             "l2" : ms_link_type_lan,
             "l2 link": ms_link_type_lan,
@@ -390,7 +390,7 @@ class BaseMonitoring(object):
                 port = dpid_port[1]["port_num"]
                 iface.set("client_id", "%s_%s" % (dpid, port))
         except Exception as e:
-            logger.warning("Physical topology - Cannot add SE interface %s. Details: %s" % (component_id,e))
+            logger.warning("Physical topology - Cannot add SE interface %s. Details: %s" % (link.get("component_id", "(unknown)"), e))
 
 
     ##################

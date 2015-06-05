@@ -1,5 +1,4 @@
 from core.config import ConfParser
-from extensions.geni.util import cred_util
 from handler.geni.v3 import exceptions
 from lxml import etree
 from lxml.builder import ElementMaker

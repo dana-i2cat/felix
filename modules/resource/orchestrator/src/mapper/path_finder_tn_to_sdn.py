@@ -1,7 +1,7 @@
 from db.db_manager import db_sync_manager
 from pprint import pprint
 
-import itertools
+#import itertools
 
 class PathFinderTNtoSDN(object):
 
@@ -14,6 +14,9 @@ class PathFinderTNtoSDN(object):
         self.dst_of_cids = []
         # Dummy list to reduce lines of code
         self.src_dst_values = [ "src", "dst" ]
+        # Nodes and links from database
+        self.tn_nodes = db_sync_manager.get_tn_nodes()
+        self.se_links = db_sync_manager.get_se_links()
         # Mapping structure to be returned is a list of possible src-dst paths
         self.mapping_tn_se_of = []
         self.organisation_name_mappings = {
@@ -77,7 +80,7 @@ class PathFinderTNtoSDN(object):
     def get_tn_interfaces_cids(self, clean=False):
         # Return a list with the component_id values for the TN interfaces
         tn_interfaces = set()
-        for tn_node in tn_nodes:
+        for tn_node in self.tn_nodes:
             tn_interfaces.update(self.get_tn_interfaces_cid_from_node(tn_node, clean))
         return tn_interfaces
 
@@ -107,8 +110,8 @@ class PathFinderTNtoSDN(object):
     def get_se_interfaces_cids(self, clean=False):
         # Return a list with the component_id values for the SE interfaces
         se_interfaces = set()
-        for se_link in se_links:
-            se_interfaces.add(get_se_interfaces_cid_from_link(se_link, clean))
+        for se_link in self.se_links:
+            se_interfaces.add(self.get_se_interfaces_cid_from_link(se_link, clean))
         return se_interfaces
 
     def find_tn_interfaces_for_domain(self, domain_name):
@@ -116,7 +119,6 @@ class PathFinderTNtoSDN(object):
         tn_interfaces_cids = self.get_tn_interfaces_cids(clean=True)
         domain_names_alt = self.get_organisation_mappings(domain_name)    
         domain_name_alt_matches = set()    
-        tn_interfaces_match = []
         # A set is used to add possible TN interfaces. This avoids duplications
         for domain_name_alt in domain_names_alt:
             domain_name_alt_matches.add(tuple(s for s in tn_interfaces_cids if domain_name_alt in s))
@@ -124,7 +126,7 @@ class PathFinderTNtoSDN(object):
 
     def find_se_interfaces_for_tn_interface(self, tn_interface):
         se_interfaces_match = set()
-        for se_link in se_links:
+        for se_link in self.se_links:
             if tn_interface in se_link.get("component_id"):
                 se_link_interfaces = [ self.clean_tn_stp_cid(iface.get("component_id")) for iface in se_link.get("interface_ref") ]
                 # Remove link interface that matches with the passed TN interface
@@ -135,7 +137,7 @@ class PathFinderTNtoSDN(object):
 
     def find_sdn_interfaces_for_se_interface(self, se_interface, negative_filter=[], possitive_filter=[""]):
         sdn_interfaces_match = set()
-        for se_link in se_links:
+        for se_link in self.se_links:
             se_link_interfaces = [ iface.get("component_id") for iface in se_link.get("interface_ref") ]
             se_link_interfaces_match = any([ self.remove_port_cid(se_interface) in se_link_interface for se_link_interface in se_link_interfaces ])
             if se_link_interfaces_match:
@@ -156,7 +158,7 @@ class PathFinderTNtoSDN(object):
 
     def find_se_sdn_links_for_se_node(self, se_node, negative_filter=[], possitive_filter=[""]):
         sdn_se_links = set()
-        for se_link in se_links:
+        for se_link in self.se_links:
             se_link_interfaces = [ iface.get("component_id") for iface in se_link.get("interface_ref") ]
             se_link_interfaces_match = any([ se_node in se_link_interface for se_link_interface in se_link_interfaces ])
             if se_link_interfaces_match:
@@ -174,8 +176,6 @@ class PathFinderTNtoSDN(object):
     def prune_invalid_paths(self, mapping_path_structure):
         new_mapping_path_structure = []
         for idx, mapping_path_element in enumerate(mapping_path_structure):
-            cond_idx = all( [ len(mapping_path_element["src"][elem]) > 0 for elem in mapping_path_element["src"] ]) \
-                and all( [ len(mapping_path_element["dst"][elem]) > 0 for elem in mapping_path_element["dst"] ])
             if all( [ len(mapping_path_element["src"][elem]) > 0 for elem in mapping_path_element["src"] ]) \
                 and all( [ len(mapping_path_element["dst"][elem]) > 0 for elem in mapping_path_element["dst"] ]):
                 new_mapping_path_structure.append(mapping_path_element)
@@ -186,7 +186,6 @@ class PathFinderTNtoSDN(object):
         tn_interfaces_cids = self.get_tn_interfaces_cids(clean=True)
         
         # Get proper TN interfaces for both SRC and DST TN interfaces
-        tn_candidates = []
         self.mapping_tn_se_of_src_partial = {}
         self.mapping_tn_se_of_dst_partial = {}
 
@@ -238,7 +237,7 @@ class PathFinderTNtoSDN(object):
         negative_filter = [ "tnrm" ]
         for path_source in self.mapping_tn_se_of:
             for src_dst_value in self.src_dst_values:
-                possitive_filter_of_switches = [ self.remove_port_cid(f) for f in getattr(self, "%s_of_cids" % src_dst_value) ]
+                #possitive_filter_of_switches = [ self.remove_port_cid(f) for f in getattr(self, "%s_of_cids" % src_dst_value) ]
                 se_interface = path_source[src_dst_value]["se"]
     
                 # Possible SE-SDN links

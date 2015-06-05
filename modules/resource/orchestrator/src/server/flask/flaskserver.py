@@ -7,7 +7,7 @@ logger=log.getLogger("flaskserver")
 from server.flask.views import ro_flask_views
 
 from werkzeug import serving
-from OpenSSL import SSL, crypto
+from OpenSSL import crypto, SSL
 
 import ast
 import os
@@ -99,11 +99,10 @@ class FlaskServer(object):
     def runServer(self, services=[]):
         """Starts up the server. It (will) support different config options via the config plugin."""
         self.add_routes()
-        debug = self.general_section.get("debug")
+        #debug = self.general_section.get("debug")
         host = self.general_section.get("host")
         use_reloader = ast.literal_eval(self.general_section.get("use_reloader"))
         app_port = int(self.general_section.get("port"))
-        template_folder = self.general_section.get("template_folder")
         cFCGI = ast.literal_eval(self.fcgi_section.get("enabled"))
         fcgi_port = int(self.fcgi_section.get("port"))
         must_have_client_cert = ast.literal_eval(self.certificates_section.get("force_client_certificate"))
@@ -119,16 +118,15 @@ class FlaskServer(object):
 
             # the code from flask's `run...`
             # see https://github.com/mitsuhiko/flask/blob/master/flask/app.py
-            options = {}
+            #options = {}
             try:
                 # now the code from werkzeug's `run_simple(host, app_port, self._app, **options)`
                 # see https://github.com/mitsuhiko/werkzeug/blob/master/werkzeug/serving.py
-                from werkzeug.debug import DebuggedApplication
+                #from werkzeug.debug import DebuggedApplication
                 import socket
-                application = DebuggedApplication(self._app, True)
+                #application = DebuggedApplication(self._app, True)
                 
                 # Set up an SSL context
-                from OpenSSL import SSL
                 context = SSL.Context(SSL.SSLv23_METHOD)
                 certs_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../..", "cert"))
                 context_crt = os.path.join(certs_path, "server.crt")

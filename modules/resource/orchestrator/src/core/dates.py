@@ -23,7 +23,7 @@ def rfc3339_to_datetime(date):
         formatted_date = datetime.strptime(
             date_form.replace("T", " ").
             replace("Z", ""), "%Y-%m-%d %H:%M:%S")
-    except Exception as e:
+    except:
         formatted_date = date
     logger.debug("Converted datetime object (%s): %s" %
                  (type(formatted_date), formatted_date))
@@ -64,7 +64,6 @@ def rfc3339format(dt):
     # Add UTC TZ, to have an RFC3339 compliant datetime, per the AM API
     naiveUTC(dt)
     time_with_tz = dt.replace(tzinfo=dateutil.tz.tzutc())
-    d1 = time_with_tz.isoformat()
     return time_with_tz.isoformat()
 
 def is_date(dt):
@@ -75,7 +74,7 @@ def is_date(dt):
 def is_rfc3339(dt):
     try:
         date_form = re.sub(r'[\+|\.].+', "", dt)
-        formatted_date = datetime.strptime(
+        datetime.strptime(
             date_form.replace("T", " ").
             replace("Z", ""), "%Y-%m-%d %H:%M:%S")
         return True

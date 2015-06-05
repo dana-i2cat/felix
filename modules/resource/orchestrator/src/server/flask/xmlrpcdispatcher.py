@@ -1,7 +1,4 @@
-import os.path
 from flask import request
-
-import exceptions
 
 class XMLRPCDispatcher(object):
     """Please see documentation in FlaskXMLRPC."""

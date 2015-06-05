@@ -208,8 +208,8 @@ class GENIv3Client(SFAClient):
         """
         domain_urn = ""
         try:
-            am_version = str(self.geni_api_version)
-            am_type = str(self.geni_type)
+            #am_version = str(self.geni_api_version)
+            #am_type = str(self.geni_type)
             # Look for case-independent 'am_type' and numeric 'am_type'
             #am_type_re = re.compile(am_type)
             #filter_params = {"am_version": int(am_version), "am_type": am_type_re}
@@ -234,8 +234,6 @@ class GENIv3Client(SFAClient):
 
     def allocate(self, slice_urn, credentials, rspec, end_time):
         options = self.format_options(end_time=end_time)
-        # By default: all or nothing
-        best_effort = False
         logger.debug("%s Options: %s" % (self.typee, options,))
         # Credentials must be sent in the proper format
         credentials = self.format_credentials(credentials)
@@ -257,8 +255,6 @@ class GENIv3Client(SFAClient):
 
     def describe(self, urns, credentials):
         options = self.format_options()
-        # By default: all or nothing
-        best_effort = False
         logger.debug("%s Options: %s" % (self.typee, options,))
         # Credentials must be sent in the proper format
         credentials = self.format_credentials(credentials)
