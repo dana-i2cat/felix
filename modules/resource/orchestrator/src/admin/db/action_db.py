@@ -62,16 +62,16 @@ class CommandMgr(object):
         return getattr(getattr(pymongo.MongoClient(), db_name), table_name)
 
     def __select(self, table, name):
-        print "\n\n" + "(RO) %s has %d rows\n" % (name, table.count())
+        print("\n\n" + "(RO) %s has %d rows\n" % (name, table.count()))
         for row in table.find():
-            print "%s" % (row)
+            print("%s" % (row))
 
     def __delete(self, table, name):
         table.remove()
-        print "\n\n" + "Deleted all rows of (RO) %s" % (name)
+        print("\n\n" + "Deleted all rows of (RO) %s" % (name))
 
     def list_tables(self):
-        print "\n\nManaged Tables: %s\n\n" % self.TABLES.keys()
+        print("\n\nManaged Tables: %s\n\n" % self.TABLES.keys())
 
     def select_routing_table(self):
         self.__select(self.TABLES["domain.routing"],
@@ -128,10 +128,10 @@ def main(argv=None):
         args_ = parser_.parse_args()
 
     except Exception as ex:
-        print 'Got an exception parsing flags/options:', ex
+        print("Got an exception parsing flags/options: %s" % ex)
         return False
 
-    print "Args=%s" % (args_,)
+    print("Args=%s" % (args_,))
     try:
         if args_.action == 'list_tables':
             CommandMgr().list_tables()
@@ -151,7 +151,7 @@ def main(argv=None):
             CommandMgr().delete_all_tables()
 
     except Exception as e:
-        print "Got an Exception: %s" % (str(e))
+        print("Got an Exception: %s" % (str(e)))
         return False
     return True
 

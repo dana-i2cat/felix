@@ -106,10 +106,10 @@ class Dump(RoutingTableCommand):
         self.checkAllNone()
 
     def __dump_table(self, table, table_name):
-        print "(RO) %s has %s rows\n" % (table_name, table.count(),)
+        print("(RO) %s has %s rows\n" % (table_name, table.count()))
 
         for row_ in table.find():
-            print "%s" % (row_,)
+            print("%s" % row_)
 
     def execute(self):
         self.__dump_table(self.getTable(), "domain.routing")
@@ -128,7 +128,7 @@ class DeleteAll(RoutingTableCommand):
         table_ = self.getTable()
         table_.remove()
 
-        print "(RO) domain.routing delete all rows\n"
+        print("(RO) domain.routing delete all rows\n")
 
     def helpMessage(self):
         return "delete_all" + "\n\tDelete all entries of the mongoDB db"
@@ -159,7 +159,7 @@ class AddRouteEntry(RoutingTableCommand):
                 "am_version": self.am_version_}
 
         row_id_ = table_.insert(row_)
-        print "(RO) domain.routing insert row: %s\n" % (row_id_,)
+        print("(RO) domain.routing insert row: %s\n" % row_id_)
 
     def helpMessage(self):
         return "add_route_entry -t <type> -a <address> -p <port>" +\
@@ -191,7 +191,7 @@ class DelRouteEntry(RoutingTableCommand):
             row_["port"] = self.port_
 
         table_.remove(row_)
-        print "(RO) domain.routing delete row: %s\n" % (row_,)
+        print("(RO) domain.routing delete row: %s\n" % row_)
 
     def helpMessage(self):
         return "delete_route_entry [-t <type>] [-a <address>] [-p <port>]" +\
@@ -279,9 +279,9 @@ class CmdManager:
 
     @staticmethod
     def helpMessage():
-        print "Usage:\n"
+        print("Usage:\n")
         for (_, value) in commands.items():
-            print value.helpMessage() + "\n"
+            print(value.helpMessage() + "\n")
 
 
 class CmdConsume(argparse.Action):
@@ -291,7 +291,7 @@ class CmdConsume(argparse.Action):
             sys.exit(0)
 
         if not CmdManager.find(values):
-            print "UNMANAGED command %s" % (values,)
+            print("UNMANAGED command %s" % values)
             sys.exit(False)
 
         CmdManager.activate(values)
@@ -349,10 +349,10 @@ def main(argv=None):
         args_ = parser_.parse_args()
 
     except Exception as ex:
-        print "Got an exception parsing flags/options:", ex
+        print("Got an exception parsing flags/options: %s" % ex)
         return False
 
-    print "Args=%s" % (args_,)
+    print("Args=%s" % args_)
     comMng_ = CmdManager()
 
     try:
@@ -380,16 +380,16 @@ def main(argv=None):
         comMng_.analyze(args_.command)
 
     except AttributeError as ex:
-        print "MALFORMED command %s" % (args_.command,)
-        print "What: %s" % (str(ex),)
+        print("MALFORMED command %s" % args_.command)
+        print("What: %s" % str(ex))
         return False
 
     try:
         comMng_.execute(args_.command)
 
     except Exception as ex:
-        print "RUNTIME exception command %s" % (args_.command,)
-        print "What: %s" % (str(ex),)
+        print("RUNTIME exception command %s" % args_.command)
+        print("What: %s" % str(ex))
         return False
 
     return True
