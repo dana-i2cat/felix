@@ -14,7 +14,6 @@ class seConfigurator:
             conf_file_path = os.path.join(current_path, path)
         stream = open(conf_file_path, "r")
         initial_config = yaml.load(stream)
-        print initial_config
         self.configured_interfaces = self.convert_config_into_Resources_datamodel(initial_config["interfaces"])
         self.initial_configured_interfaces = initial_config["interfaces"]
 
@@ -29,9 +28,7 @@ class seConfigurator:
         db_sync_manager.update_resources(self.configured_interfaces, fromConfigFile=True)
 
         self.component_id_prefix = "urn:publicid:IDN+fms:" + initial_config["organisation"] + ":serm"
-        print self.component_id_prefix
         self.component_manager_prefix = "urn:publicid:IDN+fms:" + initial_config["organisation"] + ":serm+authority+cm"
-        print self.component_manager_prefix
         self.vlan_trans = initial_config["vlan_trans"]
         self.qinq = initial_config["qinq"]
         self.capacity = initial_config["capacity"]
@@ -114,7 +111,6 @@ class seConfigurator:
 
 
     def get_nodes_dict_for_rspec(self, geni_available):
-        print "+++++++++++ GENI AVAIL: ", geni_available
         component_id_prefix = self.component_id_prefix
         component_manager_prefix = self.component_manager_prefix
 

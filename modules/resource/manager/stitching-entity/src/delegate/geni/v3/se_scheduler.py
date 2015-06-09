@@ -13,11 +13,10 @@ class SESchedulerService(Service):
         se_scheduler = BackgroundScheduler()
         se_scheduler.add_jobstore("mongodb", database="felix_se",
                                   collection="ScheduledJobs")
-        print "!!!!!!!"
         se_scheduler.start()
         super(SESchedulerService, self).__init__("SESchedulerService",interval)
         self.first_time = True
-        print "!!!!!!!2"
+
     @staticmethod
     def get_scheduler():
         return se_scheduler

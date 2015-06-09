@@ -28,12 +28,8 @@ def main(argv=None):
         xmlrpc.registerXMLRPC("geni3_se", geni_v3_handler, "/xmlrpc/geni/3/")
         # Services/Workers to add
         # Topology update
-        print "^^^^^^^^^^"
-        
-        print "$$$$$$$$"
         # Run server starting the services
         flaskserver.runServer()
-        print "********"
     except KeyboardInterrupt:
         return True
     except Exception as e:

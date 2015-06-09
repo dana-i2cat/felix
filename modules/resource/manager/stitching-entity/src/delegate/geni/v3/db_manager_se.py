@@ -52,14 +52,9 @@ class DBManager(object):
     
     def set_slices(self,sliceurn,resources):
         table = pymongo.MongoClient().felix_se.SliceResources
-        print "nodes"
-        print "links"
-        print resources
         try:
-            #print "jestem w set" 
             self.__mutex.acquire()
             table.update({"sliceurn":sliceurn},{"sliceurn":sliceurn, "resources": resources},upsert=True)
-            #print "po set "
         finally:
             self.__mutex.release()
     
