@@ -14,7 +14,7 @@ import re
 from kvm.provisioning.HdManager import HdManager
 from settings.settingsLoader import OXA_DEBIAN_INTERFACES_FILE_LOCATION, OXA_DEBIAN_UDEV_FILE_LOCATION, OXA_DEBIAN_HOSTNAME_FILE_LOCATION, OXA_DEBIAN_SECURITY_ACCESS_FILE_LOCATION
 from utils.Logger import Logger
-
+from netaddr import *
 
 class DebianWheezyVMConfigurator:
 	
@@ -35,19 +35,35 @@ class DebianWheezyVMConfigurator:
 				"\tnetmask " + inter.mask + "\n"
 
 				if inter.gw != None and inter.gw != "":
-					interfaceString += "\tgateway " + inter.gw + "\n"
+					ipaddr = IPNetwork(str(inter.ip+ '/' + inter.mask))
+					if ipaddr.is_private() == False:
+						interfaceString += "\tgateway " + inter.gw + "\n"
+					else:
+						pass
+					interfaceString += "\tup route add -net " + \
+						str(ipaddr.network) + " netmask " + inter.mask + \
+						" gw "+ inter.gw + " dev " + inter.name +"\n"
 
 				if inter.dns1 != None and inter.dns1 != "":
-					interfaceString += "\tdns-nameservers " + inter.dns1
+					ipaddr = IPNetwork(str(inter.ip+ '/' + inter.mask))
+					if ipaddr.is_private() == False:
+						interfaceString += "\tdns-nameservers " + inter.dns1
+					else:
+						pass
 
 				if inter.dns2 != None and inter.dns2 != "":
-					interfaceString += " " + inter.dns2
-				interfaceString += "\n\n"
+					ipaddr = IPNetwork(str(inter.ip+ '/' + inter.mask))
+					if ipaddr.is_private() == False:
+						interfaceString += " " + inter.dns2
+					else:
+						pass
 
-				iFile.write(interfaceString)			 
+				interfaceString += "\n\n"
+				iFile.write(interfaceString)
 			else:
 				# is a data interface
-				iFile.write("auto " + inter.name + "\n\n")
+				iFile.write("auto " + inter.name + "\n")
+		return
 
 
 	@staticmethod

@@ -86,9 +86,10 @@ class XmlRpcClient:
 	def sendAsyncMonitoringLibvirtVMsInfo(actionId,status,vms,VmStatus):
 		#TODO: HARDCODED!!
 		XmlRpcClient.logger.debug("Sending asynchronous "+status+" monitoring message to: VM Manager")
-                serverInfo = server_type()
-                serverInfo.virtualization_type = 'xen'
+		serverInfo = server_type()
+		serverInfo.virtualization_type = 'xen'
 		#Trying to craft VM Manager URL
+		#server = xmlrpclib.Server('https://%s:%s/xmlrpc/agent'%(VTAM_IP,VTAM_PORT))	
 		server = xmlrpclib.Server('https://%s:%s@%s:%s/xmlrpc/agent'%(XMLRPC_USER,XMLRPC_PASS,VTAM_IP,VTAM_PORT))	
 		#XXX:This direction works
 		#server = xmlrpclib.Server('https://xml:rpc@10.216.140.11:8445/xmlrpc/agent')

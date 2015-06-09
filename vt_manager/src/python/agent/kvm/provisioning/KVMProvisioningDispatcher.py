@@ -19,6 +19,7 @@ class KVMProvisioningDispatcher(ProvisioningDispatcher):
 	# #Inventory routines
 	@staticmethod
 	def createVMfromImage(vmid, vm):
+		KVMProvisioningDispatcher.logger.info("XXX createVMfromImage start")
 		pathToMountPoint = ""	
 		KVMProvisioningDispatcher.logger.info("Initiating creation process for VM: " + vm.name
 											+ " under project: " + vm.project_id
@@ -63,6 +64,7 @@ class KVMProvisioningDispatcher(ProvisioningDispatcher):
 			except:
 				pass
 			XmlRpcClient.sendAsyncProvisioningActionStatus(vmid, "FAILED", str(e))
+		KVMProvisioningDispatcher.logger.info("XXX createVMfromImage end")
 		return
 
 	@staticmethod
@@ -94,6 +96,7 @@ class KVMProvisioningDispatcher(ProvisioningDispatcher):
 	# #Scheduling routines
 	@staticmethod
 	def startVM(vmid, vm):
+		KVMProvisioningDispatcher.logger.info("XXX startVM start")
 		try:
 			# Trigger	
 			HdManager.startHook(vm)	
@@ -106,6 +109,7 @@ class KVMProvisioningDispatcher(ProvisioningDispatcher):
 			KVMProvisioningDispatcher.logger.error(str(e))
 			# Send async notification
 			XmlRpcClient.sendAsyncProvisioningActionStatus(vmid, "FAILED", str(e))
+		KVMProvisioningDispatcher.logger.info("XXX startVM end")
 		return
 
 	@staticmethod

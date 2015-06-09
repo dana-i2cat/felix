@@ -9,7 +9,7 @@ import threading
 from communications.XmlRpcClient import XmlRpcClient
 from utils.VmMutexStore import VmMutexStore
 from utils.Logger import Logger
- 
+
 class ProvisioningDispatcher: 
 	
 	logger = Logger.getLogger()
@@ -32,20 +32,27 @@ class ProvisioningDispatcher:
 	def __dispatchAction(dispatcher,action,vm):
 		#Inventory
 		if action.type_ == "create":
+			ProvisioningDispatcher.logger.debug("XXX create called")
 			return dispatcher.createVMfromImage(action.id,vm)
 		if action.type_ == "modify" :
+			ProvisioningDispatcher.logger.debug("XXX modify called")
 			return dispatcher.modifyVM(action.id,vm)
 		if action.type_ == "delete" :
+			ProvisioningDispatcher.logger.debug("XXX delete called")
 			return dispatcher.deleteVM(action.id,vm)
 
 		#Scheduling 
 		if action.type_ == "start":
+			ProvisioningDispatcher.logger.debug("XXX start called")
 			return dispatcher.startVM(action.id,vm)
 		if action.type_ == "reboot" :
+			ProvisioningDispatcher.logger.debug("XXX reboot called")
 			return dispatcher.rebootVM(action.id,vm)
 		if action.type_ == "stop" :
+			ProvisioningDispatcher.logger.debug("XXX stop called")
 			return dispatcher.stopVM(action.id,vm)
 		if action.type_ == "hardStop" :
+			ProvisioningDispatcher.logger.debug("XXX hardStop called")
 			return dispatcher.hardStopVM(action.id,vm)
 		raise Exception("Unknown action type")
 
@@ -79,26 +86,26 @@ class ProvisioningDispatcher:
 	##Abstract methods definition for ProvisioningDispatchers
 	#Inventory
 	@staticmethod
-	def createVMfromImage(id,vm):
+	def createVMfromImage(vmid,vm):
 		raise Exception("Abstract method cannot be called")	
 	@staticmethod
-	def modifyVM(id,vm):
+	def modifyVM(vmid,vm):
 		raise Exception("Abstract method cannot be called")
 	@staticmethod
-	def deleteVM(id,vm):
+	def deleteVM(vmid,vm):
 		raise Exception("Abstract method cannot be called")	
 	
 	#Scheduling
 	@staticmethod
-	def startVM(id,vm):
+	def startVM(vmid,vm):
 		raise Exception("Abstract method cannot be called")	
 	@staticmethod
-	def rebootVM(id,vm):
+	def rebootVM(vmid,vm):
 		raise Exception("Abstract method cannot be called")	
 	@staticmethod
-	def stopVM(id,vm):
+	def stopVM(vmid,vm):
 		raise Exception("Abstract method cannot be called")	
 	@staticmethod
-	def hardStopVM(id,vm):
+	def hardStopVM(vmid,vm):
 		raise Exception("Abstract method cannot be called")	
 

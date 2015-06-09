@@ -102,6 +102,7 @@ class KVMManager(object):
 	# Provisioning routines
 	@staticmethod
 	def startDomain(vm):
+		KVMManager.logger.info('startDomain ' + vm.name)
 		# Getting connection
 		conn = KVMManager.__getConnection()
 
@@ -113,8 +114,7 @@ class KVMManager(object):
 			newVmName = KVMManager.__findAliasForDuplicatedVmName(vm)
 			xmlConf.replace("<name>"+ vm.name + "<\/name>", "<name>"+ newVmName + "<\/name>", 1)
 			KVMManager.logger.warn("duplicate VM name, change VM name from " + vm.name
-								 + " to " + newVmName)
-
+				+ " to " + newVmName)
 		
 		try:
 			# Try first using libvirt call
@@ -152,7 +152,7 @@ class KVMManager(object):
 		waitTime = 0
 		while (waitTime < OXA_KVM_STOP_MAX_SECONDS) :
 			if not KVMManager.isVmRunningByUUID(vm.uuid):
-				return	
+				break
 			waitTime += OXA_KVM_STOP_STEP_SECONDS
 			time.sleep(OXA_KVM_STOP_STEP_SECONDS)
 
