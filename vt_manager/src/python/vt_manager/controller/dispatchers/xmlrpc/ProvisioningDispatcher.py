@@ -13,6 +13,7 @@ from vt_manager.controller.actions.ActionController import ActionController
 from vt_manager.controller.policies.RuleTableManager import RuleTableManager
 #from vt_manager.communication.sfa.vm_utils.SfaCommunicator import SfaCommunicator
 #from vt_manager.common.middleware.thread_local import thread_locals, pull
+import traceback
 
 class ProvisioningDispatcher():
 	logger = logging.getLogger("ProvisioningDispatcher")
@@ -59,6 +60,7 @@ class ProvisioningDispatcher():
 				logging.debug("PROVISIONING FINISHED...")
 				return
 			except Exception as e:
+				logging.warn(traceback.format_exc())
 				if actionModel.getType() == Action.PROVISIONING_VM_CREATE_TYPE:
 					# If the VM creation was interrupted in the network
 					# configuration, the created VM won't be returned

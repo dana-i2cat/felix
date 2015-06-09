@@ -9,12 +9,14 @@ from vt_manager.utils.MutexStore import MutexStore
 from vt_manager.models.MacRange import MacRange
 from vt_manager.models.Ip4Range import Ip4Range
 from vt_manager.common.utils import validators
+import logging
 
 def validateAgentURLwrapper(url):
 	VTServer.validateAgentURL(url)
 
 class VTServer(models.Model):
 	"""Virtualization Server class"""
+	logger = logging.getLogger("VTServer")
 
 	class Meta:
 		"""Meta Class for your model."""
@@ -254,7 +256,17 @@ class VTServer(models.Model):
 	def getSubscribedIp4RangesNoGlobal(self):
 		return self.subscribedIp4Ranges.all()
 	
-	def getSubscribedIp4Ranges(self):
+	def getSubscribedIp4Ranges(self, switchID):
+		candidateList = []
+		for candidate in self.subscribedIp4Ranges.all():
+			if candidate.name != switchID:
+				continue
+			VTServer.logger.info("XXX candidate.name = " + str(candidate.name))
+			candidateList.append(candidate)
+		VTServer.logger.info("XXX candidateList = " + str(len(candidateList)))
+		return candidateList
+
+	def getSubscribedIp4Ranges0(self):
 		if self.subscribedIp4Ranges.all().count() > 0:
 			return self.subscribedIp4Ranges.all()
 		else:
@@ -276,11 +288,12 @@ class VTServer(models.Model):
 	
 		return macObj
 
-	def __allocateIpFromSubscribedRanges(self):
+	def __allocateIpFromSubscribedRanges(self, serverInterface):
 		ipObj = None 
 		
 		#Allocate Ip
-		for ipRange in self.getSubscribedIp4Ranges():
+		switchID = serverInterface.getSwitchID()
+		for ipRange in self.getSubscribedIp4Ranges(switchID):
 			try:
 				ipObj = ipRange.allocateIp() 
 			except Exception:
@@ -294,7 +307,7 @@ class VTServer(models.Model):
 	''' VM interfaces and VM creation methods '''
 	def __createEnslavedDataVMNetworkInterface(self,serverInterface):
 		#Obtain 
-		macObj = self.__allocateMacFromSubscribedRanges() 
+		macObj = self.__allocateMacFromSubscribedRanges()
 		
 		interface = NetworkInterface.createVMDataInterface(serverInterface.getName()+"-slave",macObj) 
 		
@@ -305,7 +318,7 @@ class VTServer(models.Model):
 	def __createEnslavedMgmtVMNetworkInterface(self,serverInterface):
 		#Obtain 
 		macObj = self.__allocateMacFromSubscribedRanges() 
-		ipObj = self.__allocateIpFromSubscribedRanges()
+		ipObj = self.__allocateIpFromSubscribedRanges(serverInterface)
 		
 		interface = NetworkInterface.createVMMgmtInterface(serverInterface.getName()+"-slave",macObj,ipObj) 
 		

@@ -14,7 +14,7 @@ import subprocess
 from kvm.provisioning.HdManager import HdManager
 from settings.settingsLoader import *
 from utils.Logger import Logger
-
+from netaddr import *
 
 class OfeliaDebianVMConfigurator:
 	
@@ -23,9 +23,11 @@ class OfeliaDebianVMConfigurator:
 	''' Private methods '''
 	@staticmethod
 	def __configureInterfacesFile(vm, iFile):
+		import networkx
 		# Loopback
 		iFile.write("auto lo\n")
 		iFile.write("iface lo inet loopback\n\n")
+		i = 0
 		# Interfaces
 		for inter in vm.xen_configuration.interfaces.interface:
 			if inter.ismgmt:
@@ -36,19 +38,31 @@ class OfeliaDebianVMConfigurator:
 				"\tnetmask " + inter.mask + "\n"
 
 				if inter.gw != None and inter.gw != "":
-					interfaceString += "\tgateway " + inter.gw + "\n"
+					if i == 0:
+						interfaceString += "\tgateway " + inter.gw + "\n"
+					else:
+						ipaddr = IPNetwork(inter.ip, inter.mask)
+						interfaceString += "\tup route add -net " + \
+							str(ipaddr.network) + " gw "+ inter.gw + " dev " + inter.name +"\n"
 
 				if inter.dns1 != None and inter.dns1 != "":
-					interfaceString += "\tdns-nameservers " + inter.dns1
+					if i == 0:
+						interfaceString += "\tdns-nameservers " + inter.dns1
+					else:
+						pass
 
 				if inter.dns2 != None and inter.dns2 != "":
-					interfaceString += " " + inter.dns2
+					if i == 0:
+						interfaceString += " " + inter.dns2
+					else:
+						pass
 				interfaceString += "\n\n"
 
-				iFile.write(interfaceString)			 
+				iFile.write(interfaceString)
+				i += 1
 			else:
 				# is a data interface
-				iFile.write("auto " + inter.name + "\n\n")
+				iFile.write("auto " + inter.name + "\n")
 
 
 	@staticmethod

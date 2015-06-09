@@ -28,12 +28,12 @@ class MacRange(models.Model):
 
 
 	#Range parameters
-    	startMac = models.CharField(verbose_name="Start Mac Address", max_length = 17, default="", validators=[EthernetUtils.checkValidMac])
-    	endMac = models.CharField(verbose_name="End Mac Address", max_length = 17, default="", validators=[EthernetUtils.checkValidMac])
+	startMac = models.CharField(verbose_name="Start Mac Address", max_length = 17, default="", validators=[EthernetUtils.checkValidMac])
+	endMac = models.CharField(verbose_name="End Mac Address", max_length = 17, default="", validators=[EthernetUtils.checkValidMac])
 	
 	#Pool of macs both assigned and excluded (particular case of assignment)
 	macs = models.ManyToManyField('MacSlot', blank = True, null = True, editable = False)
-    	nextAvailableMac = models.CharField(verbose_name="Next Available Mac Address",max_length = 17, default="",editable=False)
+	nextAvailableMac = models.CharField(verbose_name="Next Available Mac Address",max_length = 17, default="",editable=False)
 
 	#Statistics
 	numberOfSlots = models.BigIntegerField(blank = True, null=True, editable = False)
@@ -83,16 +83,16 @@ class MacRange(models.Model):
 		if self.doSave:
 			self.save()
 	
-        def __setStartMac(self, value):
+	def __setStartMac(self, value):
 		EthernetUtils.checkValidMac(value)
-		MAC4Utils.checkValidMac(value) 
-                self.startMac = value.upper()
+		#MAC4Utils.checkValidMac(value) 
+		self.startMac = value.upper()
 		self.autoSave()
 
 
-        def __setEndMac(self, value):
+	def __setEndMac(self, value):
 		EthernetUtils.checkValidMac(value)
-                self.endMac = value.upper()
+		self.endMac = value.upper()
 		self.autoSave()
 
 	def __isMacAvailable(self,mac):
@@ -104,20 +104,20 @@ class MacRange(models.Model):
 	def getLockIdentifier(self):
 		#Uniquely identifies object by a key
 		return inspect.currentframe().f_code.co_filename+str(self)+str(self.id)
-        
+
 	def getName(self):
 		return self.name 
-        def getStartMac(self):
-                return self.startMac
-        def getEndMac(self):
-                return self.endMac
+	def getStartMac(self):
+		return self.startMac
+	def getEndMac(self):
+		return self.endMac
 	def getIsGlobal(self):
 		return self.isGlobal 
- 
+
 	def getExcludedMacs(self):
 		return self.macs.filter(isExcluded=True).order_by('mac')
 
- 	def getAllocatedMacs(self):
+	def getAllocatedMacs(self):
 		return self.macs.filter(isExcluded=False).order_by('mac')
 
 	def getNumberOfSlots(self):
@@ -127,7 +127,7 @@ class MacRange(models.Model):
 		if not self.numberOfSlots == -1:
 			return round((float(self.macs.all().count())/float(self.numberOfSlots))*100,2)
 		return -1
- 
+
 	def destroy(self):
 		with MutexStore.getObjectLock(self.getLockIdentifier()):
 			if self.macs.filter(isExcluded=False).count() > 0:
@@ -155,7 +155,7 @@ class MacRange(models.Model):
 			
 			#Try to find new slot
 			try:
-                        	it= EthernetUtils.getMacIterator(self.nextAvailableMac,self.endMac)
+				it= EthernetUtils.getMacIterator(self.nextAvailableMac,self.endMac)
 				while True:
 					mac = it.getNextMac()
 					if self.__isMacAvailable(mac):
@@ -212,7 +212,7 @@ class MacRange(models.Model):
 			#if was nextSlot shift
 			if self.nextAvailableMac == macStr:
 				try:
-                        		it= EthernetUtils.getMacIterator(self.nextAvailableMac,self.endMac)
+					it= EthernetUtils.getMacIterator(self.nextAvailableMac,self.endMac)
 					while True:
 						mac = it.getNextMac()
 						if self.__isMacAvailable(mac):
@@ -257,15 +257,15 @@ class MacRange(models.Model):
 	@staticmethod
 	def getAllocatedGlobalNumberOfSlots():
 		allocated = 0
-		for range in MacRange.objects.filter(isGlobal=True):
-			allocated += range.macs.all().count()
+		for macrange in MacRange.objects.filter(isGlobal=True):
+			allocated += macrange.macs.all().count()
 		return allocated
 			
 	@staticmethod
 	def getGlobalNumberOfSlots():
 		slots = 0
-		for range in MacRange.objects.filter(isGlobal=True):
-			slots += range.numberOfSlots
+		for macrange in MacRange.objects.filter(isGlobal=True):
+			slots += macrange.numberOfSlots
 		return int(slots)
 		
 
@@ -275,7 +275,7 @@ class MacRange(models.Model):
 			print "Rebasing pointer of range: "+str(self.id)
 			print "Current pointer point to: "+self.nextAvailableMac
 			try:
-                    		it= EthernetUtils.getMacIterator(self.startMac,self.endMac)
+				it= EthernetUtils.getMacIterator(self.startMac,self.endMac)
 				while True:
 					mac = it.getNextMac()
 					if self.__isMacAvailable(mac):
@@ -289,8 +289,8 @@ class MacRange(models.Model):
 	
 	@staticmethod
 	def rebasePointers():
-		for range in MacRange.objects.all():
-			range.rebasePointer()
+		for macrange in MacRange.objects.all():
+			macrange.rebasePointer()
 		
 			
 #slot = RangeSlot("127.0.0.1","127.0.0.255","255.255.255.0")

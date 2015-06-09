@@ -31,7 +31,7 @@ EMAIL_PORT=25
 #
 # Set true to enable debug.
 #
-DEBUG = True
+DEBUG = False
 
 ##
 ## Advanced parameters.
