@@ -1,3 +1,5 @@
+import sys
+sys.path.append("/opt/felix/resource-orchestrator-mro/modules/resource/orchestrator/src")
 from db.db_manager import db_sync_manager
 from pprint import pprint
 
@@ -15,8 +17,8 @@ class PathFinderTNtoSDN(object):
         # Dummy list to reduce lines of code
         self.src_dst_values = [ "src", "dst" ]
         # Nodes and links from database
-        self.tn_nodes = db_sync_manager.get_tn_nodes()
-        self.se_links = db_sync_manager.get_se_links()
+        self.tn_nodes = [ x for x in db_sync_manager.get_tn_nodes() ]
+        self.se_links = [ x for x in db_sync_manager.get_se_links() ]
         # Mapping structure to be returned is a list of possible src-dst paths
         self.mapping_tn_se_of = []
         self.organisation_name_mappings = {
@@ -127,7 +129,9 @@ class PathFinderTNtoSDN(object):
     def find_se_interfaces_for_tn_interface(self, tn_interface):
         se_interfaces_match = set()
         for se_link in self.se_links:
-            if tn_interface in se_link.get("component_id"):
+            #if tn_interface in se_link.get("component_id"):
+            se_link_interfaces = [ self.clean_tn_stp_cid(iface.get("component_id")) for iface in se_link.get("interface_ref") ]
+            if tn_interface in se_link_interfaces:
                 se_link_interfaces = [ self.clean_tn_stp_cid(iface.get("component_id")) for iface in se_link.get("interface_ref") ]
                 # Remove link interface that matches with the passed TN interface
                 se_link_interfaces.pop(se_link_interfaces.index(tn_interface))
@@ -258,7 +262,7 @@ class PathFinderTNtoSDN(object):
             for src_dst_value in self.src_dst_values:
                 mapping[src_dst_value]["tn"] = self.format_verify_tn_interface(mapping[src_dst_value]["tn"])
         # Remove paths where either source or destination are invalid
-        self.mapping_tn_se_of = self.prune_invalid_paths(self.mapping_tn_se_of)
+#        self.mapping_tn_se_of = self.prune_invalid_paths(self.mapping_tn_se_of)
         return self.mapping_tn_se_of
 
     def find_paths(self):
@@ -276,12 +280,12 @@ if __name__ == "__main__":
 #    dst_name = "kddi"
 
 	# Link PSNC-KDDI
-    src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:pionier.net.pl:2013:topology:felix-ge-1-0-3"
-    dst_name = "urn:publicid:IDN+fms:kddi:tnrm+stp+urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp1"
+#    src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:pionier.net.pl:2013:topology:felix-ge-1-0-3"
+#    dst_name = "urn:publicid:IDN+fms:kddi:tnrm+stp+urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp1"
 
 	# Link AIST-KDDI
-#    src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:aist.go.jp:2013:topology:bi-se1"
-#    dst_name = "urn:publicid:IDN+fms:kddi:tnrm+stp+urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp1"
+    src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:aist.go.jp:2013:topology:bi-se1"
+    dst_name = "urn:publicid:IDN+fms:kddi:tnrm+stp+urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp1"
 
     # --------
    
