@@ -203,3 +203,14 @@ class TNUtils(CommonUtils):
                 raise e
 
         return (manifests, slivers, db_slivers, se_tn_info)
+
+    def find_stps_from_links(self, links_in):
+        ret = []
+        for link in links_in:
+            logger.debug("TNLink=%s" % (link,))
+            if len(link.get("property")) > 0:
+                # we use only the first item to identify the src/dst stps
+                item = link.get("property")[0]
+                ret.append({"src_name": item.get("source_id"),
+                            "dst_name": item.get("dest_id")})
+        return ret

@@ -165,3 +165,89 @@ class SDNUtils(CommonUtils):
         logger.info("Stored slice.sdn info: id=%s" % (id_,))
 
         return (manifests, slivers, db_slivers, se_sdn_info)
+
+    def find_dpid_port_identifiers(self, groups, matches):
+        ret = []
+        for g in groups:
+            logger.debug("Group=%s" % (g,))
+            item = {"name": g.get("name"),
+                    "ids": []}
+            for d in g.get("dpids"):
+                for p in d.get("ports"):
+                    ident = d.get("component_id") + "_" + p.get("num")
+                    item.get("ids").append(ident)
+            ret.append(item)
+
+        logger.debug("Matches=%s" % (matches,))
+        # We do not support the specification of dpids directly
+        # in the match structure for the moment.
+        return ret
+
+    def __find_id_link_in_path(self, ident, paths):
+        logger.debug("Searching this identify: %s" % (ident,))
+        for p in paths:
+            for link in p.get("src").get("links"):
+                if ident in link.get("sdn"):
+                    logger.debug("Match in the SRC side: %s" % (link,))
+                    return True, link
+            for link in p.get("dst").get("links"):
+                if ident in link.get("sdn"):
+                    logger.debug("Match in the DST side: %s" % (link,))
+                    return True, link
+
+        return False, None
+
+    def __is_ids_in_path(self, ids, paths):
+        for i in ids:
+            ret, link = self.__find_id_link_in_path(i, paths)
+            if ret:
+                return True
+
+        return False
+
+    def __fill_group_info(self, group, link, i):
+        return {"name": group.get("name"),
+                "component_id": link[0:i],
+                "port_num": link[i+1:len(link)]}
+
+    def __find_group_info(self, identity, char, paths, group):
+        idx = identity.rfind(char)
+        prefix = identity[0:idx]
+        ret, link = self.__find_id_link_in_path(prefix, paths)
+        if ret:
+            idx = link.get("sdn").rfind("_")
+            return True, self.__fill_group_info(group, link.get("sdn"), idx)
+
+        return False, None
+
+    def __choose_sdn_for_group(self, group, paths):
+        if len(group.get("ids")) == 0:
+            logger.error("Enable to choose an SDN-res: group lenght is ZERO!")
+            return None
+        ident = group.get("ids")[0]
+
+        # first, identify the prefix for this group using the dpid
+        # match the "_" char at the end!
+        ret, info = self.__find_group_info(ident, "_", paths, group)
+        if ret:
+            return info
+
+        # then, identify the prefix for this group using the domain
+        # match the "+" char at the end!
+        ret, info = self.__find_group_info(ident, "+", paths, group)
+        if ret:
+            return info
+
+        return None
+
+    def analyze_mapped_path(self, ids, paths):
+        ret = []
+        for i in ids:
+            if self.__is_ids_in_path(i.get("ids"), paths):
+                logger.info("The group is completed: %s" % (i,))
+            else:
+                logger.warning("The group is NOT completed: %s" % (i,))
+                item = self.__choose_sdn_for_group(i, paths)
+                ret.append(item)
+
+        return ret

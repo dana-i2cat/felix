@@ -20,6 +20,8 @@ from utils.se import SEUtils
 from utils.tn import TNUtils
 from utils.ro import ROUtils
 
+from mapper.path_finder_tn_to_sdn import PathFinderTNtoSDN
+
 from core.config import ConfParser
 import ast
 import core
@@ -224,7 +226,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
                 logger.debug("ro_m=%s, ro_s=%s, urn=%s" %
                              (ro_m_info, ro_slivers, last_slice))
-                ro_manifest = ROUtils.generate_describe_manifest(ro_manifest, ro_m_info)
+                ro_manifest = ROUtils.generate_describe_manifest(
+                    ro_manifest, ro_m_info)
                 ro_slivers.extend(ro_slivers_ro)
 
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
@@ -254,6 +257,30 @@ class GENIv3Delegate(GENIv3DelegateBase):
         CommonUtils().validate_rspec(req_rspec.get_rspec())
 
         ro_manifest, ro_slivers, ro_db_slivers = ROManifestFormatter(), [], []
+
+        # Before starting the allocation process, we need to find a proper
+        # mapping between TN and SDN resources in the islands.
+        # We use the tn-links as starting point (STPs)
+        stps = TNUtils().find_stps_from_links(req_rspec.tn_links())
+        logger.debug("STPs=%s" % (stps,))
+        dpid_port_ids = SDNUtils().find_dpid_port_identifiers(
+            req_rspec.of_groups(), req_rspec.of_matches())
+        logger.debug("DPIDs=%s" % (dpid_port_ids,))
+
+        extend_groups = []
+        for stp in stps:
+            path_finder_tn_sdn = PathFinderTNtoSDN(
+                stp.get("src_name"), stp.get("dst_name"))
+            paths = path_finder_tn_sdn.find_paths()
+            logger.info("PATHs=%s" % (paths,))
+            if len(paths) == 0:
+                e = "Empty path, maybe the configuration is wrong!"
+                raise geni_ex.GENIv3GeneralError(e)
+            items = SDNUtils().analyze_mapped_path(dpid_port_ids, paths)
+            extend_groups.extend(items)
+
+        logger.warning("We need to extended RSpec with OF-groups: %s" %
+                       (extend_groups,))
 
         # COM resources
         slivers = req_rspec.com_slivers()
@@ -546,7 +573,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     peer, v, credentials, best_effort, end_time, geni_users)
 
                 logger.debug("ro_m=%s, ro_s=%s" % (ro_m_info, ro_slivers,))
-                ro_manifest = ROUtils.generate_describe_manifest(ro_manifest, ro_m_info)
+                ro_manifest = ROUtils.generate_describe_manifest(
+                    ro_manifest, ro_m_info)
 
                 ro_slivers.extend(ro_slivers_ro)
                 # introduce slice-monitoring info for ALL the resource types!
