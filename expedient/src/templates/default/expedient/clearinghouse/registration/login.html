@@ -15,6 +15,9 @@
         <button id="button" onclick="showhide()">Show</button>
       </p>
     </div>
+    <div id="login-error" class="centered_hidden errorlist" style="display:none;">
+      {{error}}
+    </div>
     <div id="cert_login" class="centered_hidden">
       <p>
         <label for="id_cert_file">Certificate:</label>
@@ -60,7 +63,6 @@
 <script src="/static/media/default/js/jsrsasign-latest-all-min.js"></script>
 <script LANGUAGE="JavaScript">
 function computeSignature (form) {
-
   var prvKeyPEM = form.id_key.value;
   form.id_key.value = '' //To avoid key uploading in case any exception occurs in sign computation
   var data = form.csrfmiddlewaretoken.value;
@@ -71,6 +73,9 @@ function computeSignature (form) {
 }
 
   function handleCertFileSelect(evt) {
+    /* Clean any error that may be left */
+    cleanAndHideError();
+
     var files = evt.target.files; // FileList object
     var file = files[0];
     var reader = new FileReader();
@@ -86,6 +91,9 @@ function computeSignature (form) {
   }
 
   function handleKeyFileSelect(evt) {
+    /* Clean any error that may be left */
+    cleanAndHideError();
+
     var files = evt.target.files; // FileList object
     var file = files[0];
 
@@ -105,6 +113,8 @@ function computeSignature (form) {
   document.getElementById('id_cert_file').addEventListener('change', handleCertFileSelect, false);
 
     function showhide() {
+        /* Clean any error that may be left */
+        cleanAndHideError();
         var div_pswd = document.getElementById("pswd_login");
         var div_cert = document.getElementById("cert_login");
         var showhide = document.getElementById("showhide");
@@ -120,6 +130,26 @@ function computeSignature (form) {
             showhide.innerHTML = showhide.innerHTML = '<p><em>Switch to certificate based login: </em> <button id="button" onclick="showhide()">Show</button> </p>';
         }
     }
+
+ function checkAndShowError() {
+   /* Check errors on log-in and set style appropriately */
+   var errorContents = $("#login-error").text().trim().replace(/\n/g, '');
+   if (errorContents != "") {
+     $("#login-error").css("display", "block");
+     $("#login-error").addClass("errorlist");
+   }
+ }
+
+ function cleanAndHideError() {
+   /* Clean error when not needed anymore */
+   $("#login-error").css("display", "none");
+   $("#login-error").removeClass("errorlist");
+ }
+
+
+$( document ).ready(function() {
+  checkAndShowError();
+});
 </script>
 {% endblock %}
 

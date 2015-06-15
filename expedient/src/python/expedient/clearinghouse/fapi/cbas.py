@@ -1,6 +1,13 @@
 __author__ = 'umar.toseef'
-import logging
+
+from django.contrib.auth.models import User
+from django.core.urlresolvers import reverse
+from django.http import HttpResponseRedirect
+from django.views.generic.simple import direct_to_template
 from expedient.clearinghouse.fapi.communication_tools import *
+from expedient.common.permissions.shortcuts import has_permission
+
+import logging
 
 
 def get_credentials_from_file(user_name):
@@ -314,8 +321,11 @@ def print_debug_message(msg):
         logger.debug(msg+'\n')
 
 def verify_certificate(cert_str):
-
-    code, value, output = ma_call('verify_certificate', [cert_str, EXPEDIENT_CREDENTIALS])
+    # Any failure in the verification will result in a negative return
+    try:
+        code, value, output = ma_call('verify_certificate', [cert_str, EXPEDIENT_CREDENTIALS])
+    except Exception as e:
+        return False
     if not code == 0:
         print_debug_message('verify_certificate()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
         return False
@@ -323,7 +333,6 @@ def verify_certificate(cert_str):
         return True
 
 def is_cbas_server_active():
-
     try:
         code, value, output = sa_call('get_version', [])
         if not code == 0:

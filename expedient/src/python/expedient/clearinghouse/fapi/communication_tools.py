@@ -39,13 +39,10 @@ def ssl_call(method_name, params, endpoint, key_path, cert_path, host=CBAS_HOST_
     proxy = xmlrpclib.ServerProxy("https://%s:%s/%s" % (host, str(port), endpoint), transport=transport)
     # return proxy.get_version()
     method = getattr(proxy, method_name)
-
     return method(*params)
-
 
 def get_file_contents(filename):
     creds_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '.', 'creds'))
-    print creds_path
     if not os.path.isabs(filename):
         filename = os.path.join(creds_path, filename)
     filename = os.path.abspath(os.path.expanduser(filename))

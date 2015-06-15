@@ -1,13 +1,18 @@
 from django.contrib.auth.views import login
 from django.contrib.auth import REDIRECT_FIELD_NAME
+from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.contrib import auth
 from django.contrib.auth.models import User
+from django.views.generic.simple import direct_to_template
 import OpenSSL.crypto
 from Crypto.Util import asn1
 from django.conf import settings
 from expedient.clearinghouse.fapi.cbas import verify_certificate
+from expedient.common.permissions.shortcuts import has_permission
+
 import binascii
+
 
 class ScriptsRemoteUserMiddleware(object):
 
@@ -23,10 +28,35 @@ class ScriptsRemoteUserMiddleware(object):
                 return None
 
             myBackend = ScriptsRemoteUserBackend()
-            user = myBackend.authenticate(cert_str, sign_str, token)
-
-            if not user:
-                return None
+            try:
+                user = myBackend.authenticate(cert_str, sign_str, token)
+                if not user:
+                    raise
+            # In case of error, show a generic error
+            except:
+                isSuperUser = False
+                try:
+                    if has_permission(request.user, User, "can_manage_users"):
+                        isSuperUser = True
+                except:
+                    pass
+                if request.session.get("visited") == None:
+                    showFirstTimeTooltips = True
+                    request.session["visited"] = True
+                else:
+                    showFirstTimeTooltips = False
+                return direct_to_template(
+                    request,
+                    template="expedient/clearinghouse/registration/login.html",
+                    extra_context={
+                        "error": "Could not log in with cert, key. Check that you are using the proper pair or try authenticating with user, pass",
+                        "isSuperUser": isSuperUser,
+                        "showFirstTimeTooltips": showFirstTimeTooltips,
+                        "breadcrumbs": (
+                            ("Home", reverse("home")),
+                        ),
+                    }
+                )
 
             auth.login(request, user)
 
