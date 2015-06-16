@@ -31,6 +31,7 @@ from expedient.clearinghouse.defaultsettings.xmlrpc import *
 from expedient.clearinghouse.defaultsettings.openflowtests import *
 from expedient.clearinghouse.defaultsettings.tests import *
 from expedient.clearinghouse.defaultsettings.ldapSettings import *
+from expedient.clearinghouse.defaultsettings.cbas import *
 
 # *Before importing plug-in*, load database info
 DATABASES = {

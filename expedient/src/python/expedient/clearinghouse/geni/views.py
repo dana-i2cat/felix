@@ -20,7 +20,6 @@ from expedient.clearinghouse.geni.forms import UploadCertForm, UploadKeyForm
 from expedient.clearinghouse.slice.models import Slice
 from expedient.clearinghouse.users.models import UserProfile
 from expedient.clearinghouse.fapi.cbas import *
-from expedient.clearinghouse.defaultsettings.cbas import *
 
 logger = logging.getLogger("geni.views")
 

@@ -60,7 +60,8 @@ def home(request):
 	        }
 	# CBAS-related data
         try:
-            cbas_variables = ["CBAS_STATUS", "CBAS_NAME", "CBAS_IP_ADDR", "CBAS_PORT"]
+            cbas_variables = ["CBAS_HOST_NAME", "CBAS_HOST_IP", "CBAS_HOST_PORT"]
+            from django.conf import settings
             [ getattr(settings, cbas_var) for cbas_var in cbas_variables ]
         except:
             from expedient.clearinghouse.defaultsettings import cbas as settings
