@@ -273,9 +273,11 @@ class DBManager(object):
             containing_slice = {}
             containing_slice_urn = None
             if len(urns) > 0:
-                containing_slice = table.find_one({"slivers.geni_sliver_urn": urns[0]}) or {}
+                containing_slice = table.find_one(
+                    {"slivers.geni_sliver_urn": urns[0]}) or {}
                 if "slice_urn" in containing_slice:
-                    containing_slice_urn = containing_slice.get("slice_urn", None)
+                    containing_slice_urn = containing_slice.get(
+                        "slice_urn", None)
             for u in urns:
                 for r in table.find():
                     # Passed URN belongs to a slice
@@ -295,8 +297,10 @@ class DBManager(object):
                                     (u,))
                                 break
             # Remove slice when it does not contain slivers anymore
-            containing_slice = table.find_one({"slice_urn": containing_slice_urn}) or {}
-            if len(containing_slice.get("slivers", [])) == 0 and containing_slice_urn is not None:
+            containing_slice = table.find_one(
+                {"slice_urn": containing_slice_urn}) or {}
+            if (len(containing_slice.get("slivers", [])) == 0) and\
+               (containing_slice_urn is not None):
                 table.remove({"slice_urn": containing_slice_urn})
         finally:
             self.__mutex.release()
@@ -466,6 +470,11 @@ class DBManager(object):
              "component_manager_id": dpid.get("component_manager_id"),
              "dpid": dpid.get("dpid")}
         return self.__get_one(table, filter_params).get("routing_key")
+
+    def get_sdn_datapath_by_componentid(self, cid):
+        table = self.__get_table("resource.of.node")
+        filter_params = {"component_id": cid}
+        return self.__get_one(table, filter_params)
 
     # (felix_ro) resource.of.link
     def store_sdn_links(self, routingKey, values):

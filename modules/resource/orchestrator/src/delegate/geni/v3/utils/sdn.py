@@ -124,12 +124,44 @@ class SDNUtils(CommonUtils):
                                  m.get("packet").get("tp_dst"))
                 rspec.match(match.serialize())
 
-    def manage_allocate(self, surn, creds, end, sliver, parser, slice_urn):
+    def __add_extended_info(self, group, info):
+        # Add the port to an already configured dpid (if any)
+        for d in group.get("dpids"):
+            if d.get("component_id") == info.get("component_id"):
+                d.get("ports").extend(info.get("ports"))
+                return
+        # otherwise, just append a new dpid to the group info
+        group.get("dpids").append(info)
+
+    def __update_group_with_extended_info(self, extended, group):
+        if extended.get("name") == group.get("name"):
+            info = db_sync_manager.get_sdn_datapath_by_componentid(
+                extended.get("component_id"))
+            logger.debug("Found info in DB: %s" % (info,))
+            tmp = {"component_manager_id": info.get("component_manager_id"),
+                   "component_id": extended.get("component_id"),
+                   "dpid": info.get("dpid"),
+                   "ports": []}
+            for p in info.get("ports"):
+                if p.get("num") == extended.get("port_num"):
+                    tmp.get("ports").append({"num": extended.get("port_num"),
+                                             "name": p.get("name")})
+            logger.info("Introduce new info in the group: %s" % (tmp,))
+            self.__add_extended_info(group, tmp)
+
+    def manage_allocate(self, surn, creds, end, sliver, parser, slice_urn,
+                        extended_group_info):
         route = {}
         controllers = parser.of_controllers()
         logger.debug("Controllers=%s" % (controllers,))
 
         groups = parser.of_groups()
+        logger.debug("Groups=%s" % (groups,))
+        # Update the group info to support the mapper module
+        for eg in extended_group_info:
+            for g in groups:
+                self.__update_group_with_extended_info(eg, g)
+
         self.__update_route(route, groups)
         logger.debug("Groups=%s" % (groups,))
 

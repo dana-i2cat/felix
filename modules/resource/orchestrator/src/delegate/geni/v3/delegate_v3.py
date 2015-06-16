@@ -308,9 +308,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
         sliver = req_rspec.of_sliver()
         if sliver is not None:
             logger.debug("Found an OF-sliver segment: %s", sliver)
+            # Manage the "extend-group" info here: extend the group info
+            # introducing the new dpids/ports taken from
+            # the mapper (path-finder) module.
             (of_m_info, of_slivers, db_slivers, se_sdn_info) =\
-                SDNUtils().manage_allocate(slice_urn, credentials, end_time,
-                                           sliver, req_rspec, slice_urn)
+                SDNUtils().manage_allocate(
+                    slice_urn, credentials, end_time, sliver, req_rspec,
+                    slice_urn, extend_groups)
 
             logger.debug("of_m=%s, of_s=%s, db_s=%s" %
                          (of_m_info, of_slivers, db_slivers))
