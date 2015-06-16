@@ -438,20 +438,21 @@ class VTAMDriver:
     def __convert_to_links(self, server):
         links = list()
         network_ifaces = server.networkInterfaces.all()
-        VTAMDriver.logger.debug("XXX len = " + str(len(network_ifaces)))
         for network_interface in network_ifaces:
-            VTAMDriver.logger.debug("XXX name = " + network_interface.name)
             link = Link()
             if not network_interface.switchID:
                 continue
                 #network_interface.switchID = "OfeliaVPNGateWay"
             dpid_port = "%s_%s" % (network_interface.switchID, network_interface.port)
             component_id = self.__get_link_urn(network_interface.name, dpid_port, server.name)
+            VTAMDriver.logger.debug("XXX name = " + network_interface.name + ", dpid_port = " + dpid_port)
+            #VTAMDriver.logger.debug("XXX component_id = " + component_id)
             link.set_component_id(component_id)
             link.set_component_name(component_id)
             link.set_capacity("1024MB/s")
             link.set_dest_id(self.__get_foreign_urn(network_interface.switchID))
             link.set_source_id(self.__get_port_urn(network_interface.name, server.name))
+            #VTAMDriver.logger.debug("XXX source_id = " + link.get_source_id())
             link.set_type("L2 Link")
             links.append(link)
         return links
@@ -463,7 +464,8 @@ class VTAMDriver:
     def __correct_iface_name(self, iface_name):
         # Returns correct eth name from server
         if "." not in iface_name:
-            return iface_name.replace(iface_name[-1], str(int(iface_name[-1])-1))
+            #return iface_name.replace(iface_name[-1], str(int(iface_name[-1])-1))
+            return iface_name
         else:
             return self.__correct_iface_name(iface_name.split(".")[0])
 

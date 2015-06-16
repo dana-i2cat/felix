@@ -26,6 +26,7 @@ class VTAMRM(ResourceManagerBase):
                     servers.append(server)
             return servers
         else:
+            VTAMRM.logger.debug("URN not specified, get all servers")
             servers = self.__driver.get_all_servers(geni_available)
             return servers
     
