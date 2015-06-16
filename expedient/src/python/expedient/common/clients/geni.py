@@ -19,7 +19,7 @@ class SafeTransportWithCert(xmlrpclib.SafeTransport):
         return xmlrpclib.SafeTransport.make_connection(self, host_with_cert) # no super, because old style class
 
 class GENIClient(object):
-    def __init__(self, host, port, key_path=None, cert_path=None):
+    def __init__(self, host, port, endpoint="RPC2", key_path=None, cert_path=None):
         """
         Establishes a connection proxy with the client certificate given.
         {host} e.g. 127.0.0.1
@@ -32,7 +32,7 @@ class GENIClient(object):
             cert_path = "/etc/apache2/ssl.crt/server.crt"
         
         transport = SafeTransportWithCert(key_path, cert_path)
-        self._proxy = xmlrpclib.ServerProxy("https://%s:%s/RPC2" % (host, str(port)), transport=transport)
+        self._proxy = xmlrpclib.ServerProxy("https://%s:%s/%s" % (host, str(port), endpoint), transport=transport)
     
     def call_method(self, method_name, *params):
         """
