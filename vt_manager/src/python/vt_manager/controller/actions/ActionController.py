@@ -76,7 +76,7 @@ class ActionController():
 				currentIface.gw = vmIface.ip4s.all()[0].Ip4Range.get().gw
 				currentIface.dns1 = vmIface.ip4s.all()[0].Ip4Range.get().dns1
 				currentIface.dns2 = vmIface.ip4s.all()[0].Ip4Range.get().dns2
-			currentIface.switch_id = vmIface.serverBridge.all()[0].name
+			currentIface.switch_id = vmIface.serverBridge.all()[0].switchID
 			actionIfaces.append(currentIface)
 		
     @staticmethod

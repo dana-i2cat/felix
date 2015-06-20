@@ -355,7 +355,7 @@ class VTServer(models.Model):
 				mgmt = NetworkInterface.createServerMgmtBridge(name,macStr)
 				self.networkInterfaces.add(mgmt)
 			else:
-				raise Exception("Unexpected length of managment NetworkInterface query")
+				raise Exception("Unexpected length of management NetworkInterface query")
 			self.autoSave()
 	
 	#Network data bridges
