@@ -1,0 +1,8 @@
+*~
+*.pyc
+*.class
+*.swp
+.project
+.pydevproject
+*.log*
+*.log.*
