@@ -63,6 +63,7 @@ class DebianWheezyVMConfigurator:
 			else:
 				# is a data interface
 				iFile.write("auto " + inter.name + "\n")
+				iFile.write("iface " + inter.name + " inet manual\n\n")
 		return
 
 

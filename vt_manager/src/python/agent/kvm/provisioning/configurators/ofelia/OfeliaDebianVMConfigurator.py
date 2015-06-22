@@ -64,13 +64,14 @@ class OfeliaDebianVMConfigurator:
 			else:
 				# is a data interface
 				iFile.write("auto " + inter.name + "\n")
+				iFile.write("iface " + inter.name + " inet manual\n\n")
 		return
 
 	@staticmethod
 	def __configureUdevFile(vm, uFile):
 		for inter in vm.xen_configuration.interfaces.interface:
 			uFile.write('SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="' + inter.mac
-						+ '", ATTR{dev_id}=="0x0", ATTR{type}=="1", KERNEL=="eth*", NAME="'	 + inter.name + '"\n')
+				+ '", ATTR{dev_id}=="0x0", ATTR{type}=="1", KERNEL=="eth*", NAME="'	 + inter.name + '"\n')
 
 	@staticmethod
 	def __configureHostname(vm, hFile):

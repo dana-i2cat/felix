@@ -8,11 +8,11 @@ import logging
 
 '''Base folder where vms and logs will be store.
 All the rest of folder must be inside this folder'''
-OXA_PATH="/opt/ofelia/oxa/"
+OXA_PATH="/mnt/l1vm/image/dc1-1/"
 
 
 '''Log folder. Must exist!'''
-OXA_LOG="/opt/ofelia/oxa/log/"
+OXA_LOG="/var/log/"
 
 #Log level. Should be: 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
 #Default warning
@@ -34,16 +34,16 @@ OXA_DEFAULT_SWAP_SIZE_MB=512
 OXA_FILEHD_USE_CACHE=False
 
 '''Cache folder to store VMs (if cache mechanism is used)'''
-OXA_FILEHD_CACHE_VMS="/opt/ofelia/oxa/cache/vms/"
+OXA_FILEHD_CACHE_VMS="/mnt/l1vm/image/dc1-1/cache/vms/"
 
 '''Remote folder to store VMs'''
-OXA_FILEHD_REMOTE_VMS="/opt/ofelia/oxa/remote/vms/"
+OXA_FILEHD_REMOTE_VMS="/mnt/l1vm/image/dc1-1/remote/vms/"
 
 '''Cache folder for templates (if cache is enabled)'''
-OXA_FILEHD_CACHE_TEMPLATES="/opt/ofelia/oxa/cache/templates/"
+OXA_FILEHD_CACHE_TEMPLATES="/mnt/l1vm/image/dc1-1/cache/templates/"
 
 '''Remote folder for templates'''
-OXA_FILEHD_REMOTE_TEMPLATES="/opt/ofelia/oxa/remote/templates/"
+OXA_FILEHD_REMOTE_TEMPLATES="/mnt/l1vm/image/dc1-1/remote/templates/"
 
 '''Use sparse disks while cloning'''
 OXA_FILEHD_CREATE_SPARSE_DISK=False
