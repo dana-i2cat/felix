@@ -63,8 +63,8 @@ class SDNUtils(CommonUtils):
                 if k not in route:
                     route[k] = OFv3RequestFormatter()
 
-    def __create_se_id(self, component_id, port_name):
-        return component_id + ":" + port_name
+    def __create_se_id(self, component_id, port_number):
+        return component_id + "_" + port_number
 
     def __extract_se_from_sdn(self, groups, matches):
         ret = []
@@ -80,7 +80,7 @@ class SDNUtils(CommonUtils):
                         for gds in g.get("dpids"):
                             for p in gds.get("ports"):
                                 seid = self.__create_se_id(
-                                    gds.get("component_id"), p.get("name"))
+                                    gds.get("component_id"), p.get("num"))
                                 dpids.append(seid)
 
             for mds in m.get("dpids"):

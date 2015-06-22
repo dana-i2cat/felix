@@ -609,14 +609,14 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
-    def get_se_link_info(self, node_cid):
+    def get_se_link_info(self, node_port_id):
         table = self.__get_table("resource.se.link")
         try:
             self.__mutex.acquire()
             for r in table.find():
-                i = r.get('component_id').find(node_cid)
-                if i != -1:
-                    return r.get('link_type'), r.get('component_manager_name')
+                for ifref in r.get("interface_ref"):
+                    if ifref.get("component_id") == node_port_id:
+                        return r.get('link_type'), r.get('component_manager_name')
 
             return None, None
         finally:

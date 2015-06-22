@@ -109,16 +109,18 @@ class SEUtils(CommonUtils):
                             n.add_interface(intf.serialize())
 
     def __create_link(self, if1, if2, sliver_id):
-        i = if1.rindex(":")
-        n1, name1 = if1[0:i], if1[i+1:len(if1)]
-        i = if2.rindex(":")
-        n2, name2 = if2[0:i], if2[i+1:len(if1)]
+        i = if1.rindex("_")
+        n1, num1 = if1[0:i], if1[i+1:len(if1)]
+        i = if2.rindex("_")
+        n2, num2 = if2[0:i], if2[i+1:len(if1)]
 
         if n1 != n2:
             raise Exception("SELink: differs node cid (%s,%s)" % (n1, n2))
 
-        cid = n1 + ":" + name1 + "-" + name2
-        typee, cm_name = db_sync_manager.get_se_link_info(n1)
+        cid = n1 + ":" + num1 + "-" + num2
+        logger.debug("cid=%s, node-id=%s, port-num1=%s, port-num2=%s" %
+                     (cid, n1, num1, num2,))
+        typee, cm_name = db_sync_manager.get_se_link_info(n1 + "_" + num1)
 
         l = SELink(cid, typee, cm_name, sliver=sliver_id)
         l.add_interface_ref(if1)
