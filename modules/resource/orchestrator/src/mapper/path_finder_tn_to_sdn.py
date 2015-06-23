@@ -1,5 +1,6 @@
+import os
 import sys
-sys.path.append("/opt/felix/resource-orchestrator-mro/modules/resource/orchestrator/src")
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 from db.db_manager import db_sync_manager
 from pprint import pprint
 
@@ -342,6 +343,8 @@ if __name__ == "__main__":
 #    src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:aist.go.jp:2013:topology:bi-se1"
 #    dst_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp1"
 
+#    src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:aist.go.jp:2013:topology:bi-se1"
+#    dst_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:pionier.net.pl:2013:topology:felix-ge-1-1-7"
     # --------
    
     src_of_switch_cids = [ "urn:publicid:IDN+openflow:ocf:psnc:ofam+datapath+00:00:54:e0:32:cc:a4:c0_11", "urn:publicid:IDN+openflow:ocf:psnc:ofam+datapath+00:00:08:81:f4:88:f5:b0_9" ]
