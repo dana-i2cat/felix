@@ -9,8 +9,8 @@ class PathFinderTNtoSDN(object):
 
     def __init__(self, source_tn, destination_tn, *args, **kwargs):
         # CIDs of source and destination TN endpoints
-        self.src_tn = source_tn
-        self.dst_tn = destination_tn
+        self.src_dom = source_tn
+        self.dst_dom = destination_tn
         # Filters to match against required switches
         self.src_of_cids = []
         self.dst_of_cids = []
@@ -139,6 +139,27 @@ class PathFinderTNtoSDN(object):
         # Convert from set to tuple to avoid unhashable problems later on
         return tuple(se_interfaces_match)
 
+    def find_se_interfaces_for_domain_names(self, src_domain, dst_domain):
+        se_interfaces_matches = set()
+        for se_link in self.se_links:
+            #if tn_interface in se_link.get("component_id"):
+            se_link_interfaces = [ self.clean_tn_stp_cid(iface.get("component_id")) for iface in se_link.get("interface_ref") ]
+            # Both source and destination must exist in an SE-SE link
+            src_alias = [ src_domain ]
+            src_alias.extend([ dom for dom in self.get_organisation_mappings(src_domain) ])
+            src_alias_match = any([ alias in iface for alias in src_alias for iface in se_link_interfaces ])
+            dst_alias = [ dst_domain ]
+            dst_alias.extend([ dom for dom in self.get_organisation_mappings(dst_domain) ])
+            dst_alias_match = any([ alias in iface for alias in dst_alias for iface in se_link_interfaces ])
+            if src_alias_match and dst_alias_match:
+                se_link_interfaces = [ self.clean_tn_stp_cid(iface.get("component_id")) for iface in se_link.get("interface_ref") ]
+                candidate_set = (se_link_interfaces[0], se_link_interfaces[1])
+                if not set(candidate_set).issubset(se_interfaces_matches):
+                    se_interfaces_matches.add(tuple(candidate_set))
+
+        # Convert from set to tuple to avoid unhashable problems later on
+        return tuple(se_interfaces_matches)
+
     def find_sdn_interfaces_for_se_interface(self, se_interface, negative_filter=[], possitive_filter=[""]):
         sdn_interfaces_match = set()
         for se_link in self.se_links:
@@ -169,8 +190,9 @@ class PathFinderTNtoSDN(object):
                 # Retrieve link interfaces from SDN switches that are connected with any SE interface
                 # Search for some SDN link connected to the passed SE component id (without port!)
                 se_interface_noport = se_node
-                # Also, avoid adding links SE-TN (this would introduce a never-ending loop)
+                # Also, avoid adding links SE-SE and SE-TN (this would introduce a never-ending loop)
                 if se_interface_noport in " ".join(se_link_interfaces[:]) and \
+                        any([ "ofam" in link for link in se_link_interfaces]) and \
                         not any([ param in " ".join(se_link_interfaces[:]) for param in negative_filter ]) and \
                         any([ param in " ".join(se_link_interfaces[:]) for param in possitive_filter ]):
                     sdn_se_links.add(tuple(se_link_interfaces))
@@ -179,6 +201,11 @@ class PathFinderTNtoSDN(object):
 
     def prune_invalid_paths(self, mapping_path_structure):
         new_mapping_path_structure = []
+        # There must be information in SRC and DST links
+        ## Check all keys (SRC, DST) inside the "mapping_path_structure" list
+        if not all([ all(len(val) > 0 for val in elem.values()) for elem in mapping_path_structure ]):
+            return new_mapping_path_structure
+        # There must also be information for links
         for idx, mapping_path_element in enumerate(mapping_path_structure):
             if all( [ len(mapping_path_element["src"][elem]) > 0 for elem in mapping_path_element["src"] ]) \
                 and all( [ len(mapping_path_element["dst"][elem]) > 0 for elem in mapping_path_element["dst"] ]):
@@ -196,7 +223,7 @@ class PathFinderTNtoSDN(object):
         # Get proper TN interfaces for (SRC, DST) TN interface
         for src_dst_value in self.src_dst_values:
             # Do a first clean of SRC and DST interface
-            src_dst_cid = self.clean_tn_stp_cid(getattr(self, "%s_tn" % src_dst_value))
+            src_dst_cid = self.clean_tn_stp_cid(getattr(self, "%s_dom" % src_dst_value))
             dst_src_tn_interface_found = False
             # Playing a bit with the language to be able
             # to have all the processing in a single place
@@ -235,12 +262,38 @@ class PathFinderTNtoSDN(object):
                 path_source[src_dst_value]["se"] = ""
                 if len(se_candidates) > 0:
                     path_source[src_dst_value]["se"] = se_candidates[0]
-    
+        # Get SE interfaces without previous TN info
+        # (case of static links between islands)
+        # Here, the name of two different islands/domains is provided
+        if len(self.mapping_tn_se_of) == 0:
+            partial_mapping = self.find_se_interfaces_for_domain_names(self.src_dom, self.dst_dom)
+            mapping_tn_se_of_path = {}
+            for src_dst_value in self.src_dst_values:
+                src_dst_value_struct = {}
+                for part in partial_mapping:
+                    src_dst_domain = getattr(self, "%s_dom" % src_dst_value)
+                    index_serm = [ src_dst_domain in l and "serm" in l for l in list(part) ].index(True)
+                    index_sdnrm = len(part) - index_serm - 1
+                    src_dst_value_struct = {}
+                    src_dst_value_struct["se"] = part[index_serm]
+                    part_mapping_sdn = part[index_sdnrm] if "ofam" in part[index_sdnrm] else None
+                    # Only add proper links structure when both endpoints (SDN, SE) are correct
+                    src_dst_value_struct["links"] = []
+                    if part_mapping_sdn is not None:
+                        src_dst_value_struct["links"] = [{"se": part[index_serm], "sdn": part_mapping_sdn }]
+                # Add SE-SE paths for SRC and DST
+                mapping_tn_se_of_path[src_dst_value] = src_dst_value_struct
+            # Append to final structure
+            self.mapping_tn_se_of.append(mapping_tn_se_of_path)
+ 
     def find_path_sdn(self):
         # Get SDN interfaces for (SRC, DST) SE interface
         negative_filter = [ "tnrm" ]
         for path_source in self.mapping_tn_se_of:
             for src_dst_value in self.src_dst_values:
+                # Domains connected through the VPN may not have SE links (skip)
+                if "se" not in path_source[src_dst_value]:
+                    return
                 #possitive_filter_of_switches = [ self.remove_port_cid(f) for f in getattr(self, "%s_of_cids" % src_dst_value) ]
                 se_interface = path_source[src_dst_value]["se"]
     
@@ -260,9 +313,11 @@ class PathFinderTNtoSDN(object):
         # Restore the full CID of the source and destination TN interfaces
         for mapping in self.mapping_tn_se_of:
             for src_dst_value in self.src_dst_values:
-                mapping[src_dst_value]["tn"] = self.format_verify_tn_interface(mapping[src_dst_value]["tn"])
+                # Domains connected through static links may not have "tn" data
+                if "tn" in mapping[src_dst_value]:
+                   mapping[src_dst_value]["tn"] = self.format_verify_tn_interface(mapping[src_dst_value]["tn"])
         # Remove paths where either source or destination are invalid
-#        self.mapping_tn_se_of = self.prune_invalid_paths(self.mapping_tn_se_of)
+        self.mapping_tn_se_of = self.prune_invalid_paths(self.mapping_tn_se_of)
         return self.mapping_tn_se_of
 
     def find_paths(self):
@@ -275,17 +330,17 @@ class PathFinderTNtoSDN(object):
         return self.mapping_tn_se_of
 
 if __name__ == "__main__":
-	# Link PSNC-KDDI
-#    src_name ="psnc"
-#    dst_name = "kddi"
+    # Link PSNC-i2CAT
+    src_name = "psnc"
+    dst_name = "i2cat"
 
-	# Link PSNC-KDDI
+     # Link PSNC-KDDI
 #    src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:pionier.net.pl:2013:topology:felix-ge-1-0-3"
-#    dst_name = "urn:publicid:IDN+fms:kddi:tnrm+stp+urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp1"
+#    dst_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp1"
 
-	# Link AIST-KDDI
-    src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:aist.go.jp:2013:topology:bi-se1"
-    dst_name = "urn:publicid:IDN+fms:kddi:tnrm+stp+urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp1"
+    # Link AIST-KDDI
+#    src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:aist.go.jp:2013:topology:bi-se1"
+#    dst_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp1"
 
     # --------
    
