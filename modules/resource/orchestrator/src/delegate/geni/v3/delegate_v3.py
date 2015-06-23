@@ -44,6 +44,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
             ast.literal_eval(ConfParser("geniv3.conf").get("certificates").
                              get("verify_users"))
         self._allowed_peers = AllowedPeers.get_peers()
+        self._mro_enabled =\
+            ast.literal_eval(ConfParser("ro.conf").get("master_ro").
+                             get("mro_enabled"))
 
     def trace_method_inputs(f):
         as_ = f.func_code.co_varnames[:f.func_code.co_argcount]
@@ -268,16 +271,18 @@ class GENIv3Delegate(GENIv3DelegateBase):
         logger.debug("DPIDs=%s" % (dpid_port_ids,))
 
         extend_groups = []
-        for stp in stps:
-            path_finder_tn_sdn = PathFinderTNtoSDN(
-                stp.get("src_name"), stp.get("dst_name"))
-            paths = path_finder_tn_sdn.find_paths()
-            logger.info("PATHs=%s" % (paths,))
-            if len(paths) == 0:
-                e = "Empty path, maybe the configuration is wrong!"
-                raise geni_ex.GENIv3GeneralError(e)
-            items = SDNUtils().analyze_mapped_path(dpid_port_ids, paths)
-            extend_groups.extend(items)
+        # We need to call the mapper path-finder only in case of MRO!
+        if self._mro_enabled:
+            for stp in stps:
+                path_finder_tn_sdn = PathFinderTNtoSDN(
+                    stp.get("src_name"), stp.get("dst_name"))
+                paths = path_finder_tn_sdn.find_paths()
+                logger.info("PATHs=%s" % (paths,))
+                if len(paths) == 0:
+                    e = "Empty path, maybe the configuration is wrong!"
+                    raise geni_ex.GENIv3GeneralError(e)
+                items = SDNUtils().analyze_mapped_path(dpid_port_ids, paths)
+                extend_groups.extend(items)
 
         logger.warning("We need to extended RSpec with OF-groups: %s" %
                        (extend_groups,))
