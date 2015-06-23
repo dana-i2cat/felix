@@ -134,7 +134,9 @@ class SDNUtils(CommonUtils):
         group.get("dpids").append(info)
 
     def __update_group_with_extended_info(self, extended, group):
-        if extended.get("name") == group.get("name"):
+        # If name is not present, condition will not be fulfilled
+        if isinstance(extended, dict) and isinstance(group, dict) and \
+            extended.get("name", "no-name-ext") == group.get("name", "no-name-or"):
             info = db_sync_manager.get_sdn_datapath_by_componentid(
                 extended.get("component_id"))
             logger.debug("Found info in DB: %s" % (info,))
