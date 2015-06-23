@@ -79,19 +79,19 @@ class SEUtils(CommonUtils):
         # remove all the elements that not have internal_ifs as key!
         values[:] = [v for v in values if 'internal_ifs' in v]
 
+    def __is_node_present(self, nodes, cid, cmid):
+        for n in nodes:
+            if (n.serialize().get("component_id") == cid) and\
+               (n.serialize().get("component_manager_id") == cmid):
+                return True
+        return False
+
     def __update_nodes(self, nodes, values):
         for v in values:
             if v.get("node") is not None:
                 cid = v.get("node").get("component_id")
                 cmid = v.get("node").get("component_manager_id")
-                if len(nodes) > 0:
-                    for i in nodes:
-                        if (i.serialize().get("component_id") != cid) and\
-                           (i.serialize().get("component_manager_id") != cmid):
-                            n = Node(cid, cmid,
-                                     sliver_type_name=v.get("routing_key"))
-                            nodes.append(n)
-                else:
+                if not self.__is_node_present(nodes, cid, cmid):
                     n = Node(cid, cmid, sliver_type_name=v.get("routing_key"))
                     nodes.append(n)
 
@@ -148,8 +148,8 @@ class SEUtils(CommonUtils):
 
     def __update_route_rspec(self, route, sdn_info, tn_info):
         nodes, links = self.__extract_info(sdn_info, tn_info)
-        logger.debug("SE-Nodes=%s" % (nodes,))
-        logger.debug("SE-Links=%s" % (links,))
+        logger.debug("SE-Nodes(%d)=%s" % (len(nodes), nodes,))
+        logger.debug("SE-Links(%d)=%s" % (len(links), links,))
 
         for key, rspec in route.iteritems():
             for n in nodes:
