@@ -589,7 +589,7 @@ class VTAMDriver:
         actionClass.server.virtualization_type = server.getVirtTech()
         rspec.query.provisioning.action.append(actionClass)
         return rspec.query.provisioning
-   
+    
     def get_default_vm_parameters(self, reservation):
         VTAMDriver.logger.debug("get_default_vm_parameters() called")
         vm = dict()
@@ -608,6 +608,31 @@ class VTAMDriver:
         vm["operating-system-version"] = "6.0"
         vm["operating-system-distribution"] = "Debian"
         vm["hd-origin-path"] = "legacy/legacy.tar.gz"
+        vm["interfaces"] = list()
+        vm["hd-setup-type"] = "file-image"
+        vm["virtualization-setup-type"] = "paravirtualization"
+        vm["memory-mb"] = 512
+        return vm 
+
+    # AIST TODO
+    def get_default_vm_parameters_new(self, reservation):
+        VTAMDriver.logger.debug("get_default_vm_parameters() called")
+        vm = dict()
+        ### TODO: Consider used the same name as id for project and slices
+        vm["project-id"] = str(uuid.uuid4())
+        vm["slice-id"] = str(uuid.uuid4())    
+        vm["project-name"] = reservation.get_project_name()
+        vm["slice-name"]= reservation.get_slice_name()
+        vm["uuid"] = reservation.uuid
+        vm["virtualization-type"] = reservation.server.getVirtTech()
+        vm["server-id"] = reservation.server.getUUID()
+        vm["name"] = reservation.get_name()
+        vm["state"] = "on queue"
+        vm["aggregate-id"] = "aggregate-id"
+        vm["operating-system-type"] = "GNU/Linux"
+        vm["operating-system-version"] = "6.0"
+        vm["operating-system-distribution"] = "Debian"
+        vm["hd-origin-path"] = reservation.diskImage
         vm["interfaces"] = list()
         vm["hd-setup-type"] = "file-image"
         vm["virtualization-setup-type"] = "paravirtualization"

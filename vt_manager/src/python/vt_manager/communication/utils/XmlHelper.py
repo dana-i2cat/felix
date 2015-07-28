@@ -82,12 +82,13 @@ class XmlHelper(object):
     @staticmethod
     def getSimpleActionSpecificQuery(type, serverUUID):
         
-	with open(os.path.dirname(__file__)+'/xml/queryProvisioning.xml','r') as openProv:
-	         simpleRspec =  XmlHelper.parseXmlString(openProv.read())
-	if type == 'stop': type = 'hardStop'
-	simpleRspec.query.provisioning.action[0].type_ = type
-	simpleRspec.query.provisioning.action[0].server.uuid = serverUUID
-	return simpleRspec
+        with open(os.path.dirname(__file__)+'/xml/queryProvisioning.xml','r') as openProv:
+            simpleRspec =  XmlHelper.parseXmlString(openProv.read())
+        if type == 'stop':
+            type = 'hardStop'
+        simpleRspec.query.provisioning.action[0].type_ = type
+        simpleRspec.query.provisioning.action[0].server.uuid = serverUUID
+        return simpleRspec
 #        if type == 'start':
 #            simpleRspec =  XmlHelper.parseXmlString(open(os.path.dirname(__file__)+'/xml/queryStart.xml','r').read())
 #        if type == 'delete':

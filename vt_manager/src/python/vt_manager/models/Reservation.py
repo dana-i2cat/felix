@@ -1,5 +1,5 @@
 from django.db import models
-from vt_manager.models.XenServer import XenServer
+#from vt_manager.models.XenServer import XenServer
 from vt_manager.models.VTServer import VTServer
 
 class Reservation(models.Model):
@@ -16,6 +16,7 @@ class Reservation(models.Model):
     projectName = models.CharField(max_length = 1024, default="")
     sliceName = models.CharField(max_length = 1024, default="")
     uuid  = models.CharField(max_length = 1024, default="")
+    diskImage = models.CharField(max_length = 1024, default="")
     
 
     def get_name(self):
