@@ -251,10 +251,9 @@ class GeniV3Handler(HandlerBase):
             if not type(result) == list:
                 result = [result]
             try:
-               
-               slice_urn = result[0].get_sliver().get_slice_urn()
+                slice_urn = result[0].get_sliver().get_slice_urn()
             except:
-               slice_urn = result[0].get_slice_urn()
+                slice_urn = result[0].get_slice_urn()
         else:
             slice_urn = urns[0]
         return self.success_result(slivers=result, slice_urn=slice_urn)
