@@ -1,9 +1,11 @@
+import logging
 from xml.dom.minidom import parseString
 from rspecs.src.geni.v3.container.resource import Resource
 from rspecs.src.geni.v3.container.sliver import Sliver
 from rspecs.src.geni.v3.container.link import Link
 
 class ParserManager:
+    logger = logging.getLogger("ParserManager")
     
     def __init__(self):
         pass
@@ -50,7 +52,25 @@ class ParserManager:
                 attrs = sliver_elem.attributes
                 if attrs.has_key('name'):
                     sliver.set_name(attrs.get('name').value)
-                    
+                
+                # AIST 201508
+                # obtain disk image URN
+                disk_image_urn = ""
+                disk_image_urn_default = "XXX_DEFAULT_DISK_IMAGE_URN"
+                disk_images = sliver_elem.getElementsByTagName("disk_image")
+                if(disk_images == None or len(disk_images) == 0):
+                    ParserManager.logger.debug("cannot find <disk_image> tag, use default")
+                    disk_image_urn = disk_image_urn_default
+                else:
+                    elem_attrs = disk_images[0].attributes
+                    if elem_attrs.has_key('name'):
+                        disk_image_urn = elem_attrs.get('name').value
+                    else:
+                        ParserManager.logger.debug("cannot find name attr in <disk_image> tag, use default")
+                        disk_image_urn = disk_image_urn_default
+                        
+                ParserManager.logger.debug("disk_image_urn = " + disk_image_urn)
+                resource.set_disk_image(disk_image_urn)
                 sliver.set_resource(resource)
                 resource.set_sliver(sliver)
             

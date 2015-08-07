@@ -14,6 +14,7 @@ class Resource:
         self.__exclusive = None
         self.__type = None
         self.__error_message = None
+        self.__disk_image = None
     
     def get_id(self):
         return self.__id
@@ -53,7 +54,10 @@ class Resource:
 
     def get_error_message(self):
         return self.__error_message
-
+    
+    def get_disk_image(self):
+        return self.__disk_image
+    
     def set_id(self, value):
         self.__id = value
 
@@ -93,6 +97,10 @@ class Resource:
     def set_error_message(self, value):
         self.__error_mesage = value
         
+    def set_disk_image(self, value):
+        self.__disk_image = value
+
+    
 #    def add_sliver(self, value):
 #        if not type(self.__slivers) == list:
 #            self.__slivers = [value]

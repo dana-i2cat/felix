@@ -242,6 +242,7 @@ class VTAMDriver:
         reserved_vm.set_name(reservation_name)
         reserved_vm.set_valid_until(str(expiration))
         reserved_vm.uuid = str(uuid.uuid4())
+        reserved_vm.set_disk_image(reservation.get_disk_image())
         reserved_vm.save()
        
         if not reservation.get_sliver():
@@ -590,7 +591,7 @@ class VTAMDriver:
         rspec.query.provisioning.action.append(actionClass)
         return rspec.query.provisioning
     
-    def get_default_vm_parameters(self, reservation):
+    def get_default_vm_parameters_old(self, reservation):
         VTAMDriver.logger.debug("get_default_vm_parameters() called")
         vm = dict()
         ### TODO: Consider used the same name as id for project and slices
@@ -614,8 +615,8 @@ class VTAMDriver:
         vm["memory-mb"] = 512
         return vm 
 
-    # AIST TODO
-    def get_default_vm_parameters_new(self, reservation):
+    # AIST 201508
+    def get_default_vm_parameters(self, reservation):
         VTAMDriver.logger.debug("get_default_vm_parameters() called")
         vm = dict()
         ### TODO: Consider used the same name as id for project and slices
@@ -632,7 +633,7 @@ class VTAMDriver:
         vm["operating-system-type"] = "GNU/Linux"
         vm["operating-system-version"] = "6.0"
         vm["operating-system-distribution"] = "Debian"
-        vm["hd-origin-path"] = reservation.diskImage
+        vm["hd-origin-path"] = reservation.get_disk_image()
         vm["interfaces"] = list()
         vm["hd-setup-type"] = "file-image"
         vm["virtualization-setup-type"] = "paravirtualization"

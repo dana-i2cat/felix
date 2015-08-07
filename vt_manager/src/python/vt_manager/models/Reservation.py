@@ -33,6 +33,9 @@ class Reservation(models.Model):
 
     def get_provisioned(self):
         return self.is_provisioned
+    
+    def get_disk_image(self):
+        return self.diskImage
      
     def set_name(self, value):
         self.name = value
@@ -48,3 +51,6 @@ class Reservation(models.Model):
 
     def set_provisioned(self, value):
         self.is_provisioned = value
+    
+    def set_disk_image(self, value):
+        self.diskImage = value
