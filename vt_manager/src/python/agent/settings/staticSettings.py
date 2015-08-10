@@ -10,7 +10,6 @@ import logging
 All the rest of folder must be inside this folder'''
 OXA_PATH="/mnt/l1vm/image/dc1-1/"
 
-
 '''Log folder. Must exist!'''
 OXA_LOG="/var/log/"
 
@@ -29,39 +28,13 @@ XMLRPC_SERVER_CERTFILE='security/certs/agent.crt'  # Replace with your PEM forma
 #HDs
 OXA_DEFAULT_SWAP_SIZE_MB=512
 
-##FileHD driver settings
-'''Enable/disable file-type Hdmanager Cache FS'''
-OXA_FILEHD_USE_CACHE=False
-
-'''Cache folder to store VMs (if cache mechanism is used)'''
-OXA_FILEHD_CACHE_VMS="/mnt/l1vm/image/dc1-1/cache/vms/"
-
-'''Remote folder to store VMs'''
-OXA_FILEHD_REMOTE_VMS="/mnt/l1vm/image/dc1-1/remote/vms/"
-
-'''Cache folder for templates (if cache is enabled)'''
-OXA_FILEHD_CACHE_TEMPLATES="/mnt/l1vm/image/dc1-1/cache/templates/"
-
-'''Remote folder for templates'''
-OXA_FILEHD_REMOTE_TEMPLATES="/mnt/l1vm/image/dc1-1/remote/templates/"
-
-'''Use sparse disks while cloning'''
-OXA_FILEHD_CREATE_SPARSE_DISK=False
-
-'''Nice priority for Copy&untar operations'''
-OXA_FILEHD_NICE_PRIORITY=15
-
-'''IONice copy&untar operations class'''
-OXA_FILEHD_IONICE_CLASS=2
-'''IONice copy&untar operations priority'''
-OXA_FILEHD_IONICE_PRIORITY=5
-'''/bin/dd block size(bs) for copy operations'''
-OXA_FILEHD_DD_BS_KB=32
 
 ##Ofelia Debian VM configurator parameters
 '''Kernel and initrd that will be used by machines'''
 OXA_XEN_SERVER_KERNEL="/boot/vmlinuz-2.6.32-5-xen-amd64"
 OXA_XEN_SERVER_INITRD="/boot/initrd.img-2.6.32-5-xen-amd64"
+OXA_KVM_SERVER_KERNEL="/boot/vmlinuz-2.6.32-5-xen-amd64"
+OXA_KVM_SERVER_INITRD="/boot/initrd.img-2.6.32-5-xen-amd64"
 
 '''Debian-family usual file locations'''
 OXA_DEBIAN_INTERFACES_FILE_LOCATION = "/etc/network/interfaces"
@@ -74,5 +47,3 @@ OXA_DEBIAN_SECURITY_ACCESS_FILE_LOCATION="/etc/security/access.conf"
 OXA_REDHAT_INTERFACES_FILE_LOCATION = "/etc/sysconfig/network-scripts/"
 OXA_REDHAT_UDEV_FILE_LOCATION = "/etc/udev/rules.d/70-persistent-net.rules"
 OXA_REDHAT_HOSTNAME_FILE_LOCATION="/etc/hostname"
-
-

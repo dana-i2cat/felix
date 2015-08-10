@@ -9,7 +9,7 @@
 class HdManager(object):
 	@staticmethod
 	def __getHdManager(hdtype):
-		#Import of Dispatchers must go here to avoid import circular dependecy 		
+		#Import of Dispatchers must go here to avoid import circular dependency 		
 		from kvm.provisioning.hdmanagers.FileHdManager import FileHdManager
 
 		return FileHdManager

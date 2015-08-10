@@ -170,10 +170,16 @@ class FileFullHdManager(object):
 	@staticmethod
 	def clone(vm):
 		try:
-			# TODO: user authentication 	
-			template_path = OXA_KVM_DEBIAN_TEMPLATE_IMGFILE
+			# TODO: user authentication
+			template_path = vm.xen_configuration.hd_origin_path
+			if os.path.isfile(template_path) == False:
+				FileFullHdManager.logger.warn("invalid hd_origin_path specified, use default. " + 
+											"hd_origin_path = " + template_path)
+				template_path = OXA_KVM_DEBIAN_TEMPLATE_IMGFILE
+
 			vm_path = FileFullHdManager.getHdPath(vm)
-			FileFullHdManager.logger.debug("Trying to clone from:" + template_path + "->>" + vm_path)
+			FileFullHdManager.logger.info("template_path = " + template_path)
+			FileFullHdManager.logger.debug("Trying to clone from " + template_path + " to " + vm_path)
 
 			if not os.path.exists(os.path.dirname(vm_path)):	
 				os.makedirs(os.path.dirname(vm_path))

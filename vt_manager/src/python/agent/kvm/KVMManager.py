@@ -123,7 +123,7 @@ class KVMManager(object):
 			conn.createXML(xmlConf, 0)
 			KVMManager.logger.info(KVMManager.sanitize_arg(HdManager.getConfigFilePath(vm)))
 			KVMManager.logger.info('created vm')
-			# raise Exception("Skip") #otherwise stop is ridicously slow
+			# raise Exception("Skip") #otherwise stop is ridiculously slow
 		except Exception as e:
 			KVMManager.logger.error(str(e))
 			KVMManager.logger.error(traceback.format_exc())

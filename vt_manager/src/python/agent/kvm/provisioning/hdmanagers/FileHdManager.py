@@ -8,11 +8,11 @@ import os
 import shutil
 import subprocess
 import traceback
-from settings.settingsLoader import OXA_FILEHD_CACHE_VMS, OXA_FILEHD_REMOTE_VMS, \
-	OXA_FILEHD_CACHE_TEMPLATES, OXA_FILEHD_REMOTE_TEMPLATES, OXA_FILEHD_USE_CACHE, \
-	OXA_FILEHD_NICE_PRIORITY, OXA_FILEHD_IONICE_CLASS, OXA_FILEHD_IONICE_PRIORITY, \
-	OXA_KVM_DEBIAN_TEMPLATE_IMGFILE
 from utils.Logger import Logger
+from settings.settingsLoader import OXA_FILEHD_CACHE_TEMPLATES,\
+	OXA_FILEHD_REMOTE_TEMPLATES, OXA_FILEHD_CACHE_VMS, OXA_FILEHD_REMOTE_VMS,\
+	OXA_FILEHD_NICE_PRIORITY, OXA_FILEHD_IONICE_CLASS,\
+	OXA_FILEHD_IONICE_PRIORITY, OXA_FILEHD_USE_CACHE, OXA_KVM_DEBIAN_TEMPLATE_IMGFILE
 
 OXA_FILEHD_HD_TMP_MP = "/tmp/oxa/hd"
 
@@ -65,7 +65,7 @@ class FileHdManager(object):
 			return OXA_FILEHD_CACHE_VMS + vm.project_id + "/" + vm.slice_id + "/" + vm.name + ".img"
 		else:
 			return OXA_FILEHD_REMOTE_VMS + vm.project_id + "/" + vm.slice_id + "/" + vm.name + ".img"
-		
+
 	''' Returns the path of the hd file in Remote'''
 	@staticmethod
 	def getRemoteHdPath(vm):
@@ -162,9 +162,15 @@ class FileHdManager(object):
 	def clone(vm):
 		try:
 			# TODO: user authentication
-			template_path = OXA_KVM_DEBIAN_TEMPLATE_IMGFILE
+			template_path = vm.xen_configuration.hd_origin_path
+			if os.path.isfile(template_path) == False:
+				FileHdManager.logger.warn("invalid hd_origin_path specified, use default. " + 
+										"hd_origin_path = " + template_path)
+				template_path = OXA_KVM_DEBIAN_TEMPLATE_IMGFILE
+				
 			vm_path = FileHdManager.getHdPath(vm)
 			swap_path = FileHdManager.getSwapPath(vm)
+			FileHdManager.logger.info("template_path = " + template_path)
 			FileHdManager.logger.info("vm_path = " + vm_path)
 			FileHdManager.logger.info("swap_path = " + swap_path)
 			FileHdManager.logger.debug("Trying to clone " + vm_path

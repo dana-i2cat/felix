@@ -15,7 +15,7 @@ import socket, os
 from OpenSSL import SSL
 from utils.Logger import Logger
 
-from settings.settingsLoader import XMLRPC_SERVER_LISTEN_HOST,XMLRPC_SERVER_LISTEN_PORT,XMLRPC_SERVER_KEYFILE,XMLRPC_SERVER_CERTFILE,XMLRPC_SERVER_PASSWORD
+from settings.settingsLoader import *
 from _socket import SHUT_RDWR
 
 
@@ -155,7 +155,7 @@ class XmlRpcServer():
                         #return cPickle.dumps(templates_dict)
                         
                         #callBackFunction(callback_url, list(templates_dict)) 
-			# INFO: callBackFunction = processXmlQuery => result should be in XML (not working anyway)
+                        # INFO: callBackFunction = processXmlQuery => result should be in XML (not working anyway)
                         #return ""
                     except Exception as e:
                         XmlRpcServer.logger.error("OXA list_templates returned an error: %s" % str(e))
