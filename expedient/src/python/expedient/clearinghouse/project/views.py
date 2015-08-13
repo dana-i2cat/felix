@@ -28,7 +28,7 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 import uuid   
 from django.conf import settings
-from expedient.clearinghouse.fapi.cbas import create_project, add_member_to_project, remove_member_from_project
+from expedient.clearinghouse.fapi.cbas import create_project, add_member_to_project, remove_member_from_project, delete_project
 from django.contrib.auth.models import User
 import ldap 
 from django.contrib.sites.models import Site
@@ -99,10 +99,25 @@ def delete(request, proj_id):
         try:
             for s in project.slice_set.all():
                 s.stop(request.user)
-            project.delete()
-            DatedMessage.objects.post_message_to_user(
-                "Successfully deleted project %s" % project.name,
-               request.user, msg_type=DatedMessage.TYPE_SUCCESS)
+
+            if settings.ENABLE_CBAS:
+                code = delete_project(None, None, project_urn=project.urn)
+                if code == 0:
+                    project.delete()
+                    DatedMessage.objects.post_message_to_user(
+                        "Successfully deleted project %s" % project.name,
+                       request.user, msg_type=DatedMessage.TYPE_SUCCESS)
+                else:
+                    DatedMessage.objects.post_message_to_user(
+                    "Project %s could not be deleted. Check C-BAS log." % project.name,
+                    request.user, msg_type=DatedMessage.TYPE_ERROR)
+
+            else:
+                project.delete()
+                DatedMessage.objects.post_message_to_user(
+                    "Successfully deleted project %s" % project.name,
+                   request.user, msg_type=DatedMessage.TYPE_SUCCESS)
+
         except Exception as e:
             if isinstance(e,ldap.LDAPError):
                 DatedMessage.objects.post_message_to_user(
@@ -212,6 +227,7 @@ def create(request):
     user_profile = UserProfile.get_or_create_profile(request.user)
     cert = user_profile.certificate
     creds = user_profile.credentials
+    user_urn = user_profile.urn
 
     def post_save(instance, created):
         # Create default roles in the project
@@ -222,7 +238,8 @@ def create(request):
         #import pdb; pdb.set_trace()
         if settings.ENABLE_CBAS:
             project_urn = create_project(certificate=cert, credentials=creds,
-                                    project_name=instance.name, project_desc=instance.description)
+                                    project_name=instance.name, project_desc=instance.description,
+                                    user_urn=user_urn)
             if project_urn:
                 instance.urn = project_urn
         create_project_roles(instance, request.user)

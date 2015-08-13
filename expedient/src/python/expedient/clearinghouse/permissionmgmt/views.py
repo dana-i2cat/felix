@@ -186,7 +186,8 @@ def confirm_requests(request):
                             cert = user_profile.certificate
                             creds = user_profile.credentials
                             project_urn = create_project(certificate=cert, credentials=creds,
-                                                    project_name=project.name, project_desc=project.description)
+                                                    project_name=project.name, project_desc=project.description,
+                                                    user_urn=user_profile.urn)
                             if project_urn:
                                 project.urn = project_urn
 

@@ -108,6 +108,7 @@ def user_cert_manage(request, user_id):
     user_profile = UserProfile.get_or_create_profile(request.user)
     user_cert = user_profile.certificate
     private_ssh_key_exists = len(user_profile.private_ssh_key) > 0
+    public_ssh_key_exists = len(user_profile.public_ssh_key) > 0
 
     
     must_have_permission(request.user, user, "can_change_user_cert")
@@ -126,6 +127,7 @@ def user_cert_manage(request, user_id):
             "curr_user": user,
             "cert": cert,
             "private_ssh_key_exists" : private_ssh_key_exists,
+            "public_ssh_key_exists": public_ssh_key_exists
         },
     )
 

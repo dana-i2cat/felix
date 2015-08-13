@@ -59,7 +59,9 @@
 <div style="margin-top: 1em !important; ">
 	<h1>Manage user {{ curr_user.username }}'s SSH keys</h1>
     <p><strong>Public SSH key:</strong>
+	{% if public_ssh_key_exists %}
         <input type="button" id="download_pub_ssh_key" value="Download" onclick="document.location='{% url gcf_pub_ssh_key_download curr_user.pk %}'"/>
+        {% endif %}
         <input type="button" id="regenerate_ssh_keys" value="Regenerate a new pair" onclick="document.location='{% url gcf_ssh_keys_generate curr_user.pk %}'"/>
         <input type="button" id="upload_ssh_keys" value="Upload your own" onclick="document.location='{% url gcf_ssh_upload curr_user.pk %}'">
     </p>

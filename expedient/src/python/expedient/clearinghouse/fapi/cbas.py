@@ -43,19 +43,21 @@ def sa_call(method_name, params=[]):
 def create_slice(owner_urn, owner_certificate, slice_name, slice_desc, slice_project_urn):
 
     #Try to lookup project credentials for requesting user; otherwise use Expedient creds
-    credentials = get_project_credentials(slice_project_urn, owner_urn)
+    #credentials = get_project_credentials(slice_project_urn, owner_urn)
 
-    if credentials:
-        creds = [{'geni_type': 'geni_sfa', 'geni_version':'3', 'geni_value': credentials}]
-    else:
-        creds = EXPEDIENT_CREDENTIALS
+    # if credentials:
+    #     creds = [{'geni_type': 'geni_sfa', 'geni_version':'3', 'geni_value': credentials}]
+    # else:
+    #     creds = EXPEDIENT_CREDENTIALS
 
-    print_debug_message(slice_project_urn)
+    creds = EXPEDIENT_CREDENTIALS   # Use Expedient credentials until speak-for credentials are introduced
 
     create_data = {'SLICE_NAME': slice_name, 'SLICE_DESCRIPTION': slice_desc, 'SLICE_PROJECT_URN': slice_project_urn}
     code, value, output = sa_call('create', ['SLICE', creds, {'fields': create_data}])
     if code == 0:
         slice_urn = value['SLICE_URN']
+        add_member_to_slice(project_urn=slice_project_urn, slice_urn=slice_urn, to_add_user_urn=owner_urn,
+                            to_add_user_certificate=owner_certificate, authz_user_urn=None, authz_user_certificate=None)
     else:
         print_debug_message('create_slice()\npcode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
         slice_urn = None
@@ -63,29 +65,46 @@ def create_slice(owner_urn, owner_certificate, slice_name, slice_desc, slice_pro
     return slice_urn
 
 
-def create_project(certificate, credentials, project_name, project_desc):
+def create_project(certificate, credentials, project_name, project_desc, user_urn):
 
     create_data = {'PROJECT_EXPIRATION': '2020-03-21T11:35:57Z', 'PROJECT_NAME': project_name, 'PROJECT_DESCRIPTION': project_desc}
-    code, value, output = sa_call('create', ['PROJECT', [{'geni_type': 'geni_sfa', 'geni_version':'3', 'geni_value': credentials}], {'fields': create_data}])
+    # cred = [{'geni_type': 'geni_sfa', 'geni_version':'3', 'geni_value': credentials}]
+    cred = EXPEDIENT_CREDENTIALS # Use Expedient credentials until speak-for credentials are introduced
+    code, value, output = sa_call('create', ['PROJECT', cred, {'fields': create_data}])
 
     if code == 0:
         project_urn = value['PROJECT_URN']
+        add_member_to_project(project_urn, user_urn, certificate,None,None)
     else:
         project_urn = None
         print_debug_message('create_project()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
 
     return project_urn
 
+def delete_project(certificate, credentials, project_urn):
+
+    # cred = [{'geni_type': 'geni_sfa', 'geni_version':'3', 'geni_value': credentials}]
+    cred = EXPEDIENT_CREDENTIALS # Use Expedient credentials until speak-for credentials are introduced
+    code, value, output = sa_call('delete', ['PROJECT', project_urn, cred, {}])
+
+    if not code == 0:
+        print_debug_message('delete_project()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
+
+    return code
+
+
 
 def add_member_to_project(project_urn, to_add_user_urn, to_add_user_certificate, authz_user_urn, authz_user_certificate):
 
     #Try to lookup project credentials for requesting user; otherwise use Expedient creds
-    credentials = get_project_credentials(project_urn, authz_user_urn)
+    # credentials = get_project_credentials(project_urn, authz_user_urn)
+    #
+    # if credentials:
+    #     creds = [{'geni_type': 'geni_sfa', 'geni_version':'3', 'geni_value': credentials}]
+    # else:
+    #     creds = EXPEDIENT_CREDENTIALS
 
-    if credentials:
-        creds = [{'geni_type': 'geni_sfa', 'geni_version':'3', 'geni_value': credentials}]
-    else:
-        creds = EXPEDIENT_CREDENTIALS
+    creds = EXPEDIENT_CREDENTIALS   # Use Expedient credentials until speak-for credentials are introduced
 
     add_data = {'members_to_add': [{'PROJECT_MEMBER': to_add_user_urn, 'PROJECT_ROLE': 'ADMIN',
                                      'MEMBER_CERTIFICATE': to_add_user_certificate}]}
@@ -99,12 +118,15 @@ def add_member_to_project(project_urn, to_add_user_urn, to_add_user_certificate,
 def remove_member_from_project(project_urn, user_urn, authz_user_urn, authz_user_certificate):
 
     #Try to lookup project credentials for requesting user; otherwise use Expedient creds
-    credentials = get_project_credentials(project_urn, authz_user_urn)
+    # credentials = get_project_credentials(project_urn, authz_user_urn)
+    #
+    # if credentials:
+    #     creds = [{'geni_type': 'geni_sfa', 'geni_version':'3', 'geni_value': credentials}]
+    # else:
+    #     creds = EXPEDIENT_CREDENTIALS
 
-    if credentials:
-        creds = [{'geni_type': 'geni_sfa', 'geni_version':'3', 'geni_value': credentials}]
-    else:
-        creds = EXPEDIENT_CREDENTIALS
+    creds = EXPEDIENT_CREDENTIALS   # Use Expedient credentials until speak-for credentials are introduced
+
 
     remove_data = {'members_to_remove' : [{'PROJECT_MEMBER': user_urn}]}
     code, value, output = sa_call('modify_membership', ['PROJECT', project_urn,
@@ -117,12 +139,14 @@ def remove_member_from_project(project_urn, user_urn, authz_user_urn, authz_user
 def add_member_to_slice(project_urn, slice_urn, to_add_user_urn, to_add_user_certificate, authz_user_urn, authz_user_certificate):
 
     #Try to lookup project credentials for requesting user; otherwise use Expedient creds
-    credentials = get_project_credentials(project_urn, authz_user_urn)
+    # credentials = get_project_credentials(project_urn, authz_user_urn)
+    #
+    # if credentials:
+    #     creds = [{'geni_type': 'geni_sfa', 'geni_version':'3', 'geni_value': credentials}]
+    # else:
+    #     creds = EXPEDIENT_CREDENTIALS
 
-    if credentials:
-        creds = [{'geni_type': 'geni_sfa', 'geni_version':'3', 'geni_value': credentials}]
-    else:
-        creds = EXPEDIENT_CREDENTIALS
+    creds = EXPEDIENT_CREDENTIALS   # Use Expedient credentials until speak-for credentials are introduced
 
     add_data = {'members_to_add': [{'SLICE_MEMBER': to_add_user_urn, 'SLICE_ROLE' : 'ADMIN',
                                      'MEMBER_CERTIFICATE': to_add_user_certificate}]}
@@ -178,14 +202,20 @@ def get_member_info(username, user_details=None):
 
     lookup_results = lookup_members({'MEMBER_USERNAME': username}, 'MEMBER')
     user_info = None
-    ssh_key_pair = None
+    ssh_key_pair = '', ''
 
     if lookup_results:
         for key in lookup_results:
             user_info = lookup_results[key]
             user_info['MEMBER_URN'] = key
+
+        # Now try to lookup public ssh key
+        lookedup_keys = lookup(match={'KEY_MEMBER': user_info['MEMBER_URN']}, object_type='KEY', _filter=None,
+                               certificate=None, credentials=None)
+        if lookedup_keys:
+            ssh_key_pair = lookedup_keys.itervalues().next()['KEY_PUBLIC'], ''
     else:
-        user_info, ssh_key_pair = register_user(username, user_details)
+        user_info = register_user(username, user_details)
 
     if user_info:
         return user_info['MEMBER_URN'], user_info['MEMBER_CERTIFICATE'], \
@@ -228,14 +258,19 @@ def lookup(match, object_type, _filter=[], certificate=None, credentials=None):
     if _filter:
         options['filter'] = _filter
 
-    if credentials:
-        creds = [{'geni_type': 'geni_sfa', 'geni_version':'3', 'geni_value': credentials}]
-    else:
-        creds = EXPEDIENT_CREDENTIALS
+    # if credentials:
+    #     creds = [{'geni_type': 'geni_sfa', 'geni_version':'3', 'geni_value': credentials}]
+    # else:
+    #     creds = EXPEDIENT_CREDENTIALS
+    creds = EXPEDIENT_CREDENTIALS   # Use Expedient credentials until speak-for credentials are introduced
 
     value = None
     if object_type in ['SLICE', 'PROJECT']:
         code, value, output = sa_call('lookup', [object_type, creds, options])
+        if not code == 0:
+            print_debug_message('lookup()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
+    elif object_type in ['KEY']:
+        code, value, output = ma_call('lookup', [object_type, creds, options])
         if not code == 0:
             print_debug_message('lookup()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
     else:
@@ -245,14 +280,26 @@ def lookup(match, object_type, _filter=[], certificate=None, credentials=None):
 
 def update_ssh_key(user_urn, pub_ssh_key, certificate=None, credentials=None):
 
-    fields = {'KEY_PUBLIC': pub_ssh_key}
+    fields = {'KEY_MEMBER':user_urn, 'KEY_TYPE':'rsa-ssh', 'KEY_DESCRIPTION':'SSH key inserted via Expedient', 'KEY_PUBLIC':pub_ssh_key}
 
-    if credentials:
-        creds = [{'geni_type': 'geni_sfa', 'geni_version':'3', 'geni_value': credentials}]
-    else:
-        creds = EXPEDIENT_CREDENTIALS
+    # if credentials:
+    #     creds = [{'geni_type': 'geni_sfa', 'geni_version':'3', 'geni_value': credentials}]
+    # else:
+    #     creds = EXPEDIENT_CREDENTIALS
+    creds = EXPEDIENT_CREDENTIALS   # Use Expedient credentials until speak-for credentials are introduced
 
-    code, value, output = ma_call('update', ['KEY', user_urn, creds, {'fields': fields}])
+    # Replacing public ssh key with new value is not possible directly. It has to be done in 2 steps
+    # Step 1: Lookup and delete any existing key
+    lookedup_keys = lookup(match={'KEY_MEMBER': user_urn}, object_type='KEY', _filter=None,
+                               certificate=None, credentials=None)
+    if lookedup_keys:
+        existing_ssh_key_id = lookedup_keys.keys()[0]
+        code, value, output = ma_call('delete', ['KEY', existing_ssh_key_id, creds, {}])
+        if not code == 0:
+            print_debug_message('update_ssh_key()->delete\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
+            return code
+
+    code, value, output = ma_call('create', ['KEY', creds, {'fields': fields}])
     if not code == 0:
         print_debug_message('update_ssh_key()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
     return code
@@ -271,10 +318,11 @@ def lookup_members(match, object_type, _filter=[], object_urn=None, certificate=
     if _filter:
         options['filter'] = _filter
 
-    if credentials:
-        creds = [{'geni_type': 'geni_sfa', 'geni_version':'3', 'geni_value': credentials}]
-    else:
-        creds = EXPEDIENT_CREDENTIALS
+    # if credentials:
+    #     creds = [{'geni_type': 'geni_sfa', 'geni_version':'3', 'geni_value': credentials}]
+    # else:
+    #     creds = EXPEDIENT_CREDENTIALS
+    creds = EXPEDIENT_CREDENTIALS   # Use Expedient credentials until speak-for credentials are introduced
 
     value = None
 
@@ -294,9 +342,7 @@ def lookup_members(match, object_type, _filter=[], object_urn=None, certificate=
 
 def register_user(username, user_details):
 
-    pub_ssh_key, priv_ssh_key = generate_ssh_keys(username)
-
-    fields = {'MEMBER_FIRSTNAME':username, 'MEMBER_LASTNAME':username, 'MEMBER_USERNAME':username, 'MEMBER_EMAIL':'', 'KEY_PUBLIC': pub_ssh_key}
+    fields = {'MEMBER_FIRSTNAME':username, 'MEMBER_LASTNAME':username, 'MEMBER_USERNAME':username, 'MEMBER_EMAIL':''}
 
     if user_details:
         if 'FIRST_NAME' in user_details:
@@ -313,7 +359,7 @@ def register_user(username, user_details):
         print_debug_message('register_user()\ncode:'+str(code)+'\nvalue:'+str(value)+'\noutput:'+str(output))
         return None
     else:
-        return value, [pub_ssh_key, priv_ssh_key]
+        return value
 
 
 def print_debug_message(msg):

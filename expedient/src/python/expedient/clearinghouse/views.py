@@ -39,7 +39,7 @@ def home(request):
             user_profile.urn = urn
             user_profile.certificate = cert
             user_profile.credentials = creds
-            if ssh_key_pair: # Keys are returned only for new registration
+            if ssh_key_pair:
                 user_profile.public_ssh_key = ssh_key_pair[0]
                 user_profile.private_ssh_key = ssh_key_pair[1]
             user_profile.save()
