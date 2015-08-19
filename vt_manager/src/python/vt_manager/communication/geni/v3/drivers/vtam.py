@@ -490,6 +490,11 @@ class VTAMDriver:
                     expiration = ExpiringComponents.objects.filter(slice=vm.sliceName, authority=vm.projectName)[0].expires
                 except Exception as e:
                     print e
+            if not expiration:
+                VTAMDriver.logger.debug("cannot find expiration in ExpiringComponents, use vm.valid_until")
+                expiration = vm.valid_until
+                    
+            VTAMDriver.logger.debug("expiration = " + str(expiration))
             new_resource = copy.deepcopy(resource)
             new_resource.set_id(vm.name)
             VTAMDriver.logger.debug("vm.name = " + new_resource.get_id())
