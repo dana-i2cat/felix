@@ -1,0 +1,25 @@
+{
+  "device_management_info":
+  {
+    "urn:publicid:IDN+openflow:ocf:<organisation>:ofam+datapath+<switch_1_dpid>":
+    {
+      "ip": "<switch_1_ip>",
+      "port": "switch_1_port>",
+      "snmp":
+      {
+        "id": "public",
+        "password": ""
+      }
+    },
+    "urn:publicid:IDN+openflow:ocf:<organisation>:ofam+datapath+<switch_2_dpid>":
+    {
+      "ip": "<switch_2_ip>",
+      "port": "<switch_2_port>",
+      "snmp":
+      {
+        "id": "public",
+        "password": ""
+      }
+    }
+  }
+}

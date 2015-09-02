@@ -1,0 +1,66 @@
+<rspec type="request"
+       xmlns="http://www.geni.net/resources/rspec/3"
+       xmlns:sharedvlan="http://www.geni.net/resources/rspec/ext/shared-vlan/1"
+       xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:stitch="http://hpn.east.isi.edu/rspec/ext/stitch/0.1/"
+       xs:schemaLocation="http://hpn.east.isi.edu/rspec/ext/stitch/0.1/
+                          http://hpn.east.isi.edu/rspec/ext/stitch/0.1/stitch-schema.xsd
+                          http://www.geni.net/resources/rspec/3/request.xsd
+                          http://www.geni.net/resources/rspec/ext/shared-vlan/1/request.xsd">
+
+    <node client_id="urn:publicid:tn-network1:"
+          component_manager_id="urn:publicid:IDN+NSI+authority+tnrm">
+        <interface client_id="urn:publicid:tn:aist:network1+urn:ogf:network:aist:network1:stp1">
+            <sharedvlan:link_shared_vlan name="urn:publicid:tn:aist:network1+urn:ogf:network:aist:network1:stp1+vlan"
+                                         vlantag="1785"/>
+        </interface>
+        <interface client_id="urn:publicid:tn:xxx:network1+urn:felix:xxx-stp1"/>
+        <interface client_id="urn:publicid:tn:yyy:network1+urn:felix:yyy-stp2"/>
+        <interface client_id="urn:publicid:tn:i2cat:network1+urn:felix:i2cat-stp2">
+            <sharedvlan:link_shared_vlan name="urn:publicid:tn:i2cat:network1+urn:felix:i2cat-stp2+vlan"
+                                         vlantag="1785"/>
+        </interface>
+    </node>
+
+    <link client_id="urn:publicid:tn:network1:link">
+        <component_manager name="urn:publicid:IDN+NSI+authority+tnrm"/>
+        <interface_ref client_id="urn:publicid:tn:aist:network1+urn:ogf:network:aist:network1:stp1"/>
+        <interface_ref client_id="urn:publicid:tn:xxx:network1+urn:felix:xxx-stp1"/>
+        <interface_ref client_id="urn:publicid:tn:yyy:network1+urn:felix:yyy-stp2"/>
+        <interface_ref client_id="urn:publicid:tn:i2cat:network1+urn:felix:i2cat-stp2"/>
+        <property source_id="urn:publicid:tn:aist:network1+urn:ogf:network:aist:network1:stp1"
+                  dest_id="urn:publicid:tn:i2cat:network1+urn:felix:i2cat-stp2" capacity="1000">
+            <!-- use <stitch:path> (see Request from RO to TN-RM  (i2CAT) (2)) -->
+            <stitch:path id="urn:publicid:tn:aist:network1+urn:ogf:network:aist:network1:stp1+urn:publicid:tn-network1+urn:felix:i2cat-stp2">
+                <stitch:hop id="1">
+                    <stitch:link id="urn:publicid:tn:xxx:network1+urn:felix:xxx-stp1">
+                        <stitch:trafficEngineeringMetric>10</stitch:trafficEngineeringMetric>
+                    </stitch:link>
+                    <stitch:nextHop>2</stitch:nextHop>
+                </stitch:hop>
+                <stitch:hop id="2">
+                    <stitch:link id="urn:publicid:tn:yyy:network1+urn:felix:yyy-stp2">
+                        <stitch:trafficEngineeringMetric>10</stitch:trafficEngineeringMetric>
+                    </stitch:link>
+                </stitch:hop>
+            </stitch:path>
+        </property>
+        <property source_id="urn:publicid:tn:i2cat:network1+urn:felix:i2cat-stp2"
+                  dest_id="urn:publicid:tn:aist:network1+urn:ogf:network:aist:network1:stp1" capacity="500">
+            <!-- use <stitch:path> (see Request from RO to TN-RM  (i2CAT) (2)) -->
+            <stitch:path id="urn:publicid:tn:network1+urn:felix:i2cat-stp2+urn:publicid:tn:aist:network1+urn:ogf:network:aist:network1:stp1">
+                <stitch:hop id="1">
+                    <stitch:link id="urn:publicid:tn:yyy:network1+urn:felix:yyy-stp2">
+                        <stitch:trafficEngineeringMetric>10</stitch:trafficEngineeringMetric>
+                    </stitch:link>
+                    <stitch:nextHop>2</stitch:nextHop>
+                </stitch:hop>
+                <stitch:hop id="2">
+                    <stitch:link id="urn:publicid:tn:xxx:network1+urn:felix:xxx-stp1">
+                        <stitch:trafficEngineeringMetric>10</stitch:trafficEngineeringMetric>
+                    </stitch:link>
+                </stitch:hop>
+            </stitch:path>
+        </property>
+    </link>
+</rspec>

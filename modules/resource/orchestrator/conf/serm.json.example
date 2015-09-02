@@ -1,0 +1,15 @@
+{
+  "device_management_info":
+  {
+    "urn:publicid:IDN+fms:i2cat:serm":
+    {
+      "ip": "10.10.10.10",
+      "port": "161",
+      "snmp":
+      {
+        "id": "public",
+        "password": ""
+      }
+    }
+  }
+}

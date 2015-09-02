@@ -1,0 +1,6 @@
+*~
+*.pyc
+*.class
+*.swp
+.project
+.pydevproject
