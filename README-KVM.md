@@ -1,141 +1,416 @@
-===================
-OVERVIEW OF OCF-KVM
+OVERVIEW OF KVM-CRM
 ===================
 
-OFELIA Control Framework for KVM (OCF-KVM) is a set of software tools
-for testbed management. It based on OFELIA Control Framework (OCF).
+FELIX KVM-based Compute Resource Manager (KVM-CRM) is a KVM-based virtual 
+machine (VM) management software for testbed management. It based on OFELIA 
+Control Framework (OCF).
 It controls experimentation life-cycle; reservation,
 instantiation, configuration, monitoring and uninistantiation.
 
-Features:
-
-OCF-KVM replaces some of components of OCF to use KVM.
-So OCF-KVM provides only CRM-KVM (VT manager for KVM) and OXAD-KVM (KVM agent
-for virtualization purposes). 
-OCF-KVM is currently deployed in OFELIA FP7 project testbed, the European
-Openflow testbed. The ideas behind its architecture are heavily influenced
-by the experience of other testbed management tools and GENI architectural
-concepts. Take a look at Overview section for more details.
+KVM-CRM replaces some of components of XEX-based OCF to use KVM.
+So the KVM-CRM package provides only a VT manager for KVM (KVM-VT) 
+and KVM-based OXAD (KVM-OXAD). KVM-VT is a master server of KVM-CRM
+and KVM-OXAD is a KVM agent for virtualization purposes. 
 
 
-==================
-INSTALLING OCF-KVM
+
+INSTALLING KVM-CRM
 ==================
 
-1. Requirements
----------------
+# 1. Requirements
 
-* CRM-KVM (VT manager for KVM)
+
+* KVM-VT (VT manager for KVM)
   * One (or more) GNU/Linux Debian-based distros
   * Developed and ensured to work under Debian 7.0 (Wheezy) using
     the following packages:
     * Python 2.7
-    * Django 1.4.5 (automatically installed)
+    * Django 1.4.19 (automatically installed)
     * MySQL server (automatically installed)
-* OXAD-KVM (KVM agent for virtualization purposes)
+* KVM-OXAD (KVM agent for virtualization purposes)
   * Ubuntu 14.04 or later
   * Developed and ensured to work under Ubuntu 14.04 (or later) using
     the following packages:
+    * libvirt-bin
     * qemu-kvm
-    * Python 2.6
-    * libvirt-bin  (automatically installed)
-    * Django 1.2.3 (automatically installed)
-    * MySQL server (automatically installed)
+    * Python 2.7
+    * Django 1.4.19
+    * MySQL server
 
 
-2. Installing
--------------
+# 2. Installing
 
-2.1 Clone the OCF-KVM repository:
+## 2.1 Clone the KVM-CRM repository:
 
-    git clone ssh://163.220.30.137/opt/felix/ocf /opt/felix/ocf
+    mkdir -p /opt/felix/ocf
+    git clone https://github.com/dana-i2cat/felix.git /opt/felix/ocf
     cd /opt/felix/ocf
-    git checkout ocf-kvm
+    git checkout kvm-crm
 
-    Alternatively you can download the tarball and uncompress in place
-
-2.2 For CRM-KVM: choose the components to install 
-    as a root user. This will implicitly trigger OFVER:
+## 2.2 For KVM-VT: choose the components to install as a root user. 
 
     cd /opt/felix/ocf/deploy
     python install.py
 
     The following actions will take place: 
     * Install dependencies
-    * Build Certificates (see Note #2)
+    * Build Certificates (see Note #1)
     * Configure Apache
     * Set file permissions
     * Modify the localsettings.py or mySettings.py depending on the 
       component being installed
     * Populate database
-    * When installation starts, ofver will ask if it is an OFELIA
-      project installation or not. Select No (N) for non OFELIA testbeds.
 
-    Note #2: When installing the component, you will need to create the
+    Note #1: When installing the component, you will need to create the
     certificates for the Certification Authority (CA) first and for the
     component later. Do not use the same Common Name (CN) for both of them,
     and make sure that the CN you use in the component later certificate
     (you can use an IP) is the same you then set in the SITE_DOMAIN field
-    in the localsettings.py file.
+    in the localSettings.py file.
 
-2.3 For OXAD-KVM (KVM agent for virtualization purposes):
+## 2.3 For KVM-OXAD:
 
-    Trigger OFVER install by performing the following as a root user (see Note #3):
+### 2.3.1 Install packages
 
-    cd /opt/felix/ocf/vt_manager/src/python/agent/tools
-    ./ofver install
+    apt-get install openssl ssl-cert \
+        python-setuptools qemu-kvm libvirt-bin tshark python-libvirt \
+        python-setuptools python-mysqldb python-openssl python-m2crypto \
+        python-dateutil python-decorator python-paramiko build-essential \
+        python-imaging python-configobj python-pyparsing \
+        python-lxml python-argparse python-pexpect python-dev libldap2-dev \
+        libsasl2-dev libguestfs-tools libpython-stdlib python-pip git
+    pip install --allow-external django-evolution \
+        "django-evolution<=0.6.9" pytz "Django<=1.4.19" \
+        "django-extensions<=1.2.5" django-autoslug django-auth-ldap \
+        django-registration jinja2 
 
-    Note #3: When installation starts, ofver will ask if it is an OFELIA project 
-    installation or not, and accordingly ofver will download the VMs templates 
-    from the proper storage.
+### 2.3.2 Configure libvirt
+
+- Open /etc/libvirt/qemu.conf and add (or modify) following parameters:
+
+        user = "root"
+        group = "root"
+        
+- Restert libvirt-bin
+
+        service libvirt-bin restart
+
+- Create bridge to connect the NICs of user VM
+
+        brctl addbr brx0
+        brctl addif brx0 eth0
+
+### 2.3.3 Set up disk image files
+
+#### 2.3.3.1 Create directories for disk image files
+
+Most of directories created in this section should be specified
+in configuration file (see section 2.3.4)
+
+    mkdir -p /mnt/l1vm
+    # Disk image template folder
+    mkdir -p /mnt/l1vm/template
+    # Log folder
+    mkdir -p /mnt/l1vm/image/log
+    # Cache folder to store VMs (OXA_FILEHD_CACHE_VMS)
+    mkdir -p /mnt/l1vm/image/cache/vms
+    # Remote folder to store VMs (OXA_FILEHD_REMOTE_VMS)
+    mkdir -p /mnt/l1vm/image/remote/vms 
+    # Cache folder for templates (OXA_FILEHD_CACHE_TEMPLATES)
+    mkdir -p /mnt/l1vm/image/cache/templates
+    # Remote folder for templates (OXA_FILEHD_REMOTE_TEMPLATES)
+    mkdir -p /mnt/l1vm/image/remote/templates
+
+#### 2.3.4.2 Generate disk image template
+
+Place following `generate_template` script and `preseed.cfg` in same directory,
+and run `generate_template` script as root. When finished,
+a template file `l1vm.qcow2` is generated in `/mnt/l1vm/template` directory.
+
+    ./generate_template
+
+- `generate_template` script
+
+        #!/bin/bash
+  
+        set -u
+        if [ ${EUID:-${UID}} -ne 0 ]; then
+            echo 'please run at root.'
+            exit 1
+        fi
+        
+        IMGDIR=/mnt/l1vm/template
+        IMGFILE=l1vm.qcow2
+        if [ ! -d ${IMGDIR} ]; then
+            echo "cannot find ${IMGDIR}, create."
+            mkdir -p ${IMGDIR}
+            if [ $? -ne 0 ]; then
+                echo "cannot create ${IMGDIR}, abort."
+                exit 1
+            fi
+        fi
+        
+        IMG=${IMGDIR}/${IMGFILE}
+        URL=http://jp.archive.ubuntu.com/ubuntu/dists/precise/main/installer-amd64
+        PRESEED=./preseed.cfg
+        
+        virsh destroy l1vm
+        virsh undefine l1vm
+        rm -f ${IMG}
+        qemu-img create -f qcow2 ${IMG} 128G
+        
+        virsh net-start default
+        
+        virt-install --name=l1vm --vcpus=1 --ram=2048 \
+            --disk path=${IMG},size=32,sparse=true,format=qcow2 -l ${URL} \
+            --os-type=linux --os-variant=ubuntuprecise --noreboot --nographics \
+            -w bridge=virbr0 --noreboot --initrd-inject=${PRESEED} \
+            --extra-args='console=tty0 console=ttyS0,115200n8 preseed/file=/preseed.cfg auto=true priority=critical'
+        
+        virsh destroy l1vm
+        virsh dumpxml l1vm
+        virsh undefine l1vm
+        virsh net-destroy default
+        
+- preseed.cfg
+
+        d-i debian-installer/locale string en_US
+        d-i debian-installer/language string en
+        d-i debian-installer/country string JP
+        d-i debian-installer/locale string en_US.UTF-8
+        
+        d-i console-setup/ask_detect boolean false
+        d-i console-setup/layoutcode string jp
+        d-i console-setup/charmap select UTF-8
+        d-i console-keymaps-at/keymap select jp
+        d-i keyboard-configuration/layoutcode string jp
+        d-i keyboard-configuration/modelcode jp106
+        
+        d-i netcfg/choose_interface select eth0
+        d-i netcfg/dhcp_timeout string 30
+        d-i netcfg/wireless_wep string
+        
+        d-i mirror/country string manual
+        d-i mirror/http/hostname string jp.archive.ubuntu.com
+        d-i mirror/http/directory string /ubuntu
+        d-i mirror/http/proxy string
+        
+        d-i clock-setup/utc boolean false
+        d-i time/zone string Asia/Tokyo
+        d-i clock-setup/ntp boolean true
+        
+        d-i partman-auto/method string regular
+        d-i partman-auto/choose_recipe select atomic
+        d-i partman-partitioning/confirm_write_new_label boolean true
+        d-i partman/choose_partition select Finish partitioning and write changes to disk
+        d-i partman/confirm boolean true
+        d-i partman/confirm_nooverwrite boolean true
+        
+        d-i passwd/root-login boolean true
+        d-i passwd/make-user boolean false
+        d-i passwd/root-password password password
+        d-i passwd/root-password-again password password
+        d-i user-setup/allow-password-weak boolean true
+        d-i user-setup/encrypt-home boolean false
+        
+        tasksel tasksel/first multiselect
+        d-i pkgsel/include string openssh-server libvirt-bin qemu-kvm vlan
+        d-i pkgsel/upgrade select none
+        d-i pkgsel/update-policy select none
+        d-i grub-installer/only_debian boolean true
+        d-i grub-installer/with_other_os boolean true
+        
+        d-i finish-install/reboot_in_progress note
+        d-i debian-installer/exit/poweroff boolean true
+    
+### 2.3.5 Create KVM-OXAD configuration files
+
+    cd /opt/felix/ocf/vt_manager/src/python/agent/
+    vi mySettings.py
+
+- mySettings.py
+
+        ### Section 1: KVM-OXAD settings
+        #
+        # Basic settings for the KVM-OXAD
+        # Settings for virtualization KVM-VT, to which the KVM-OXAD connects
+        # VTAM_PORT: it is usually '8445'
+        # WARNING: *same* settings as in KVM-VT's 'mySettings.py' file
+        VTAM_IP = "172.21.100.137"
+        VTAM_PORT = "8445"
+        XMLRPC_USER = "root"
+        XMLRPC_PASS = "password"
+        
+        # Password for the KVM-OXAD HTTP XML-RPC server. Use a STRONG password
+        XMLRPC_SERVER_PASSWORD = "password"
+        
+        ### Section 2: Optional KVM-OXAD settings
+        #
+        # Optional settings for the KVM-OXAD.
+        # WARNING: default values are commented. Uncomment and modify to override
+        # the static settings (file at 'settings/staticSettings.py').
+        #
+        # Network parameters.
+        # XMLRPC_SERVER_LISTEN_HOST: you should not use '' here
+        # unless you have a real FQDN.
+        # Defaults are as follows.
+        ##XMLRPC_SERVER_LISTEN_HOST = "0.0.0.0"
+        ##XMLRPC_SERVER_LISTEN_PORT = 9229
+        
+        # Enable/Disable the usage of cache.
+        # Default is True.
+        ##OXA_FILEHD_USE_CACHE = True
+        
+        # Use sparse disks or not while cloning.
+        # Uncomment if willing to use Sparse disks.
+        # Default is False.
+        ##OXA_FILEHD_CREATE_SPARSE_DISK = False
+        
+        # Define machine SWAP size in MB.
+        # Default is 512.
+        ##OXA_DEFAULT_SWAP_SIZE_MB = 512
+        
+        # Level used for logging Agent messages.
+        # Possible values = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}.
+        # Default is "WARNING".
+        #
+        LOG_LEVEL = "DEBUG"
+        
+        #Template Image File location
+        OXA_KVM_DEBIAN_TEMPLATE_IMGFILE="/mnt/l1vm/template/l1vm.qcow2"
+        OXA_KVM_UBUNTU_TEMPLATE_IMGFILE="/mnt/l1vm/template/l1vm.qcow2"
+        
+        ## FileHD driver settings
+        # Enable/disable file-type Hdmanager Cache FS
+        OXA_FILEHD_USE_CACHE=False
+        
+        # Cache folder to store VMs (if cache mechanism is used)
+        OXA_FILEHD_CACHE_VMS="/mnt/l1vm/image/cache/vms/"
+        
+        # Remote folder to store VMs
+        OXA_FILEHD_REMOTE_VMS="/mnt/l1vm/image/remote/vms/"
+        
+        # Cache folder for templates (if cache is enabled)
+        OXA_FILEHD_CACHE_TEMPLATES="/mnt/l1vm/image/cache/templates/"
+        
+        # Remote folder for templates
+        OXA_FILEHD_REMOTE_TEMPLATES="/mnt/l1vm/image/remote/templates/"
+        
+        # Use sparse disks while cloning
+        OXA_FILEHD_CREATE_SPARSE_DISK=False
+        
+        # Nice priority for Copy&untar operations
+        OXA_FILEHD_NICE_PRIORITY=15
+        
+        # IONice copy&untar operations class
+        OXA_FILEHD_IONICE_CLASS=2
+        
+        # IONice copy&untar operations priority
+        OXA_FILEHD_IONICE_PRIORITY=5
+        
+        # /bin/dd block size(bs) for copy operations
+        OXA_FILEHD_DD_BS_KB=32
+
+### 2.3.6 Register KVM-OXAD to KVM-VT (at KVM-VT node)
+
+    Note: Values should be changed to fit your environment.
+    The followings are an example of settings.
+    
+    mysql -u root -p ocf__vt_manager 
+
+- Register KVM-OXAD
+
+        INSERT INTO `vt_manager_vtserver` VALUES (\
+            1,        /* id: ID of KVM-OXAD, must be unique */ \
+            0,        /* available: KVM-OXAD is available or not, 1 is available */ \
+            1,        /* enabled: KVM-OXAD is enable or not, 1 is enable */ \
+            'test1',  /* name: Name of KVM-OXAD */ \
+            'uuid1',  /* uuid: UUID of KVM-OXAD */ \
+            'Linux',  /* operatingSystemType: OS type running KVM-OXAD */ \
+            'Ubuntu', /* operatingSystemDistribution: OS distribution type running KVM-OXAD */ \
+            '14.04',  /* operatingSystemVersion: OS version running KVM-OXAD */ \
+            'kvm',    /* virtTech: Hypervisor type of KVM-OXAD, must be 'kvm' for KVM-OXAD */ \
+            1,        /* numberOfCPUs: Number of CPUs in KVM-OXAD node */ \
+            2000,     /* CPUFrequency: CPU clock (units in MHz) of KVM-OXAD node */ \
+            1024,     /* memory: Memory (units in MB) of KVM-OXAD node */ \
+            1024,     /* discSpaceGB: Disk size (units in GB) of KVM-OXAD node */ \
+            'http://172.21.100.11:9229/', /* agentURL: URL of KVM-OXAD */ \
+            'password',                   /* agentPassword: Password to access the URL */ \
+            'http://172.21.100.11:9229/'  /* url: URL of KVM-OXAD node, normally same as agentURL */);
+
+- Register KVM-OXAD as KVM hypervisor
+
+        INSERT INTO `vt_manager_kvmserver` VALUES (\
+            1 /* vtserver_ptr_id: ID of KVM-OXAD, must be same as vt_manager_vtserver.id */);
+
+- Register IP address range to allocate to user VM
+
+        INSERT INTO `vt_manager_ip4range` VALUES (\
+            1,                 /* id: ID of the range, must be unique */ \
+            'ip1',             /* name: Name of the range */
+            1,                 /* isGlobal: 1 if the range is global IP, 0 is local */ \
+            '192.168.123.2',   /* startIp: Start IP address the range */ \
+            '192.168.123.254', /* endIp: End IP address the range */ \
+            '255.255.255.0',   /* netMask: Subnet mask of the range */ \
+            '192.168.123.1',   /* gw: Gateway of the range */ \
+            '10.1.100.1',      /* dns1: DNS address for the range (optional) */ \
+            '8.8.8.8',         /* dns2: Secondary DNS address for the range (optional) */ \
+            '192.168.123.2',   /* nextAvailableIp: Next allocatable IP address */ \
+            253                /* numberOfSlots: Number of IP addresses of the range */ \);
+
+- Register MAC address range to allocate to user VM
+
+        INSERT INTO `vt_manager_macrange` VALUES (\
+            1,                   /* id: ID of the range, must be unique */ \
+            'mac1',              /* name: Name of the range, must be unique */ \
+            1,                   /* isGlobal: 1 if the range is global MAC, 0 is local */ \
+            '52:54:01:00:00:01', /* startMac: Start MAC address the range */ \
+            '52:54:01:00:00:ff', /* endMac: End MAC address the range */ \
+            '52:54:01:00:00:02', /* nextAvailableMac: Next allocatable MAC address */ \
+            254                  /* numberOfSlots: Number of MAC addresses of the range */);
+
+- Register MAC address of a bridge of KVM-OXAD node as a slot
+
+        INSERT INTO `vt_manager_macslot` VALUES (\
+            1001,                /* id: ID of the slot, must be unique */ \
+            '52:54:01:00:00:01', /* mac: MAC address of the slot */ \
+            1,                   /* macRange_id: ID of the range, must be same as vt_manager_macrange.id */ \
+            1,                   /* isExcluded: 1 if this slot is excluded from allocation, 0 otherwise */ \
+            'comment'            /* comment: Comment of the slot */ \);
+
+- Register a bridge of KVM-OXAD node to provide for user VM
+
+        INSERT INTO `vt_manager_networkinterface` VALUES (\
+            101,    /* id: ID of the interface, must be unique */ \
+            'brx0', /* name: Interface name, must be same as actual interface */ \
+            1001,   /* mac_id: MAC address slot of the interface, must be same as vt_manager_macslot.id */ \
+            1,      /* isMgmt: 1 if this interface is used for management, 0 otherwise */ \
+            1,      /* isBridge: 1 if this interface is bridge, 0 is actual NIC */ \
+            'brx0', /* switchID: Switch name, must be same as vt_manager_networkinterface.name if this interface is bridge */ \
+            1,      /* port: Number of port on this interface, normally 1 */ \
+            1       /* idForm: currently unused */ \);
+
+- Allocate a bridge to KVM-OXAD node as an interface
+
+        INSERT INTO `vt_manager_vtserver_networkInterfaces` VALUES (\
+            1,  /* id: ID of the allocation, must be unique */ \
+            1,  /* vtserver_id: ID of the KVM-OXAD, must be same as vt_manager_vtserver.id */ \
+            101 /* networkinterface_id: ID of the interface, must be same as vt_manager_networkinterface.id */ );
 
 
-3. Upgrading
-------------
+# 3. Additional notes
 
-3.1 For CRM-KVM: choose the components to install as a 
-    root user. This will implicitly trigger OFVER:
-
-    cd /opt/felix/ocf/deploy
-    python upgrade.py
-
-3.2 For OXAD-KVM:
-
-    cd /opt/felix/ocf/vt_manager/src/python/agent/tools
-    ./ofver upgrade
-
-
-4. Migrating
-------------
-
-4.1 For CRM-KVM: choose the new path in your servers 
-    where you want the OCF stack code to be migrated:
-
-    cd /opt/felix/ocf/deploy
-    python migrate.py
-
-4.2 For OXAD-KVM:
-    Sorry, this features is not supported
-
-
-5. Additional notes
--------------------
-
-Please have a look to Manuals [https://github.com/fp7-ofelia/ocf/wiki/Manuals]
+Please have a look to Manuals [https://github.com/dana-i2cat/felix/wiki]
 for further component configuration.
 
-You can use -f force flag on OFVER to force installation/upgrade. Take a look
-at ./ofver -h for more details.
 
-
-===============
 FURTHER READING
 ===============
 
 For more information about configuration, troubleshooting, contribution and
-so on please visit https://github.com/fp7-ofelia/ocf/wiki
+so on please visit https://github.com/dana-i2cat/felix/wiki
 
-=========
+
 COPYRIGHT
 =========
 

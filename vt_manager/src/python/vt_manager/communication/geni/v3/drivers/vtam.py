@@ -661,7 +661,7 @@ class VTAMDriver:
         vm["interfaces"] = list()
         vm["hd-setup-type"] = "file-image"
         vm["virtualization-setup-type"] = "paravirtualization"
-        vm["memory-mb"] = 512
+        vm["memory-mb"] = 4096
         return vm 
 
     def vm_dict_to_class(self, vm_dict, vm_class):
