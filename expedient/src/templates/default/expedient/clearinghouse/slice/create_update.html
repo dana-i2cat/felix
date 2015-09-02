@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load ch_extras %}
+
+{% block title %}{{ title }}{% endblock title %}
+
+{% block head %}
+{{ form.media }}
+{% endblock head %}
+
+{% block content %}
+<div class="title">
+	<h1>{% if slice %}Update{% else %}Create{% endif %} Slice in Project
+	{% if slice %}{{ slice.project.name }}{% else %}{{ project.name }}{% endif %}</h1>
+</div>
+
+<div class="slice_edit">
+	<form class="form" action="" method="POST">{% csrf_token %}
+		{{ form.as_p }}
+		<div class="center">
+			<input type="submit" {% if slice %}id="form_update_slice"
+						{% else %}id="form_create_slice"{% endif %} value="Save" />
+			<input type="button" value="Cancel" onclick="document.location='{{ cancel_url }}'"/>
+		</div>
+	</form>
+</div>
+{% endblock content %}

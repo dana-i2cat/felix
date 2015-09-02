@@ -1,0 +1,416 @@
+{% extends "default/iframebase.html" %}
+{% load ch_extras %}
+
+{% block title %}detail for monitoring cp{% endblock title %}
+
+{% block head %}
+<link rel="stylesheet" href="{% url css_media_m_gui 'monitor_cp.css' %}">
+<link rel="stylesheet" href="{% url css_media_m_gui 'jquery.datetimepicker.css' %}">
+<link rel="stylesheet" href="{% url css_media_m_gui 'tooltip.monitor_cp.css' %}">
+
+<script src="{% url js_media_m_gui 'tooltip.monitor_cp.js' %}"></script>
+<script src="{% url js_media_m_gui 'd3.v2.min.js' %}"></script>
+<script src="{% url js_media_m_gui 'jquery.datetimepicker.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+{% if form %}
+<div id="cpContainer" class="expandable">
+	<div id="id_resourceinfo">{{ resourceid }}</div>
+	<div id="id_condition">
+		<form method="post" action="">{% csrf_token %}
+			{% for field in form %}
+				{{ field.label_tag }}
+				{{ field }}
+			{% endfor %}
+			<div id="id_submit">
+				<input type="submit" value="submit"/>
+			</div>
+		</form>
+	</div>
+	<div>
+		<div id="cp_view"></div>
+{% if mdatas %}
+		<div id="cp_overview"></div>
+		<div id="cp_grid">
+			<div id="cp_grid_data">
+			</div>
+		</div>
+{% endif %}
+	</div>
+</div>
+
+<script>
+var parseDate = d3.time.format("%Y/%m/%d");
+var parseDateTime = d3.time.format("%Y/%m/%d %H:%M:%S");
+var formatDate = "%Y/%m/%d %H:%M"
+var formatDatepicker = "Y/m/d H:i";
+
+var tzdata = [
+        {% for tm in timezone %}
+            { offset: {{ tm.2 }}, timezone: "{{ tm.0 }}"}
+        {% if not forloop.last %},{% endif %}
+        {% endfor %}
+];
+
+$(function(){
+	// Metric:
+
+	// Date range:
+	// from
+	$('#id_datefrom').datetimepicker({
+		format: formatDatepicker,
+		onShow: function( ct ) {
+			this.setOptions( {
+				maxDate: $('#id_dateto').val()?parseDate(new Date($('#id_dateto').val())):false
+			})
+		},
+	});
+	var defaultdate = d3.time.format(formatDate)(new Date());
+	var date = $('#id_datefrom').val() || defaultdate;
+	$('#id_datefrom').datetimepicker({value: date});
+
+	// to
+	$('#id_dateto').datetimepicker({
+		format: formatDatepicker,
+		onShow: function( ct ) {
+			this.setOptions( {
+				minDate: $('#id_datefrom').val()?parseDate(new Date($('#id_datefrom').val())):false
+			})
+		},
+	});
+	var date = $('#id_dateto').val() || defaultdate;
+	$('#id_dateto').datetimepicker({value: date});
+
+	// Timezone:
+	{% if mdatas %}
+	{% else %}
+	var date = new Date();
+	var tzoffset = (date.getHours() - date.getUTCHours()) % 24;      
+	var timezone = 0;
+	tzdata.forEach(function(d) {
+		if (d.offset == tzoffset)
+			timezone = d.timezone;
+		}
+	);
+	if (timezone != 0)
+	{
+		var id_timezone = document.getElementById("id_timezone");
+		for (var i=0;i<id_timezone.length;i++)
+		{
+			if (id_timezone.options[i].value == timezone)
+				id_timezone.options[i].selected = true;
+		}
+	}
+	{% endif %}
+});
+
+{% if mdatas %}
+var margin_ov = {top: 10, right: 10, bottom: 20, left: 30},
+    margin_view = {top: 30, right: 80, bottom: 140, left: 100},
+    width_container = parseInt($("#cpContainer").css("width")), /* Obtain width from container */
+    width_view = width_container - parseInt($("#cp_overview").css("width")) - margin_view.left - margin_view.right - 4,
+    width_ov = parseInt($("#cp_overview").css("width")) - margin_ov.left - margin_ov.right,
+    height_ov = parseInt($("#cp_overview").css("height")) - margin_ov.top - margin_ov.bottom,
+    height_view = parseInt($("#cp_view").css("height")) - margin_view.top - margin_view.bottom;
+
+var hdata = [
+        {% for hdata in hdatas %}
+        {
+            colname: "{{ hdata.colname }}", width: "{{ hdata.width }}", align: "{{ hdata.align }}", scale: {{ hdata.scale }}
+        }
+        {% if not forloop.last %},{% endif %}
+        {% endfor %}
+];
+
+var data = [
+        {% for mdata in mdatas %}
+        {
+            {% for item in mdata %}
+                {{ item.name }}: "{{ item.value }}"
+            {% if not forloop.last %},{% endif %}
+            {% endfor %}
+        }
+        {% if not forloop.last %},{% endif %}
+        {% endfor %}
+];
+
+var color = d3.scale.category10();
+color.domain(d3.keys(data[0]).filter(function(key) { return key !== "datetime"; }));
+
+var graph_data = color.domain().map(function(name, i) {
+	return {
+		name: name,
+		values: data.map(function(d) {
+			var value = d[name];
+			var text = d[name];
+			// ignore datetime
+			if (hdata[i+1].scale == 1)
+			{
+				value = Number(value);
+				text = value.toLocaleString(undefined, {minimumFractionDigits:{{ decimal_point_accuracy }}});
+			}
+			return {datetime: d.datetime, value: value, text: text};
+		})
+	};
+});
+
+{% if graph_scale == 1 %}
+var valueMax = d3.max( graph_data, function(d) { return d3.max(d.values, function(v) { return v.value; }); });
+{% endif %}
+
+// genarate grid
+var table_nm = d3.select("#cp_grid_data")
+	.append("table");
+var thead_nm = table_nm.append("thead");
+var tbody_nm = table_nm.append("tbody");
+
+var tr_th_nm = thead_nm.append("tr");
+var th_nm = tr_th_nm.selectAll("tr")
+	.data(hdata)
+	.enter().append("th")
+		.text(function(d){return d.colname;})
+		.style("width", function(d){return d.width;})
+		.attr("align", "center");
+
+var tr_td_nm = tbody_nm.selectAll("tr")
+	.data(data)
+	.enter().append("tr");
+var td_nm = tr_td_nm.selectAll("td")
+	.data(function(d){ return d3.values(d); })
+	.enter().append("td")
+		.text(function(d, i){
+			var value = d;
+			if (hdata[i].scale == 1)
+				value = Number(value).toLocaleString(undefined, {minimumFractionDigits:{{ decimal_point_accuracy }}});
+			return value;
+		})
+		.style("width", function(d, i){return hdata[i].width;})
+		.attr("align", function(d, i){return hdata[i].align;});
+
+// generate graph
+// make view
+var xScale_view = d3.time.scale()
+	.domain([
+		new Date(data[data.length-1].datetime),
+		new Date(data[0].datetime),
+	])
+	.range([0, width_view]);
+
+{% if graph_scale == 2 %}
+var yScale_view = d3.scale.ordinal()
+	.domain([
+        {% for ov in ordinal_value %}
+            "{{ ov.1 }}"
+        {% if not forloop.last %},{% endif %}
+        {% endfor %}
+	])
+	.range([0, height_view]);
+{% else %}
+var yScale_view = d3.scale.linear()
+	.domain([0, valueMax])
+	.range([height_view, 0]);
+{% endif %}
+
+var xAxis_view = d3.svg.axis()
+	.scale(xScale_view)
+	.orient("bottom")
+	.tickFormat(parseDateTime)
+	.tickSize(0, 0)
+	.tickPadding(10);
+
+var yAxis_view = d3.svg.axis()
+	.scale(yScale_view)
+	.orient("left")
+	.tickSize(-width_view, 0)
+	.tickPadding(10);
+
+// make overview
+var xScale_ov = d3.time.scale()
+	.domain(xScale_view.domain())
+	.range([0, width_ov]);
+
+{% if graph_scale == 2 %}
+var yScale_ov = d3.scale.ordinal()
+{% else %}
+var yScale_ov = d3.scale.linear()
+{% endif %}
+	.domain(yScale_view.domain())
+{% if graph_scale == 2 %}
+	.range([0, height_ov]);
+{% else %}
+	.range([height_ov, 0]);
+{% endif %}
+
+var xAxis_ov = d3.svg.axis()
+	.scale(xScale_ov)
+	.orient("bottom")
+	.tickFormat(parseDateTime)
+	.tickSize(0, 0)
+	.tickPadding(5);
+
+var yAxis_ov = d3.svg.axis()
+	.scale(yScale_ov)
+	.orient("left")
+	.tickSize(-width_ov, 0)
+	.tickPadding(5);
+
+// area object
+var area_view = d3.svg.area()
+	.x(function(d) { return xScale_view(new Date(d.datetime)); })
+	.y(function(d) { return yScale_view(d.value); });
+
+var area_ov = d3.svg.area()
+	.x(function(d) { return xScale_ov(new Date(d.datetime)); })
+	.y(function(d) { return yScale_ov(d.value); });
+
+// stage
+var svg_cp_view = d3.select("#cp_view")
+	.append("svg")
+		.attr("width", width_view + margin_view.left + margin_view.right)
+		.attr("height", height_view + margin_view.top + margin_view.bottom);
+
+var svg_cp_ov = d3.select("#cp_overview")
+	.append("svg")
+		.attr("width", width_ov + margin_ov.left + margin_ov.right)
+		.attr("height", height_ov + margin_ov.top + margin_ov.bottom);
+
+// clippath
+svg_cp_view.append("defs").append("clipPath")
+	.attr("id", "clip")
+	.append("rect")
+		.attr("width", width_view)
+		.attr("height", height_view + margin_view.top + margin_view.bottom);
+
+var focus = svg_cp_view.selectAll(".focus")
+	.data(graph_data)
+	.enter().append("g")
+		.attr("class", "focus")
+		.attr("transform", "translate(" + margin_view.left + "," + margin_view.top + ")");
+
+var context = svg_cp_ov.selectAll(".context")
+	.data(graph_data)
+	.enter().append("g")
+		.attr("class", "context")
+		.attr("transform", "translate(" + margin_ov.left + "," + margin_ov.top + ")");
+
+focus.append("path")
+	.attr("clip-path", "url(#clip)")
+	.attr("d", function(d) { return area_view(d.values); })
+	.style("stroke", function(d) { return color(d.name); });
+
+focus.selectAll("circle")
+	.data(function(d) {
+		return d.values.map(function(v) {
+			return {name: d.name, datetime: v.datetime, value: v.value, text: v.text};
+		});
+	})
+	.enter().append("circle")
+		.attr("clip-path", "url(#clip)")
+		.attr("cx", function(d, i) { return xScale_view(new Date(d.datetime)); })
+		.attr("cy", function(d, i) { return yScale_view(d.value); })
+		.attr("r", 5)
+		.on("mouseover", function(d, i){
+			// Excluded outside the display range
+			var dt = new Date(d.datetime);
+			if ((dt < xScale_view.domain()[0]) || (dt > xScale_view.domain()[1]))
+				return;
+			var description = "Date:&lt;br/&gt;" + parseDateTime(new Date(d.datetime)) + "&lt;br/&gt;&lt;br/&gt;" + d.name + ":&lt;br/&gt;" + d.text;
+			tooltip.show($('<div/>').html(description).text());
+		})
+		.on("mouseout", function(){
+			tooltip.hide();
+		});
+
+focus.append("g")
+	.attr("class", "x axis")
+	.attr("transform", "translate(0," + height_view + ")")
+	.call(xAxis_view)
+	.selectAll("text")
+		.attr("x", 10)
+		.attr("y", -5)
+		.attr("font-size", 9)
+		.attr("transform", "rotate(90)")
+		.style("text-anchor", "start");
+
+focus.append("g")
+	.attr("class", "y axis")
+	.call(yAxis_view)
+	.selectAll("text")
+		.attr("font-size", 9);
+
+// Legend
+var legend = focus.append("g")
+	.attr("transform", function(d, i) { return "translate(" + (width_view + 10) + "," + (i * 20) + ")"; });
+
+legend.append("line")
+	.attr("x1", 0)
+	.attr("x2", 7)
+	.attr("y1", 5)
+	.attr("y2", 5)
+	.style("stroke-width", 2)
+	.style("stroke", function(d) { return color(d.name); });
+
+legend.append("text")
+	.attr("x", 12)
+	.attr("y", 5)
+	.attr("dy", ".35em")
+	.text(function(d) { return d.name })
+	.attr("fill", function(d) { return color(d.name); });
+
+context.append("path")
+	.attr("d", function(d) { return area_ov(d.values); })
+	.style("stroke", function(d) { return color(d.name); });
+
+context.append("g")
+	.attr("class", "x axis")
+	.attr("transform", "translate(0," + height_ov + ")")
+	.call(xAxis_ov)
+	.selectAll("text")
+		.attr("x", 2)
+		.attr("y", -5)
+		.attr("font-size", 1)
+		.attr("transform", "rotate(90)")
+		.style("text-anchor", "start");
+
+context.append("g")
+	.attr("class", "y axis")
+	.call(yAxis_ov)
+	.selectAll("text")
+		.attr("font-size", 3);
+
+var brush = d3.svg.brush()
+	.x(xScale_ov)
+	.on("brush", brushed);
+
+context.append("g")
+	.attr("class", "x brush")
+	.call(brush)
+	.selectAll("rect")
+		.attr("y", -6)
+		.attr("height", height_ov + 7);
+
+function brushed() {
+	xScale_view.domain(brush.empty() ? xScale_ov.domain() : brush.extent());
+	focus.select("path")
+		.attr("d", function(d) { return area_view(d.values); })
+
+	focus.selectAll("circle")
+		.attr("cx", function(d, i) { return xScale_view(new Date(d.datetime)); })
+		.attr("cy", function(d, i) { return yScale_view(d.value); })
+
+	focus.select(".x.axis")
+		.call(xAxis_view)
+		.selectAll("text")
+			.attr("x", 10)
+			.attr("y", -5)
+			.attr("font-size", 9)
+			.attr("transform", "rotate(90)")
+			.style("text-anchor", "start");
+}
+
+{% endif %}
+
+</script>
+{% endif %}
+{% endblock content %}

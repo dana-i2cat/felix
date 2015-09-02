@@ -1,0 +1,43 @@
+<h1 id="resourceDetails">Resource details</h1>
+
+<!-- Common expandable tooltip -->
+<div class="tooltip" id="expandableHelp" style="font-size:normal"> Click to expand/collapse</div>
+<h2 class="resources">
+	<a id="networkResources" class="expandableTooltipable expandableCtl resources" ref="#/">
+	Network resources
+	<span class="opened">&#x25B2;</span>
+	</a>
+</h2>
+<div id="networkResourcesContainer" class="expandable">
+	<iframe class="dynsized" id="frameNetwork" name="frameNetwork" src="../../../sdn" scrolling="no" frameborder="0" height="400px" width="100%">
+		<p>Your browser does not support iframes.</p>
+	</iframe>
+</div>
+<h2 class="resources">
+	<a id="computationalResources" class="expandableTooltipable expandableCtl resources" ref="#/">
+	Computational resources
+	<span class="opened">&#x25B2;</span>
+	</a>
+</h2>
+<div id="computationalResourcesContainer" class="expandable">
+	<iframe class="dynsized" id="frameCp" name="frameCp" src="../../../cp" scrolling="no" frameborder="0" height="400px" width="100%">
+		<p>Your browser does not support iframes.</p>
+	</iframe>
+</div>
+<script type="text/javascript">
+$(document).ready(function() {
+	$(".expandableCtl").click(function()
+	{
+		elementName = "#"+$(this).attr('id')+"Container";
+		$("#"+$(this).attr('id')+"Container").slideToggle(250);
+		if($("span", this).attr("class") == "closed") {
+			$("span", this).html("&#x25B2;");
+			$('html, body').animate({scrollTop: $(elementName).offset().top-150}, 200);
+		} else {
+			$("span", this).html("&#x25BC;");
+		}
+		$("span", this).toggleClass("opened closed");
+  	});
+});
+
+</script>

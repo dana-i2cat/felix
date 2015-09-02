@@ -1,0 +1,27 @@
+{% extends "default/base.html" %}
+{% load ch_extras %}
+{% load breadcrumbs %}
+
+{% block title %}Slice Detail - Slice {{ slicename }}{% endblock title %}
+
+{% block head %}
+<link rel="stylesheet" href="{% url css_media 'slice.css' %}" />
+<link rel="stylesheet" href="{% url css_media 'slice.topology.css' %}" />
+<script src="{% url js_media 'slice.js' %}"></script>
+<script src="{% url js_media 'jquery.blockUI.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="main">
+	<div class="title">
+		<h1>Slice <font class="highlight">{{ slicename }}</font></h1>
+	</div>
+    </div><!-- detail section -->
+
+{# Topology #}
+{% include "topology.html" %}
+
+{# Resource Details #}
+{% include "monitoring.html" %}
+
+{% endblock content %}

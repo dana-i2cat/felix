@@ -1,0 +1,123 @@
+#networkContainer {
+	background: #fff !important; /* Overwrites settings from .expandable */
+	border: 1px solid #7e9fc0 !important;
+	margin-bottom: 20px;
+	overflow: hidden;
+	padding: 0px !important;
+}
+#id_resourceinfo {
+	background-color: #ebf5ff;
+	height: 14px;
+	text-shadow: #eee -3px 2px 4px;
+}
+#id_condition{
+	border-bottom: 1px solid #7e9fc0 !important;
+	line-height: 1.0em;
+	height: 32px;
+	padding: 5px !important;
+}
+#id_submit{
+	float: right;
+}
+#network_overview{
+	height: 76px;
+	width: 330px;
+	float: right;
+}
+#network_grid{
+	position: relative;
+	padding-top: 20px;
+	width: 330px;
+	background-color: #fff;
+	float: right;
+}
+#network_grid_data{
+	overflow: auto;
+	height: 302px;
+}
+#network_view{
+	border-right: 1px solid #7e9fc0 !important;
+	line-height: 1.0em;
+	height: 400px;
+	float: left;
+}
+#id_metric{
+	width: 100px;
+	display: inline !important;
+}
+#id_datefrom, #id_dateto{
+	width: 100px;
+	display: inline-block;
+}
+#id_timezone{
+	width: 140px;
+	display: inline !important;
+}
+#id_limit{
+	width: 70px;
+	display: inline !important;
+}
+
+#network_grid table {
+	background: #E0E8FF !important;
+	border-spacing: 0px;
+	border-collapse: collapse !important;
+	margin: 0px 0px;
+	padding: 0px;
+	font-size: 9px;
+}
+
+#network_grid table thead tr {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+}
+
+#network_grid table thead tr th{
+	background: #9cf !important; 
+	padding: 3px 6px;
+}
+
+#network_grid table tbody tr td{
+	background: #ebf5ff;
+	border-top: 1px solid #7e9fc0;
+	border-bottom: 1px solid #7e9fc0;
+	padding: 3px 6px;
+}
+
+path {
+	fill: none;
+	stroke: steelblue;
+	stroke-width: 2;
+}
+circle {
+	stroke: steelblue;
+	fill: steelblue;
+	opacity: 0.0;
+}
+
+
+.axis path,
+.axis line{
+	fill: none;
+	stroke: grey;
+	stroke-width: 1;
+	shape-rendering: crispEdges;
+}
+
+.tick text{
+	font-size: 12px;
+}
+
+.tick line{
+	stroke: lightgrey;
+	stroke-opacity: 0.5;
+	shape-rendering: crispEdges;
+}
+
+.brush .extent {
+	stroke: #fff;
+	fill:red;
+	fill-opacity: .125;
+	shape-rendering: crispEdges;
+}
