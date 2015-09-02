@@ -1,0 +1,75 @@
+#!/bin/sh
+
+PROGNAME="monitoring_api.py"
+BASEDIR=".."
+
+pid_get(){
+    ps ax|grep ${PROGNAME}|grep -v grep|awk '{print $1}'
+}
+
+start()
+{
+    PID=`pid_get`
+    if [ ! -z $PID ]; then
+       echo $"$PROGNAME (pid $PID) is running..."
+       return 0
+    fi
+    echo -n $"Starting $PROGNAME: "
+    cd ${BASEDIR}
+    nohup ./${PROGNAME} < /dev/null > /dev/null 2>&1 &
+    sleep 1
+    PID=`pid_get`
+    if [ ! -z $PID ];
+    then
+       echo "success $PROGNAME startup"
+    else
+       echo "failure $PROGNAME startup"
+    fi
+    return 0
+}
+
+stop()
+{
+    pid=`pid_get`
+    if [ -z $pid ]; then
+        echo "$PROGNAME is stoped"
+        return 1
+    fi
+    echo -n $"Stopping $PROGNAME: "
+    kill $pid
+    RETVAL=$?
+    if [ $RETVAL = 0 ];
+    then
+        echo "success $PROGNAME stop"
+    else
+        echo "failure $PROGNAME stop"
+    fi
+    return 0
+}
+
+
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  status)
+        PID=`pid_get`
+        if [ -z $PID ]; then
+            echo $"${PROGNAME} is stopped"
+        else
+           echo $"${PROGNAME} (pid $PID) is running..."
+        fi
+        ;;
+  restart)
+        stop
+        sleep 3
+        start
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|restart|status}"
+        exit 1
+esac
+exit 0
