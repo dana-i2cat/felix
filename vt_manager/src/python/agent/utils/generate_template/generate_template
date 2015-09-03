@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# Copyright (C) 2015
+# National Institute of Advanced Industrial Science and Technology
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+  
+set -u
+if [ ${EUID:-${UID}} -ne 0 ]; then
+    echo 'please run at root.'
+    exit 1
+fi
+
+IMGDIR=/mnt/l1vm/template
+IMGFILE=l1vm.qcow2
+if [ ! -d ${IMGDIR} ]; then
+    echo "cannot find ${IMGDIR}, create."
+    mkdir -p ${IMGDIR}
+    if [ $? -ne 0 ]; then
+echo "cannot create ${IMGDIR}, abort."
+exit 1
+    fi
+fi
+
+IMG=${IMGDIR}/${IMGFILE}
+URL=http://jp.archive.ubuntu.com/ubuntu/dists/precise/main/installer-amd64
+PRESEED=./preseed.cfg
+
+virsh destroy l1vm
+virsh undefine l1vm
+rm -f ${IMG}
+qemu-img create -f qcow2 ${IMG} 128G
+
+virsh net-start default
+
+virt-install --name=l1vm --vcpus=1 --ram=2048 \
+    --disk path=${IMG},size=32,sparse=true,format=qcow2 -l ${URL} \
+    --os-type=linux --os-variant=ubuntuprecise --noreboot --nographics \
+    -w bridge=virbr0 --noreboot --initrd-inject=${PRESEED} \
+    --extra-args='console=tty0 console=ttyS0,115200n8 preseed/file=/preseed.cfg auto=true priority=critical'
+
+virsh destroy l1vm
+virsh dumpxml l1vm
+virsh undefine l1vm
+virsh net-destroy default

@@ -105,123 +105,35 @@ INSTALLING KVM-CRM
 #### 2.3.3.1 Create directories for disk image files
 
 Most of directories created in this section should be specified
-in configuration file (see section 2.3.4)
+in configuration file (see section 2.3.5)
 
     mkdir -p /mnt/l1vm
     # Disk image template folder
     mkdir -p /mnt/l1vm/template
     # Log folder
     mkdir -p /mnt/l1vm/image/log
-    # Cache folder to store VMs (OXA_FILEHD_CACHE_VMS)
+    # Cache folder to store VMs
+    # It must be same as OXA_FILEHD_CACHE_VMS in configuration file.
     mkdir -p /mnt/l1vm/image/cache/vms
-    # Remote folder to store VMs (OXA_FILEHD_REMOTE_VMS)
+    # Remote folder to store VMs 
+    # It must be same as OXA_FILEHD_REMOTE_VMS in configuration file.
     mkdir -p /mnt/l1vm/image/remote/vms 
-    # Cache folder for templates (OXA_FILEHD_CACHE_TEMPLATES)
+    # Cache folder for templates 
+    # It must be same as OXA_FILEHD_CACHE_TEMPLATES in configuration file.
     mkdir -p /mnt/l1vm/image/cache/templates
-    # Remote folder for templates (OXA_FILEHD_REMOTE_TEMPLATES)
+    # Remote folder for templates
+    # It must be same as OXA_FILEHD_REMOTE_TEMPLATES in configuration file.
     mkdir -p /mnt/l1vm/image/remote/templates
 
 #### 2.3.4.2 Generate disk image template
 
-Place following `generate_template` script and `preseed.cfg` in same directory,
+Change directory to
+`/opt/felix/ocf/vt_manager/src/python/agent/utils/generate_template` 
 and run `generate_template` script as root. When finished,
 a template file `l1vm.qcow2` is generated in `/mnt/l1vm/template` directory.
 
+    cd /opt/felix/ocf/vt_manager/src/python/agent/utils/generate_template
     ./generate_template
-
-- `generate_template` script
-
-        #!/bin/bash
-  
-        set -u
-        if [ ${EUID:-${UID}} -ne 0 ]; then
-            echo 'please run at root.'
-            exit 1
-        fi
-        
-        IMGDIR=/mnt/l1vm/template
-        IMGFILE=l1vm.qcow2
-        if [ ! -d ${IMGDIR} ]; then
-            echo "cannot find ${IMGDIR}, create."
-            mkdir -p ${IMGDIR}
-            if [ $? -ne 0 ]; then
-                echo "cannot create ${IMGDIR}, abort."
-                exit 1
-            fi
-        fi
-        
-        IMG=${IMGDIR}/${IMGFILE}
-        URL=http://jp.archive.ubuntu.com/ubuntu/dists/precise/main/installer-amd64
-        PRESEED=./preseed.cfg
-        
-        virsh destroy l1vm
-        virsh undefine l1vm
-        rm -f ${IMG}
-        qemu-img create -f qcow2 ${IMG} 128G
-        
-        virsh net-start default
-        
-        virt-install --name=l1vm --vcpus=1 --ram=2048 \
-            --disk path=${IMG},size=32,sparse=true,format=qcow2 -l ${URL} \
-            --os-type=linux --os-variant=ubuntuprecise --noreboot --nographics \
-            -w bridge=virbr0 --noreboot --initrd-inject=${PRESEED} \
-            --extra-args='console=tty0 console=ttyS0,115200n8 preseed/file=/preseed.cfg auto=true priority=critical'
-        
-        virsh destroy l1vm
-        virsh dumpxml l1vm
-        virsh undefine l1vm
-        virsh net-destroy default
-        
-- preseed.cfg
-
-        d-i debian-installer/locale string en_US
-        d-i debian-installer/language string en
-        d-i debian-installer/country string JP
-        d-i debian-installer/locale string en_US.UTF-8
-        
-        d-i console-setup/ask_detect boolean false
-        d-i console-setup/layoutcode string jp
-        d-i console-setup/charmap select UTF-8
-        d-i console-keymaps-at/keymap select jp
-        d-i keyboard-configuration/layoutcode string jp
-        d-i keyboard-configuration/modelcode jp106
-        
-        d-i netcfg/choose_interface select eth0
-        d-i netcfg/dhcp_timeout string 30
-        d-i netcfg/wireless_wep string
-        
-        d-i mirror/country string manual
-        d-i mirror/http/hostname string jp.archive.ubuntu.com
-        d-i mirror/http/directory string /ubuntu
-        d-i mirror/http/proxy string
-        
-        d-i clock-setup/utc boolean false
-        d-i time/zone string Asia/Tokyo
-        d-i clock-setup/ntp boolean true
-        
-        d-i partman-auto/method string regular
-        d-i partman-auto/choose_recipe select atomic
-        d-i partman-partitioning/confirm_write_new_label boolean true
-        d-i partman/choose_partition select Finish partitioning and write changes to disk
-        d-i partman/confirm boolean true
-        d-i partman/confirm_nooverwrite boolean true
-        
-        d-i passwd/root-login boolean true
-        d-i passwd/make-user boolean false
-        d-i passwd/root-password password password
-        d-i passwd/root-password-again password password
-        d-i user-setup/allow-password-weak boolean true
-        d-i user-setup/encrypt-home boolean false
-        
-        tasksel tasksel/first multiselect
-        d-i pkgsel/include string openssh-server libvirt-bin qemu-kvm vlan
-        d-i pkgsel/upgrade select none
-        d-i pkgsel/update-policy select none
-        d-i grub-installer/only_debian boolean true
-        d-i grub-installer/with_other_os boolean true
-        
-        d-i finish-install/reboot_in_progress note
-        d-i debian-installer/exit/poweroff boolean true
     
 ### 2.3.5 Create KVM-OXAD configuration files
 
