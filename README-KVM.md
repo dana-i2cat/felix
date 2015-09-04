@@ -314,8 +314,8 @@ a template file `l1vm.qcow2` is generated in `/mnt/l1vm/template` directory.
 
         INSERT INTO vt_manager_vtserver_subscribedIp4Ranges VALUES (\
         1, /* id: ID of the allocation, must be unique */ 
-	1, /* id: ID of the KVM-OXAD, must be same as vt_manager_vtserver.id*/ 
-	1  /* id: ID of IP address range to allocate, must be same as vt_manager_ip4range.id*/ );
+	1, /* vtserver_id: ID of the KVM-OXAD, must be same as vt_manager_vtserver.id*/ 
+	1  /* ip4range_id: ID of IP address range to allocate, must be same as vt_manager_ip4range.id*/ );
 
 
 # 3. Additional notes
