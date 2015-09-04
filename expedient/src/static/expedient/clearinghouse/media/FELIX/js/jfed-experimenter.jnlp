@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jnlp
+    xmlns:jfx="http://javafx.com"
+    spec="1.0+"
+    href="jfed-experimenter.jnlp"
+    codebase="http://jfed.iminds.be/releases/master/422/webstart/experimenter/"
+    >
+  <information>
+    <title>jFed Experimenter Toolkit</title>
+    <vendor>iMinds</vendor>
+    <homepage href="http://jfed.iminds.be/experimenter-gui"/>
+    <description>A toolkit to create and execute experiments on Fed4FIRE testbeds</description>
+  <icon href="images/jfed-logo.png" />
+
+  </information>
+  <security>
+     <all-permissions/>
+  </security>
+  <resources>
+    <j2se version="1.8+" href="http://java.sun.com/products/autodl/j2se" />
+         
+    <jar href="lib/experimenter-gui-5.5.0.jar" main="true"/>
+    <jar href="lib/preloader-gui-5.5.0.jar"/>
+    <jar href="liblibrary-5.5.0.jar"/>
+    <jar href="lib/geni-rspec-binding-5.5.0.jar"/>
+    <jar href="lib/httpclient-4.2.2.jar"/>
+    <jar href="lib/commons-codec-1.6.jar"/>
+    <jar href="lib/xmlsec-1.5.7.jar"/>
+    <jar href="lib/xmlrpc-2.0.jar"/>
+    <jar href="lib/ganymed-ssh-2-modified-for-jfed-5.5.0.jar"/>
+    <jar href="lib/jcl-over-slf4j-1.7.7.jar"/>
+    <jar href="lib/json-20140107.jar"/>
+    <jar href="lib/guice-4.0-beta5.jar"/>
+    <jar href="lib/aopalliance-1.0.jar"/>
+    <jar href="lib/jsr305-3.0.0.jar"/>
+    <jar href="lib/call-log-output-5.5.0.jar"/>
+    <jar href="lib/rendersnake-1.7.jar"/>
+    <jar href="lib/commons-lang3-3.1.jar"/>
+    <jar href="lib/highlevel-library-5.5.0.jar"/>
+    <jar href="lib/rspec-fx-5.5.0.jar"/>
+    <jar href="lib/rspec-5.5.0.jar"/>
+    <jar href="lib/stax-utils-20070216.jar"/>
+    <jar href="lib/woodstox-core-asl-4.4.0.jar"/>
+    <jar href="lib/stax-api-1.0-2.jar"/>
+    <jar href="lib/stax2-api-3.1.4.jar"/>
+    <jar href="lib/xmlunit-1.4.jar"/>
+    <jar href="lib/protobuf-java-2.5.0.jar"/>
+    <jar href="lib/javax.inject-1.jar"/>
+    <jar href="lib/base-gui-5.5.0.jar"/>
+    <jar href="lib/controlsfx-8.20.8.jar"/>
+    <jar href="lib/openjfx-dialogs-1.0.2.jar"/>
+    <jar href="lib/fx-guice-8.0.0.jar"/>
+    <jar href="lib/slf4j-api-1.7.5.jar"/>
+    <jar href="lib/httpmime-4.2.2.jar"/>
+    <jar href="lib/httpcore-4.2.2.jar"/>
+    <jar href="lib/logback-classic-1.0.13.jar"/>
+    <jar href="lib/logback-core-1.0.13.jar"/>
+    <jar href="lib/guava-18.0.jar"/>
+    <jar href="lib/commons-configuration-1.10.jar"/>
+    <jar href="lib/commons-logging-1.1.1.jar"/>
+    <jar href="lib/commons-lang-2.6.jar"/>
+    <jar href="lib/commons-collections-3.2.1.jar"/>
+    <jar href="lib/jsch-0.1.50.jar"/>
+    <jar href="lib/dnsjava-2.1.6.jar"/>
+    <jar href="lib/guice-grapher-4.0-beta5.jar"/>
+    <jar href="lib/guice-assistedinject-4.0-beta5.jar"/>
+    <jar href="lib/guice-multibindings-4.0-beta5.jar"/>
+    <jar href="lib/GMapsFX-1.2.1-JFED.jar"/>
+
+     
+  </resources>
+    <jfx:javafx-desc main-class="be.iminds.ilabt.jfed.experimenter_gui.Launch" name="jFed Experimenter Toolkit" preloader-class="be.iminds.ilabt.jfed.JFedPreloader" />
+    <update check="background"/>
+</jnlp>
