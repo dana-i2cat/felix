@@ -232,7 +232,7 @@ a template file `l1vm.qcow2` is generated in `/mnt/l1vm/template` directory.
 
 - Register KVM-OXAD
 
-        INSERT INTO `vt_manager_vtserver` VALUES (\
+        INSERT INTO vt_manager_vtserver VALUES (\
             1,        /* id: ID of KVM-OXAD, must be unique */ \
             0,        /* available: KVM-OXAD is available or not, 1 is available */ \
             1,        /* enabled: KVM-OXAD is enable or not, 1 is enable */ \
@@ -252,12 +252,12 @@ a template file `l1vm.qcow2` is generated in `/mnt/l1vm/template` directory.
 
 - Register KVM-OXAD as KVM hypervisor
 
-        INSERT INTO `vt_manager_kvmserver` VALUES (\
+        INSERT INTO vt_manager_kvmserver VALUES (\
             1 /* vtserver_ptr_id: ID of KVM-OXAD, must be same as vt_manager_vtserver.id */);
 
 - Register IP address range to allocate to user VM
 
-        INSERT INTO `vt_manager_ip4range` VALUES (\
+        INSERT INTO vt_manager_ip4range VALUES (\
             1,                 /* id: ID of the range, must be unique */ \
             'ip1',             /* name: Name of the range */
             1,                 /* isGlobal: 1 if the range is global IP, 0 is local */ \
@@ -272,7 +272,7 @@ a template file `l1vm.qcow2` is generated in `/mnt/l1vm/template` directory.
 
 - Register MAC address range to allocate to user VM
 
-        INSERT INTO `vt_manager_macrange` VALUES (\
+        INSERT INTO vt_manager_macrange VALUES (\
             1,                   /* id: ID of the range, must be unique */ \
             'mac1',              /* name: Name of the range, must be unique */ \
             1,                   /* isGlobal: 1 if the range is global MAC, 0 is local */ \
@@ -283,16 +283,16 @@ a template file `l1vm.qcow2` is generated in `/mnt/l1vm/template` directory.
 
 - Register MAC address of a bridge of KVM-OXAD node as a slot
 
-        INSERT INTO `vt_manager_macslot` VALUES (\
+        INSERT INTO vt_manager_macslot VALUES (\
             1001,                /* id: ID of the slot, must be unique */ \
             '52:54:01:00:00:01', /* mac: MAC address of the slot */ \
             1,                   /* macRange_id: ID of the range, must be same as vt_manager_macrange.id */ \
             1,                   /* isExcluded: 1 if this slot is excluded from allocation, 0 otherwise */ \
-            'comment'            /* comment: Comment of the slot */ \);
+            'comment'            /* comment: Comment of the slot */ );
 
 - Register a bridge of KVM-OXAD node to provide for user VM
 
-        INSERT INTO `vt_manager_networkinterface` VALUES (\
+        INSERT INTO vt_manager_networkinterface VALUES (\
             101,    /* id: ID of the interface, must be unique */ \
             'brx0', /* name: Interface name, must be same as actual interface */ \
             1001,   /* mac_id: MAC address slot of the interface, must be same as vt_manager_macslot.id */ \
@@ -300,14 +300,22 @@ a template file `l1vm.qcow2` is generated in `/mnt/l1vm/template` directory.
             1,      /* isBridge: 1 if this interface is bridge, 0 is actual NIC */ \
             'brx0', /* switchID: Switch name, must be same as vt_manager_networkinterface.name if this interface is bridge */ \
             1,      /* port: Number of port on this interface, normally 1 */ \
-            1       /* idForm: currently unused */ \);
+            1       /* idForm: currently unused */);
 
 - Allocate a bridge to KVM-OXAD node as an interface
 
-        INSERT INTO `vt_manager_vtserver_networkInterfaces` VALUES (\
+        INSERT INTO vt_manager_vtserver_networkInterfaces VALUES (\
             1,  /* id: ID of the allocation, must be unique */ \
             1,  /* vtserver_id: ID of the KVM-OXAD, must be same as vt_manager_vtserver.id */ \
             101 /* networkinterface_id: ID of the interface, must be same as vt_manager_networkinterface.id */ );
+
+
+- Allocate the IP address ranges to KVM-OXAD node
+
+        INSERT INTO vt_manager_vtserver_subscribedIp4Ranges VALUES (\
+        1, /* id: ID of the allocation, must be unique */ 
+	1, /* id: ID of the KVM-OXAD, must be same as vt_manager_vtserver.id*/ 
+	1  /* id: ID of IP address range to allocate, must be same as vt_manager_ip4range.id*/ );
 
 
 # 3. Additional notes
