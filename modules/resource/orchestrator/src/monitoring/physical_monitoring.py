@@ -59,7 +59,8 @@ class PhysicalMonitoring(BaseMonitoring):
         for domain_name in self.peers_by_domain:
             peers = self.peers_by_domain[domain_name]
             try:
-                # Update domain URN with name
+                # Update domain URN with URN prefix and island name
+                # (warning: problem when changing the following var)
                 self.domain_urn = domain_name
                 db_peers = {}
                 for peer in peers:
@@ -128,9 +129,10 @@ class PhysicalMonitoring(BaseMonitoring):
         Creates new RSpec from scratch.
         """
         # Milliseconds in UTC format
-        self.topology.set("last_update_time", self.domain_last_update)
+        self.topology.set("last_update_time", self.domain_last_update or self._get_timestamp())
         self.topology.set("type", "physical")
-        self.topology.set("name", self.domain_urn)
+        # Use custom URN format for the domain URN in the XML
+        self.topology.set("name", "urn:publicid:IDN+ocf:" + self.domain_urn)
 
     def __check_node_in_topology(self, node_name):
         """

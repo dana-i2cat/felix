@@ -3,9 +3,9 @@ from core.config import ConfParser
 from core.organisations import AllowedOrganisations
 from extensions.sfa.util.xrn import urn_to_hrn
 from lxml import etree
+from utils_links import MonitoringUtilsLinks
 
 import ast
-import copy
 import core
 import re
 import requests
@@ -73,7 +73,7 @@ class BaseMonitoring(object):
         self.config_serm = core.config.JSONParser("serm.json")
         self.serm_mgmt_info = self.config_serm.get("device_management_info")
 
-    def __get_timestamp(self):
+    def _get_timestamp(self):
         # Return integer part as a string
         return str(int(time.time()))
     
@@ -92,7 +92,7 @@ class BaseMonitoring(object):
             # Stores last_update_time for the physical topology
             # on a given domain
             try:
-                last_update_time = self.__get_timestamp()
+                last_update_time = self._get_timestamp()
                 db_sync_manager.store_physical_info(peer_domain_urn,
                                                     last_update_time)
             except Exception as e:
@@ -114,7 +114,7 @@ class BaseMonitoring(object):
                 for authority in self.peers_by_domain:
                     if peer_domain_urn not in self.peers_by_domain.get(authority):
                         self.peers_by_domain[authority].append(peer_domain_urn)
-            # XXX: END TEMPORARY CODE FOR (M)MS
+        # XXX: END TEMPORARY CODE FOR (M)MS
 
     def _send(self, xml_data, peer=None):
         try:
@@ -259,61 +259,6 @@ class BaseMonitoring(object):
                     logger.warning("Physical topology - Cannot add management section. Details: %s" % e)
         return n
 
-    def _translate_link_types(self):
-#        topology_tree = etree.fromstring(self.get_topology())
-#        filtered_links = topology_tree.xpath("//link")
-        filtered_links = self.topology_tree.findall(".//link")
-        for filtered_link in filtered_links:
-            if filtered_link.get("link_type"):
-                filtered_link.set("link_type", self._translate_link_type(filtered_link))
-            elif filtered_link.get("type"):
-                filtered_link.set("type", self._translate_link_type(filtered_link))
-#        self.set_topology_tree(topology_tree)
-
-    def _translate_link_type(self, link):
-        # TODO - IMPORTANT FOR MS TO PARSE PROPERLY:
-        #   Add others as needed in the future!
-        default_type = "lan"
-        
-        ms_link_type_lan = "lan"
-#        ms_link_type_static_link = "static_link"
-#        ms_link_type_vlan_trans = "vlan_translation"
-        link_type_translation = {
-            "l2" : ms_link_type_lan,
-            "l2 link": ms_link_type_lan,
-            #"urn:felix+static_link": ms_link_type_static_link,
-            "urn:felix+static_link": ms_link_type_lan,
-#            "urn:felix+vlan_trans": ms_link_type_vlan_trans,
-            "urn:felix+vlan_trans": ms_link_type_lan,
-        }
-        # Tries to get some attributes
-        link_type = link.get("link_type", "")
-        if not link_type:
-            link_type = link.get("type", "")
-        # Otherwise it uses a default value
-        if not link_type:
-            link_type = default_type
-        else:
-            link_type = link_type_translation.get(link_type.lower(), default_type)
-        return link_type
-
-    def _set_dpid_port_from_link(self, component_id, link):
-        mod_link = copy.deepcopy(link)
-        # Keep component_id for further processing and then
-        # retrieve the 2nd part of the link URN (with the resources)
-        # E.g. "eth1-00:10:00:00:00:00:00:01_1"
-        # And extract the DPID's port from there
-        urn_split = component_id.split("+link+")[1]
-        if "datapath" in mod_link.get("source_id"):
-            dpid_port = urn_split.split("-")[0].split("_")[1]
-            new_id = "%s_%s" % (mod_link.get("source_id"), dpid_port)
-            mod_link["source_id"] = new_id
-        elif "datapath" in mod_link.get("dest_id"):
-            dpid_port = urn_split.split("-")[1].split("_")[1]
-            new_id = "%s_%s" % (mod_link.get("dest_id"), dpid_port)
-            mod_link["dest_id"] = new_id
-        return mod_link
-
 
     #################
     # C-RM resources
@@ -341,17 +286,21 @@ class BaseMonitoring(object):
         logger.debug("com-links=%s" % (link,))
         l = etree.SubElement(self.topology, "link")
         # NOTE that this cannot be empty
-        l.set("type", self._translate_link_type(link))
+        l.set("type", MonitoringUtilsLinks._translate_link_type(link))
+        link_id = ""
         links = link.get("links")
         for link_i in links:
             # Modify link on-the-fly to add the DPID port as needed
-            link_i = self._set_dpid_port_from_link(link.get("component_id"), link_i)
+            link_i = MonitoringUtilsLinks._set_dpid_port_from_link(link.get("component_id"), link_i)
             # Source
             iface_source = etree.SubElement(l, "interface_ref")
             iface_source.set("client_id", link_i.get("source_id"))
             # Destination
             iface_dest = etree.SubElement(l, "interface_ref")
             iface_dest.set("client_id", link_i.get("dest_id"))
+            # - Prepare link ID for CRM-SDNRM link
+            link_id = MonitoringUtilsLinks.get_id_for_link_crm_sdnrm(link_i)
+        l.set("id", link_id)
 
 
     ###################
@@ -380,7 +329,8 @@ class BaseMonitoring(object):
     def _add_sdn_link(self, link):
         l = etree.SubElement(self.topology, "link")
         # NOTE that this cannot be empty
-        l.set("type", self._translate_link_type(link))
+        l.set("type", MonitoringUtilsLinks._translate_link_type(link))
+        link_id = ""
         ports = link.get("ports")
         dpids = link.get("dpids")
         try:
@@ -390,7 +340,14 @@ class BaseMonitoring(object):
                 port = dpid_port[1]["port_num"]
                 iface.set("client_id", "%s_%s" % (dpid, port))
         except Exception as e:
-            logger.warning("Physical topology - Cannot add SE interface %s. Details: %s" % (link.get("component_id", "(unknown)"), e))
+            logger.warning("Physical topology - Cannot add SDN interface %s. Details: %s" % (link.get("component_id", "(unknown)"), e))
+        try:
+            # - Prepare link ID for SDNRM-SDNRM link
+            link_id = MonitoringUtilsLinks.get_id_for_link_sdnrm_sdnrm(zip(dpids, ports))
+            l.set("id", link_id)
+        except Exception as e:
+            logger.warning("Physical topology - Cannot add SDN link ID %s. Details: %s" % (link.get("component_id", "(unknown)"), e))
+
 
 
     ##################
@@ -455,10 +412,14 @@ class BaseMonitoring(object):
         if not interface_cid_in_filter:
             l = etree.SubElement(self.topology, "link")
             # NOTE that this cannot be empty
-            l.set("type", self._translate_link_type(link))
+            l.set("type", MonitoringUtilsLinks._translate_link_type(link))
+            link_id = ""
             links = link.get("interface_ref")
             for link in links:
                 # SE link
                 iface = etree.SubElement(l, "interface_ref")
                 iface.set("client_id", link.get("component_id"))
+            # - Prepare link ID for SERM-SDNRM link
+            link_id = MonitoringUtilsLinks.get_id_for_link_serm_sdnrm(links)
+            l.set("id", link_id)
 
