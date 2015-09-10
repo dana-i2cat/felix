@@ -147,6 +147,10 @@ class DBManager(object):
         table = self.__get_table("domain.info")
         return self.__get_all(table, filter_params)
 
+    def get_domains_info(self, filter_params):
+        table = self.__get_table("domain.info")
+        return self.__get_all(table, filter_params)
+
     def get_domain_info(self, filter_params):
         table = self.__get_table("domain.info")
         return self.__get_one(table, filter_params)

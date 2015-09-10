@@ -33,7 +33,7 @@ class PhysicalMonitoring(BaseMonitoring):
         type_resources.extend(type_resources_sdnrm)
         type_resources.extend(type_resources_serm)
         type_resources.extend(type_resources_tnrm)
-        
+
         # If the URN belongs to one of those
         # peers/domains, add the information
         type_resource_peer = None
@@ -67,35 +67,45 @@ class PhysicalMonitoring(BaseMonitoring):
                     db_peer = db_sync_manager.get_configured_peer_by_urn(peer)
                     # Looks for referred domain through peer ID; retrieve URN and last update
                     filter_params = {"_ref_peer": db_peer.get("_id"),}
-                    domain_peer = db_sync_manager.get_domain_info(filter_params)
-                    try:
-                        domain_peer_urn = domain_peer.get("domain_urn")
-                        physical_topology = db_sync_manager.get_physical_info_from_domain(domain_peer.get("_id"))
-                        domain_last_update = physical_topology.get("last_update")
-                        db_peers[peer] = {
-                            "db_peer": db_peer,
-                            "domain_urn": domain_peer_urn,
-                            "domain_last_update": domain_last_update,
-                            }
-                        self.domain_peer_urn = domain_peer_urn
-                        # Choose less recent time of last update
-                        if not self.domain_last_update:
-                            if domain_last_update < self.domain_last_update:
-                                self.domain_last_update = domain_last_update
-                    except Exception as e:
-                        logger.warning("Physical topology - Cannot recover information for peer='%s'. Skipping to the next peer. Details: %s" % (peer, e))
-                        logger.warning(traceback.format_exc())
-                
+                    # For a MRO environment, we can have multiple domains in the same island
+                    db_peers[peer] = {
+                        "db_peer": db_peer,
+                        "domain_urns": set(),
+                        "domain_last_update": None
+                    }
+                    for domain_peer in db_sync_manager.get_domains_info(filter_params):
+                        try:
+                            domain_peer_urn = domain_peer.get("domain_urn")
+                            physical_topology = db_sync_manager.get_physical_info_from_domain(domain_peer.get("_id"))
+                            domain_last_update = physical_topology.get("last_update")
+                            db_peers[peer]["domain_urns"].add(domain_peer_urn)
+                            db_peers[peer]["domain_last_update"] = domain_last_update
+
+                            self.domain_peer_urn = domain_peer_urn
+                            # Choose less recent time of last update
+                            if not self.domain_last_update:
+                                if domain_last_update < self.domain_last_update:
+                                    self.domain_last_update = domain_last_update
+                        except Exception as e:
+                            logger.warning("Physical topology - Cannot recover information for peer='%s'. Skipping to the next peer. Details: %s" % (peer, e))
+                            logger.warning(traceback.format_exc())
+
                 # Add general information to the topology
                 self.__add_general_info()
-                                
-                for db_peer in db_peers:
+
+                # For a MRO environment, we need to send single copy of the same information
+                domain_urn_set = set()
+                for v in db_peers.values():
+                    domain_urn_set.update(v.get("domain_urns"))
+
+                logger.info("domain_urn_set: %s" % (domain_urn_set,))
+                for durn in domain_urn_set:
                     # Retrieve proper resources
-                    self.retrieve_topology_by_peer(db_peers.get(db_peer).get("domain_urn"))
+                    self.retrieve_topology_by_peer(durn)
             except Exception as e:
                 logger.warning("Physical topology - Cannot recover information for domain='%s'. Skipping to the next domain. Details: %s" % (domain_name, e))
                 logger.warning(traceback.format_exc())
-                
+
             # XXX: BEGIN TEMPORARY CODE FOR (M)MS
             # TODO: REMOVE THIS IN DUE TIME
             # Added so that (M)MS receives at least one TNRM per island (at RO level)
@@ -106,13 +116,13 @@ class PhysicalMonitoring(BaseMonitoring):
                 interface = etree.SubElement(n, "interface")
                 interface.set("id", "dummy_tn_iface_for_ms")
                 # XXX: END TEMPORARY CODE FOR (M)MS
-            
+
             # Verify structure of the "topology" tag before constructing final XML to be sent to MS
             ## Note: on SUCCESS return, it returns a boolean. On FAILURE return, it returns (boolean, string)
             check_topology = self.__check_topology_is_correct()
             if check_topology == True:
                 self.topology_list.append(self.topology)
-            else:                    
+            else:
                 logger.warning("Physical topology - Topology for domain=%s does not contain the minimum SW modules required by MS: missing '%s' node." % (domain_name, check_topology[1]))
 
         # Send topology after all peers are completed
@@ -141,7 +151,7 @@ class PhysicalMonitoring(BaseMonitoring):
         if not self.topology.findall(".//node[@type='%s']" % node_name):
             return False
         return True
-    
+
     def __check_topology_is_correct(self):
         """
         Checks that the "<topology>" subtree contains all
