@@ -48,20 +48,26 @@ class MonitoringUtilsLinks(object):
         return link_id
 
     @staticmethod
-    def get_id_for_link_serm_sdnrm(links):
+    def get_id_for_link_serm_sdnrm_tnrm(links):
+        link = ""
         link_id = ""
         # - Prepare link ID with the interfaces info
         link_id_post = ""
         for link_struct in links:
+            link = link_struct.get("component_id")
             if not link_id:
                 link_id = link_struct.get("component_id")
-                if link_struct.get("component_id").find("datapath") > -1:
+                if link_id.find(":ofam+datapath+") > -1:
                     link_id = link_id.replace(":ofam+datapath+", "+link+")
-                else:
+                elif link_id.find(":serm+datapath+") > -1:
                     link_id = link_id.replace(":serm+datapath+", "+link+")
+                # - Contents from TN URNs are not replaced
             else:
-                # -- Adjust the URN (ID) to the expected format
-                link_id = "%s_%s" % (link_id, link_id[link_id.find("datapath+") + len("datapath") + 1:])
+                # - URN of TNRM STP is reduced to the NSI URN
+                if link.find(":tnrm+stp+") > -1:
+                    link = link[link.find(":tnrm+stp+") + len(":tnrm+stp+"):]
+                # - Adjust the URN (ID) to the expected format
+                link_id = "%s_%s" % (link_id, link[link.find("datapath+") + len("datapath+"):])
         return link_id
 
     @staticmethod

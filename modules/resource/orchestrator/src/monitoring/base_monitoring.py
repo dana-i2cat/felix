@@ -423,6 +423,6 @@ class BaseMonitoring(object):
                 iface = etree.SubElement(l, "interface_ref")
                 iface.set("client_id", link.get("component_id"))
             # - Prepare link ID for SERM-SDNRM link
-            link_id = MonitoringUtilsLinks.get_id_for_link_serm_sdnrm(links)
+            link_id = MonitoringUtilsLinks.get_id_for_link_serm_sdnrm_tnrm(links)
             l.set("id", link_id)
 
