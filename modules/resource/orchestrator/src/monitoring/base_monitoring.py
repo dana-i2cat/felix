@@ -26,7 +26,7 @@ class BaseMonitoring(object):
         self.domain_urn = ""
         self.domain_last_update = ""
         self.topology_list = etree.Element("topology_list")
-        self.topology = etree.Element("topology")
+        self.topology = etree.SubElement(self.topology_list, "topology")
         ## Operation mode
         self.config = ConfParser("ro.conf")
         master_ro = self.config.get("master_ro")
@@ -76,7 +76,7 @@ class BaseMonitoring(object):
     def _get_timestamp(self):
         # Return integer part as a string
         return str(int(time.time()))
-    
+
     def __group_peers_by_domain(self):
         for peer in self.peers_info:
             filter_params = {"_id": peer.get("_id"),}
@@ -88,7 +88,7 @@ class BaseMonitoring(object):
                 self.peers_by_domain[authority] = []
             # Extend list of peers with new one
             self.peers_by_domain[authority].append(peer_domain_urn)
-            
+
             # Stores last_update_time for the physical topology
             # on a given domain
             try:
@@ -98,7 +98,7 @@ class BaseMonitoring(object):
             except Exception as e:
                 logger.error("Error storing last_update_time for phy-topology.")
                 logger.error("Exception: %s" % e)
-            
+
         # XXX: BEGIN TEMPORARY CODE FOR (M)MS
         # TODO: REMOVE THIS IN DUE TIME
         # Added so that (M)MS receives at least one TNRM per island
@@ -152,7 +152,7 @@ class BaseMonitoring(object):
             self.topology_list = topology_list_tree
         except:
             pass
-            
+
     def get_topology_tree(self):
         # Return whole list of topologies
         return self.topology_list
@@ -165,12 +165,15 @@ class BaseMonitoring(object):
         # XML not in proper format: need to convert to lxml, then pretty-print
         return etree.tostring(etree.fromstring(self.get_topology()), pretty_print=True)
 
+    def flush_topology(self):
+        # Create a new sub-element of the list of topologies
+        self.topology = etree.SubElement(self.topology_list, "topology")
 
     ##########
     # Helpers
     ##########
 
-    def _get_authority_from_urn(self, urn):              
+    def _get_authority_from_urn(self, urn):
         authority = ""
         hrn, hrn_type = urn_to_hrn(urn)
         # Remove leaf (the component_manager part)
@@ -181,14 +184,14 @@ class BaseMonitoring(object):
                 authority = hrn_element
                 break
         return authority
-    
+
     def _update_topology_name(self):
         filter_string = "[@last_update_time='%s']" % str(self.domain_last_update)
         filtered_nodes = self.get_topology_tree().xpath("//topology%s" % filter_string)
         # There should only be one
         filtered_nodes[0].set("name", str(self.domain_urn))
         self.get_topology_tree().xpath("//topology%s" % filter_string)[0].set("name", str(self.domain_urn))
-    
+
     def _remove_empty_topologies(self, filter_name=None, filter_update_time=None):
         filter_string = ""
         if filter_name:
@@ -201,7 +204,7 @@ class BaseMonitoring(object):
             # Remove any node whose length is 0 (=> no content inside)
             if list(filtered_node) == 0:
                 filtered_node.get_parent().remove(filtered_node)
-        
+
     def _get_management_data_devices(self, parent_node):
         configuration_data = {}
         if self.urn_type_resources.get("crm") in parent_node.get("id"):
@@ -228,10 +231,10 @@ class BaseMonitoring(object):
         try:
             configuration_data = self._get_management_data_devices(parent_node)
             if configuration_data is not None:
-                # Possible mismatch between URN of *RM that is configured in the *rm.json config file 
+                # Possible mismatch between URN of *RM that is configured in the *rm.json config file
                 # and the URN directly received from the RM. Issue a comprehensive warning here
                 if not parent_node.get("id") in configuration_data.keys():
-                    raise Exception("Mismatch between configuration device URN and received URN for URN='%s'. Please check the settings of your RMs under RO's configuration folder" 
+                    raise Exception("Mismatch between configuration device URN and received URN for URN='%s'. Please check the settings of your RMs under RO's configuration folder"
                                         % parent_node.get("id"))
                 address.text = configuration_data.get(parent_node.get("id")).get("ip")
                 port.text = configuration_data.get(parent_node.get("id")).get("port")

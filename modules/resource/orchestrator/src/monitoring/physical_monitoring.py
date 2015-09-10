@@ -121,7 +121,7 @@ class PhysicalMonitoring(BaseMonitoring):
             ## Note: on SUCCESS return, it returns a boolean. On FAILURE return, it returns (boolean, string)
             check_topology = self.__check_topology_is_correct()
             if check_topology == True:
-                self.topology_list.append(self.topology)
+                self.flush_topology()
             else:
                 logger.warning("Physical topology - Topology for domain=%s does not contain the minimum SW modules required by MS: missing '%s' node." % (domain_name, check_topology[1]))
 
