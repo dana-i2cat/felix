@@ -42,14 +42,14 @@ INSTALLING KVM-CRM
 
 ## 2.1 Clone the KVM-CRM repository:
 
-    mkdir -p /opt/felix/ocf
-    git clone https://github.com/dana-i2cat/felix.git /opt/felix/ocf
-    cd /opt/felix/ocf
+    mkdir -p /opt/felix/kvm-crm
+    git clone https://github.com/dana-i2cat/felix.git /opt/felix/kvm-crm
+    cd /opt/felix/kvm-crm
     git checkout kvm-crm
 
 ## 2.2 For KVM-VT: choose the components to install as a root user. 
 
-    cd /opt/felix/ocf/deploy
+    cd /opt/felix/kvm-crm/deploy
     python install.py
 
     The following actions will take place: 
@@ -128,16 +128,16 @@ in configuration file (see section 2.3.5)
 #### 2.3.4.2 Generate disk image template
 
 Change directory to
-`/opt/felix/ocf/vt_manager/src/python/agent/utils/generate_template` 
+`/opt/felix/kvm-crm/vt_manager/src/python/agent/utils/generate_template` 
 and run `generate_template` script as root. When finished,
 a template file `l1vm.qcow2` is generated in `/mnt/l1vm/template` directory.
 
-    cd /opt/felix/ocf/vt_manager/src/python/agent/utils/generate_template
+    cd /opt/felix/kvm-crm/vt_manager/src/python/agent/utils/generate_template
     ./generate_template
     
 ### 2.3.5 Create KVM-OXAD configuration files
 
-    cd /opt/felix/ocf/vt_manager/src/python/agent/
+    cd /opt/felix/kvm-crm/vt_manager/src/python/agent/
     vi mySettings.py
 
 - mySettings.py
@@ -313,9 +313,9 @@ a template file `l1vm.qcow2` is generated in `/mnt/l1vm/template` directory.
 - Allocate the IP address ranges to KVM-OXAD node
 
         INSERT INTO vt_manager_vtserver_subscribedIp4Ranges VALUES (\
-        1, /* id: ID of the allocation, must be unique */ 
-	1, /* vtserver_id: ID of the KVM-OXAD, must be same as vt_manager_vtserver.id*/ 
-	1  /* ip4range_id: ID of IP address range to allocate, must be same as vt_manager_ip4range.id*/ );
+            1, /* id: ID of the allocation, must be unique */ 
+            1, /* vtserver_id: ID of the KVM-OXAD, must be same as vt_manager_vtserver.id*/ 
+            1  /* ip4range_id: ID of IP address range to allocate, must be same as vt_manager_ip4range.id*/ );
 
 
 # 3. Additional notes
