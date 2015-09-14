@@ -60,14 +60,18 @@ class MonitoringUtilsLinks(object):
                 if link_id.find(":ofam+datapath+") > -1:
                     link_id = link_id.replace(":ofam+datapath+", "+link+")
                 elif link_id.find(":serm+datapath+") > -1:
-                    link_id = link_id.replace(":serm+datapath+", "+link+")
-                # - Contents from TN URNs are not replaced
+                    # Replace link in all but SE-TN links (where TN = "ogf")
+                    if not any([ "ogf" in x for x in links ]):
+                        link_id = link_id.replace(":serm+datapath+", "+link+")
+            # - Contents from TN URNs are not replaced
             else:
                 # - URN of TNRM STP is reduced to the NSI URN
                 if link.find(":tnrm+stp+") > -1:
                     link = link[link.find(":tnrm+stp+") + len(":tnrm+stp+"):]
-                # - Adjust the URN (ID) to the expected format
-                link_id = "%s_%s" % (link_id, link[link.find("datapath+") + len("datapath+"):])
+            if link.find("datapath+") > -1:
+                link = link[link.find("datapath+") + len("datapath+"):]
+        # - Adjust the URN (ID) to the expected format
+        link_id = "%s_%s" % (link_id, link)
         return link_id
 
     @staticmethod
