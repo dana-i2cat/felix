@@ -16,6 +16,9 @@ import sys
 from datetime import datetime, timedelta
 import time
 import types
+import log
+logger = log.getLogger('tnrm:nsi2interface')
+logger.info("start nsi2interface from TNRM to NSI.")
 
 sys.path.append('/usr/share/java/')
 #sys.path.append('../../common/build/jar/nsi2_common.jar')
@@ -98,10 +101,19 @@ from java.lang import String
 from java.util import ArrayList
 import jarray
 
+from reservation import Reservation
+
 pNSA = 'urn:ogf:network:aist.go.jp:2013:nsa'
-#pURI = 'https://127.0.0.1:22311/aist_upa/services/ConnectionProvider'
+#pURI = 'https://163.220.30.173:22311/aist_upa/services/ConnectionProvider'
 #pURI='http://127.0.0.1:28080/provider/services/ConnectionProvider'
-pURI='https://163.220.30.145:28443/provider/services/ConnectionProvider'
+#
+# dummy NRM
+# pURI='https://163.220.30.147:28443/provider/services/ConnectionProvider'
+# dummy AG
+# pURI='https://163.220.30.174:28443/provider/services/ConnectionProvider'
+# real AG
+pURI='https://163.220.30.174:28443/nsi2/services/ConnectionProvider'
+# rNSA = 'urn:ogf:network:aist.go.jp:2013:nsa:felix'
 rNSA = 'urn:ogf:network:aist.go.jp:2013:nsa'
 rURI = 'https://163.220.30.145:29081/nsi2_requester/services/ConnectionRequester'
 #rURI = 'https://127.0.0.1:29081/nsi2_requester/services/ConnectionRequester'
@@ -111,30 +123,27 @@ password = ''
 class NSI:
       def __init__(self):
             self.nsi = NSI2Interface(pNSA, pURI, rNSA, rURI, user, password)
+            self.index = 1
 
-      def reserve_sec(self, src, dst, srcvlan, dstvlan, capacity, eros, start_sec, end_sec):
-            rid = self.nsi.reserveCommit(src, dst, srcvlan, dstvlan, capacity, start_sec, end_sec, eros)
+      def reserve_sec(self, gid, src, dst, srcvlan, dstvlan, capacity, eros, start_sec, end_sec):
+            rid = self.nsi.reserveCommit(gid, src, dst, srcvlan, dstvlan, capacity, start_sec, end_sec, eros)
             return rid
 
-      def reserve(self, resv):
-            print "Enter reserve."
-            ep_start = int(resv.start_time)
-            ep_end = int(resv.end_time)
-            print "start=%s" % (ep_start)
-            print "end=%s" % (ep_end)
-            print "ero=%s" % (resv.eroEP)
+      def reserve(self, gid, sstp, dstp, svlantag, dvlantag, bw, 
+                  ep_start, ep_end, eroEP):
 
-            rid = self.nsi.reserveCommit(resv.sSTP, resv.dSTP, int(resv.sEP.vlantag), int(resv.dEP.vlantag), int(resv.capacity), ep_start, ep_end, resv.eroEP)
+            rid = self.nsi.reserveCommit(gid, sstp, dstp, svlantag, dvlantag,                                          bw, ep_start, ep_end, eroEP)
+            self.index = self.index + 1
+            logger.info("rid=%s" % (rid))
             return rid
 
-      def modify_sec(self, rid, end_sec):
-            self.nsi.modifyCommit(rid, end_sec)
+      def modify_sec(self, gid, rid, end_sec):
+            self.nsi.modifyCommit(gid, rid, end_sec)
 
-      def modify(self, rid, resv):
-            ep_end = int(resv.end_time)
-            print "end=%s" % (ep_end)
-
-            self.nsi.modifyCommit(rid, ep_end)
+      def modify(self, gid, rid, ep_end):
+            mid = self.nsi.modifyCommit(gid, rid, ep_end)
+            logger.info("mid=%s" % (mid))
+            return mid
 
       def commit(self, rid):
             self.nsi.commit(rid)
@@ -150,6 +159,7 @@ class NSI:
 
       def release(self, rid):
             self.nsi.release(rid)
+            
 
 if __name__ == "__main__":
       s_stp = "urn:ogf:network:aist.go.jp:2013:bi-ps"
@@ -158,6 +168,7 @@ if __name__ == "__main__":
       d_vlan = s_vlan
       capacity = 100
       eros = ["urn:ogf:network:xxx:2013:stp1", "urn:ogf:network:yyy:2013:stp2"]
+      gid = "TEST-GLOBAL-ID"
       nsi = NSI()
 
       epoch = datetime.utcfromtimestamp(0)
@@ -168,11 +179,11 @@ if __name__ == "__main__":
       end_sec = start_sec + 3600
 
       time.sleep(10)
-      reservationId = nsi.reserve_sec(s_stp, d_stp, s_vlan, d_vlan, capacity, eros, start_sec, end_sec)
+      reservationId = nsi.reserve_sec(gid, s_stp, d_stp, s_vlan, d_vlan, capacity, eros, start_sec, end_sec)
       print reservationId
 
       time.sleep(10)
-      nsi.modify_sec(reservationId, end_sec)
+      nsi.modify_sec(gid, reservationId, end_sec)
 
 
       time.sleep(10)

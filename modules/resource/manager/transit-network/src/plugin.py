@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#import amsoil.core.pluginmanager as pm
+import amsoil.core.pluginmanager as pm
 from tn_rm_delegate import TNRMGENI3Delegate
 
 def setup():
@@ -21,6 +21,7 @@ def setup():
 
     xmlrpc = pm.getService('xmlrpc')
     handler = pm.getService('geniv3handler')
+    xmlrpc.registerXMLRPC('tn_rm_geni_v3', handler, '/xmlrpc/geni/3/')
     delegate = TNRMGENI3Delegate()
     handler.setDelegate(delegate)
-    xmlrpc.registerXMLRPC('tn_rm_geni_v3', handler, '/geni/3')
+

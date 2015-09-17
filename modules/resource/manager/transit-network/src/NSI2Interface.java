@@ -48,6 +48,7 @@ import nsi2.SampleEventListener;
 
 import javax.xml.bind.JAXBElement;
 
+import org.ogf.schemas.nsi._2013._12.framework.types.ServiceExceptionType;
 import org.ogf.schemas.nsi._2013._12.connection._interface.ServiceException;
 import org.ogf.schemas.nsi._2013._12.connection.types.QueryNotificationConfirmedType;
 import org.ogf.schemas.nsi._2013._12.connection.types.QueryNotificationType;
@@ -85,7 +86,8 @@ public class NSI2Interface {
     String requesterURI = null;
     String httpUser = null;
     String httpPassword = null;
-    long replyWait = 60 * 1000L; // 60 sec
+    // long replyWait = 60 * 1000L; // 60 sec
+    long replyWait = 300 * 1000L; // 60 sec
 
     EventListener listener = null;
     NSI2Client client = null;
@@ -158,12 +160,12 @@ public class NSI2Interface {
     }
 
     public String reserveCommit
-	(String sSTP, String dSTP, int sVlan, int dVlan, long capacity,
+	(String gid, String sSTP, String dSTP, int sVlan, int dVlan, long capacity,
 	 int start, int end, String[] eros)
 	throws Exception 
     {
 	ReservationRequestCriteriaType criteria = makeReservationCriteria
-	    (sSTP, dSTP, sVlan, dVlan, capacity, start, end);
+	    (gid, sSTP, dSTP, sVlan, dVlan, capacity, start, end);
 
 	P2PServiceBaseType p2p = getP2PServiceBaseType(criteria.getAny());
 	if (p2p != null) {
@@ -189,20 +191,26 @@ public class NSI2Interface {
 	    }
 	}
 
-	String reservationId = reserve(criteria);
-	commit(reservationId);
+	try {
+	    String reservationId = reserve(gid, criteria);
+	    if (debug) System.out.println("******************* reservationId:" + reservationId);
+	    commit(reservationId);
 
-	criterias.put(reservationId, criteria);
-	capacities.put(reservationId, new Long(capacity));
-	return reservationId;
+	    criterias.put(reservationId, criteria);
+	    capacities.put(reservationId, new Long(capacity));
+	    return reservationId;
+	} catch (Exception e) {
+	    if (debug) System.out.println("******************* ex:" + e);
+	    throw e;
+	}
     }
 
     public ReservationRequestCriteriaType makeReservationCriteria
-	(String sSTP, String dSTP, int sVlan, int dVlan, long capacity,
+	(String gid, String sSTP, String dSTP, int sVlan, int dVlan, long capacity,
 	 int startTime, int endTime, String[] ero)
     {
 	ReservationRequestCriteriaType criteria = makeReservationCriteria
-	    (sSTP, dSTP, sVlan, dVlan, capacity, startTime, endTime);
+	    (gid, sSTP, dSTP, sVlan, dVlan, capacity, startTime, endTime);
 
 	if (ero == null || ero.length == 0) return criteria;
 
@@ -235,7 +243,7 @@ public class NSI2Interface {
     }
 
     public ReservationRequestCriteriaType makeReservationCriteria
-	(String sSTP, String dSTP, int sVlan, int dVlan, long capacity,
+	(String gid, String sSTP, String dSTP, int sVlan, int dVlan, long capacity,
 	 int startTime, int endTime)
     {
         String srcstp = sSTP;
@@ -265,16 +273,23 @@ public class NSI2Interface {
 	return criteria;
     }
 
-    public String reserve(ReservationRequestCriteriaType criteria) 
+    public String reserve(String gid, ReservationRequestCriteriaType criteria) 
 	throws Exception 
     {
 	String reservationId = null;
-        String globalReservationId = DEFAULT_GLOBAL_RESERVATION_ID;
+        // String globalReservationId = DEFAULT_GLOBAL_RESERVATION_ID;
+        String globalReservationId = gid;
         String description = DEFAULT_DESCRIPTION;
         if (debug) showMessage(criteria, NSITextDump.toString(criteria));
 
-        ReserveReply reply = client.reserve
-	    (reservationId, globalReservationId, description, criteria);
+	ReserveReply reply = null;
+	try {
+	    reply = client.reserve
+		(reservationId, globalReservationId, description, criteria);
+	} catch (Exception e) {
+	    if (debug) System.out.println("******************* ex:" + e);
+	    throw e;
+	}
 
         if (reply.getConfirm() != null) {
             ReservationConfirmCriteriaType conf = reply.getConfirm();
@@ -289,7 +304,15 @@ public class NSI2Interface {
             if (debug) showMessage
 			   (reply.getConnectionStates(),
 			    NSITextDump.toString(reply.getConnectionStates()));
-        }
+
+	    ServiceExceptionType t = reply.getServiceException();
+	    List<ServiceExceptionType> l = t.getChildException();
+	    String s = "ServiceException: \n";
+	    for (ServiceExceptionType i: l) {
+		s += "    :" + i.getText() + "\n";
+	    }
+	    throw new Exception (s);
+	}
         return reply.getConnectionId();
     }
 
@@ -315,10 +338,11 @@ public class NSI2Interface {
         client.reserveAbort(reservationId);
     }
 
-    public void modify (String reservationId, int end_time_sec)
+    public String modify (String gid, String reservationId, int end_time_sec)
 	throws Exception 
     {
-        String globalReservationId = DEFAULT_GLOBAL_RESERVATION_ID;
+        // String globalReservationId = DEFAULT_GLOBAL_RESERVATION_ID;
+        String globalReservationId = gid;
         String description = DEFAULT_DESCRIPTION;
 
         ReservationRequestCriteriaType old = 
@@ -363,13 +387,15 @@ public class NSI2Interface {
 			   (reply.getConnectionStates(),
 			    NSITextDump.toString(reply.getConnectionStates()));
         }
+
+	return reservationId;
     }
 
 
-    public void modifyCommit (String reservationId, int end_time_sec)
+    public void modifyCommit (String gid, String reservationId, int end_time_sec)
 	throws Exception 
     {
-	modify(reservationId, end_time_sec);
+	modify(gid, reservationId, end_time_sec);
         commit(reservationId);
     }
 
@@ -494,15 +520,17 @@ public class NSI2Interface {
 	    String[] eros = new String[2];
 	    eros[0] = "rn:ogf:network:xxx:2013:ero";
 	    eros[1] = "rn:ogf:network:yyy:2013:ero";
+	    String gid = "global-id";
 	    
 	    String id = nsi.reserveCommit
-		("urn:ogf:network:aist.go.jp:2013:bi-ps",
+		(gid, 
+		 "urn:ogf:network:aist.go.jp:2013:bi-ps",
 		 "urn:ogf:network:aist.go.jp:2013:bi-aist-jgn-x",
 		 1783, 1783, 400, 0, 0, eros);
 	    nsi.provision(id);
 
 	    Thread.sleep(10 * 1000);
-	    nsi.modifyCommit(id, 0);
+	    nsi.modifyCommit(gid, id, 0);
 
 	    Thread.sleep(10 * 1000);
 	    nsi.release(id);
