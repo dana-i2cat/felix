@@ -28,8 +28,8 @@ TN-RM code is available from the git repository:
       $ cd felix_tnrm
       $ git checkout trangit-network
       $ cd ..
-      $ cp -Rp felix_tnrm/modules/resource/manager/transit-network/src eiSoil/src/vendor/tnrm
-      $ export TNRM_HOME=`pwd`
+      $ cp -Rp felix_tnrm/modules/resource/manager/transit-network/src $EISOIL/src/vendor/tnrm
+      $ export TNRM_HOME=$EISOIL
 
 TN-RM need Jython, Apache CXF 2.7.10 and NSIv2 impllementation by AIST.
 Jython, CXF are installed from the respective website:
@@ -81,9 +81,9 @@ The format is as follows:
 
     type:		"ovsgre" just only
     sedev:		device name connect to stiting entity
-    address:		local ip address connect to other gre host
+    address:		local ip address connect from other gre host
     dpid:		dpid of open vSwitch 
-    ovsdb:		ip address of database server in local ovs
+    ovsdb:		ip address of database server for local ovs
     ryu:		ip address of ryu rest service
 
 2.3 nsi2interface.py for NSIv2 parameters
@@ -94,9 +94,9 @@ nsi2interface.py and the following change must be made in order to
 make the connection.
 
       pNSA = 'urn:ogf:network:aist.go.jp:2013:nsa'
-      pURI='https://163.220.30.174:28443/nsi2/services/ConnectionProvider'
+      pURI = 'https://172.22.30.174:28443/nsi2/services/ConnectionProvider'
       rNSA = 'urn:ogf:network:aist.go.jp:2013:nsa'
-      rURI = 'https://163.220.30.145:29081/nsi2_requester/services/ConnectionRequester'
+      rURI = 'https://172.22.30.145:29081/nsi2_requester/services/ConnectionRequester'
       user = ''
       password = ''
 
