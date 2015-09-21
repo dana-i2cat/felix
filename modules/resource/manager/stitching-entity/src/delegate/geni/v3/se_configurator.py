@@ -197,7 +197,7 @@ class seConfigurator:
                             if configured_interfaces[interface][str(vlan)] == True or geni_available is False:
                                 new_static_link =  {
                                     'component_id':component_id_prefix + '+link+' + self.dpid + "_" + interface + "_" + endpoint["name"].rsplit("+", 1)[1],
-                                    'component_manager_name':None,
+                                    'component_manager_name': component_id_prefix + "+authority+cm",
                                     'interface_ref':[
                                         {
                                             'component_id': component_id_prefix + '+datapath+' + self.dpid + "_" + interface
@@ -222,7 +222,7 @@ class seConfigurator:
                                     if configured_interfaces[interface][str(v)] == True or geni_available is False:
                                         new_static_link =  {
                                             'component_id':component_id_prefix + '+link+' + self.dpid + "_" + interface + "_" + endpoint["name"].rsplit("+", 1)[1],
-                                            'component_manager_name':None,
+                                            'component_manager_name': component_id_prefix + "+authority+cm",
                                             'interface_ref':[
                                                 {
                                                     'component_id': component_id_prefix + '+datapath+' + self.dpid + "_" + interface
