@@ -311,6 +311,66 @@ blockquote cite {
 	display: none;
 	}
 
+.login {
+  width: 70%;
+}
+
+.rounded-button {
+  border-color: #082375; /*#BF0F38;*/
+  border-style: solid;
+  border-width: 2px;
+  border-radius: .7em;
+  margin-top: .8em;
+  padding: .7em;
+  width: 25%;
+}
+.rounded-button-jfed {
+  background: #c2efc2;
+  width: 60%;
+}
+.rounded-button-jfed:hover {
+  background: #a3e4a3;
+}
+.rounded-button-jfed>a:hover {
+  text-decoration: none;
+}
+
+.centered-content {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Table-like divs */
+.table-wrapper {
+  border: 1px solid #9B9898;
+  display: table;
+}
+.table-wrapper-row {
+  border: 1px solid #9B9898;
+  display: table-row;
+}
+.table-wrapper-cell {
+  display: table-cell;
+}
+
+.table-wrapper-row-head {
+  background-color: #aecff0;
+  font-weight: bold;
+  padding: 5px;
+}
+.table-wrapper-cell-body {
+  background-color: #f9fcff;
+  border: 1px solid #dae8f7;
+}
+.table-wrapper-cell-body:hover {
+  background-color: #dce9f5;
+}
+
+#java7Dialog, #noJavaDialog {
+  width: 27em;
+}
+
+
 hr {
 	display: none;
 	}

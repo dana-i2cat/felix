@@ -60,6 +60,119 @@
 	 </tr>
 	{%endif%}
 </table>
+=======
+{% block messages %}{% endblock %}    
+{% block content %}
+
+<script>
+    //initialize if not defined already
+    var java8_jnlp = (java8_jnlp === undefined)? []: java8_jnlp;
+    var java7_jnlp =  (java7_jnlp === undefined)? []: java7_jnlp;
+    java8_jnlp['experimenter'] =  "http://jfed.iminds.be/releases/master/422/webstart/experimenter/jfed-experimenter.jnlp";
+    java7_jnlp['experimenter'] = "experimenter/jfed-experimenter.jnlp";
+</script>
+<script src="//java.com/js/dtjava.js"></script>
+<!--<script src="http://jfed.iminds.be/js/jfed_webstart.js"></script>-->
+<script src="{% url js_media 'jquery.min.js' %}"></script>
+<script src="{% url js_media 'jquery-ui.min.js' %}"></script>
+<script src="{% url js_media 'jfed_webstart.js' %}"></script>
+<link rel="stylesheet" href="{% url css_media 'jquery-ui.css' %}" />
+
+<h1>Log in</h1>
+
+<div class="login table-wrapper centered-content">
+  <div class="table-wrapper-row">
+    <!-- Log-in to Expedient -->
+    <div class="table-wrapper-cell table-wrapper-row-head center">
+      Log-in to Expedient
+    </div>
+    <!-- Middle column -->
+    <div class="table-wrapper-cell table-wrapper-row-head center">
+      ... OR ...
+    </div>
+    <!-- Log-in to jFed -->
+    <div class="table-wrapper-cell table-wrapper-row-head center">
+      Log-in to jFed
+    </div>
+  </div>
+</div>
+<div class="login table-wrapper centered-content">
+  <!-- Log-in to Expedient -->
+  <div class="table-wrapper-row">
+    <div class="table-wrapper-cell table-wrapper-cell-body" style="border: none; none; width: 50%">
+      <form class="form" style="padding: 10px; width:100%;" method="post" action="." onSubmit="computeSignature(this);">{% csrf_token %}
+        <div id="showhide" class="centered_hidden">
+          <p>
+            <em>Switch to username & password based login: </em>
+            <button id="button" onclick="showhide()">Show</button>
+          </p>
+        </div>
+        <div id="login-error" class="centered_hidden errorlist" style="display:none;">
+          {{error}}
+        </div>
+        <div id="cert_login" class="centered_hidden">
+          <p>
+            <label for="id_cert_file">Certificate:</label>
+            <input type="file" id="id_cert_file" name="files[]" />
+            <input type="hidden" id="id_cert" name="cert" value="">
+          </p>
+          <p>
+            <label for="id_key_file">Private Key:</label>
+            <input type="file" id="id_key_file" name="files[]" />
+            <input type="hidden" id="id_key" name="key" value="">
+          </p>
+        </div>
+        <div id="pswd_login" class="centered_hidden" style="display:none">
+          <p>
+            <label for="id_username">Username:</label>
+            <input id="id_username" type="text" name="username" maxlength="30" />
+          </p>
+          <p>
+            <label for="id_password">Password:</label>
+            <input id="id_password" type="password" name="password" maxlength="4096" />
+          </p>
+        </div>
+        <div>
+          <!--<input type="submit" class="centered" value="Log in" onClick="computeSignature(this.form)"/>-->
+          <input type="submit" class="centered" value="Log in" />
+        </div>
+        <input type="hidden" name="next" value="{{ next }}" />
+      </form>
+      <table class="centered" style="margin-top: 1em !important; padding-bottom: 1em;">
+        <tr>
+           <td>{% trans "Forgot your credential" %}?</td>
+           <td><a href="{% url my_password_reset %}">{% trans "Reset it" %}</a>!</td>
+        </tr>
+        {% if allowLocalRegistration == 1 %}
+        <tr>
+           <td>{% trans "Not a member" %}?</td>
+           <td><a href="{% url registration_register %}">{% trans "Register" %}</a>!</td>
+         </tr>
+        {%endif%}
+      </table>
+    </div>
+    
+    <!-- Middle column -->
+    
+    <!-- Log-in to jFed -->
+    <div class="table-wrapper-cell table-wrapper-cell-body" style="border: none; width: 40%;">
+      <div class="center rounded-button rounded-button-jfed centered-content">
+        <a class="webstart-button" href="{% url js_media 'jfed-experimenter.jnlp' %}" onclick="return launchjFed('experimenter');">Quickstart Experimenter GUI</a>
+      </div>
+      <div id="java7Dialog" class="center centered-content" title="Old Java version detected">
+        <p>The latest version of jFed is only compatible with Java 8 or higher. We detected that you are using an older version.</p>
+        <p>Please upgrade to Java 8 to get access to the newest version. Otherwise, you can use the older jFed 5.3.2, which is Java 7-compatible.</p>
+        <p id="versioninfo" />
+      </div>
+      <div id="noJavaDialog" class="center centered-content" title="No Java detected">
+        <p>jFed requires Java to run. We however couldn't detect a Java installation in your browser.</p>
+        <p>Please install the latest version of Java to continue.</p>
+        <p id="versioninfo_nojava" />
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="/static/media/default/js/jsrsasign-latest-all-min.js"></script>
 <script LANGUAGE="JavaScript">
 function computeSignature (form) {
