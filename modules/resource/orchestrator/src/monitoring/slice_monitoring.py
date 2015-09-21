@@ -1,9 +1,10 @@
 from db.db_manager import db_sync_manager
 from monitoring.base_monitoring import BaseMonitoring
 from core.config import ConfParser
+from utils_links import MonitoringUtilsLinks
+
 import requests
 import time
-
 import core
 from lxml import etree
 
@@ -240,7 +241,7 @@ class SliceMonitoring(BaseMonitoring):
                 logger.debug("COM link=%s" % (com_link,))
                 for eps in com_link.get("links"):
                     # Modify link on-the-fly to add the DPID port as needed
-                    eps = self._set_dpid_port_from_link(
+                    eps = MonitoringUtilsLinks._set_dpid_port_from_link(
                         com_link.get("component_id"), eps)
 
                     eps_src_id, eps_dst_id = self.__get_eps_ids(
