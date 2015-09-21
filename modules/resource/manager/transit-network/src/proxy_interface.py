@@ -12,16 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import amsoil.core.pluginmanager as pm
-from tn_rm_delegate import TNRMGENI3Delegate
+from SimpleXMLRPCServer import SimpleXMLRPCServer
+from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
+from abc import ABCMeta, abstractmethod
 
-def setup():
-    # setup config keys
-    # config = pm.getService("config")
+# class Handler(SimpleXMLRPCRequestHandler):
 
-    xmlrpc = pm.getService('xmlrpc')
-    handler = pm.getService('geniv3handler')
-    xmlrpc.registerXMLRPC('tn_rm_geni_v3', handler, '/xmlrpc/geni/3/')
-    delegate = TNRMGENI3Delegate()
-    handler.setDelegate(delegate)
+class Proxy:
+    __metaclass__ = ABCMeta
 
+    @abstractmethod
+    def reserve(resv):
+        pass
+
+    @abstractmethod
+    def modify(resv, end_time_sec):
+        pass
+
+    @abstractmethod
+    def provision(resv):
+        pass
+
+    @abstractmethod
+    def release(resv):
+        pass
+
+    @abstractmethod
+    def terminate(resv):
+        pass

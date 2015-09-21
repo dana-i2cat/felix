@@ -24,6 +24,7 @@ LIBS=$LIBS:${NSI_HOME}/clientapi/build/jar/nsi2_client.jar
 LIBS=$LIBS:${NSI_HOME}/nrm/build/jar/aist_upa.jar
 LIBS=$LIBS:${NSI_HOME}/nrm/lib/commons-logging-1.1.1.jar
 LIBS=$LIBS:${NSI_HOME}/nrm/lib/log4j-1.2.13.jar
+LIBS=$LIBS:${NSI_HOME}/nrm/lib/commons-io-2.4.jar
 for i in ${CXF_HOME}/lib/*.jar
 do
    LIBS=$LIBS:"$i"
@@ -34,5 +35,6 @@ LOGFILE=/tmp/test.log
 
 #jython main.jy
 #jython  main.jy
-env CLASSPATH=$LIBS jython -v proxy.py 2>&1 | tee $LOGFILE 
-#env CLASSPATH=$LIBS jython -v nsi2interface.py 2>&1 | tee $LOGFILE 
+JOPT='-Dpython.cachedir=tmp/cache -v'
+echo jython $JOPT proxy.py 2>&1 | tee $LOGFILE 
+env CLASSPATH=$LIBS jython $JOPT proxy.py 2>&1 | tee $LOGFILE 

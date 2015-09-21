@@ -28,7 +28,13 @@ class RspecException(TnrmException):
 
 class ParamException(TnrmException):
     def __init__(self, prog, reason):
-        super(RspecException, self).__init__("Parameter has errors in [%s]: %s" % (str(prog), str(reason)))
+        super(ParamException, self).__init__("Parameter has errors in [%s]: %s" % (str(prog), str(reason)))
         self._desc = "Parameter has errors in [%s]: [%s]" % (str(prog), str(reason))
         print "Parameter has errors in [%s]: [%s]" % (str(prog), str(reason))
+
+class ManagerException(TnrmException):
+    def __init__(self, prog, reason):
+        super(ManagerException, self).__init__("Manager has errors in [%s]: %s" % (str(prog), str(reason)))
+        self._desc = "Manager has errors in [%s]: [%s]" % (str(prog), str(reason))
+        print "Manager has errors in [%s]: [%s]" % (str(prog), str(reason))
 

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+import sys
 
 import xmlrpclib
 import amsoil.core.pluginmanager as pm
@@ -25,15 +26,25 @@ from datetime import datetime, timedelta
 GENIv3DelegateBase = pm.getService('geniv3delegatebase')
 geni_ex = pm.getService('geniv3exceptions')
 
-# from config import Config, Node, Interface, TNRM_Exception
-from reservation import Request, Reservation
-import tn_rm_exceptions as tnex
+# from config import Config, Node, Interface
+from reservation import Request, Reservation, Advertisement
+from ovsgre import ovs_proxy
+from tn_rm_exceptions import ManagerException, ParamException
+
+# import tn_rm_exceptions as tnex
 # from nsi2interface import *
 
-# TNRM_CONFIG = 'src/vendor/tnrm/config.xml'
 TNRM_PROXY = 'http://localhost:24444/'
 nsi_proxy = xmlrpclib.ServerProxy(TNRM_PROXY)
 geni_sliver_urn = 'urn:publicid:tn-network1:'
+gre_proxy = ovs_proxy()
+
+#
+# from config import Config
+# TNRM_CONFIG = 'src/vendor/tnrm/config.xml'
+# config = Config(TNRM_CONFIG)
+
+dict_slice_urn = {}
 
 dict_manifest = {}
 dict_urn_rid = {}
@@ -63,7 +74,7 @@ epoch = datetime.utcfromtimestamp(0)
 
 def unix_time_sec(dt):
     delta = dt - epoch
-    # print "timezone=%s" % (dt.tzinfo)
+    logger.info("timezone=%s" % (dt.tzinfo))
     return int(delta.total_seconds())
 
 class TNRMGENI3Delegate(GENIv3DelegateBase):
@@ -73,6 +84,8 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
     def __init__(self):
         super(TNRMGENI3Delegate, self).__init__()
         logger.info("TNRMGENI3Delegate successfully initialized!")
+        self.adv = Advertisement()
+        self.advertisement = self.adv.get_advertisement()
         # self.config = Config(TNRM_CONFIG)
         # self.nsi = NSI()
 
@@ -86,6 +99,9 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
             return f(*args, **kwargs)
         return wrapper
 
+    def __datetime2str(self, dt):
+        return dt.strftime('%Y-%m-%d %H:%M:%S.%fZ')
+
     @enter_method_log
     def list_resources(self, client_cert, credentials, geni_available):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
@@ -93,7 +109,8 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
         # logger.info("list_resource:credentials:" + credentials)
         logger.info("list_resource:geni_available:%s" % (geni_available))
 
-        rspec = nsi_proxy.get_advertisement()
+        # rspec = config.get_advertisement()
+        rspec = self.advertisement
         logger.info("advertisement=%s" % (rspec))
         return "%s" % (rspec)
 
@@ -102,15 +119,17 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
                  end_time=None):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         logger.info("slice_urn=%s" % (slice_urn))
-        # logger.info("client_cert=%s" % (client_cert))
-        # logger.info("credentials=%s" % (credentials))
+        logger.info("client_cert=%s" % (client_cert))
+        logger.info("credentials=%s" % (credentials))
         logger.info("request rspec=%s" % (rspec))
         logger.info("end_time=%s" % (end_time))
 
         start_time = datetime.utcnow()
         # start_time = datetime.now()
+        start_time += timedelta(minutes=2)
         if (isinstance(end_time, type(None)) == True):
-            end_time = start_time + timedelta(hours=1)
+            end_time = start_time + timedelta(minutes=10)
+            end_time = start_time + timedelta(hours=3)
         else:
             delta = end_time - start_time
             logger.debug("delta days=%s, seconds=%s" % (delta.days, delta.seconds))
@@ -120,76 +139,86 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
                 
         start_time_sec = unix_time_sec(start_time)
         end_time_sec = unix_time_sec(end_time)
-        logger.info("call reserve start_time=%s, end_time=%s" % 
-                    (self.__datetime2str(start_time), self.__datetime2str(end_time)))
 
-        rid = None
-        slivers = [{}]
-        manifest = None
+        req = Request(slice_urn, rspec, start_time, end_time)
+        req, error = req.parse_reservations()
+        if error is not None:
+            raise geni_ex.GENIv3GeneralError(error)
+        logger.info("slice=%s, urns=%s" % (slice_urn, str(req.urns)))
 
-        try:
-              rid = nsi_proxy.reserve(rspec, start_time_sec, end_time_sec)
-              logger.info("urns=%s, rid=%s" % (slice_urn, rid))
+        if slice_urn in dict_slice_urn:
+            raise geni_ex.GENIv3GeneralError("slice_urn(%s) is already exit." % (slice_urn))
 
-              dict_urn_rid[slice_urn] = rid
-              dict_urn_endtime[slice_urn] = end_time
-              dict_urn_rspec[slice_urn] = rspec
-              dict_urn_ostatus[slice_urn] = self.OPERATIONAL_STATE_READY
-              dict_urn_astatus[slice_urn] = self.ALLOCATION_STATE_ALLOCATED
-              dict_urn_pstatus[slice_urn] = self.OPERATIONAL_ACTION_STOP
+        logger.info("allocate: add dict_slice_urn[%s]." % slice_urn)
+        dict_slice_urn[slice_urn] = req
 
-        except Exception as e:
-              rid = None
-              logger.error("%s" % (e))
-              slivers = [{
-                    'geni_operational_status': self.OPERATIONAL_STATE_NOTREADY,
-                    'geni_expires': end_time,
-                    'geni_allocation_status': self.ALLOCATION_STATE_UNALLOCATED,
-                    'geni_sliver_urn': geni_sliver_urn,
-                    'geni_nrn': slice_urn,
-                    'geni_error': ("%s" % (e))
-                    }]
+        for urn in req.urns:
+            resv = req.get_reservation(urn)
+            resv.ostatus = self.OPERATIONAL_STATE_NOTREADY
+            resv.astatus = self.ALLOCATION_STATE_UNALLOCATED
+            resv.action = self.OPERATIONAL_ACTION_STOP
 
-        if rid is not None:
-            slivers = [{
-                    'geni_operational_status': self.OPERATIONAL_STATE_READY,
-                    'geni_expires': end_time,
-                    # 'geni_expires': self.__datetime2str(end_time),
-                    'geni_allocation_status': self.ALLOCATION_STATE_ALLOCATED,
-                    'geni_sliver_urn': geni_sliver_urn,
-                    'geni_nrn': slice_urn,
-                    # 'geni_error': ""
-                    }]
+        slice_status = req.get_status()
+        manifest = req.get_manifest()
+
+        isError = False
+        for urn in req.urns:
+            resv = req.get_reservation(urn)
+            logger.info("call reserve %s" % (resv))
+
+            #
+            # VLAN range check in Reservation
+            #
 
             try:
-                manifest = nsi_proxy.get_manifest(rid)
-                dict_manifest[slice_urn] = manifest
+                if resv.service == "NSI":
+                    rid = nsi_proxy.reserve(resv.gid,
+                                            resv.path.sep.stp, 
+                                            resv.path.dep.stp,
+                                            int(resv.path.sep.vlantag), 
+                                            int(resv.path.dep.vlantag), 
+                                            int(resv.path.sd_bw), 
+                                            unix_time_sec(start_time), 
+                                            unix_time_sec(end_time))
+
+                elif resv.service == "GRE":
+                    rid = gre_proxy.reserve(resv)
+
+                else:
+                    emes = "Unknown service=%s: urn=%s, type=$s, reservation=%s" % (resv.service, slice_urn, resv)
+                    logger.error(emes)
+                    raise ManagerException("tn_rm_delegate:allocate", emes);
+                    
+                logger.info("urns=%s, rid=%s" % (slice_urn, rid))
+
+                resv.resv_id = rid
+                resv.astatus = self.ALLOCATION_STATE_ALLOCATED
+                resv.ostatus = self.OPERATIONAL_STATE_READY
+                resv.action = self.OPERATIONAL_ACTION_STOP
+
             except Exception as e:
-                logger.error("ex=%s,\nManifest=%s,\nSlivers=%s" % (e, manifest, slivers))
-                manifest = None
+                logger.error("ex=%s" % (e))
+                resv.error = "%s" % (e)
+                isError = True
+                    
+        if isError:
+            now = datetime.utcnow()
+            self.__slice_delete_status(slice_urn, now)
 
-        logger.info("Manifest=%s, Slivers=%s" % (manifest, slivers))
-        return (manifest, slivers)
+        slice_status = req.get_status()
+        manifest = req.get_manifest()
+        return (manifest, slice_status)
 
-    def __datetime2str(self, dt):
-        return dt.strftime('%Y-%m-%d %H:%M:%S.%fZ')
-
-    def __sliver_describe_status(self, urn):
+    def __slice_status(self, urn):
         if self.urn_type(urn) == "slice":
-              rid = dict_urn_rid[urn]
-              end_time = dict_urn_endtime[urn]
-              astatus = dict_urn_astatus[urn]
-              ostatus = dict_urn_ostatus[urn]
-              
-              return {
-                  'geni_operational_status': ostatus,
-                  # 'geni_expires': end_time,
-                  'geni_expires': self.__datetime2str(end_time),
-                  'geni_allocation_status': astatus,
-                  'geni_sliver_urn': geni_sliver_urn,
-                  'geni_nrn': urn,
-                  'geni_error': ""
-                  }
+            logger.info("urn (%s) is a slice." % (urn))
+            if urn in dict_slice_urn:
+                req = dict_slice_urn[urn]
+                slice_status = req.get_status()
+                return slice_status
+            else:
+                logger.info("urn (%s) is aslice." % (urn)) 
+        return None
 
     @enter_method_log
     def describe(self, urns, credentials, options):
@@ -198,78 +227,60 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
         # logger.info("describe:urns:" + urns)
         # logger.info("describe:credentials:" + credentials)
 
-        slivers = [self.__sliver_describe_status(u) for u in urns]
+        last_slice = None
+        req = None
+        manifest = None
+        slice_status = []
 
-        last_slice_urn = ""
-        for u in urns:
-              last_slice_urn = u
-              logger.info("urn =%s" % (u))
-              break
+        for urn in urns:
+            if self.urn_type(urn) == "slice":
+                logger.info("urn (%s) is a slice." % (urn))
+                if urn in dict_slice_urn:
+                    req = dict_slice_urn[urn]
+                    last_slice = urn
+                else:
+                    logger.info("urn (%s) is not in dict_slice_urn." % (urn)) 
 
-        sliver = self.__sliver_describe_status(last_slice_urn)
-        manifest = dict_manifest[last_slice_urn]
-        logger.info("Manifest=%s, Slivers=%s" % (manifest, slivers))
+        if req is not None:
+            manifest = req.get_manifest()
+            slice_status = req.get_status()
+        else:
+            raise geni_ex.GENIv3GeneralError("This slice (%s) is not exist." % (urn))
+        logger.info("manifest=%s, status=%s" % (manifest, slice_status))
         return {'geni_rspec': manifest,
-                'geni_urn': last_slice_urn,
-                'geni_slivers': slivers}
+                'geni_urn': last_slice,
+                'geni_slivers': slice_status}
 
     def __sliver_renew_status(self, urn, end_time, end_time_sec):
-        rid = None
-        astatus = None
-        ostatus = None
-        sliver = {}
-
         logger.debug("renew urn=%s" % (urn))
 
-        try:
-            if self.urn_type(urn) == "slice":
-                rid = dict_urn_rid[urn]
-                logger.debug("rid=%s" % (rid))
-                
-                astatus = dict_urn_astatus[urn]
-                ostatus = dict_urn_ostatus[urn]
-                logger.info("allocate=%s, operation=%s" % (astatus, ostatus))
-        except Exception as e:
-            rid = None
+        req = dict_slice_urn[urn]
+        for u in req.urns:
+            resv = req.get_reservation(u)
+            if resv.astatus == self.ALLOCATION_STATE_UNALLOCATED:
+                continue
 
-        logger.debug("rid=%s" % (rid))
-
-        if rid is not None:
+            rid = resv.resv_id
+            
             try:
-                rid = nsi_proxy.modify(rid, end_time_sec)
-                logger.info("old is %s, new is %s" %(dict_urn_rid[urn], rid))
-                dict_urn_endtime[urn] = end_time
+                if resv.service == "NSI":
+                    mid = nsi_proxy.modify(resv.gid, rid, end_time_sec)
+                elif resv.service == "GRE":
+                    mid = gre_proxy.modify(resv, end_time_sec)
+                else:
+                    logger.error("Unknown service=%s: urn=%s, type=$s, reservation=%s" % 
+                                 (resv.service, u, resv))
 
-                sliver = {
-                    'geni_operational_status': ostatus,
-                    'geni_expires': end_time,
-                    'geni_allocation_status': astatus,
-                    'geni_sliver_urn': geni_sliver_urn,
-                    'geni_nrn': urn,
-                    }
+                logger.info("old is %s, new is %s" %(rid, mid))
+                resv.end_time = end_time
+                resv.error = None
+
             except Exception as e:
-                end_time = dict_urn_endtime[urn]
-                sliver = {
-                    'geni_operational_status': ostatus,
-                    'geni_expires': end_time,
-                    'geni_allocation_status': astatus,
-                    'geni_sliver_urn': geni_sliver_urn,
-                    'geni_nrn': urn,
-                    'geni_error': ("%s" % (e))
-                    }
-        logger.info("sliver is %s" % (sliver))
+                logger.error("%s" % (e))
+                resv.error = "%s" % (e)
 
-        aho = """
-            else:
-            sliver = {
-                'geni_operational_status': self.OPERATIONAL_STATE_NOTREADY,
-                'geni_expires': end_time,
-                'geni_allocation_status': self.ALLOCATION_STATE_UNALLOCATED,
-                'geni_sliver_urn': geni_sliver_urn,
-                'geni_nrn': urn,
-                # 'geni_error': ("There is no allocated resoure.")
-                } """
-        return sliver
+        slice_status = req.get_status()
+        return slice_status
 
     @enter_method_log
     def renew(self, urns, client_cert, credentials, expiration_time,
@@ -282,65 +293,42 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
         # logger.debug("expiration_time=%s" % (expiration_time))
 
         end_time_sec = unix_time_sec(expiration_time)
-        slivers = [self.__sliver_renew_status(u, expiration_time, end_time_sec) for u in urns]
-        
-        
-        logger.info("Slivers=%s" % (slivers))
-        return slivers
 
-    def __sliver_provision_status(self, urn):
-        rid = None
-        logger.debug("renew urn=%s" % (urn))
-        end_time = None
-        astatus = None
-        ostatus = None
-        sliver = {}
+        last_slice = None
+        req = None
+        manifest = None
+        slice_status = []
 
-        try:
+        for urn in urns:
             if self.urn_type(urn) == "slice":
-                rid = dict_urn_rid[urn]
+                logger.info("urn (%s) is a slice." % (urn))
+                if urn in dict_slice_urn:
+                    req = dict_slice_urn[urn]
+                    last_slice = urn
+                else:
+                    logger.info("urn (%s) is not in dict_slice_urn." % (urn)) 
 
-                astatus = dict_urn_astatus[urn]
-                ostatus = dict_urn_ostatus[urn]
-                logger.info("allocate=%s, operation=%s" % (astatus, ostatus))
-        except Exception as e:
-            rid = None
-
-        logger.debug("rid=%s" % (rid))
-
-        if rid is not None:
-            end_time = dict_urn_endtime[urn]
-            rspec = dict_urn_rspec[urn]
-            st = dict_urn_astatus[urn]
-
-            if (st == self.ALLOCATION_STATE_PROVISIONED):
-                logger.info("urn is already provisiond. urn=%s" % (urn))
-            else:
-                dict_urn_astatus[urn] = self.ALLOCATION_STATE_PROVISIONED
-                dict_urn_ostatus[urn] = self.OPERATIONAL_STATE_READY
-                dict_urn_pstatus[urn] = self.OPERATIONAL_ACTION_STOP
-
-            sliver = {
-                'geni_operational_status': dict_urn_ostatus[urn],
-                'geni_expires': end_time,
-                'geni_end_time': self.__datetime2str(end_time),
-                'geni_allocation_status': dict_urn_astatus[urn],
-                'geni_sliver_urn': geni_sliver_urn,
-                'geni_nrn': urn,
-                }
+        if req is not None:
+            self.__sliver_renew_status(last_slice, expiration_time, end_time_sec)
+            slice_status = req.get_status()
         else:
-            ctime = datetime.utcnow()
-            sliver = {
-                'geni_operational_status': self.OPERATIONAL_STATE_NOTREADY,
-                'geni_expires': ctime,
-                # 'geni_end_time': ctime,
-                'geni_allocation_status': self.ALLOCATION_STATE_UNALLOCATED,
-                'geni_sliver_urn': geni_sliver_urn,
-                'geni_nrn': urn,
-                # 'geni_error': "There is no allocated resource."
-                }
-            
-        return sliver
+            raise geni_ex.GENIv3GeneralError("This slice (%s) is not exist." % (urn))
+        logger.info("status=%s" % (slice_status))
+        return slice_status
+
+    def __slice_provision_status(self, urn):
+        req = dict_slice_urn[urn]
+        for u in req.urns:
+            resv = req.get_reservation(u)
+            if resv.astatus == self.ALLOCATION_STATE_UNALLOCATED:
+                continue
+
+            resv.astatus = self.ALLOCATION_STATE_PROVISIONED
+            resv.ostatus = self.OPERATIONAL_STATE_READY
+            resv.action = self.OPERATIONAL_ACTION_STOP
+
+        slice_status = req.get_status()
+        return slice_status
     
     @enter_method_log
     def provision(self, urns, client_cert, credentials, best_effort, end_time,
@@ -353,217 +341,231 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
         # logger.debug("end_time=%s" % (end_time))
         # logger.debug("geni_users=%s" % (geni_users))
 
-        slivers = [self.__sliver_provision_status(u) for u in urns]
+        last_slice = None
+        req = None
+        manifest = None
+        slice_status = []
 
-        logger.info("Slivers=%s" % (slivers))
-
-        rspec = None
-
-        try:
-            rspec = dict_manifest[urns[0]]
-        except:
-            rspec = """<?xml version="1.1" encoding="UTF-8"?>
-<rspec type="manifest"
-       xmlns="http://www.geni.net/resources/rspec/3"
-       xmlns:sharedvlan="http://www.geni.net/resources/rspec/ext/shared-vlan/1"
-       xmlns:stitch="http://hpn.east.isi.edu/rspec/ext/stitch/0.1/"
-       xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
-       xs:schemaLocation="http://hpn.east.isi.edu/rspec/ext/stitch/0.1/
-            http://hpn.east.isi.edu/rspec/ext/stitch/0.1/stitch-schema.xsd
-            http://www.geni.net/resources/rspec/3/manifest.xsd
-            http://www.geni.net/resources/rspec/ext/shared-vlan/1/request.xsd">
-</rspce>"""
-
-        return rspec, slivers
-
-    def __sliver_status(self, urn):
-        sliver = None
-
-        try :
+        for urn in urns:
             if self.urn_type(urn) == "slice":
-                end_time = dict_urn_endtime[urn]
-                astatus = dict_urn_astatus[urn]
-                ostatus = dict_urn_ostatus[urn]
-                
-                sliver = {
-                    'geni_operational_status': ostatus,
-                    'geni_expires': end_time,
-                    'geni_allocation_status': astatus,
-                    'geni_sliver_urn': geni_sliver_urn,
-                    'geni_nrn': urn,
-                    }
-        except Exception as e:
-            pass
+                logger.info("urn (%s) is a slice." % (urn))
+                if urn in dict_slice_urn:
+                    req = dict_slice_urn[urn]
+                    last_slice = urn
+                else:
+                    logger.info("urn (%s) is not in dict_slice_urn." % (urn)) 
 
-        if sliver is None:
-            ctime = datetime.utcnow()
-            sliver = {
-                'geni_operational_status': self.OPERATIONAL_STATE_NOTREADY,
-                'geni_expires': ctime,
-                'geni_allocation_status': self.ALLOCATION_STATE_UNALLOCATED,
-                'geni_sliver_urn': geni_sliver_urn,
-                'geni_nrn': urn,
-                }
+        if req is not None:
+            slice_status = self.__slice_provision_status(last_slice)
+            manifest = req.get_manifest()
+        else:
+            raise geni_ex.GENIv3GeneralError("This slice (%s) is not exist." % (urn))
+        logger.info("status=%s" % (slice_status))
+        return (manifest, slice_status)
 
-        return sliver
-            
     @enter_method_log
     def status(self, urns, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        slivers = [self.__sliver_status(d) for d in urns]
-        logger.info("Slivers=%s" % (slivers))
-        return "status-slice_urns", slivers
+        rule_error = None
 
-    def __sliver_operational_status(self, urn, action):
-        sliver = None
-
-        try:
+        for urn in urns:
             if self.urn_type(urn) == "slice":
-                rid = dict_urn_rid[urn]
+                logger.info("urn (%s) is a slice." % (urn))
+                if urn in dict_slice_urn:
+                    req = dict_slice_urn[urn]
+                    last_slice = urn
 
-                end_time = dict_urn_endtime[urn]
-                astatus = dict_urn_astatus[urn]
-                ostatus = dict_urn_ostatus[urn]
-                pstatus = dict_urn_pstatus[urn]
-
-                if astatus != self.ALLOCATION_STATE_PROVISIONED:
-                    sliver = {
-                        'geni_operational_status': dict_urn_ostatus[urn],
-                        'geni_expires': end_time,
-                        'geni_allocation_status': dict_urn_astatus[urn],
-                        'geni_sliver_urn': geni_sliver_urn,
-                        'geni_nrn': urn,
-                        'geni_error': "Not ALLOCATION_STATE_PROVISIONED.",
-                        }
-                    logger.info("Not ALLOCATION_STATE_PROVISIONED.")
-                    return sliver
-
-
-                if action == "start":
-                    if pstatus == self.OPERATIONAL_ACTION_STOP:
-                        nsi_proxy.provision(rid)
-                        dict_urn_ostatus[urn] = self.OPERATIONAL_ACTION_START
-                        dict_urn_pstatus[urn] = self.OPERATIONAL_ACTION_START
-                        logger.info("NSI PROVISIONED.")
-
-                elif action == "stop":
-                    if pstatus == self.OPERATIONAL_ACTION_START:
-                        nsi_proxy.release(rid)
-                        dict_urn_ostatus[urn] = self.OPERATIONAL_ACTION_STOP
-                        dict_urn_pstatus[urn] = self.OPERATIONAL_ACTION_STOP
-                        logger.info("NSI RELEASE.")
-
-                elif action == "restart":
-                    if pstatus == self.OPERATIONAL_ACTION_START:
-                        nsi_proxy.release(rid)
-                        dict_urn_ostatus[urn] = self.OPERATIONAL_ACTION_STOP
-                        dict_urn_pstatus[urn] = self.OPERATIONAL_ACTION_STOP
-                        logger.info("NSI RELEASE.")
-
-                        nsi_proxy.provision(rid)
-                        dict_urn_ostatus[urn] = self.OPERATIONAL_ACTION_START
-                        dict_urn_pstatus[urn] = self.OPERATIONAL_ACTION_START
-                        logger.info("NSI PROVISIONED.")
-
-                    if pstatus == self.OPERATIONAL_ACTION_STOP:
-                        nsi_proxy.provision(rid)
-                        dict_urn_ostatus[urn] = self.OPERATIONAL_ACTION_START
-                        dict_urn_pstatus[urn] = self.OPERATIONAL_ACTION_START
-                        logger.info("NSI PROVISIONED.")
-
+                    for u in req.urns:
+                        resv = req.get_reservation(u)
+                        logger.info("status: urn=%s, resv=%s" % (u, resv))
+                        if resv is not None:
+                            logger.info("status:check rule now.")
+                            rc = self.__proxy_check_rule(resv, u)
+                            if not rc:
+                                logger.info("status:check rule is %s" % (rc)) 
+                                rule_error = "mis match openflow rule in Open vSwitch, try poa geni_restart"
+                                keep_error = resv.error
+                                resv.error = rule_error
+                                slice_status = req.get_status()
+                                resv.error = keep_error
+                                
+                                return "status-slice_urns", slice_status
+                            else:
+                                logger.info("status: flow rule is OK.")
+                        else:
+                            logger.info("status:skip check as resv is None.")
                 else:
-                    sliver = {
-                        'geni_operational_status': dict_urn_ostatus[urn],
-                        'geni_expires': end_time,
-                        'geni_allocation_status': dict_urn_astatus[urn],
-                        'geni_sliver_urn': geni_sliver_urn,
-                        'geni_nrn': urn,
-                        'geni_error': ("Unknown operation action(%s)." % (action)),
-                        }
-                    logger.info("Unknown operation action(%s)." % (action))
-                    return sliver
+                    logger.info("urn (%s) is not in dict_slice_urn." % (urn)) 
+            else:
+                logger.info("urn type is not slice, but (%s)." % (self.urn_type(urn)))
 
-                sliver = {
-                    'geni_operational_status': dict_urn_ostatus[urn],
-                    'geni_expires': end_time,
-                    'geni_allocation_status': dict_urn_astatus[urn],
-                    'geni_sliver_urn': geni_sliver_urn,
-                    'geni_nrn': urn,
-                    }
+        if req is not None:
+            manifest = req.get_manifest()
+            slice_status = req.get_status()
+            logger.info("status: %s" % slice_status)
+        else:
+            raise geni_ex.GENIv3GeneralError("This slice (%s) is not exist." % (urn))
+
+        return "status-slice_urns", slice_status
+
+    def __proxy_setup_path(self, resv, urn):
+        logger.info("service type=%s" % (resv.service)); 
+        try:
+            if resv.service == "NSI":
+                nsi_proxy.provision(resv.resv_id)
+                logger.info("NSI PROVISIONED.")
+            elif resv.service == "GRE":
+                gre_proxy.provision(resv)
+                logger.info("GRE SETUP.")
+            else:
+                logger.error("Unknown service=%s: urn=%s, type=$s, reservation=%s" % 
+                             (resv.service, urn, resv))
 
         except Exception as e:
-            ctime = datetime.utcnow()
-            sliver = {
-                'geni_operational_status': self.OPERATIONAL_STATE_NOTREADY,
-                'geni_expires': ctime,
-                'geni_allocation_status': self.ALLOCATION_STATE_UNALLOCATED,
-                'geni_sliver_urn': geni_sliver_urn,
-                'geni_nrn': urn,
-                'geni_error': ("%s" % (e)),
-                }
-            logger.info("Exception %s" % (e))
+            logger.error("%s" % (e))
+            resv.error = "%s" % (e)
 
-        return sliver
+    def __proxy_teardown_path(self, resv, urn):
+        logger.info("service type=%s" % (resv.service)); 
+        try:
+            if resv.service == "NSI":
+                nsi_proxy.release(resv.resv_id)
+                logger.info("NSI RELEASED.")
+            elif resv.service == "GRE":
+                gre_proxy.release(resv)
+                logger.info("GRE TEARDOWN.")
+            else:
+                logger.error("Unknown service=%s: urn=%s, type=$s, reservation=%s" % 
+                             (resv.service, urn, resv))
+        except Exception as e:
+            logger.error("%s" % (e))
+            resv.error = "%s" % (e)
+                
+    def __proxy_check_rule(self, resv, urn):
+        logger.info("operation status=%s" % (resv.action)); 
+        if resv.action != self.OPERATIONAL_ACTION_START:
+            return True
+
+        logger.info("service type=%s" % (resv.service)); 
+        try:
+            if resv.service == "NSI":
+                pass
+            elif resv.service == "GRE":
+                rc = gre_proxy.status(resv)
+                if not rc:
+                    return False
+            else:
+                logger.error("Unknown service=%s: urn=%s, type=$s, reservation=%s" % 
+                             (resv.service, urn, resv))
+
+        except Exception as e:
+            logger.error("%s" % (e))
+            resv.error = "%s" % (e)
+
+        return True
+                
+    def __slice_operational_status(self, urn, action):
+        req = dict_slice_urn[urn]
+
+        for u in req.urns:
+            resv = req.get_reservation(u)
+            if resv.astatus == self.ALLOCATION_STATE_UNALLOCATED:
+                continue
+
+            # Carolina 2015/06/29: standardize POA actions to GENI expected
+            # -- Keeping custom actions (start, stop) for backwards compatibility
+            geni_start_action = ["geni_start", "start"]
+            geni_stop_action = ["geni_stop", "stop"]
+            geni_restart_action = ["geni_restart", "restart"]
+
+            if resv.astatus == self.ALLOCATION_STATE_PROVISIONED:
+                if any([ action == a for a in geni_start_action]):
+                    if resv.action == self.OPERATIONAL_ACTION_STOP:
+                        self.__proxy_setup_path(resv, u)
+                        resv.action = self.OPERATIONAL_ACTION_START
+
+                    # if resv.action == self.OPERATIONAL_ACTION_START:
+                    #   self.__proxy_setup_path(resv, u)
+                        
+                elif any([ action == a for a in geni_stop_action]):
+                    if resv.action == self.OPERATIONAL_ACTION_START:
+                        self.__proxy_teardown_path(resv, u)
+                        resv.action = self.OPERATIONAL_ACTION_STOP
+
+                    # if resv.action == self.OPERATIONAL_ACTION_STOP:
+                    #   __proxy_teardown_path(resv, u)
+
+                elif any([ action == a for a in geni_restart_action]):
+                    if resv.action == self.OPERATIONAL_ACTION_START:
+                        self.__proxy_teardown_path(resv, u)
+                        resv.action = self.OPERATIONAL_ACTION_STOP
+
+                    if resv.action == self.OPERATIONAL_ACTION_STOP:
+                        self.__proxy_setup_path(resv, u)
+                        resv.action = self.OPERATIONAL_ACTION_START
+
+                else:
+                    logger.info("Unknown operation action(%s)." % (action))
+
+        slice_status = req.get_status()
+        return slice_status
 
     @enter_method_log
     def perform_operational_action(self, urns, client_cert, credentials,
-                                   action, best_effort):
-        slivers = [self.__sliver_operational_status(u, action) for u in urns]
-        logger.info("Slivers=%s" % (slivers))
-        return slivers
+                                   action, best_effort): 
+        req = None
+        last_slice = None
+        for urn in urns:
+            if self.urn_type(urn) == "slice":
+                logger.info("urn (%s) is a slice." % (urn))
+                if urn in dict_slice_urn:
+                    req = dict_slice_urn[urn]
+                    last_slice = urn
+                else:
+                    logger.info("urn (%s) is not in dict_slice_urn." % (urn)) 
 
-    def __sliver_delete_status(self, urn, now):
-          rid = None
-          end_time = datetime.utcnow()
-          sliver = None
+        if req is not None:
+            slice_status = self.__slice_operational_status(last_slice, action)
+        else:
+            raise geni_ex.GENIv3GeneralError("This slice (%s) is not exist." % (urn))
+        return slice_status
 
-          sliver = {
-              'geni_operational_status': self.OPERATIONAL_STATE_NOTREADY,
-              'geni_expires': end_time,
-              'geni_allocation_status': self.ALLOCATION_STATE_UNALLOCATED,
-              'geni_sliver_urn': geni_sliver_urn,
-              'geni_nrn': urn,
-              }
+    def __slice_delete_status(self, urn, now):
+        req = dict_slice_urn[urn]
 
-          if self.urn_type(urn) == "slice":
-              # logger.debug("delete urn=%s" % (urn))
-              try:
-                    rid = dict_urn_rid[urn]
-              except Exception as e:
-                    rid = None
+        doneall = True
 
-          if rid is not None:
-              try:
-                  nsi_proxy.terminate(rid)
+        for u in req.urns:
+            resv = req.get_reservation(u)
+            if resv.astatus == self.ALLOCATION_STATE_UNALLOCATED:
+                continue
+            
+            logger.info("call terminate %s" % (resv))
+            try:
+                if resv.service == "NSI":
+                    nsi_proxy.terminate(resv.resv_id)
+                elif resv.service == "GRE":
+                    gre_proxy.terminate(resv)
+                else:
+                    logger.error("Unknown service=%s: urn=%s, type=$s, reservation=%s" % 
+                                 (resv.service, urn, resv))
 
-                  del dict_manifest[urn]
-                  del dict_urn_rid[urn]
-                  end_time = dict_urn_endtime[urn]
-                  del dict_urn_endtime[urn]
-                  del dict_urn_rspec[urn]
-                  del dict_urn_astatus[urn]
-                  del dict_urn_ostatus[urn]
-                  del dict_urn_pstatus[urn]
+                resv.astatus = self.ALLOCATION_STATE_UNALLOCATED
+                resv.ostatus = self.OPERATIONAL_STATE_NOTREADY
+                resv.action = self.OPERATIONAL_ACTION_STOP
+                resv.end_time = now
 
-                  logger.debug("rid=%s, end_time=%s" % (rid, end_time))
-                  sliver = {
-                      'geni_allocation_status': self.ALLOCATION_STATE_UNALLOCATED,
-                      'geni_expires': end_time,
-                      'geni_operational_status': self.OPERATIONAL_STATE_NOTREADY,
-                      'geni_sliver_urn': geni_sliver_urn,
-                      'geni_nrn': urn,
-                      }  
-              except Exception as e:
-                  sliver = {
-                      'geni_operational_status': self.OPERATIONAL_STATE_NOTREADY,
-                      'geni_expires': end_time,
-                      'geni_allocation_status': self.ALLOCATION_STATE_UNALLOCATED,
-                      'geni_sliver_urn': geni_sliver_urn,
-                      'geni_nrn': urn,
-                      'geni_error': ("%s" % (e))
-                      }
+            except Exception as e:
+                logger.error("%s" % (e))
+                resv.error = "%s" % (e)
+                doneall = False
 
-          return sliver
+        slice_status = req.get_status()
+
+        # if doneall:
+        #    del dict_slice_urn[urn]
+        del dict_slice_urn[urn]
+        return slice_status
 
     @enter_method_log
     def delete(self, urns, client_cert, credentials, best_effort):
@@ -574,68 +576,37 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
 
         # now = datetime.now(pytz.timezone('Asia/Tokyo'))
         now = datetime.utcnow()
-        slivers = [self.__sliver_delete_status(u, now) for u in urns]
+        slice_status = []
+        req = None
+        for urn in urns:
+            if self.urn_type(urn) == "slice":
+                if urn in dict_slice_urn:
+                    req = dict_slice_urn[urn]
+                    last_slice = urn
+                else:
+                    logger.info("This slice (%s) is not exist." % (urn))
+            else:
+                logger.info("This urn (%s) is not slice." % (urn))
 
-        logger.info("Slivers=%s" % (slivers))
-        return slivers
+        if req is not None:
+            slice_status = self.__slice_delete_status(last_slice, now)
+        else:
+            raise geni_ex.GENIv3GeneralError("This slice (%s) is not exist." % (urn))
+        return slice_status
 
     @enter_method_log
     def shutdown(self, slice_urn, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         now = datetime.utcnow()
-        slivers = [self.__sliver_delete_status(slice_urn, now)]
-        return slivers
+        if slice_urn in dict_slice_urn:
+            slice_status = self.__slice_delete_status(slice_urn, now)
+        else:
+            raise geni_ex.GENIv3GeneralError("This slice (%s) is not exist." % (slice_urn))
+        return slice_status
 
-    gomi = """
-    def __test_urns(self, urns, offset):
-        dpids, last_urn = [], ""
-        for urn in urns:
-            if self.urn_type(urn) == "slice":
-                last_urn = urn
+if __name__ == "__main__":
+    client_cert = "test client_cert"
+    credentials = "test credentials"
+    geni_acailable = "False"
 
-            dpids.append(
-                {"component_id": "test-sliver_%d" % (len(dpids) + offset)})
-        return dpids, last_urn
-
-    def __test_datapaths(self, dpids):
-        if len(dpids) == 0:
-            raise geni_ex.GENIv3SearchFailedError(
-                "No resources in the given slice-urns")
-
-    def __sliver_str_status(self, dpid):
-        return {'geni_sliver_urn': dpid.get("component_id"),
-                'geni_expires': self.__datetime2str(datetime.datetime.now()),
-                'geni_allocation_status': self.ALLOCATION_STATE_ALLOCATED,
-                'geni_operational_status': self.OPERATIONAL_STATE_READY,
-                'geni_error': ""}
-
-    def __sliver_date_status(self, dpid):
-        return {'geni_sliver_urn': dpid.get("component_id"),
-                'geni_expires': datetime.datetime.now(),
-                'geni_allocation_status': self.ALLOCATION_STATE_ALLOCATED,
-                'geni_operational_status': self.OPERATIONAL_STATE_READY,
-                'geni_error': ""}
-
-    def __sliver_details_status(self, dpid):
-        cid = dpid.get("component_id")
-        return {'geni_sliver_urn': cid,
-                'geni_expires': datetime.datetime.now(),
-                'geni_allocation_status': self.ALLOCATION_STATE_ALLOCATED,
-                'geni_operational_status': self.OPERATIONAL_STATE_READY,
-                'geni_error': "",
-                'geni_resource_status': "some-details-%s" % cid}
-
-    def __manifest(self, sliver):
-        mr = self.lxml_manifest_root()
-        em = self.lxml_manifest_element_maker('openflow')
-
-        ref = "Pending" if sliver.get("ref") is None else sliver.get("ref")
-
-        s = em.sliver(email=sliver.get("email"),
-                      description=sliver.get("description"),
-                      ref=ref)
-        mr.append(s)
-
-        return mr
-    """
-
+    list_resources(client_cert, credentials, geni_available)

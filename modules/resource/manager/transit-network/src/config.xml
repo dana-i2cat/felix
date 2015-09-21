@@ -15,70 +15,170 @@
 -->
 
 <resources>
-      <node component_id="urn:publicid:tn-network1:"
-	    component_manager_id="urn:publicid:IDN+NSI+authority+tnrm"
-	    exclusive="false">
-	
-	<interface felix_domain_id="urn:publicid:tn:aist:network1" 
-		   felix_stp_id="urn:ogf:network:aist:network1:stp1"
-		   nsi_stp_id="urn:ogf:network:aist.go.jp:2013:bi-ps"
-		   nsi_stp_id_in="urn:ogf:network:aist.go.jp:2013:in-ps"
-		   nsi_stp_id_out="urn:ogf:network:aist.go.jp:2013:out-ps"
-		   vlan="1779-1799"
-		   capacity="10000" />
-	<interface felix_domain_id="urn:publicid:tn:aist:network1" 
-		   felix_stp_id="urn:ogf:network:aist:network1:stp2"
-		   nsi_stp_id="urn:ogf:network:aist.go.jp:2013:bi-video"
-		   nsi_stp_id_in="urn:ogf:network:aist.go.jp:2013:in-video"
-		   nsi_stp_id_out="urn:ogf:network:aist.go.jp:2013:out-video"
-		   vlan="1779-1799"
-		   capacity="10000" />
+      <node component_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+            component_manager_id="urn:publicid:IDN+fms:aist:tnrm+authority+cm"
+            exclusive="false">
 
-	<interface felix_domain_id="urn:publicid:tn:i2cat:network1" 
-		   felix_stp_id="urn:felix:i2cat-stp1"
-		   nsi_stp_id="urn:ogf:network:i2cat.net:bi-i2cat-1"
-		   nsi_stp_id_in="urn:ogf:network:i2cat.net:in-i2cat-1"
-		   nsi_stp_id_out="urn:ogf:network:i2cat.net:out-i2cat-1"
-		   vlan="1779-1799"
-		   capacity="10000" />
-	<interface felix_domain_id="urn:publicid:tn:i2cat:network1" 
-		   felix_stp_id="urn:felix:i2cat-stp2"
-		   nsi_stp_id="urn:ogf:network:aist.go.jp:2013:bi-video"
-		   nsi_stp_id_in="urn:ogf:network:i2cat.net:in-i2cat-2"
-		   nsi_stp_id_out="urn:ogf:network:i2cat.net:out-i2cat-2"
-		   vlan="1779-1799"
-		   capacity="10000" />
+	<!-- AIST STPs -->
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:aist.go.jp:2013:topology:bi-ps"
+                   nsi_stp_id="urn:ogf:network:aist.go.jp:2013:topology:bi-ps"
+                   vlan="1779-1798"
+                   capacity="10000" />
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:aist.go.jp:2013:topology:bi-video"
+                   nsi_stp_id="urn:ogf:network:aist.go.jp:2013:topology:bi-video"
+                   vlan="1779-1798"
+                   capacity="10000" />
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:aist.go.jp:2013:topology:bi-se1"
+                   nsi_stp_id="urn:ogf:network:aist.go.jp:2013:topology:bi-se1"
+                   vlan="1779-1798"
+                   capacity="10000" />
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:aist.go.jp:2013:topology:bi-se2"
+                   nsi_stp_id="urn:ogf:network:aist.go.jp:2013:topology:bi-se2"
+                   vlan="1779-1798"
+                   capacity="10000" />
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:aist.go.jp:2013:topology:bi-aist-jgn-x"
+                   nsi_stp_id="urn:ogf:network:aist.go.jp:2013:topology:bi-aist-jgn-x"
+                   vlan="1779-1798"
+                   capacity="10000" />
 
-	<interface felix_domain_id="urn:publicid:tn:xxx:network1" 
-		   felix_stp_id="urn:felix:xxx-stp1"
-		   nsi_stp_id="urn:ogf:network:xxx:bi-stp1"
-		   nsi_stp_id_in="urn:ogf:network:xxx:in-stp1"
-		   nsi_stp_id_out="urn:ogf:network:xxx:out-stp1"
-		   vlan="1779-1799"
-		   capacity="10000" />
-	<interface felix_domain_id="urn:publicid:tn:xxx:network1" 
-		   felix_stp_id="urn:felix:xxx-stp2"
-		   nsi_stp_id="urn:ogf:network:xxx:bi-stp2"
-		   nsi_stp_id_in="urn:ogf:network:xxx:in-stp2"
-		   nsi_stp_id_out="urn:ogf:network:xxx:out-stp2"
-		   vlan="1779-1799"
-		   capacity="10000" />
+	<!-- KDDI STPs -->
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:jgn-x.jp:2013:topology:bi-jgn-x-aist"
+                   nsi_stp_id="urn:ogf:network:jgn-x.jp:2013:topology:bi-jgn-x-aist"
+                   vlan="1779-1798"
+                   capacity="10000" />
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:jgn-x.jp:2013:topology:bi-jgn-x-startap"
+                   nsi_stp_id="urn:ogf:network:jgn-x.jp:2013:topology:bi-jgn-x-startap"
+                   vlan="1779-1798"
+                   capacity="10000" />
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp1"
+                   nsi_stp_id="urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp1"
+                   vlan="1779-1798"
+                   capacity="10000" />
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp2"
+                   nsi_stp_id="urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp2"
+                   vlan="1779-1798"
+                   capacity="10000" />
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp3"
+                   nsi_stp_id="urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp3"
+                   vlan="1779-1798"
+                   capacity="10000" />
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp4"
+                   nsi_stp_id="urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp4"
+                   vlan="1779-1798"
+                   capacity="10000" />
 
-	<interface felix_domain_id="urn:publicid:tn:yyy:network1" 
-		   felix_stp_id="urn:felix:yyy-stp1"
-		   nsi_stp_id="urn:ogf:network:yyy:bi-stp1"
-		   nsi_stp_id_in="urn:ogf:network:yyy:in-stp1"
-		   nsi_stp_id_out="urn:ogf:network:yyy:out-stp1"
-		   vlan="1779-1799"
-		   capacity="10000" />
-		   
-	<interface felix_domain_id="urn:publicid:tn:yyy:network1" 
-		   felix_stp_id="urn:felix:yyy-stp2"
-		   nsi_stp_id="urn:ogf:network:yyy:bi-stp2"
-		   nsi_stp_id_in="urn:ogf:network:yyy:in-stp2"
-		   nsi_stp_id_out="urn:ogf:network:yyy:out-stp2"
-		   vlan="1779-1799"
-		   capacity="10000" />
-		   
+	<!-- PSNC STPs -->
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:pionier.net.pl:2013:topology:server_port"
+                   nsi_stp_id="urn:ogf:network:pionier.net.pl:2013:topology:server_port"
+                   vlan="1779-1798"
+                   capacity="10000" />
+<!--
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:pionier.net.pl:2013:topology:felix_port"
+                   nsi_stp_id="urn:ogf:network:pionier.net.pl:2013:topology:felix_port"
+                   vlan="1779-1798"
+                   capacity="10000" />
+-->
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:pionier.net.pl:2013:topology:felix-ge-1-0-9"
+                   nsi_stp_id="urn:ogf:network:pionier.net.pl:2013:topology:felix-ge-1-0-9"
+                   vlan="1779-1798"
+                   capacity="10000" />
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:pionier.net.pl:2013:topology:felix-ge-1-0-3"
+                   nsi_stp_id="urn:ogf:network:pionier.net.pl:2013:topology:felix-ge-1-0-3"
+                   vlan="1779-1798"
+                   capacity="10000" />
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:pionier.net.pl:2013:topology:felix-ge-1-1-7"
+                   nsi_stp_id="urn:ogf:network:pionier.net.pl:2013:topology:felix-ge-1-1-7"
+                   vlan="1779-1798"
+                   capacity="10000" />
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:pionier.net.pl:2013:topology:felix-ge-1-0-4"
+                   nsi_stp_id="urn:ogf:network:pionier.net.pl:2013:topology:felix-ge-1-0-4"
+                   vlan="1779-1798"
+                   capacity="10000" />
+
+	<!-- iMinds STP -->
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:geant.net:2013:topology:iMinds__port__to__GEANT"
+                   nsi_stp_id="urn:ogf:network:geant.net:2013:topology:iMinds__port__to__GEANT"
+                   vlan="1280"
+                   capacity="10000" />
+
+
+	<!-- iCair STP -->
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:icair.org:2013:topology:ps"
+                   nsi_stp_id="urn:ogf:network:icair.org:2013:topology:ps"
+                   vlan="1779-1798"
+                   capacity="10000" />
+
+	<!-- AIST GRE STPs -->
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:aist.go.jp:2015:gre:bi-se1"
+                   nsi_stp_id="urn:ogf:network:aist.go.jp:2015:gre:bi-se1"
+                   vlan="1700-1799"
+                   capacity="10000"
+
+		   type="ovsgre"
+		   sedev="eth1"
+		   address="163.220.30.180"
+		   dpid="0x10"
+		   ovsdb="tcp:127.0.0.1:44444"
+		   ryu="http://163.220.30.180:8080"
+		   />
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:aist.go.jp:2015:gre:bi-test1"
+                   nsi_stp_id="urn:ogf:network:aist.go.jp:2015:gre:bi-test1"
+                   vlan="1700-1799"
+                   capacity="10000"
+
+		   type="ovsgre"
+		   sedev="eth2"
+		   address="163.220.30.180"
+		   dpid="0x10"
+		   ovsdb="tcp:127.0.0.1:44444"
+		   ryu="http://163.220.30.180:8080"
+		   />
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:aist.go.jp:2015:gre:bi-se2"
+                   nsi_stp_id="urn:ogf:network:aist.go.jp:2015:gre:bi-se2"
+                   vlan="1700-1799"
+                   capacity="10000"
+
+		   type="ovsgre"
+		   sedev="eth1"
+		   address="163.220.30.181"
+		   dpid="0x10"
+		   ovsdb="tcp:127.0.0.1:44444"
+		   ryu="http://163.220.30.181:8080"
+		   />
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:aist.go.jp:2015:gre:bi-test2"
+                   nsi_stp_id="urn:ogf:network:aist.go.jp:2015:gre:bi-test2"
+                   vlan="1700-1799"
+                   capacity="10000"
+
+		   type="ovsgre"
+		   sedev="eth2"
+		   address="163.220.30.181"
+		   dpid="0x10"
+		   ovsdb="tcp:127.0.0.1:44444"
+		   ryu="http://163.220.30.181:8080"
+		   />
       </node>
 </resources>
