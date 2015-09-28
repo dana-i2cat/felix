@@ -221,12 +221,28 @@ class SEUtils(CommonUtils):
                 if l.get("routing_key") == key:
                     rspec.link(l)
 
+    def __update_link_with_vlantag(self, nodes, links):
+        ret = {}
+        for n in nodes:
+            for i in n.get('interfaces'):
+                for v in i.get('vlan'):
+                    ret[i.get('component_id')] = v.get('tag')
+
+        for l in links:
+            for i in l.get('interface_ref'):
+                i['vlantag'] = ret.get(i.get('component_id'))
+
     def manage_direct_allocate(self, surn, creds, end, nodes, links):
         route = {}
         self.__update_node_route(route, nodes)
         logger.debug("Nodes(%d)=%s" % (len(nodes), nodes,))
         self.__update_link_route(route, links)
         logger.debug("Links(%d)=%s" % (len(links), links,))
+
+        # XXX_FIXME_XXX: the SERM requires a new field in the link attribute
+        # (felix:vlan). This is not compatible with the GENI world...
+        self.__update_link_with_vlantag(nodes, links)
+        logger.warning("Updated Links(%d)=%s" % (len(links), links,))
 
         self.__update_direct_route_rspec(route, nodes, links)
         logger.info("Route=%s" % (route,))
