@@ -109,15 +109,20 @@ class SEUtils(CommonUtils):
                             n.add_interface(intf.serialize())
 
     def __create_link(self, if1, if2, sliver_id):
+        """
+        Generates the SE link in a proper format:
+            <urn_dpid_1>_<port1>_<dpid2>_<port2>_<vlan1>_<vlan2>
+        """
         i = if1.rindex("_")
         n1, num1 = if1[0:i], if1[i+1:len(if1)]
         i = if2.rindex("_")
         n2, num2 = if2[0:i], if2[i+1:len(if1)]
+        dpid2 = n2[n2.rindex("+")+1:]
 
         if n1 != n2:
             raise Exception("SELink: differs node cid (%s,%s)" % (n1, n2))
 
-        cid = n1 + ":" + num1 + "-" + num2
+        cid = n1 + "_" + num1 + "_" + dpid2 + "_" + num2
         logger.debug("cid=%s, node-id=%s, port-num1=%s, port-num2=%s" %
                      (cid, n1, num1, num2,))
         typee, cm_name = db_sync_manager.get_se_link_info(n1 + "_" + num1)
