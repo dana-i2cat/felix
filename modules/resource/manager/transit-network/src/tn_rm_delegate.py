@@ -118,11 +118,12 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
     def allocate(self, slice_urn, client_cert, credentials, rspec,
                  end_time=None):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
-        logger.info("slice_urn=%s" % (slice_urn))
-        logger.info("client_cert=%s" % (client_cert))
-        logger.info("credentials=%s" % (credentials))
-        logger.info("request rspec=%s" % (rspec))
-        logger.info("end_time=%s" % (end_time))
+        # logger.info("slice_urn=%s" % (slice_urn))
+        # logger.info("client_cert=%s" % (client_cert))
+        # logger.info("credentials=%s" % (credentials))
+        # logger.info("request rspec=%s" % (rspec))
+        # logger.info("end_time=%s" % (end_time))
+        logger.info(">>>>> allocate <<<<< urn=%s" % slice_urn)
 
         start_time = datetime.utcnow()
         # start_time = datetime.now()
@@ -226,6 +227,7 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
         # logger.info("describe:urns:" + urns)
         # logger.info("describe:credentials:" + credentials)
+        logger.info(">>>>> describe <<<<< urn=%s" % urns)
 
         last_slice = None
         req = None
@@ -291,6 +293,7 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
         # logger.debug("credentials=%s" % 'credentials))
         # logger.debug("best_effort=%s" % (best_effort))
         # logger.debug("expiration_time=%s" % (expiration_time))
+        logger.info(">>>>> renew <<<<< urn=%s, expire=%s" % (urns, expiration_time))
 
         end_time_sec = unix_time_sec(expiration_time)
 
@@ -340,6 +343,7 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
         # logger.debug("best_effort=%s" % (best_effort))
         # logger.debug("end_time=%s" % (end_time))
         # logger.debug("geni_users=%s" % (geni_users))
+        logger.info(">>>>> provision <<<<< urn=%s" % urns)
 
         last_slice = None
         req = None
@@ -366,6 +370,8 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
     @enter_method_log
     def status(self, urns, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
+        logger.info(">>>>> status <<<<< urn=%s" % urns)
+
         rule_error = None
 
         for urn in urns:
@@ -513,6 +519,8 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
     @enter_method_log
     def perform_operational_action(self, urns, client_cert, credentials,
                                    action, best_effort): 
+        logger.info(">>>>> poa <<<<< action=%s, urn=%s" % (action, urns))
+
         req = None
         last_slice = None
         for urn in urns:
@@ -573,6 +581,7 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
         # logger.debug("urns=%s" % (urns))
         # logger.debug("client_cert=%s" % (client_cert))
         # logger.debug("best_effort=%s" % (best_effort))
+        logger.info(">>>>> delete <<<<< urn=%s" % urns)
 
         # now = datetime.now(pytz.timezone('Asia/Tokyo'))
         now = datetime.utcnow()
@@ -597,6 +606,8 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
     @enter_method_log
     def shutdown(self, slice_urn, client_cert, credentials):
         """Documentation see [geniv3rpc] GENIv3DelegateBase."""
+        logger.info(">>>>> shutdown <<<<< urn=%s" % slice_urn)
+
         now = datetime.utcnow()
         if slice_urn in dict_slice_urn:
             slice_status = self.__slice_delete_status(slice_urn, now)
