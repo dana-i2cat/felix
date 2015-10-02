@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+/*
 # Copyright 2014-2015 National Institute of Advanced Industrial Science and Technology
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,6 +28,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+*/
 
 import java.util.Calendar;
 import java.util.List;
@@ -392,11 +393,12 @@ public class NSI2Interface {
     }
 
 
-    public void modifyCommit (String gid, String reservationId, int end_time_sec)
+    public String modifyCommit (String gid, String reservationId, int end_time_sec)
 	throws Exception 
     {
-	modify(gid, reservationId, end_time_sec);
+	String mid = modify(gid, reservationId, end_time_sec);
         commit(reservationId);
+	return mid;
     }
 
     public void query(String reservationId) throws Exception {

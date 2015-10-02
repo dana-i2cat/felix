@@ -30,7 +30,7 @@ do
 done
 export CLASSPATH=$LIBS
 
-rm *.class *.pyc
-python -m compileall *.py 
+# rm *.class *.pyc
+# python -m compileall *.py 
 javac NSI2Interface.java
 # java NSI2Interface
