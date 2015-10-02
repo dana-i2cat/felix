@@ -12,10 +12,14 @@ DEFAULT_REQ_SCHEMA_LOCATION += DSL_PREFIX + "ext/shared-vlan/1/request.xsd"
 class TNRMv3RequestFormatter(FormatterBase):
     def __init__(self, xmlns=DEFAULT_XMLNS, xs=DEFAULT_XS,
                  sharedvlan=DEFAULT_SHARED_VLAN,
+                 felix=None,
                  schema_location=DEFAULT_REQ_SCHEMA_LOCATION):
+        nmap = {"sharedvlan": "%s" % (sharedvlan)}
+        if felix is not None:
+            nmap["felix"] = "%s" % (felix)
+
         super(TNRMv3RequestFormatter, self).__init__(
-            "request", schema_location, {"sharedvlan": "%s" % (sharedvlan)},
-            xmlns, xs)
+            "request", schema_location, nmap, xmlns, xs)
         self.__sv = sharedvlan
 
     def node(self, n):
