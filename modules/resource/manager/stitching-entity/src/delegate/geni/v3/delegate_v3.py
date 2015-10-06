@@ -394,7 +394,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     except Exception as e:
                         raise geni_ex.GENIv3GeneralError("Error in communication with SE. Details: %s" % e)
                     logger.debug("Cross-connection added: %s[%s]<->%s[%s]" % (in_port, in_vlan, out_port, out_vlan))
-                status = "geni_ready"
+
+                allocationStatus = "geni_provisioned"
+                operationalStatus = "geni_ready"
 
             elif action == "geni_stop":
                 for portVlanItem in portsVlansPairs:
@@ -405,7 +407,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
                         raise geni_ex.GENIv3GeneralError("Error in communication with SE.")
                     logger.debug("Cross-connection deleted: %s[%s]<->%s[%s]" % (in_port, in_vlan, out_port, out_vlan))
 
-                status = "geni_notready"
+                allocationStatus = "geni_provisioned"
+                operationalStatus = "geni_notready"
                 
             elif action == "geni_restart":
                 for portVlanItem in portsVlansPairs:
@@ -415,7 +418,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                         se_provision.addSwitchingRule(in_port, out_port, in_vlan, out_vlan)
                     except:
                         raise geni_ex.GENIv3GeneralError("Error in communication with SE.")
-                status = "geni_ready"
+                
+                allocationStatus = "geni_provisioned"
+                operationalStatus = "geni_ready"
 
 
             for sliver in links_db["geni_sliver_urn"]:
@@ -423,8 +428,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
                                 {   
                                     "geni_sliver_urn": sliver,
                                     "geni_expires": expires_date,
-                                    "geni_allocation_status": links_db["geni_allocation_status"],
-                                    "geni_operational_status" : status
+                                    "geni_allocation_status": allocationStatus,
+                                    "geni_operational_status" : operationalStatus
                                 }
                             )
 
