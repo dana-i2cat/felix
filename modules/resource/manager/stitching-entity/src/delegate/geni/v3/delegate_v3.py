@@ -308,8 +308,20 @@ class GENIv3Delegate(GENIv3DelegateBase):
             links_db, nodes, links = self.SESlices.get_link_db(urn)
             sliceVlansPairs = self.SESlices.get_slice_vlan_pairs(urn)
             self.SESlices._create_manifest_from_req_n_and_l(se_manifest, nodes,links, sliceVlansPairs)
-
             reservation_ports = self.SESlices._allocate_ports_in_slice(nodes)["ports"]
+
+            if end_time != None:
+                alarm_time = end_time
+                SESchedulerService.get_scheduler().add_job( se_job_unprovision,
+                                                            "date",
+                                                            run_date=alarm_time,
+                                                            args=[datetime.now(),
+                                                            links_db,
+                                                            urn])
+
+            
+            # Retrieve allocation status and modify after the method's operation
+            links_db, _, _ = self.__update_fetch_allocation_status_slivers(urn, "geni_provisioned")
 
             if end_time != None:
                 alarm_time = end_time
@@ -325,11 +337,10 @@ class GENIv3Delegate(GENIv3DelegateBase):
                                 {   
                                     "geni_sliver_urn": sliver,
                                     "geni_expires": end_time,
-                                    "geni_allocation_status": "geni_provisioned",
-                                    "geni_operational_status" : "geni_notready"
+                                    "geni_allocation_status": links_db["geni_allocation_status"],
+                                    "geni_operational_status": links_db["geni_operational_status"],
                                 }
                             )
-
 
             logger.info("provision successfully completed: %s", urn)
 
@@ -359,7 +370,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
                                     "geni_sliver_urn": sliver,
                                     "geni_expires": expires_date,
                                     "geni_allocation_status": links_db["geni_allocation_status"],
-                                    "geni_operational_status" : "geni_ready"
+                                    "geni_operational_status": links_db["geni_operational_status"],
                                 }
                             )
 
@@ -395,8 +406,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                         raise geni_ex.GENIv3GeneralError("Error in communication with SE. Details: %s" % e)
                     logger.debug("Cross-connection added: %s[%s]<->%s[%s]" % (in_port, in_vlan, out_port, out_vlan))
 
-                allocationStatus = "geni_provisioned"
-                operationalStatus = "geni_ready"
+                # Retrieve allocation status and modify after the method's operation
+                links_db, _, _ = self.__update_fetch_allocation_status_slivers(urn, "geni_provisioned")
+                links_db, _, _ = self.__update_fetch_operational_status_slivers(urn, "geni_ready")
 
             elif action == "geni_stop":
                 for portVlanItem in portsVlansPairs:
@@ -407,8 +419,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                         raise geni_ex.GENIv3GeneralError("Error in communication with SE.")
                     logger.debug("Cross-connection deleted: %s[%s]<->%s[%s]" % (in_port, in_vlan, out_port, out_vlan))
 
-                allocationStatus = "geni_provisioned"
-                operationalStatus = "geni_notready"
+                # Retrieve allocation status and modify after the method's operation
+                links_db, _, _ = self.__update_fetch_allocation_status_slivers(urn, "geni_provisioned")
+                links_db, _, _ = self.__update_fetch_operational_status_slivers(urn, "geni_notready")
                 
             elif action == "geni_restart":
                 for portVlanItem in portsVlansPairs:
@@ -419,8 +432,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     except:
                         raise geni_ex.GENIv3GeneralError("Error in communication with SE.")
                 
-                allocationStatus = "geni_provisioned"
-                operationalStatus = "geni_ready"
+                # Retrieve allocation status and modify after the method's operation
+                links_db, _, _ = self.__update_fetch_allocation_status_slivers(urn, "geni_provisioned")
+                links_db, _, _ = self.__update_fetch_operational_status_slivers(urn, "geni_ready")
 
 
             for sliver in links_db["geni_sliver_urn"]:
@@ -428,8 +442,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
                                 {   
                                     "geni_sliver_urn": sliver,
                                     "geni_expires": expires_date,
-                                    "geni_allocation_status": allocationStatus,
-                                    "geni_operational_status" : operationalStatus
+                                    "geni_allocation_status": links_db["geni_allocation_status"],
+                                    "geni_operational_status": links_db["geni_operational_status"],
                                 }
                             )
 
@@ -521,3 +535,29 @@ class GENIv3Delegate(GENIv3DelegateBase):
             result = result - result.utcoffset()
             result = result.replace(tzinfo=None)
         return result
+
+    def __update_slivers(self, urn, dict_slivers):
+        slices = db_sync_manager.get_slices(urn)
+        if "slivers" in dict_slivers:
+            dict_slivers = dict_slivers["slivers"]
+        slices["slivers"].update(dict_slivers)
+        db_sync_manager.set_slices(urn, slices)
+
+    def __update_allocation_status_slivers(self, urn, status):
+        slices = db_sync_manager.get_slices(urn)
+        dict_status = {"slivers": {"geni_allocation_status": status}}
+        self.__update_slivers(urn, dict_status)
+
+    def __update_operational_status_slivers(self, urn, status):
+        slices = db_sync_manager.get_slices(urn)
+        dict_status = {"slivers": {"geni_operational_status": status}}
+        self.__update_slivers(urn, dict_status)
+
+    def __update_fetch_allocation_status_slivers(self, urn, status):
+        self.__update_allocation_status_slivers(urn, status)
+        return self.SESlices.get_link_db(urn)
+
+    def __update_fetch_operational_status_slivers(self, urn, status):
+        self.__update_operational_status_slivers(urn, status)
+        return self.SESlices.get_link_db(urn)
+
