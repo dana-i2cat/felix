@@ -14,9 +14,11 @@ import zlib
 from handler.geni.v3 import exceptions as geni_ex
 # import handler.geni.v3.extensions.geni
 # import handler.geni.v3.extensions.sfa.trust.gid as gid
+from delegate.geni.v3.db_manager_se import db_sync_manager
 
 from core import log
 logger = log.getLogger("handlergeniv3")
+from core.utils import credentials as geni_creds
 
 # import ast
 
@@ -171,16 +173,28 @@ class GENIv3Handler(xmlrpc.Dispatcher):
     def Provision(self, urns, credentials, options):
         geni_best_effort = self._option(options, "geni_best_effort", ret=True)
         geni_users = self._option(options, "geni_users", ret=[])
-        geni_end_time = None
+
+        # Expiration in credentials
+        expiration = geni_creds.get_cred_exp(logger, credentials[0]["geni_value"])
+        # Expiration in slice
+        slice_resources = db_sync_manager.get_slices(urns[0])
+        # Convert expiration date in slice credential to expected datetime format
+        try:
+            # Expiration in slice (from Allocate reservation)
+            expiration = slice_resources["slivers"]["geni_expires"]
+            expiration = self._datetime2str(expiration)
+            expiration = self._str2datetime(expiration)
+        except:
+            pass
         if "geni_end_time" in options:
-            geni_end_time = self._str2datetime(options["geni_end_time"])
+            expiration = max(expiration, self._str2datetime(options["geni_end_time"]))
 
         # TODO check the end_time against the duration of the credential
         try:
             self._checkRSpecVersion(options["geni_rspec_version"])
             r_rspec, r_sliver_list = self._delegate.provision(
                 urns, self.requestCertificate(), credentials, geni_best_effort,
-                geni_end_time, geni_users)
+                expiration, geni_users)
 
             result = {"geni_rspec": r_rspec,
                       "geni_slivers": self._convertExpiresDate(r_sliver_list)}
