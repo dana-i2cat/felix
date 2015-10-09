@@ -316,14 +316,14 @@ class GENIv3Delegate(GENIv3DelegateBase):
             # Manage the "extend-group" info here: extend the group info
             # introducing the new dpids/ports taken from
             # the mapper (path-finder) module.
-            (sdn_m_info, sdn_slivers, db_slivers, se_sdn_info) =\
+            (of_m_info, of_slivers, db_slivers, se_sdn_info) =\
                 SDNUtils().manage_allocate(
                     slice_urn, credentials, end_time, sliver, req_rspec,
                     slice_urn, extend_groups)
 
             logger.debug("sdn_m=%s, sdn_s=%s, db_s=%s" %
-                         (sdn_m_info, sdn_slivers, db_slivers))
-            for m in sdn_m_info:
+                         (of_m_info, of_slivers, db_slivers))
+            for m in of_m_info:
                 for s in m.get("slivers"):
                     ro_manifest.of_sliver(s)
 
