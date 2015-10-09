@@ -17,9 +17,12 @@ class SERMv3RequestParser(ParserBase):
         # "serm" as resource-name (client_id) and authority
         # (component_manager_id) fields
         # At least we verify the autority field here!
-        if not node.attrib.get("component_manager_id"):
+        if not node.attrib.get("component_manager_id") \
+            and not node.attrib.get("client_id"):
             return False
         if "serm" in node.attrib.get("component_manager_id"):
+            return True
+        if "serm" in node.attrib.get("client_id"):
             return True
         return False
 
