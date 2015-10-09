@@ -160,6 +160,14 @@ class VTAMDriver:
         return slivers_to_manifest       
     
     def reserve_vms(self, slice_urn, reservation, expiration=None, users=list()):
+        # URNs of foreign RMs are not served
+        current_cm_hrn = self.__config.CM_HRN
+        cm_id = getattr(reservation, "get_component_manager_id")
+        if callable(cm_id):
+            cm_id = urn_to_hrn(cm_id())[0]
+        if current_cm_hrn != cm_id:
+            # No reservation is provided for URNs of other CMs
+            return None
         # VMs are dynamic resource -> no collision will happen
         slice_hrn, hrn_type = urn_to_hrn(slice_urn)
 
