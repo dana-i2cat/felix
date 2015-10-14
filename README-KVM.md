@@ -1,7 +1,7 @@
 OVERVIEW OF KVM-CRM
 ===================
 
-FELIX KVM-based Compute Resource Manager (KVM-CRM) is a KVM-based virtual 
+FELIX KVM-based Computing Resource Manager (KVM-CRM) is a KVM-based virtual 
 machine (VM) management software for testbed management. It based on OFELIA 
 Control Framework (OCF).
 It controls experimentation life-cycle; reservation,
