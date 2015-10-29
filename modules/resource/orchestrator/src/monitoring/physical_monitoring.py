@@ -98,7 +98,6 @@ class PhysicalMonitoring(BaseMonitoring):
                 for v in db_peers.values():
                     domain_urn_set.update(v.get("domain_urns"))
 
-                logger.info("domain_urn_set: %s" % (domain_urn_set,))
                 for durn in domain_urn_set:
                     # Retrieve proper resources
                     self.retrieve_topology_by_peer(durn)
@@ -106,16 +105,9 @@ class PhysicalMonitoring(BaseMonitoring):
                 logger.warning("Physical topology - Cannot recover information for domain='%s'. Skipping to the next domain. Details: %s" % (domain_name, e))
                 logger.warning(traceback.format_exc())
 
-            # XXX: BEGIN TEMPORARY CODE FOR (M)MS
-            # TODO: REMOVE THIS IN DUE TIME
-            # Added so that (M)MS receives at least one TNRM per island (at RO level)
+            # XXX: (M)MS expects to receive one TNRM per island
             if not self.__check_node_in_topology("tn"):
-                # Use dummy data to fill TN node
-                dummy_node = {"component_id": "urn:publicid:IDN+fms:dummy_org:tnrm+node+tnrm"}
-                n = self._add_generic_node(self.topology, dummy_node, "tn")
-                interface = etree.SubElement(n, "interface")
-                interface.set("id", "dummy_tn_iface_for_ms")
-                # XXX: END TEMPORARY CODE FOR (M)MS
+                self._add_tn_info()
 
             # Verify structure of the "topology" tag before constructing final XML to be sent to MS
             ## Note: on SUCCESS return, it returns a boolean. On FAILURE return, it returns (boolean, string)

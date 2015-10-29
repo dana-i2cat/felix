@@ -99,9 +99,8 @@ class BaseMonitoring(object):
                 logger.error("Error storing last_update_time for phy-topology.")
                 logger.error("Exception: %s" % e)
 
-        # XXX: BEGIN TEMPORARY CODE FOR (M)MS
-        # TODO: REMOVE THIS IN DUE TIME
-        # Added so that (M)MS receives at least one TNRM per island
+        # XXX: (M)MS assumes one TNRM per island
+        # With this, (M)MS receives at least one TNRM per island
         type_resource_peer_tnrm = self.urn_type_resources_variations.get("tnrm")
         for peer in self.peers:
             filter_params = {"_ref_peer": peer.get("_id"),}
@@ -114,7 +113,6 @@ class BaseMonitoring(object):
                 for authority in self.peers_by_domain:
                     if peer_domain_urn not in self.peers_by_domain.get(authority):
                         self.peers_by_domain[authority].append(peer_domain_urn)
-        # XXX: END TEMPORARY CODE FOR (M)MS
 
     def _send(self, xml_data, peer=None):
         try:
@@ -267,12 +265,15 @@ class BaseMonitoring(object):
     # C-RM resources
     #################
 
-    def _add_com_info(self):
+    def _add_com_info(self, parent_node=None):
         # 1. Nodes
         nodes = [ n for n in db_sync_manager.get_com_nodes_by_domain(self.domain_urn) ]
         for node in nodes:
             logger.debug("com-node=%s" % (node,))
-            n = self._add_generic_node(self.topology, node, "server")
+            # If no parent node passed, COM info is attached to root topology node
+            if parent_node is None:
+                parent_node = self.topology
+            n = self._add_generic_node(parent_node, node, "server")
             # Output interfaces per server
             logger.debug("com-node-interfaces=%s" % node.get("interfaces"))
             for iface in node.get("interfaces"):
@@ -283,11 +284,13 @@ class BaseMonitoring(object):
         links = [ l for l in db_sync_manager.get_com_links_by_domain(self.domain_urn) ]
         logger.debug("com-links=%s" % (links,))
         for link in links:
-            self._add_com_link(link)
+            self._add_com_link(link, parent_node)
 
-    def _add_com_link(self, link):
+    def _add_com_link(self, link, parent_node=None):
         logger.debug("com-links=%s" % (link,))
-        l = etree.SubElement(self.topology, "link")
+        if parent_node is None:
+            parent_node = self.topology
+        l = etree.SubElement(parent_node, "link")
         # NOTE that this cannot be empty
         l.set("type", MonitoringUtilsLinks._translate_link_type(link))
         link_id = ""
@@ -310,12 +313,15 @@ class BaseMonitoring(object):
     # SDN-RM resources
     ###################
 
-    def _add_sdn_info(self):
+    def _add_sdn_info(self, parent_node=None):
         # 1. Nodes
         datapaths = [ d for d in db_sync_manager.get_sdn_datapaths_by_domain(self.domain_urn) ]
         for dp in datapaths:
             logger.debug("sdn-datapath=%s" % (dp,))
-            switch = self._add_generic_node(self.topology, dp, "switch")
+            # If no parent node passed, SDN info is attached to root topology node
+            if parent_node is None:
+                parent_node = self.topology
+            switch = self._add_generic_node(parent_node, dp, "switch")
             for p in dp.get("ports"):
                 iface = etree.SubElement(switch, "interface")
                 iface.set("id", "%s_%s" % (switch.get("id"), p.get("num")))
@@ -325,12 +331,14 @@ class BaseMonitoring(object):
         (sdn_links, fed_links) = [ l for l in db_sync_manager.get_sdn_links_by_domain(self.domain_urn) ]
         for sdn_link in sdn_links:
             logger.debug("sdn-link=%s" % (sdn_link,))
-            self._add_sdn_link(sdn_link)
+            self._add_sdn_link(sdn_link, parent_node)
         for sdn_fed_link in fed_links:
             logger.debug("fed-sdn-link=%s" % (sdn_fed_link,))
 
-    def _add_sdn_link(self, link):
-        l = etree.SubElement(self.topology, "link")
+    def _add_sdn_link(self, link, parent_node=None):
+        if parent_node is None:
+            parent_node = self.topology
+        l = etree.SubElement(parent_node, "link")
         # NOTE that this cannot be empty
         l.set("type", MonitoringUtilsLinks._translate_link_type(link))
         link_id = ""
@@ -357,16 +365,21 @@ class BaseMonitoring(object):
     # TN-RM resources
     ##################
 
-    def _add_tn_info(self):
+    def _add_tn_info(self, parent_node=None):
         # 1. Nodes
-        nodes = [ d for d in db_sync_manager.get_tn_nodes_by_domain(self.domain_urn) ]
-        # XXX: TEMPORARY CODE FOR (M)MS
-        # TODO: REMOVE THIS IN DUE TIME
-        # Added so that (M)MS receives at least one TNRM per island
+        # XXX: (M)MS assumes one TNRM per island
+        # This retrieves TN information from AIST instance
+        # (providing MRO has TNRM as peer, or its information in its DB)
+        felix_tn_urn = "urn:publicid:IDN+fms:aist:tnrm"
+        nodes = [ d for d in db_sync_manager.get_tn_nodes_by_domain(felix_tn_urn) ]
+#        nodes = [ d for d in db_sync_manager.get_tn_nodes_by_domain(self.domain_urn) ]
 #        nodes = [ d for d in db_sync_manager.get_tn_nodes() ]
         for node in nodes:
             logger.debug("tn-node=%s" % (node,))
-            n = self._add_generic_node(self.topology, node, "tn")
+            # If no parent node passed, SDN info is attached to root topology node
+            if parent_node is None:
+                parent_node = self.topology
+            n = self._add_generic_node(parent_node, node, "tn")
             # Output interfaces per node
             logger.debug("tn-node-interfaces=%s" % node.get("interfaces"))
             for iface in node.get("interfaces"):
@@ -380,12 +393,15 @@ class BaseMonitoring(object):
     # SE-RM resources
     ##################
 
-    def _add_se_info(self):
+    def _add_se_info(self, parent_node=None):
         # 1. Nodes
         nodes = [ d for d in db_sync_manager.get_se_nodes_by_domain(self.domain_urn) ]
         for node in nodes:
             logger.debug("se-node=%s" % (node,))
-            n = self._add_generic_node(self.topology, node, "se")
+            # If no parent node passed, SE info is attached to root topology node
+            if parent_node is None:
+                parent_node = self.topology
+            n = self._add_generic_node(parent_node, node, "se")
             # Output interfaces per node
             logger.debug("se-node-interfaces=%s" % node.get("interfaces"))
             for iface in node.get("interfaces"):
