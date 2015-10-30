@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load ch_extras %}
+
+{% block title %}Add member to Project {{ project.name }}{% endblock title %}
+
+{% block head %}
+<script>
+	$(document).ready(function() {
+		addTooltipToClass("role_desc");
+	});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="main">
+	<div class="title">
+		<h1>Add a Member to Project {{ project.name }}</h1>
+	</div>
+	<div class="member_form">
+		<form class="form" action="." method="post">{% csrf_token %}
+				{{ form.as_p }}
+			<div class="center">
+				<input type="submit" value="Add" />
+				<input type="button" value="Cancel" onclick="document.location='{{ breadcrumbs.1.1 }}'" />
+			</div>
+		</form>
+	</div>
+</div>
+{% endblock content %}

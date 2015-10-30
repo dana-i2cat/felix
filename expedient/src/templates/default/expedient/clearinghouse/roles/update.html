@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load breadcrumbs %}
+
+{% block title %}Update Role {{ role.name }} in Project {{ project.name }}{% endblock %}
+
+{% block head %}
+<script>
+	$(document).ready(function() {
+		addTooltipToClass("perm_desc");
+	});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="main">
+	<h1>Update Role {{ role.name }} in Project {{ project.name }}</h1>
+	
+	Here you can edit the role {{ role.name }}. Note that you can only remove
+	permissions if you have the "can_remove_members" permission for the project.
+	Also, note that you can only add permissions to the role that you are
+	allowed to give to other users.
+	
+	<form class="form" action="" method="POST">{% csrf_token %}
+		{{ form.as_p }}
+		<div class="center">
+			<input type="submit" value="Update" />
+			<input type="button" value="Cancel" onclick="document.location='{% before_last_link breadcrumbs %}'"/>
+		</div>
+	</form>
+</div>
+{% endblock %}

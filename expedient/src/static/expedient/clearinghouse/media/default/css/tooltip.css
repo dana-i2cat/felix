@@ -1,0 +1,49 @@
+.tooltip {
+	background-color: #c5cfd8; /*#b0c4ff;*/
+	border: 1px solid #9fa4a8;
+	border-radius: 6px;
+	/* color: #fff; */
+	display: none;
+	font-size: .9em;
+	max-width: 400px;
+	min-width: 250px;
+	padding: 10px 10px;
+	text-align: left;
+	/*opacity: 0.85;*/
+	/* outline radius for mozilla/firefox only */
+	-moz-box-shadow:0 0 2px #132c60;
+	-webkit-box-shadow:0 0 2px #132c60;
+	-moz-border-radius: 6px;
+	-webkit-border-radius: 6px;
+	/* IE 8 */
+  	/*-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=85)";*/
+  	/* IE 5-7 */
+  	/*filter: alpha(opacity=85);*/
+	/* Netscape */
+  	/*-moz-opacity: 0.85;*/
+  	/* Safari 1.x */
+  	/*-khtml-opacity: 0.85;*/
+}
+.tooltiptable {
+	border: none;
+	border-collapse: collapse;
+}
+.tooltiptable tbody td,
+.tooltipable tbody th {
+	border: none;
+	border-collapse: collapse;
+}
+/* Separate 1st row (th) from 2nd (td) */
+.tooltiptable tbody th {
+	padding-right: 5px;
+}
+
+/* Links*/
+.tooltip a {
+	/*color: #fff;*/
+	text-decoration: underline;
+}
+.tooltip a:hover {
+	text-decoration: none;
+}
+

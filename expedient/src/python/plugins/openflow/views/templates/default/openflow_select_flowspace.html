@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+{% load ch_extras %}
+
+{% block head %}
+<script>
+	$(document).ready(function() {
+		$("table.fulltable td").css("padding", "1px 1px 1px 1px");
+		$("input[type=text]").css("width", "280px");
+                if ("{{alertMessage}}" != ""){
+			alert("{{alertMessage}}");
+		}
+	})
+</script>
+<style>
+table.fulltable input[type=text] {
+    width: 70px;
+}
+span.next_link {
+    font-weight: bold;
+}
+div.errors {
+    color: #a70000;
+    font-weight: bold;
+}
+
+div.steps {
+    background-color: #ebf5ff;
+    border: 1px solid #CCC;
+    border-radius: 0px 0px 25px 25px;
+    margin-bottom: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 0px;
+    -moz-border-radius: 0px 0px 25px 25px;
+    padding: 10px;
+    vertical-align: middle;
+    -webkit-border-radius: 0px 0px 25px 25px;
+    width: 400px;
+}
+
+.center {
+    text-align: center;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main">
+    
+    <h1 style="margin-bottom:0px;">Set FlowSpace for Slice {{ slice.name }}</h1>
+    
+<div id="procsteps" class="steps center">
+    1. <a href="{% url book_openflow slice.id %}">Select OpenFlow Ports</a>
+    2. <a href="{% url flowspace slice.id %}" style="font-weight: bold;">Select/Modify Flowspace</a>
+</div>
+
+	<div class="help_text">
+	<p>Each table below describes a class of traffic to be received by
+	your controller. Each field is specified as a range. Empty cells mean any value.
+	The tables are OR'ed together to produce a rule.</p>
+
+	<p><em><!--For example, if you want to receive all incoming and
+	outgoing port 80 traffic, then you will need two tables. In the first, you
+	would set the "TCP/UDP Destination" field to 80. In the second,
+	you would set the "TCP/UDP Source" field to 80.-->
+	For example, if you want to receive packets tagged with the VLAN
+	2012, then you will need to set this value in both columns corresponding to
+	the "VLAN ID" row. Or you may choose a small range of values.</em></p>
+
+	<p>If you need to define more FlowSpaces, click "Define another FlowSpace"
+	and an additional empty table will be displayed.</p>
+	</div>
+
+    <script>
+    // Dynamycally change the form action depending on the pressed button
+    function changeFlowSpaceFormActionURL(url) {
+        form = $("#flowspace_formset")[0];
+        form.action = url;
+    }
+    </script>
+
+    <form class="form" style="width: auto !important;" id='flowspace_formset' method="POST" action="{% url flowspace slice.id %}">{% csrf_token %}
+    	{{ fsformset.management_form }}
+		{% for form in fsformset.forms %}
+			{% for hidden in form.hidden_fields %}
+				{{ hidden }}
+			{% endfor %}
+		{% endfor %}
+		<div class="center">
+	   	{% for form in fsformset.forms %}
+			<h2>Flowspace {{ forloop.counter }} ({% if form.initial %}saved{% else %}unsaved{% endif %})</h2>
+			<div class="errors">{{ form.non_field_errors }}</div>
+	 	   	<table class="fulltable formtable {% if form.initial %}saved{% endif %}">
+	    		<thead>
+	    			<tr><th>Field</th><th>From</th><th>To</th></tr>
+	    		</thead>
+	    		<tbody>
+		            <tr>
+		            	<th><strong>MAC Source</strong></th>
+		            	<td>
+		            		{{ form.dl_src_start.errors }}
+		            		{{ form.dl_src_start.label_tag }}
+		            		{{ form.dl_src_start }}
+		            	</td>
+		            	<td>
+		            		{{ form.dl_src_end.errors }}
+		            		{{ form.dl_src_end.label_tag }}
+		            		{{ form.dl_src_end }}
+		            	</td>
+		            </tr>
+		            <tr>
+		            	<th><strong>MAC Destination</strong></th>
+		            	<td>
+		            		{{ form.dl_dst_start.errors }}
+		            		{{ form.dl_dst_start.label_tag }}
+		            		{{ form.dl_dst_start }}
+		            	</td>
+		            	<td>
+		            		{{ form.dl_dst_end.errors }}
+		            		{{ form.dl_dst_end.label_tag }}
+		            		{{ form.dl_dst_end }}
+		            	</td>
+		            </tr>
+		            <tr>
+		            	<th><strong>Ethernet Type</strong></th>
+		            	<td>
+		            		{{ form.dl_type_start.errors }}
+		            		{{ form.dl_type_start.label_tag }}
+		            		{{ form.dl_type_start }}
+		            	</td>
+		            	<td>
+		            		{{ form.dl_type_end.errors }}
+		            		{{ form.dl_type_end.label_tag }}
+		            		{{ form.dl_type_end }}
+		            	</td>
+		            </tr>
+		            <tr>
+		            	<th><strong>VLAN ID</strong></th>
+		            	<td>
+		            		{{ form.vlan_id_start.errors }}
+		            		{{ form.vlan_id_start.label_tag }}
+		            		{{ form.vlan_id_start }}
+		            	</td>
+		            	<td>
+		            		{{ form.vlan_id_end.errors }}
+		            		{{ form.vlan_id_end.label_tag }}
+		            		{{ form.vlan_id_end }}
+		            	</td>
+		            </tr>
+		            <tr>
+		            	<th><strong>IP Source</strong></th>
+		            	<td>
+		            		{{ form.nw_src_start.errors }}
+		            		{{ form.nw_src_start.label_tag }}
+		            		{{ form.nw_src_start }}
+		            	</td>
+		            	<td>
+		            		{{ form.nw_src_end.errors }}
+		            		{{ form.nw_src_end.label_tag }}
+		            		{{ form.nw_src_end }}
+		            	</td>
+		            </tr>
+		            <tr>
+		            	<th><strong>IP Destination</strong></th>
+		            	<td>
+		            		{{ form.nw_dst_start.errors }}
+		            		{{ form.nw_dst_start.label_tag }}
+		            		{{ form.nw_dst_start }}
+		            	</td>
+		            	<td>
+		            		{{ form.nw_dst_end.errors }}
+		            		{{ form.nw_dst_end.label_tag }}
+		            		{{ form.nw_dst_end }}
+		            	</td>
+		            </tr>
+		            <tr>
+		            	<th><strong>IP Protocol</strong></th>
+		            	<td>
+		            		{{ form.nw_proto_start.errors }}
+		            		{{ form.nw_proto_start.label_tag }}
+		            		{{ form.nw_proto_start }}
+		            	</td>
+		            	<td>
+		            		{{ form.nw_proto_end.errors }}
+		            		{{ form.nw_proto_end.label_tag }}
+		            		{{ form.nw_proto_end }}
+		            	</td>
+		            </tr>
+		            <tr>
+		            	<th><strong>TCP/UDP Source</strong></th>
+		            	<td>
+		            		{{ form.tp_src_start.errors }}
+		            		{{ form.tp_src_start.label_tag }}
+		            		{{ form.tp_src_start }}
+		            	</td>
+		            	<td>
+		            		{{ form.tp_src_end.errors }}
+		            		{{ form.tp_src_end.label_tag }}
+		            		{{ form.tp_src_end }}
+		            	</td>
+		            </tr>
+		            <tr>
+		            	<th><strong>TCP/UDP Destination</strong></th>
+		            	<td>
+		            		{{ form.tp_dst_start.errors }}
+		            		{{ form.tp_dst_start.label_tag }}
+		            		{{ form.tp_dst_start }}
+		            	</td>
+		            	<td>
+		            		{{ form.tp_dst_end.errors }}
+		            		{{ form.tp_dst_end.label_tag }}
+		            		{{ form.tp_dst_end }}
+		            	</td>
+		            </tr>
+		            <tr>
+		            	<th><strong>Ports</strong></th>
+		            	<td COLSPAN="2">
+		            		{{ form.slivers.errors }}
+		            		{{ form.slivers.label_tag }}
+		            		{{ form.slivers }}
+		            	</td>
+		            </tr>
+					<tr>
+						<th><strong>Delete?</strong></th>
+						<td COLSPAN="2">
+							{{ form.DELETE }}
+						</td>
+					</tr>
+		        </tbody>
+	        </table>
+	        {% endfor %}
+                <input id='submit' type="submit" value="Define another FlowSpace"
+		{%if slice.started %}onClick='return confirm("Once you save the current FlowSpace(s) a new request will be generated. Until it is granted, your old FlowSpace(s) will be deleted. Are you sure you want to save the current FlowSpace(s)?");'
+		{%else %}onClick='return confirm("Your slice is stopped at the moment. Remember to start it to request the saved FlowSpace(s).");'
+		{% endif%}/>
+			<span class="next_link">
+				<input type="button" value="Clear" onclick="document.location='{% url flowspace slice.id %}';"/>
+				{% if done %}
+				<input type="submit" id="form_request" value="Save and exit" onclick="javascript: if (confirm('Flowspace(s) will be saved before exiting. Are you ready?')) { changeFlowSpaceFormActionURL('{% url save_flowspace slice.id %}'); return true; } else { return false; }"/>
+				{% else %}
+				<input type="button" value="Next" onclick="document.location='{% url gcf_sshkeys slice.id %}';"/>
+				{% endif %}
+			</span>
+        </div>
+    </form>
+</div>
+{% endblock %}

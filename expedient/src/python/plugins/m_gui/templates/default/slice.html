@@ -1,0 +1,72 @@
+{% extends "default/base.html" %}
+{% load ch_extras %}
+
+{% block title %}Slice list{% endblock title %}
+
+{% block head %}
+<style>
+	.table_div td,th {
+    	text-align: center;
+	}
+</style>
+<script>
+	$(document).ready(function() {
+		addTooltipToClass("project_name");
+		addTooltipToClass("role_desc");
+		addTooltipToClass("user_desc");
+		addTooltipToClass("req_msg");
+		addTooltipToClass("req_user");
+		$(".permissions").each(function(index) {
+			addTooltipToSummary("role_perms_"+index);
+		});
+		$("#role_req_help_img").tooltip({
+			tip: "#role_req_help_div",
+            position: "top center",
+            cancelDefault: true,
+            relative: true,
+            offset: [0,110]
+		});
+		$("#aggs_help_img").tooltip({
+			tip: "#aggs_help_div",
+            position: "top center",
+            cancelDefault: true,
+            relative: true,
+            offset: [0,110]
+		});
+	});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="main">
+	
+	<h2>Slices</h2>
+	<div class="slice_list">
+		<div class="table_div">
+			<table class="fulltable" id="slice_table">
+				<tr class="head">
+		            <th class="name">Name</th>
+					<th class="description">Description</th>
+					<th class="resources">Size</th>
+					<th class="owner">Owner</th>
+					<th class="status">Reserved?</th>
+					<th class="actions">Actions</th>
+				</tr>
+				{% for slice in slices %}
+				<tr class="body">
+					<td class="name"><a href="{% url m_slice_detail slice.id %}">{{ slice.name }}</a></td>
+					<td class="description">{{ slice.description }}</td>
+					<td class="resources"></td>
+					<td class="owner">{{ slice.owner }}</td>
+					<td class="status">{% if slice.started and not slice.modified %}<img src="{% url img_media 'active.png' %}">{% else %}<img src="{% url img_media 'inactive.png' %}">{% endif %}</td>
+					<td class="actions">
+						<a href="{% url m_slice_detail slice.id %}">view</a>
+					</td>
+				</tr>
+				{% endfor %}
+			</table>
+		</div>
+	</div>
+		
+</div>
+{% endblock content %}

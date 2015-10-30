@@ -1,0 +1,142 @@
+{% extends "div_base.html" %}
+{% load ch_extras %}
+
+{% block head %}
+<link rel="stylesheet" href="{% url css_media 'project.css' %}" />
+<!--<style type="text/css">
+	table#projects_table tr.body td.name {
+		background: url({% url img_media 'expand.png' %}) .5em center no-repeat;
+	}
+	table#projects_table tr.body td.name:hover {
+		background: #dce9f5 url({% url img_media 'expand.png' %}) .5em center no-repeat;
+	}
+</style>-->
+<script src="{% url js_media 'jquery-ui.min.js' %}" /></script>
+<script>
+	$(document).ready(function() {
+		/* Previous */
+		addTooltipToClass("slicecontinue");
+		addTooltipToClass("project_name");
+		$(".project_list tr.body").each(function(index) {
+			addTooltipToSummary("ownersgrp_"+index);
+			addTooltipToSummary("membersgrp_"+index);
+		});
+		// Allow to expand projects with information
+		/*$('table#projects_table td.details').click(
+			function() {
+				var current_unfolded = $($(this).parent("tr")).next();
+				current_unfolded.toggle();
+				// Hide the rest of them
+				$('table#projects_table tr.accordion').not(current_unfolded).hide();
+			}
+		)*/
+		$('table#projects_table tr.body').click(
+			function(event) {
+				// Expand only when cell (TD) is clicked
+				if (event.target.nodeName.toLowerCase() == "td") {
+					var current_unfolded = $(this).next();
+					/* Obtain project ID from selected row */
+					var project_id = $(this)[0].id;
+					/* Hack to replace the project ID for the selected one */
+					project_id = project_id.substring(project_id.indexOf("_")+1,project_id.length);
+				    /* Asynchronous calls to insert data into different layers */
+					var project_details_url = '{% url project_list_details 0 %}'.replace (0, project_id);
+				    $.get(project_details_url, function(data) {
+				        current_unfolded.html(data);
+				        // Fills tab struct with information
+				        $(function() {
+				            $(".tabs").tabs();
+				        });
+				    });
+					current_unfolded.toggle();
+					// Hide the rest of them
+					$('table#projects_table tr.accordion').not(current_unfolded).hide();
+				}
+			}
+		)
+		// Original accordion
+		/*$(function() {
+			$("table#projects_table").accordion({
+				active: false,	// Initially expanded
+				collapsible: true,
+				header: 'tr.body'
+			});
+		});*/
+		// Fills tab struct with information
+		/*$(function() {
+			$(".tabs").tabs();
+		});*/
+	});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="project_list">
+	<div class="table_div">
+		<table class="fulltable" id="projects_table">
+			<tr class="head">
+				<!-- Add a new cell to match jQuery UI's accordion (?) -->
+				<th></th>
+				<th class="name">Name</th>
+                <th class="owners">Owners</th>
+                <th class="members">Members</th>
+                <th class="slices">Slices</th>
+                <th class="actions">Actions</th>
+			</tr>
+			{% for project in project_list %}
+			<!--<tr class="body accordion">-->
+			<tr id="project_{{ project.id }}" class="body">
+				<td class="expand" title="Click to expand">
+					<img src="{% url img_media 'expand.png' %}" />
+				</td>
+				<td class="name">
+					<div class="val project_name"><a href="{% url project_detail project.id %}" onClick='document.location="{% url project_detail project.id %}"'>{{ project.name }}</a></div>
+					<div class="description project_name">{{ project.description }}</div>
+				</td>
+				<td class="owners">
+					{% with project.owners.all as users %}
+					{% with "ownersgrp_"|cat:forloop.counter0 as tooltip_class %}
+					{% include "users/tooltiplist.html" %}
+					{% endwith %}
+					{% endwith %}
+				</td>
+                <td class="members">
+					{% with project.members.all as users %}
+					{% with "membersgrp_"|cat:forloop.counter0 as tooltip_class %}
+					{% include "users/tooltiplist.html" %}
+					{% endwith %}
+					{% endwith %}
+                </td>
+                <td class="slices">
+                	{% for slice in project.slice_set.all %}
+					{% if forloop.counter < 2 %}
+                	<a href="{% url slice_detail slice.id %}">{{ slice.name }}</a>{% if not forloop.last %},{% endif %}
+					{% else %}
+					{% if forloop.counter == 2 %}
+					<div class="val slicecontinue">...</div>
+					<div class="description slicecontinue">
+					{% endif %}
+						<a href="{% url slice_detail slice.id %}">{{ slice.name }}</a>{% if not forloop.last %},{% endif %}
+					{% if forloop.last %}
+					</div>
+					{% endif %}
+					{% endif %}
+					{% endfor %}
+                </td>
+				<td class="actions">
+					<a href="{% url project_detail project.id %}">view</a>,
+					<a href="{% url project_delete project.id %}">delete</a>
+				</td>
+			</tr>
+			<!-- Accordion -->
+			<tr class="accordion"></tr>
+			{% endfor %}
+		</table>
+	</div>
+    <div class="create_project">
+        <input type="button" value="Create"
+        onclick="document.location='{% url project_create %}'"/>
+    </div>
+
+</div>
+{% endblock content %}

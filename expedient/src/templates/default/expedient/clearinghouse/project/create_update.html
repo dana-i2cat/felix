@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load ch_extras %}
+{% load breadcrumbs %}
+
+{% block title %}Project {{ project.name }}{% endblock title %}
+
+{% block content %}
+<div class="title">
+	<h1>Project {{ project.name }}</h1>
+</div>
+
+<div class="project_edit">
+	<form class="form" action="" method="POST">{% csrf_token %}
+		{{ form.as_p }}
+		<div class="center">
+			<input type="submit" {% if project %}id="form_update_project"
+						{% else %}id="form_create_project"{% endif %} value="Save" />
+            <input type="button" onclick="javascipt:document.location='{% before_last_link breadcrumbs %}'" value="Cancel" />
+		</div>
+	</form>
+</div>
+{% endblock content %}

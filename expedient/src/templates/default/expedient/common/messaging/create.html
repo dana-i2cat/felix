@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Create message{% endblock title %}
+
+{% block content %}
+<h1>Create message</h1>
+<form class="form" method="post" action="">{% csrf_token %}
+	<p>{{ form.non_field_errors }}</p>
+	{{ form.as_p }}
+	<div class="center">
+		<input type="submit" value="Send" />
+		<input type="button" onClick='document.location="{% url messaging_center %}"' value="Cancel" />
+	</div>
+</form>
+{% endblock content %}

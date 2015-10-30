@@ -1,0 +1,27 @@
+{% extends "vt_plugin_base.html" %}
+
+{% block title %}{% if create %}Add Virtualization Aggregate{% else %}Update Virtualization Aggregate {{ aggregate.name }}{% endif %}.{% endblock title %}
+
+{% block content %}
+<div class="main">
+	<form class="form" enctype="multipart/form-data" method="post" action="">{% csrf_token %}
+        {# Aggregate Manager information #}
+        <p>{{ agg_form.non_field_errors }}</p>
+		{{ agg_form.as_p }}
+
+        {# Client information #}
+        <p>{{ client_form.non_field_errors }}</p>
+		{{ client_form.as_p }}
+
+		<div class="center">
+		    {% if create %}
+				<input type="submit" value="Create" />
+			{% else %}
+				<input type="submit" value="Update" />
+				<input type="button" value="Delete" onclick="document.location='{% url aggregate_delete aggregate.pk %}'"/>
+			{% endif %}
+			<input type="button" value="Cancel" onclick="document.location='{% url administration_home %}'"/>
+		</div>
+	</form>
+</div>
+{% endblock content %}

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Manage User Certificate and Keys{% endblock title %}
+
+{% block content %}
+<div >
+	<h1>Manage user {{ curr_user.username }}'s certificate</h1>
+	{% if cert %}
+	<table class="fulltable">
+		<tr align="left" bgcolor="#F0F0FF">
+			<th >Uniform Resource Name (URN)</th><td>{{ cert.get_urn }}</td>
+		</tr>
+		<tr align="left">
+			<th>Human Readable Name (HRN)</th><td>{{ cert.get_hrn }}</td>
+		</tr>
+		{% if cert.parent %}
+		<tr align="left" bgcolor="#F0F0FF">
+			<th>Issuer URN</th><td>{{ cert.parent.get_urn }}</td>
+		</tr>
+		<tr align="left" >
+			<th>Issuer HRN</th><td>{{ cert.parent.get_hrn }}</td>
+		</tr>
+		{% else %}
+		<tr align="left" bgcolor="#F0F0FF">
+			<th>Issuer URN</th><td><i>self</i></td>
+		</tr>
+		<tr align="left">
+			<th>Issuer HRN</th><td><i>self</i></td>
+		</tr>
+		{% endif %}
+		<tr align="left" bgcolor="#F0F0FF">
+			<th>Valid Not Before</th><td><i>{{ cert.get_notBefore }}</i></td>
+		</tr>
+		<tr align="left">
+			<th>Valid Not After</th><td><i>{{ cert.get_notAfter }}</i></td>
+		</tr>
+	</table>
+	{% else %}
+		<p>This user currently has no GENI user certificates. Click "Generate" below to create a new one.</p>
+	{% endif %}
+</div>
+<div>
+	{% if cert %}
+        <p><strong>Your certificate:</strong>
+		    <input type="button" id="download_cert" value="Download" onclick="document.location='{% url gcf_cert_download curr_user.pk %}'"/>
+            <input type="button" id="regenerate_credentials" value="Regenerate" onclick="document.location='{% url gcf_cert_generate curr_user.pk %}'"/>
+        </p>
+        <p><strong>Your certificate key:</strong> Private key associated with your certificate is not stored on server.
+            Private key is made available for download only once when the certificate is generated.
+            You may regenerate your certificate to get a new pair of certificate and key.</p>
+	{% else %}
+		<input type="button" id="generate_credentials" value="Generate" onclick="document.location='{% url gcf_cert_generate curr_user.pk %}'">
+	{% endif %}
+    {% comment %}
+	    <input type="button" id="upload_credentials" value="Upload credentials" onclick="document.location='{% url gcf_cert_upload curr_user.pk %}'">
+    {% endcomment %}
+</div>
+
+<div style="margin-top: 1em !important; ">
+	<h1>Manage user {{ curr_user.username }}'s SSH keys</h1>
+    <p><strong>Public SSH key:</strong>
+        <input type="button" id="download_pub_ssh_key" value="Download" onclick="document.location='{% url gcf_pub_ssh_key_download curr_user.pk %}'"/>
+        <input type="button" id="regenerate_ssh_keys" value="Regenerate a new pair" onclick="document.location='{% url gcf_ssh_keys_generate curr_user.pk %}'"/>
+        <input type="button" id="upload_ssh_keys" value="Upload your own" onclick="document.location='{% url gcf_ssh_upload curr_user.pk %}'">
+    </p>
+    <p><strong>Private SSH key:</strong> Private SSH key is not stored on server.
+            Private key is made available for download only once when the SSH key pair is generated.
+            You may regenerate a new pair of SSH keys.</p>
+</div>
+
+<div style="margin-top: 1em !important; ">
+    <input type="button" id="cancel_certs" value="Back" onclick="document.location='{% url users_detail curr_user.pk %}'">
+</div>
+
+{% endblock content %}

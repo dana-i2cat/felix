@@ -1,0 +1,30 @@
+{% extends "sshaggregate/sshaggregate_base.html" %}
+
+{% block title %}Add/Update SSH Servers in {{ aggregate.name }}.{% endblock title %}
+
+{% block head %}
+{% endblock %}
+
+{% block content %}
+<div class="main">
+	<h1>Add/Update SSH Servers in {{ aggregate.name }}</h1>
+	
+	<div> Add all servers that can be administered using the same information
+    here. You can click save to get more rows once you fill the existing
+    ones.</div>
+	
+	<form class="form" method="post" action="">{% csrf_token %}
+    	{{ formset.management_form }}
+		{% for form in formset.forms %}
+			{% for hidden in form.hidden_fields %}
+				{{ hidden }}
+			{% endfor %}
+		{{ form.as_p }}
+	    {% endfor %}
+		<div class="center">
+			<input type="submit" value="Save" /> | 
+			<a href="{% url home %}">Home</a>
+		</div>
+	</form>
+</div>
+{% endblock content %}
