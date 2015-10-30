@@ -77,4 +77,6 @@ vt_manager/bin/.ofverLock
 vt_manager/rescue/*
 ofrelease
 updater*
+.settings
 !.gitignore
+yana-ch-cert.gid
