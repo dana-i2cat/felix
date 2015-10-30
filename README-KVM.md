@@ -72,7 +72,7 @@ INSTALLING KVM-CRM
 
 ### 2.3.1 Install packages
 
-    apt-get install openssl ssl-cert \
+    apt-get install openssl ssl-cert virtinst \
         python-setuptools qemu-kvm libvirt-bin tshark python-libvirt \
         python-setuptools python-mysqldb python-openssl python-m2crypto \
         python-dateutil python-decorator python-paramiko build-essential \
@@ -138,6 +138,7 @@ a template file `l1vm.qcow2` is generated in `/mnt/l1vm/template` directory.
 ### 2.3.5 Create KVM-OXAD configuration files
 
     cd /opt/felix/kvm-crm/vt_manager/src/python/agent/
+    cp mySettings-example.py mySettings.py
     vi mySettings.py
 
 - mySettings.py
