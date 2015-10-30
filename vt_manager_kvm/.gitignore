@@ -1,1 +1,14 @@
+.currentVersion
+bin/log/*
+bin/.ofverLock
+bin/.upgradeReg
+rescue/*
+src/python/agent/.currentVersion
+src/python/agent/mySettings.py
+src/python/agent/settings.py
+src/python/agent/security/certs/agent.crt
+src/python/agent/security/certs/agent.key
 src/python/vt_manager_kvm/communication/sfa/sfa_config/config.py
+src/python/vt_manager_kvm/communication/geni/v3/trusted_roots
+src/python/vt_manager_kvm/mySettings.py
+src/python/vt_manager_kvm/settings.py

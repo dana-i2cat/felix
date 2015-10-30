@@ -1,0 +1,3 @@
+NB: This is an extension of "core" (branch "ocf") with new
+    additions to fit requirements for CRM-KVM. Ideally,
+    both versions should be merged

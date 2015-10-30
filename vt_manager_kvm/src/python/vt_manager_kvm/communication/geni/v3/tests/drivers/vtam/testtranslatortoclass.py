@@ -1,6 +1,6 @@
 import sys
-sys.path.append("/opt/ofelia/core/lib/am/")
-sys.path.append("/opt/ofelia/core/lib/")
+sys.path.append("/opt/ofelia/core_kvm/lib/am/")
+sys.path.append("/opt/ofelia/core_kvm/lib/")
 sys.path.append("/opt/ofelia/vt_manager_kvm/src/python/")
 
 import os

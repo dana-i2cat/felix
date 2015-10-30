@@ -1,6 +1,6 @@
 import sys
-sys.path.append("/opt/ofelia/core/lib/am/")
-sys.path.append("/opt/ofelia/core/lib/")
+sys.path.append("/opt/ofelia/core_kvm/lib/am/")
+sys.path.append("/opt/ofelia/core_kvm/lib/")
 
 import unittest
 from am.geniutils.src.xrn.xrn import urn_to_hrn

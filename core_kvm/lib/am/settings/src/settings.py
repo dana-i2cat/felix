@@ -4,9 +4,9 @@ class Settings:
     
     SFA_DATA_DIR = os.path.join(OCF_PATH, "optin_manager/src/python/openflow/optin_manager/sfa/my_roots/")
     SFA_INTERFACE_HRN = "ambase"
-    MY_ROOTS_DIR = os.path.join(OCF_PATH, "core/lib/am/ext/my_roots/")
+    MY_ROOTS_DIR = os.path.join(OCF_PATH, "core_kvm/lib/am/ext/my_roots/")
     ROOT_CERT = os.path.join(MY_ROOTS_DIR, "topdomain.gid")
-    TRUSTED_ROOTS_DIR = os.path.join(OCF_PATH, "core/lib/am/ext/trusted_roots/")
+    TRUSTED_ROOTS_DIR = os.path.join(OCF_PATH, "core_kvm/lib/am/ext/trusted_roots/")
     SFA_CREDENTIAL_SCHEMA = os.path.join(OCF_PATH, "optin_manager/src/python/openflow/optin_manager/sfa/schemas/credential.xsd")
 
     """Default Authority Settings"""

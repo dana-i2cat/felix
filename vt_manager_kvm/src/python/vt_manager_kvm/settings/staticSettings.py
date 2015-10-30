@@ -45,9 +45,9 @@ DEBUG = False
 #SRC_DIR = "/opt/ofelia/vt_manager_kvm/src"
 #SRC_DIR = join(os.getenv("OCF_PATH"), "vt_manager_kvm/src")
 SRC_DIR = join(dirname(__file__), "../../../")
-AM_LIB_LOCATION = SRC_DIR + "../../core/lib/am/"
+AM_LIB_LOCATION = SRC_DIR + "../../core_kvm/lib/am/"
 sys.path.append(AM_LIB_LOCATION)
-sys.path.append(SRC_DIR + "../../core/lib/")
+sys.path.append(SRC_DIR + "../../core_kvm/lib/")
 
 #
 # Database default parameters.
