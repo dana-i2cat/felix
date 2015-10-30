@@ -51,6 +51,7 @@ INSTALLING KVM-CRM
 
     cd /opt/felix/kvm-crm/deploy
     python install.py
+    pip install netaddr 
 
     The following actions will take place: 
     * Install dependencies
