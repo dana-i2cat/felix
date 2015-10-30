@@ -1,7 +1,6 @@
 from db.db_manager import db_sync_manager
 from core.config import ConfParser
-from core.organisations import AllowedOrganisations
-from extensions.sfa.util.xrn import urn_to_hrn
+from core.utils.urns import URNUtils
 from lxml import etree
 from utils_links import MonitoringUtilsLinks
 
@@ -31,8 +30,6 @@ class BaseMonitoring(object):
         self.config = ConfParser("ro.conf")
         master_ro = self.config.get("master_ro")
         self.mro_enabled = ast.literal_eval(master_ro.get("mro_enabled"))
-        ## Dictionaries
-        self.felix_organisations = AllowedOrganisations.get_organisations_type()
         self.software_stacks = {
                                 "ofelia": "ocf",
                                 "felix": "fms",
@@ -82,7 +79,7 @@ class BaseMonitoring(object):
             filter_params = {"_id": peer.get("_id"),}
             domain_peer = db_sync_manager.get_domain_info(filter_params)
             peer_domain_urn = domain_peer.get("domain_urn")
-            authority = self._get_authority_from_urn(peer_domain_urn)
+            authority = URNUtils.get_felix_authority_from_urn(peer_domain_urn)
             # If authority (domain name) does not exist yet, create
             if not self.peers_by_domain.get(authority):
                 self.peers_by_domain[authority] = []
@@ -170,18 +167,6 @@ class BaseMonitoring(object):
     ##########
     # Helpers
     ##########
-
-    def _get_authority_from_urn(self, urn):
-        authority = ""
-        hrn, hrn_type = urn_to_hrn(urn)
-        # Remove leaf (the component_manager part)
-        hrn_list = hrn.split(".")
-        hrn = ".".join(hrn_list[:-1])
-        for hrn_element in hrn_list:
-            if hrn_element in self.felix_organisations:
-                authority = hrn_element
-                break
-        return authority
 
     def _update_topology_name(self):
         filter_string = "[@last_update_time='%s']" % str(self.domain_last_update)
