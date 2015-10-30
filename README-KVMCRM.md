@@ -69,6 +69,9 @@ INSTALLING KVM-CRM
     (you can use an IP) is the same you then set in the SITE_DOMAIN field
     in the localSettings.py file.
 
+    cd /opt/felix/kvm-crm/vt_manager_kvm/src/python/vt_manager_kvm/communication/geni/v3/settings
+    cp -p vtam.py.sample vtam.py # Change "HRN" value to match your organisation name (lowercase)
+
 ## 2.3 For KVM-OXAD:
 
 ### 2.3.1 Install packages
