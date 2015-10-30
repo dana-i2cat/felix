@@ -1,5 +1,0 @@
-Please validate your email address by browsing to the following URL:
-{{ link }}
-
-Best regards
-  Your Ofelia Team
