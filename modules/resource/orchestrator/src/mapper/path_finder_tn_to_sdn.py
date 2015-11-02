@@ -196,27 +196,33 @@ class PathFinderTNtoSDN(object):
         return self.mapping_tn_se_of
 
 if __name__ == "__main__":
-    # Link PSNC-i2CAT
-    src_name = "psnc"
-    dst_name = "i2cat"
-
-     # Link PSNC-KDDI
-#    src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:pionier.net.pl:2013:topology:felix-ge-1-0-3"
-#    dst_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp1"
-    # Link AIST-KDDI
-    src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:aist.go.jp:2013:topology:bi-se1"
-    dst_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp1"
-    # Link AIST1-AIST2
-#    src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:aist.go.jp:2013:topology:bi-se1"
-#    dst_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:aist.go.jp:2013:topology:bi-se2"
-    # Link AIST-PSNC
-#    src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:aist.go.jp:2013:topology:bi-se1"
-#    dst_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:pionier.net.pl:2013:topology:felix-ge-1-1-7"
-    # --------
+    if len(sys.argv) == 3:
+        src_name = sys.argv[1]
+        dst_name = sys.argv[2]
+    else:
+        # Link PSNC-i2CAT
+        src_name = "psnc"
+        dst_name = "i2cat"
+    
+         # Link PSNC-KDDI
+#        src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:pionier.net.pl:2013:topology:felix-ge-1-0-3"
+#        dst_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp1"
+        # Link AIST-KDDI
+#        src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:aist.go.jp:2013:topology:bi-se1"
+#        dst_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp1"
+        # Link KDDI-KDDI
+#        src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp1"
+#        dst_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp3"
+        # Link AIST1-AIST2
+        src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:aist.go.jp:2013:topology:bi-se1"
+        dst_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:aist.go.jp:2013:topology:bi-se2"
+        # Link AIST-PSNC
+#        src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:aist.go.jp:2013:topology:bi-se1"
+#        dst_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:pionier.net.pl:2013:topology:felix-ge-1-1-7"
+        # --------
 
     src_of_switch_cids = [ "urn:publicid:IDN+openflow:ocf:psnc:ofam+datapath+00:00:54:e0:32:cc:a4:c0_11", "urn:publicid:IDN+openflow:ocf:psnc:ofam+datapath+00:00:08:81:f4:88:f5:b0_9" ]
     dst_of_switch_cids = [ "urn:publicid:IDN+openflow:ocf:kddi:ofam+datapath+00:00:00:25:5c:e6:4f:07_2", "urn:publicid:IDN+openflow:ocf:kddi:ofam+datapath+00:00:00:25:5c:e6:4f:07_3" ]    
-
     optional = {
         "src_of_switch_cids": src_of_switch_cids,
         "dst_of_switch_cids": dst_of_switch_cids,
