@@ -280,12 +280,11 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     stp.get("src_name"), stp.get("dst_name"))
                 paths = path_finder_tn_sdn.find_paths()
                 logger.info("PATHs=%s" % (paths,))
-                # XXX Mapper: raise an exception when a path *between different authorities/islands* cannot be found
-                src_auth = URNUtils.get_felix_authority_from_urn(stp.get("src_name"))
-                dst_auth = URNUtils.get_felix_authority_from_urn(stp.get("dst_name"))
-                # TODO FIXME Check why no mapping is provided between two STPs within the same island
-                # TODO FIXME Remove 1st condition after fixing that in the mapper
-                if src_auth != dst_auth and len(paths) == 0:
+                ## Mapper: raise an exception when a path *between different authorities/islands* cannot be found
+                #src_auth = URNUtils.get_felix_authority_from_urn(stp.get("src_name"))
+                #dst_auth = URNUtils.get_felix_authority_from_urn(stp.get("dst_name"))
+                #if src_auth != dst_auth and len(paths) == 0:
+                if len(paths) == 0:
                     e = "Mapper SDN-SE-TN: received empty path. Possible causes: requested STPs are disconnected and/or located in the same island"
                     raise geni_ex.GENIv3GeneralError(e)
                 items = SDNUtils().analyze_mapped_path(dpid_port_ids, paths)
@@ -319,7 +318,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         se_sdn_info = None
         sliver = req_rspec.of_sliver()
         if sliver is not None:
-            logger.debug("Found an SDN-sliver segment: %s", sliver)
+            logger.debug("Found an SDN-slivers segment: %s", sliver)
             # Manage the "extend-group" info here: extend the group info
             # introducing the new dpids/ports taken from
             # the mapper (path-finder) module.
