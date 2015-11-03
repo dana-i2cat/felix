@@ -1,9 +1,9 @@
 {
   "device_management_info":
   {
-    "urn:publicid:IDN+openflow:ocf:i2cat:ofam+datapath+00:00:00:01:00:00:00:01":
+    "urn:publicid:IDN+openflow:ocf:organisationName:ofam+datapath+00:00:00:01:00:00:00:01":
     {
-      "ip": "10.10.10.10",
+      "ip": "10.10.11.1",
       "port": "161",
       "snmp":
       {
@@ -11,9 +11,9 @@
         "password": ""
       }
     },
-    "urn:publicid:IDN+openflow:ocf:i2cat:ofam+datapath+00:00:00:01:00:00:00:02":
+    "urn:publicid:IDN+openflow:ocf:organisationName:ofam+datapath+00:00:00:01:00:00:00:02":
     {
-      "ip": "10.10.10.11",
+      "ip": "10.10.11.2",
       "port": "161",
       "snmp":
       {
