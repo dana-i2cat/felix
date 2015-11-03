@@ -4,3 +4,4 @@
 *.swp
 .project
 .pydevproject
+modules/resource/orchestrator/conf/*.json
