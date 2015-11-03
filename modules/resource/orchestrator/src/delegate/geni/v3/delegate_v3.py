@@ -114,43 +114,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         rspec = ROAdvertisementFormatter(schema_location=sl)
 
         try:
-            for n in db_sync_manager.get_com_nodes():
-                logger.debug("COMresources node=%s" % (n,))
-                rspec.com_node(n)
-
-            for d in db_sync_manager.get_sdn_datapaths():
-                logger.debug("OFresources dpid=%s" % (d,))
-                rspec.datapath(d)
-
-            for n in db_sync_manager.get_tn_nodes():
-                logger.debug("TNresources node=%s" % (n,))
-                rspec.tn_node(n)
-
-            for n in db_sync_manager.get_se_nodes():
-                logger.debug("SEresources node=%s" % (n,))
-                rspec.se_node(n)
-
-            for l in db_sync_manager.get_com_links():
-                logger.debug("COMresources link=%s" % (l,))
-                rspec.com_link(l)
-
-            (of_links, fed_links) = db_sync_manager.get_sdn_links()
-            for l in of_links:
-                logger.debug("OFresources of-link=%s" % (l,))
-                rspec.of_link(l)
-
-            for l in fed_links:
-                logger.debug("OFresources fed-link=%s" % (l,))
-                rspec.fed_link(l)
-
-            for l in db_sync_manager.get_tn_links():
-                logger.debug("TNresources tn-link=%s" % (l,))
-                rspec.tn_link(l)
-
-            for l in db_sync_manager.get_se_links():
-                logger.debug("SEresources se-link=%s" % (l,))
-                rspec.se_link(l)
-
+            rspec = ROUtils.generate_list_resources(rspec)
         except Exception as e:
             raise geni_ex.GENIv3GeneralError(str(e))
 
