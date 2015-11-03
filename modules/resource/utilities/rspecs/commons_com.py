@@ -33,10 +33,10 @@ class Sliver(Node):
     """
     Extends Node information for practical purposes.
     """
-    def __init__(self, component_manager_id, component_id, client_id,
+    def __init__(self, component_id, component_manager_id, client_id,
                  exclusive=False, available=False, sliver_type="emulab-xen",
                  disk_image="default", ram="512", disk="8", cores="1"):
-        super(Sliver, self).__init__(component_id, component_id,
+        super(Sliver, self).__init__(component_id, component_manager_id,
                                      component_manager_id, exclusive,
                                      available)
         # Extend internal dictionary

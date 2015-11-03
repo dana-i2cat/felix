@@ -114,43 +114,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         rspec = ROAdvertisementFormatter(schema_location=sl)
 
         try:
-            for n in db_sync_manager.get_com_nodes():
-                logger.debug("COMresources node=%s" % (n,))
-                rspec.com_node(n)
-
-            for d in db_sync_manager.get_sdn_datapaths():
-                logger.debug("OFresources dpid=%s" % (d,))
-                rspec.datapath(d)
-
-            for n in db_sync_manager.get_tn_nodes():
-                logger.debug("TNresources node=%s" % (n,))
-                rspec.tn_node(n)
-
-            for n in db_sync_manager.get_se_nodes():
-                logger.debug("SEresources node=%s" % (n,))
-                rspec.se_node(n)
-
-            for l in db_sync_manager.get_com_links():
-                logger.debug("COMresources link=%s" % (l,))
-                rspec.com_link(l)
-
-            (of_links, fed_links) = db_sync_manager.get_sdn_links()
-            for l in of_links:
-                logger.debug("OFresources of-link=%s" % (l,))
-                rspec.of_link(l)
-
-            for l in fed_links:
-                logger.debug("OFresources fed-link=%s" % (l,))
-                rspec.fed_link(l)
-
-            for l in db_sync_manager.get_tn_links():
-                logger.debug("TNresources tn-link=%s" % (l,))
-                rspec.tn_link(l)
-
-            for l in db_sync_manager.get_se_links():
-                logger.debug("SEresources se-link=%s" % (l,))
-                rspec.se_link(l)
-
+            rspec = ROUtils.generate_list_resources(rspec)
         except Exception as e:
             raise geni_ex.GENIv3GeneralError(str(e))
 
@@ -280,12 +244,11 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     stp.get("src_name"), stp.get("dst_name"))
                 paths = path_finder_tn_sdn.find_paths()
                 logger.info("PATHs=%s" % (paths,))
-                # XXX Mapper: raise an exception when a path *between different authorities/islands* cannot be found
-                src_auth = URNUtils.get_felix_authority_from_urn(stp.get("src_name"))
-                dst_auth = URNUtils.get_felix_authority_from_urn(stp.get("dst_name"))
-                # TODO FIXME Check why no mapping is provided between two STPs within the same island
-                # TODO FIXME Remove 1st condition after fixing that in the mapper
-                if src_auth != dst_auth and len(paths) == 0:
+                ## Mapper: raise an exception when a path *between different authorities/islands* cannot be found
+                #src_auth = URNUtils.get_felix_authority_from_urn(stp.get("src_name"))
+                #dst_auth = URNUtils.get_felix_authority_from_urn(stp.get("dst_name"))
+                #if src_auth != dst_auth and len(paths) == 0:
+                if len(paths) == 0:
                     e = "Mapper SDN-SE-TN: received empty path. Possible causes: requested STPs are disconnected and/or located in the same island"
                     raise geni_ex.GENIv3GeneralError(e)
                 items = SDNUtils().analyze_mapped_path(dpid_port_ids, paths)
@@ -319,7 +282,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         se_sdn_info = None
         sliver = req_rspec.of_sliver()
         if sliver is not None:
-            logger.debug("Found an SDN-sliver segment: %s", sliver)
+            logger.debug("Found an SDN-slivers segment: %s", sliver)
             # Manage the "extend-group" info here: extend the group info
             # introducing the new dpids/ports taken from
             # the mapper (path-finder) module.

@@ -1,9 +1,9 @@
 {
   "device_management_info":
   {
-    "urn:publicid:IDN+fms:i2cat:serm":
+    "urn:publicid:IDN+fms:organisationName:serm":
     {
-      "ip": "10.10.10.10",
+      "ip": "10.10.10.120",
       "port": "161",
       "snmp":
       {

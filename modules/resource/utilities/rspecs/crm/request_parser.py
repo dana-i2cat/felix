@@ -58,7 +58,7 @@ class CRMv3RequestParser(ParserBase):
             disk_image = sliver_type.find("{%s}disk_image" % self.xmlns)
             if disk_image is not None:
                 disk_image_name = disk_image.attrib.get("name")
-            sliver_elem = Sliver(server_cm_id, server_c_id, server_client_id,
+            sliver_elem = Sliver(server_c_id, server_cm_id, server_client_id,
                                  server_exclusive, server_available,
                                  sliver_type_name, disk_image_name,
                                  ram, disk, cores,

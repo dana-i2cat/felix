@@ -1,3 +1,4 @@
+from db.db_manager import db_sync_manager
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
 from rspecs.ro.manifest_parser import ROManifestParser
 from commons import CommonUtils
@@ -71,6 +72,46 @@ class ROUtils(CommonUtils):
         logger.info("SELinks(%d)=%s" %
                     (len(ret["se_links"]), ret["se_links"],))
         return ret
+
+    @staticmethod
+    def generate_list_resources(rspec):
+        for n in db_sync_manager.get_com_nodes():
+            logger.debug("COM resources node=%s" % (n,))
+            rspec.com_node(n)
+
+        for d in db_sync_manager.get_sdn_datapaths():
+            logger.debug("OF resources dpid=%s" % (d,))
+            rspec.datapath(d)
+
+        for n in db_sync_manager.get_tn_nodes():
+            logger.debug("TN resources node=%s" % (n,))
+            rspec.tn_node(n)
+
+        for n in db_sync_manager.get_se_nodes():
+            logger.debug("SE resources node=%s" % (n,))
+            rspec.se_node(n)
+
+        for l in db_sync_manager.get_com_links():
+            logger.debug("COM resources link=%s" % (l,))
+            rspec.com_link(l)
+
+        (of_links, fed_links) = db_sync_manager.get_sdn_links()
+        for l in of_links:
+            logger.debug("OF resources of-link=%s" % (l,))
+            rspec.of_link(l)
+
+        for l in fed_links:
+            logger.debug("OF resources fed-link=%s" % (l,))
+            rspec.fed_link(l)
+
+        for l in db_sync_manager.get_tn_links():
+            logger.debug("TN resources tn-link=%s" % (l,))
+            rspec.tn_link(l)
+
+        for l in db_sync_manager.get_se_links():
+            logger.debug("SE resources se-link=%s" % (l,))
+            rspec.se_link(l)
+        return rspec
 
     @staticmethod
     def generate_describe_manifest(ro_manifest, ro_m_info):
