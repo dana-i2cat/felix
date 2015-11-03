@@ -68,6 +68,8 @@ class PhysicalMonitoring(BaseMonitoring):
             else:
                 logger.warning("Physical topology - Topology for domain=%s does not contain the minimum SW modules required by MS: missing '%s' node." % (domain_name, check_topology[1]))
 
+        # Clean any empty node (result of not containing the minimum SW modules)
+        self.remove_empty_nodes()
         # Send topology after all peers are completed
         self._send(self.get_topology(), monitoring_server)
         logger.debug("Resulting RSpec=%s" % self.get_topology_pretty())

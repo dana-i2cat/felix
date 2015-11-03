@@ -164,6 +164,13 @@ class BaseMonitoring(object):
         # Create a new sub-element of the list of topologies
         self.topology = etree.SubElement(self.topology_list, "topology")
 
+    def remove_empty_nodes(self):
+        """Remove empty 'topology' nodes from the list/tree of topologies"""
+        for node in self.topology_list.findall(".//topology"):
+            if len(node.getchildren()) == 0:
+                node.getparent().remove(node)
+
+
     ##########
     # Helpers
     ##########
