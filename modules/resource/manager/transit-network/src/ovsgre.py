@@ -292,7 +292,10 @@ class swManager:
         logger.info("swManager:allocate_dev: lkey=%s." % lkey)
 
         if self.dict_path.has_key(lkey):
-            return self.dict_dev[lkey]
+            dev = self.dict_key[lkey]
+            logger.info("swManager:allocate_dev: old device is %s." % dev)
+            # return self.dict_dev[lkey]
+            return dev
 
         for v in xrange(dev_min, dev_max):
             dev = "%s%03d" % (ovsif.PREFIX_DEV, v)
