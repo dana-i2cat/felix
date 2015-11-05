@@ -202,12 +202,13 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
                 resv.error = "%s" % (e)
                 isError = True
                     
+        slice_status = req.get_status()
+        manifest = req.get_manifest()
+
         if isError:
             now = datetime.utcnow()
             self.__slice_delete_status(slice_urn, now)
 
-        slice_status = req.get_status()
-        manifest = req.get_manifest()
         return (manifest, slice_status)
 
     def __slice_status(self, urn):
