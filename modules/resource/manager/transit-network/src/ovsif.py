@@ -41,12 +41,16 @@ def get_port(urlbase, dpid, tnrmp, name):
     params["tnrm"] = tnrmp
     logger.info("get_port: request url=%s, dict=%s" % (url, params))
 
-    req = urllib2.Request(url, "%s" % json.dumps(params))
-    rs = urllib2.urlopen(req)
+    rc = None
+    try:
+        req = urllib2.Request(url, "%s" % json.dumps(params))
+        rs = urllib2.urlopen(req)
 
-    rc = json.load(rs)
-    logger.info("get_port: reply dict=%s" % rc)
-
+        rc = json.load(rs)
+        logger.info("get_port: reply dict=%s" % rc)
+    except Exception as ex:
+        raise ManagerException("ovsif:get_port", 
+                               "error in call ryu-manager. url=%s, ex=%s" % (url, ex))
     try:
         port = rc["tnrm"]["ports"][name]
         logger.info("get_port: ovs ofport=%s" % port)
@@ -69,12 +73,17 @@ def get_tunnel_info(urlbase, dpid, tnrmp):
     params["tnrm"] = tnrmp
     logger.info("get_tunnel_info: request url=%s, dict=%s" % (url, params))
 
-    req = urllib2.Request(url, "%s" % json.dumps(params))
-    rs = urllib2.urlopen(req)
-    
-    rc = json.load(rs)
-    logger.info("get_tunnel_info: reply dict=%s" % rc)
-    
+    rc = None
+    try:
+        req = urllib2.Request(url, "%s" % json.dumps(params))
+        rs = urllib2.urlopen(req)
+
+        rc = json.load(rs)
+        logger.info("get_tunnel_info: reply dict=%s" % rc)
+    except Exception as ex:
+        raise ManagerException("ovsif:get_tunnel_info", 
+                               "error in call ryu-manager. url=%s, ex=%s" % (url, ex))
+
     ports = {}
     try:
         for p in rc["tnrm"]["ports"].keys():
@@ -101,10 +110,16 @@ def get_tunnel_info(urlbase, dpid, tnrmp):
 
         logger.info("get_tunnel_info: request url=%s, dict=%s" % (url, params))
 
-        req = urllib2.Request(url, "%s" % json.dumps(params))
-        rs = urllib2.urlopen(req)
+        rc = None
+        try:
+            req = urllib2.Request(url, "%s" % json.dumps(params))
+            rs = urllib2.urlopen(req)
     
-        rc = json.load(rs)
+            rc = json.load(rs)
+        except Exception as ex:
+            raise ManagerException("ovsif:get_tunnel_info", 
+                                   "error in call ryu-manager. url=%s, ex=%s" % (url, ex))
+            
         tp = rc["tnrm"]["tunnel"]
         logger.info("get_tunnel_info: reply dict=%s" % tp)
 
@@ -134,11 +149,16 @@ def add_tunnel(urlbase, dpid, tnrmp):
     params["tnrm"] = tnrmp
     logger.info("add_tunnel: request url=%s, dict=%s" % (url, params))
 
-    req = urllib2.Request(url, "%s" % json.dumps(params))
-    rs = urllib2.urlopen(req)
+    rc = None
+    try:
+        req = urllib2.Request(url, "%s" % json.dumps(params))
+        rs = urllib2.urlopen(req)
 
-    rc = json.load(rs)
-    logger.info("add_tunnel: reply dict=%s" % rc)
+        rc = json.load(rs)
+        logger.info("add_tunnel: reply dict=%s" % rc)
+    except Exception as ex:
+        raise ManagerException("ovsif:add_tunnel", 
+                               "error in call ryu-manager. url=%s, ex=%s" % (url, ex))
 
     port = rc["tnrm"]["tunnel"]["ofport"]
     logger.info("add_tunnel: ovs ofport=%s" % port)
@@ -156,11 +176,17 @@ def del_tunnel(urlbase, dpid, tnrmp):
     params["tnrm"] = tnrmp
     logger.info("delete_tunnel: request url=%s, dict=%s" % (url,params))
 
-    req = urllib2.Request(url, "%s" % json.dumps(params))
-    rs = urllib2.urlopen(req)
+    rc = None
+    try:
+        req = urllib2.Request(url, "%s" % json.dumps(params))
+        rs = urllib2.urlopen(req)
 
-    rc = json.load(rs)
-    logger.info("delete_tunnel: reply dict=%s" % rc)
+        rc = json.load(rs)
+        logger.info("delete_tunnel: reply dict=%s" % rc)
+
+    except Exception as ex:
+        raise ManagerException("ovsif:del_tunnel", 
+                               "error in call ryu-manager. url=%s, ex=%s" % (url, ex))
 
 def add_flow(urlbase, params):
     # url = "http://localhost:8080/stats/flowentry/add
@@ -182,17 +208,22 @@ def add_flow(urlbase, params):
     logger.info("add_flow: url=%s" % url)
 
     logger.info("add_flow: request url=%s, dict=%s" % (url, params))
-    req = urllib2.Request(url, "%s" % json.dumps(params))
-    rs = urllib2.urlopen(req)
 
-    logger.info("flow entry: return=%s" % rs)
+    rc = None
+    try:
+        req = urllib2.Request(url, "%s" % json.dumps(params))
+        rs = urllib2.urlopen(req)
 
-    url = "%s/stats/flow/%d" % (urlbase, params['dpid'])
-    rs = urllib2.urlopen(url)
+        logger.info("flow entry: return=%s" % rs)
 
-    rc = json.load(rs)
-    logger.info("flow entry: reply dict=%s" % rc)
+        url = "%s/stats/flow/%d" % (urlbase, params['dpid'])
+        rs = urllib2.urlopen(url)
 
+        rc = json.load(rs)
+        logger.info("flow entry: reply dict=%s" % rc)
+    except Exception as ex:
+        raise ManagerException("ovsif:add_flow", 
+                               "error in call ryu-manager. url=%s, ex=%s" % (url, ex))
     return rc
 
 def del_flow(urlbase, params):
@@ -200,30 +231,42 @@ def del_flow(urlbase, params):
     logger.info("del_flow: url=%s" % url)
 
     logger.info("del_flow: request url=%s, dict=%s" % (url, params))
-    req = urllib2.Request(url, "%s" % json.dumps(params))
-    rs = urllib2.urlopen(req)
 
-    url = "%s/stats/flow/%d" % (urlbase, params['dpid'])
-    rs = urllib2.urlopen(url)
+    rc = None
+    try:
+        req = urllib2.Request(url, "%s" % json.dumps(params))
+        rs = urllib2.urlopen(req)
 
-    rc = json.load(rs)
-    logger.info("flow entry: reply dict=%s" % rc)
+        url = "%s/stats/flow/%d" % (urlbase, params['dpid'])
+        rs = urllib2.urlopen(url)
 
+        rc = json.load(rs)
+        logger.info("flow entry: reply dict=%s" % rc)
+
+    except Exception as ex:
+        raise ManagerException("ovsif:del_flow", 
+                               "error in call ryu-manager. url=%s, ex=%s" % (url, ex))
     return rc
 
 def list_flows(urlbase, params):
     url = "%s/stats/flow/%d" % (urlbase, params['dpid'])
-    rs = urllib2.urlopen(url)
+    rc = None
+    try:
+        rs = urllib2.urlopen(url)
 
-    rc = json.load(rs)
-    logger.info("flow entry: reply dict=%s" % rc)
+        rc = json.load(rs)
+        logger.info("flow entry: reply dict=%s" % rc)
 
+    except Exception as ex:
+        raise ManagerException("ovsif:list_flow", 
+                               "error in call ryu-manager. url=%s, ex=%s" % (url, ex))
     return rc
 
 def check_flows(urlbase, params, inport, invlan):
     rc = list_flows(urlbase, params)
     dpid = str(params['dpid'])
     lists = rc[dpid]
+
     for list in lists:
         match = list['match']
         logger.info("check_flows: match=%s" % match)
@@ -231,6 +274,7 @@ def check_flows(urlbase, params, inport, invlan):
         logger.info("check_flows: invlan=%s, %d" % (invlan, match['dl_vlan']))
         if int(inport) == match['in_port'] and int(invlan) == match['dl_vlan']:
             return True
+
     return False
 
 def list_vlans(urlbase, params):
