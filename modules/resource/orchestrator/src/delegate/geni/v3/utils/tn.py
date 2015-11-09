@@ -214,3 +214,10 @@ class TNUtils(CommonUtils):
                 ret.append({"src_name": item.get("source_id"),
                             "dst_name": item.get("dest_id")})
         return ret
+
+    @staticmethod
+    def determine_stp_gre(stp):
+        """Determine whether all involved STPs are gre (True) or not (False)"""
+        if not isinstance(stp, list):
+            stp = [ stp ]
+        return all(map(lambda x: "gre" in x, stp))

@@ -247,6 +247,10 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 ## Mapper: raise an exception when a path *between different authorities/islands* cannot be found
                 #src_auth = URNUtils.get_felix_authority_from_urn(stp.get("src_name"))
                 #dst_auth = URNUtils.get_felix_authority_from_urn(stp.get("dst_name"))
+                # If STPs involved in the request use GRE, do not call the mapper (?)
+                stps_gre = TNUtils.determine_stp_gre([stp.get("src_name"), stp.get("dst_name")])
+                if stps_gre:
+                    break
                 #if src_auth != dst_auth and len(paths) == 0:
                 if len(paths) == 0:
                     e = "Mapper SDN-SE-TN: received empty path. Possible causes: requested STPs are disconnected and/or located in the same island"
