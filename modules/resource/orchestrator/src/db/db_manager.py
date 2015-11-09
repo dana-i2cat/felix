@@ -416,7 +416,7 @@ class DBManager(object):
     def get_com_link_by_sdnkey(self, sdn_link_key):
         table = self.__get_table("resource.com.link")
         for l in self.__get_all(table, {}):
-            if l.get('component_id').endswith(sdn_link_key):
+            if l.get("component_id").endswith(sdn_link_key):
                 return l
         return None
 

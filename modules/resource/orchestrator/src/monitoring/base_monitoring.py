@@ -1,7 +1,8 @@
 from db.db_manager import db_sync_manager
+from lxml import etree
 from core.config import ConfParser
 from core.utils.urns import URNUtils
-from lxml import etree
+from utils import MonitoringUtils
 from utils_links import MonitoringUtilsLinks
 
 import ast
@@ -258,17 +259,23 @@ class BaseMonitoring(object):
     #################
 
     def _add_com_info(self, parent_node=None):
+        # If no parent node passed, COM info is attached to root topology node
+        if parent_node is None:
+            parent_node = self.topology
         # 1. Nodes
         nodes = [ n for n in db_sync_manager.get_com_nodes_by_domain(self.domain_urn) ]
         for node in nodes:
+            if MonitoringUtils.check_existing_tag_in_topology(parent_node, "node", "server", node.get("component_id")):
+                break
             logger.debug("com-node=%s" % (node,))
             # If no parent node passed, COM info is attached to root topology node
             if parent_node is None:
                 parent_node = self.topology
             n = self._add_generic_node(parent_node, node, "server")
-            # Output interfaces per server
-            logger.debug("com-node-interfaces=%s" % node.get("interfaces"))
-            for iface in node.get("interfaces"):
+            # Output interfaces (avoid "*") per server
+            node_ifaces = filter(lambda x: x!="*", node.get("interfaces"))
+            logger.debug("com-node-interfaces=%s" % node_ifaces)
+            for iface in node_ifaces:
                 interface = etree.SubElement(n, "interface")
                 # NOTE this is extending the "interface" URN
                 interface.set("id", "%s+interface+%s" % (n.get("id"), iface))
@@ -279,15 +286,20 @@ class BaseMonitoring(object):
             self._add_com_link(link, parent_node)
 
     def _add_com_link(self, link, parent_node=None):
-        logger.debug("com-links=%s" % (link,))
         if parent_node is None:
             parent_node = self.topology
-        l = etree.SubElement(parent_node, "link")
+        logger.debug("com-links=%s" % (link,))
+        #l = etree.SubElement(parent_node, "link")
+        l = etree.Element("link")
         # NOTE that this cannot be empty
         l.set("type", MonitoringUtilsLinks._translate_link_type(link))
         link_id = ""
         links = link.get("links")
+        link_exists = False
         for link_i in links:
+            if MonitoringUtils.check_existing_tag_in_topology(parent_node, "link", "lan", [link_i.get("source_id"), link_i.get("dest_id")]):
+                link_exists = True
+                break
             # Modify link on-the-fly to add the DPID port as needed
             link_i = MonitoringUtilsLinks._set_dpid_port_from_link(link.get("component_id"), link_i)
             # Source
@@ -298,7 +310,10 @@ class BaseMonitoring(object):
             iface_dest.set("client_id", link_i.get("dest_id"))
             # - Prepare link ID for CRM-SDNRM link
             link_id = MonitoringUtilsLinks.get_id_for_link_crm_sdnrm(link_i)
-        l.set("id", link_id)
+        # Finally, add it as subelement
+        if not link_exists:
+            l.set("id", link_id)
+            parent_node.append(l)
 
 
     ###################
@@ -306,13 +321,15 @@ class BaseMonitoring(object):
     ###################
 
     def _add_sdn_info(self, parent_node=None):
+        # If no parent node passed, SDN info is attached to root topology node
+        if parent_node is None:
+            parent_node = self.topology
         # 1. Nodes
         datapaths = [ d for d in db_sync_manager.get_sdn_datapaths_by_domain(self.domain_urn) ]
         for dp in datapaths:
+            if MonitoringUtils.check_existing_tag_in_topology(parent_node, "node", "switch", dp.get("component_id")):
+                break
             logger.debug("sdn-datapath=%s" % (dp,))
-            # If no parent node passed, SDN info is attached to root topology node
-            if parent_node is None:
-                parent_node = self.topology
             switch = self._add_generic_node(parent_node, dp, "switch")
             for p in dp.get("ports"):
                 iface = etree.SubElement(switch, "interface")
@@ -330,6 +347,12 @@ class BaseMonitoring(object):
     def _add_sdn_link(self, link, parent_node=None):
         if parent_node is None:
             parent_node = self.topology
+        auth1 = link.get("dpids")[0].get("component_manager_id").replace("authority+cm", "datapath")
+        dpid1 = auth1 + "+" + link.get("dpids")[0].get("dpid") + "_" + link.get("ports")[0].get("port_num") 
+        auth2 = link.get("dpids")[1].get("component_manager_id").replace("authority+cm", "datapath")
+        dpid2 = auth2 + "+" + link.get("dpids")[1].get("dpid") + "_" + link.get("ports")[1].get("port_num") 
+        if MonitoringUtils.check_existing_tag_in_topology(parent_node, "link", "lan", [dpid1, dpid2]):
+            return
         l = etree.SubElement(parent_node, "link")
         # NOTE that this cannot be empty
         l.set("type", MonitoringUtilsLinks._translate_link_type(link))
@@ -358,6 +381,9 @@ class BaseMonitoring(object):
     ##################
 
     def _add_tn_info(self, parent_node=None):
+        # If no parent node passed, TN info is attached to root topology node
+        if parent_node is None:
+            parent_node = self.topology
         # 1. Nodes
         # XXX: (M)MS assumes one TNRM per island
         # This retrieves TN information from AIST instance
@@ -367,10 +393,9 @@ class BaseMonitoring(object):
 #        nodes = [ d for d in db_sync_manager.get_tn_nodes_by_domain(self.domain_urn) ]
 #        nodes = [ d for d in db_sync_manager.get_tn_nodes() ]
         for node in nodes:
+            if MonitoringUtils.check_existing_tag_in_topology(parent_node, "node", "tn", node.get("component_id"), self.domain_urn):
+                break
             logger.debug("tn-node=%s" % (node,))
-            # If no parent node passed, SDN info is attached to root topology node
-            if parent_node is None:
-                parent_node = self.topology
             n = self._add_generic_node(parent_node, node, "tn")
             # Output interfaces per node
             logger.debug("tn-node-interfaces=%s" % node.get("interfaces"))
@@ -386,13 +411,15 @@ class BaseMonitoring(object):
     ##################
 
     def _add_se_info(self, parent_node=None):
+        # If no parent node passed, SE info is attached to root topology node
+        if parent_node is None:
+            parent_node = self.topology
         # 1. Nodes
         nodes = [ d for d in db_sync_manager.get_se_nodes_by_domain(self.domain_urn) ]
         for node in nodes:
+            if MonitoringUtils.check_existing_tag_in_topology(parent_node, "node", "se", node.get("component_id")):
+                break
             logger.debug("se-node=%s" % (node,))
-            # If no parent node passed, SE info is attached to root topology node
-            if parent_node is None:
-                parent_node = self.topology
             n = self._add_generic_node(parent_node, node, "se")
             # Output interfaces per node
             logger.debug("se-node-interfaces=%s" % node.get("interfaces"))
@@ -411,6 +438,10 @@ class BaseMonitoring(object):
         links = [ l for l in db_sync_manager.get_se_links_by_domain(self.domain_urn) ]
         logger.debug("se-links=%s" % (links,))
         for link in links:
+            dpid1 = link.get("interface_ref")[0].get("component_id")
+            dpid2 = link.get("interface_ref")[1].get("component_id")
+            if MonitoringUtils.check_existing_tag_in_topology(parent_node, "link", "lan", [dpid1, dpid2]):
+                break
             logger.debug("se-links=%s" % (link,))
             self._add_se_link(link)
 
@@ -419,7 +450,9 @@ class BaseMonitoring(object):
         SE_FILTERED_LINKS = ["*"]
         interfaces_cid = [ i.get("component_id") for i in link.get("interface_ref") ]
         interface_cid_in_filter = [ f for f in SE_FILTERED_LINKS if f in interfaces_cid ]
-
+        # Avoid reinserting existing link tags in the topology
+        if MonitoringUtils.check_existing_tag_in_topology(self.topology, "link", "lan", link.get("component_id")):
+            return
         if not interface_cid_in_filter:
             l = etree.SubElement(self.topology, "link")
             # NOTE that this cannot be empty
