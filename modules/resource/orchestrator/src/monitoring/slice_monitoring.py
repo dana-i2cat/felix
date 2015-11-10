@@ -34,6 +34,7 @@ class SliceMonitoring(BaseMonitoring):
         self.__topologies = etree.Element("topology_list")
         self.__stored = {}
         self.__mapping_c_interface = {}
+        self.__c_sdn_links = []
         self.__se_links = []
         self.__tn_links = []
         self.__hybrid_links = []
@@ -162,12 +163,15 @@ class SliceMonitoring(BaseMonitoring):
             return self.TN2TN_LINK_TYPE
         return self.MS_LINK_TYPE
 
-    def __add_link_info(self, topology_tag, link_type, ep_src, ep_dst):
-        link_type = self.__translate_link_type(link_type)
-
-        link_ = etree.SubElement(topology_tag, "link", type=link_type)
-        etree.SubElement(link_, "interface_ref", client_id=ep_src)
-        etree.SubElement(link_, "interface_ref", client_id=ep_dst)
+    def __add_link_info(self, topology_tag, ep_src, ep_dst, link_type=None):
+        # No link_type provided => interfaces appended directly under given tag
+        root = topology_tag
+        if link_type is not None:
+            link_type = self.__translate_link_type(link_type)
+            link_ = etree.SubElement(topology_tag, "link", type=link_type)
+            root = link_
+        etree.SubElement(root, "interface_ref", client_id=ep_src)
+        etree.SubElement(root, "interface_ref", client_id=ep_dst)
 
     def __extend_link_ids(self, ids):
         ret = []
@@ -256,9 +260,11 @@ class SliceMonitoring(BaseMonitoring):
 
                     logger.info("eps_src_id=%s, eps_dst_id=%s" %
                                 (eps_src_id, eps_dst_id,))
-                    self.__add_link_info(
-                        topology, com_link.get("link_type"),
-                        eps_src_id, eps_dst_id)
+#                    self.__add_link_info(topology, eps_src_id, eps_dst_id, com_link.get("link_type"))
+                    self.__c_sdn_links.append(
+                        {'id': com_link.get("component_id"),
+                         'source': eps_src_id,
+                         'destination': eps_dst_id})
 
         # SDN-SDN link info
         ext_link_ids = self.__extend_link_ids(link_ids)
@@ -276,8 +282,7 @@ class SliceMonitoring(BaseMonitoring):
                     ep2 = self.__create_link_id(
                         sdn_link.get("dpids")[1].get("component_id"),
                         sdn_link.get("ports")[1].get("port_num"))
-                    self.__add_link_info(topology, self.SDN2SDN_LINK_TYPE,
-                                         ep1, ep2)
+                    self.__add_link_info(topology, ep1, ep2, self.SDN2SDN_LINK_TYPE)
             else:
                 logger.info("Slice monitoring: cannot find link that " +
                             "ends with %s" % l)
@@ -346,8 +351,7 @@ class SliceMonitoring(BaseMonitoring):
                 # we use the attributes of the first "property" here!
                 if len(l.get("property")) >= 1:
                     p = l.get("property")[0]
-                    #self.__add_link_info(topology, self.TN2TN_LINK_TYPE,
-                    #                     p.get("source_id"), p.get("dest_id"))
+                    #self.__add_link_info(topology, p.get("source_id"), p.get("dest_id"), self.TN2TN_LINK_TYPE)
                     # store the values for the virtual island-to-island link
                     self.__tn_links.append(
                         {'id': l.get("component_id"),
@@ -362,13 +366,13 @@ class SliceMonitoring(BaseMonitoring):
 
             if extif is not None:
                 # Adding SE-to-SDN or SE-to-TN link
-#                self.__add_link_info(topo, self.MS_LINK_TYPE, i, extif)
+#                self.__add_link_info(topo, i, extif, self.MS_LINK_TYPE)
                 # store the values for the virtual island-to-island link
                 self.__hybrid_links.append({'source': i, 'destination': extif})
 
 #                if extif.count("ofam") == 1:
 #                    # Adding "abstract" link
-#                    self.__add_link_info(topo, self.MS_LINK_TYPE, extif, "*")
+#                    self.__add_link_info(topo, extif, "*", self.MS_LINK_TYPE)
 
     def __add_se_port_from_interface(self, if_id, if_tag):
         index = if_id.rfind("_")
@@ -426,9 +430,9 @@ class SliceMonitoring(BaseMonitoring):
                 continue
 
             # is it really necessary to put bidirectional links?
-            self.__add_link_info(topology, l.get("link_type"),
-                                 l.get("interface_ref")[0].get("component_id"),
-                                 l.get("interface_ref")[1].get("component_id"))
+#            self.__add_link_info(topology, l.get("interface_ref")[0].get("component_id"),
+#                                 l.get("interface_ref")[1].get("component_id"),
+#                                 l.get("link_type"))
 
             # store the values for the virtual island-to-island link
             self.__se_links.append(
@@ -510,19 +514,28 @@ class SliceMonitoring(BaseMonitoring):
 
         # Retrieve the SDN endpoints of the slice ("abstract link" in M/MS)
         se_link_urns = []
-        for se_link in self.__se_links:
+        for se_link in self.__hybrid_links:
             se_link_urns.extend([se_link.get("source"), se_link.get("destination")])
         se_link_urns = filter(lambda x: ":ofam" in x, se_link_urns)
-        # TODO Check against current slice monitoring
         # TODO Check: what about >2 islands involved in the slice?
         # For loop (step: 2, reason: finding SDN#1 port <--> SDN#2 port)
-        for se_link in xrange(0, len(se_link_urns), 2):
-            self.__add_link_info(virtual_, self.MS_LINK_TYPE, se_link[i], se_link[i+1])
+        for i in xrange(0, len(se_link_urns), 2):
+            self.__add_link_info(virtual_, se_link_urns[i], se_link_urns[i+1])
+
+        for c_sdn_link in self.__c_sdn_links:
+            logger.info("C-SDN link=%s" % (c_sdn_link,))
+            # Adding C-to-SDN link
+            self.__add_link_info(virtual_, c_sdn_link.get("source"), c_sdn_link.get("destination"), self.MS_LINK_TYPE)
+
+        for se_link in self.__se_links:
+            logger.info("SE-link=%s" % (se_link,))
+            # Adding SE-to-SDN or SE-to-TN link
+            self.__add_link_info(virtual_, se_link.get("source"), se_link.get("destination"), self.MS_LINK_TYPE)
 
         for se_link in self.__hybrid_links:
             logger.info("SE-link=%s" % (se_link,))
             # Adding SE-to-SDN or SE-to-TN link
-            self.__add_link_info(virtual_, self.MS_LINK_TYPE, se_link.get("source"), se_link.get("destination"))
+            self.__add_link_info(virtual_, se_link.get("source"), se_link.get("destination"), self.MS_LINK_TYPE)
 
         for tn_link in self.__tn_links:
             logger.info("TN-link=%s" % (tn_link,))
