@@ -1,3 +1,6 @@
 *.crt
 *.key
 *.pem
+# Ignore every certificate, but the common ones
+trusted/*
+!trusted/wall2.gid

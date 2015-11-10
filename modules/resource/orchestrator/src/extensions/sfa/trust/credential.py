@@ -53,12 +53,6 @@ from extensions.sfa.trust.gid import GID
 # 2 weeks, in seconds 
 DEFAULT_CREDENTIAL_LIFETIME = 86400 * 31
 
-
-# TODO:
-# . make privs match between PG and PL
-# . Need to add support for other types of credentials, e.g. tickets
-# . add namespaces to signed-credential element?
-
 signature_template = \
 '''
 <Signature xml:id="Sig_%s" xmlns="http://www.w3.org/2000/09/xmldsig#">
@@ -184,14 +178,33 @@ class Signature(object):
         try:
             doc = parseString(self.xml)
         except ExpatError,e:
-            logger.log_exc ("Failed to parse credential, %s"%self.xml)
             raise
         sig = doc.getElementsByTagName("Signature")[0]
-        self.set_refid(sig.getAttribute("xml:id").strip("Sig_"))
-        keyinfo = sig.getElementsByTagName("X509Data")[0]
-        szgid = getTextNode(keyinfo, "X509Certificate")
-        szgid = "-----BEGIN CERTIFICATE-----\n%s\n-----END CERTIFICATE-----" % szgid
-        self.set_issuer_gid(GID(string=szgid))        
+        ref_id = sig.getAttribute("xml:id").strip().strip("Sig_")
+        # The xml:id tag is optional, and could be in a 
+        # Reference xml:id or Reference UID sub element instead
+        if not ref_id or ref_id == '':
+            reference = sig.getElementsByTagName('Reference')[0]
+            ref_id = reference.getAttribute('xml:id').strip().strip('Sig_')
+            if not ref_id or ref_id == '':
+                ref_id = reference.getAttribute('URI').strip().strip('#')
+        self.set_refid(ref_id)
+        keyinfos = sig.getElementsByTagName("X509Data")
+        gids = None
+        for keyinfo in keyinfos:
+            certs = keyinfo.getElementsByTagName("X509Certificate")
+            for cert in certs:
+                if len(cert.childNodes) > 0:
+                    szgid = cert.childNodes[0].nodeValue
+                    szgid = szgid.strip()
+                    szgid = "-----BEGIN CERTIFICATE-----\n%s\n-----END CERTIFICATE-----" % szgid
+                    if gids is None:
+                        gids = szgid
+                    else:
+                        gids += "\n" + szgid
+        if gids is None:
+            raise CredentialNotVerifiable("Malformed XML: No certificate found in signature")
+        self.set_issuer_gid(GID(string=gids))
         
     def encode(self):
         self.xml = signature_template % (self.get_refid(), self.get_refid())
@@ -222,12 +235,16 @@ def filter_creds_by_caller(creds, caller_hrn_list):
         for cred in creds:
             try:
                 tmp_cred = Credential(string=cred)
+                if tmp_cred.get_cred_type() != Credential.SFA_CREDENTIAL_TYPE:
+                    continue
                 if tmp_cred.get_gid_caller().get_hrn() in caller_hrn_list:
                     caller_creds.append(cred)
             except: pass
         return caller_creds
 
 class Credential(object):
+
+    SFA_CREDENTIAL_TYPE = "geni_sfa"
 
     ##
     # Create a Credential object
@@ -250,6 +267,7 @@ class Credential(object):
         self.xml = None
         self.refid = None
         self.legacy = None
+        self.cred_type = Credential.SFA_CREDENTIAL_TYPE
 
         # Check if this is a legacy credential, translate it if so
         if string or filename:
@@ -273,7 +291,10 @@ class Credential(object):
                 self.xmlsec_path = path + '/' + 'xmlsec1'
                 break
         if not self.xmlsec_path:
-            logger.warn("Could not locate binary for xmlsec1 - SFA will be unable to sign stuff !!")
+            pass
+
+    def get_cred_type(self): 
+        return self.cred_type
 
     def get_subject(self):
         if not self.gidObject:
@@ -378,7 +399,7 @@ class Credential(object):
         elif isinstance (expiration, StringTypes):
             self.expiration = utcparse (expiration)
         else:
-            logger.error ("unexpected input type in Credential.set_expiration")
+            pass
 
 
     ##
@@ -449,6 +470,7 @@ class Credential(object):
 # cause those schemas are identical.
 # Also note these PG schemas talk about PG tickets and CM policies.
         signed_cred.setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
+        # FIXME: See v2 schema at www.geni.net/resources/credential/2/credential.xsd
         signed_cred.setAttribute("xsi:noNamespaceSchemaLocation", "http://www.planet-lab.org/resources/sfa/credential.xsd")
         signed_cred.setAttribute("xsi:schemaLocation", "http://www.planet-lab.org/resources/sfa/ext/policy/1 http://www.planet-lab.org/resources/sfa/ext/policy/1/policy.xsd")
 
@@ -472,7 +494,10 @@ class Credential(object):
         if not self.expiration:
             self.set_expiration(datetime.datetime.utcnow() + datetime.timedelta(seconds=DEFAULT_CREDENTIAL_LIFETIME))
         self.expiration = self.expiration.replace(microsecond=0)
-        append_sub(doc, cred, "expires", self.expiration.isoformat())
+        if self.expiration.tzinfo is not None and self.expiration.tzinfo.utcoffset(self.expiration) is not None:
+            # TZ aware. Make sure it is UTC
+            self.expiration = self.expiration.astimezone(tz.tzutc())
+        append_sub(doc, cred, "expires", self.expiration.strftime('%Y-%m-%dT%H:%M:%SZ')) # RFC3339
         privileges = doc.createElement("privileges")
         cred.appendChild(privileges)
 
@@ -528,7 +553,6 @@ class Credential(object):
                     oldAttr = signed_cred.setAttributeNode(attr.cloneNode(True))
                     if oldAttr and oldAttr.value != attr.value:
                         msg = "Delegating cred from owner %s to %s over %s:\n - Replaced attribute %s value '%s' with '%s'" % (self.parent.gidCaller.get_urn(), self.gidCaller.get_urn(), self.gidObject.get_urn(), oldAttr.name, oldAttr.value, attr.value)
-                        logger.warn(msg)
                         #raise CredentialNotVerifiable("Can't encode new valid delegated credential: %s" % msg)
 
             p_cred = doc.importNode(sdoc.getElementsByTagName("credential")[0], True)
@@ -549,7 +573,7 @@ class Credential(object):
                 signatures.appendChild(ele)
                 
         # Get the finished product
-        self.xml = doc.toxml()
+        self.xml = doc.toxml("utf-8")
 
 
     def save_to_random_tmp_file(self):       
@@ -629,10 +653,8 @@ class Credential(object):
 
     def sign(self):
         if not self.issuer_privkey:
-            logger.warn("Cannot sign credential (no private key)")
             return
         if not self.issuer_gid:
-            logger.warn("Cannot sign credential (no issuer gid)")
             return
         doc = parseString(self.get_xml())
         sigs = doc.getElementsByTagName("signatures")[0]
@@ -644,7 +666,7 @@ class Credential(object):
         sig_ele = doc.importNode(sdoc.getElementsByTagName("Signature")[0], True)
         sigs.appendChild(sig_ele)
 
-        self.xml = doc.toxml()
+        self.xml = doc.toxml("utf-8")
 
 
         # Split the issuer GID into multiple certificates if it's a chain
@@ -661,8 +683,12 @@ class Credential(object):
         # Call out to xmlsec1 to sign it
         ref = 'Sig_%s' % self.get_refid()
         filename = self.save_to_random_tmp_file()
-        signed = os.popen('%s --sign --node-id "%s" --privkey-pem %s,%s %s' \
-                 % (self.xmlsec_path, ref, self.issuer_privkey, ",".join(gid_files), filename)).read()
+        print "**********************************",'%s --sign --node-id "%s" --privkey-pem %s,%s %s' % (self.xmlsec_path, ref, self.issuer_privkey, ",".join(gid_files), filename)
+        command='%s --sign --node-id "%s" --privkey-pem %s,%s %s' \
+            % (self.xmlsec_path, ref, self.issuer_privkey, ",".join(gid_files), filename)
+#        print 'command',command
+        signed = os.popen(command).read()
+        print "*************************************",signed
         os.remove(filename)
 
         for gid_file in gid_files:
@@ -677,7 +703,7 @@ class Credential(object):
         # Update signatures
         self.decode()       
 
-        
+
     ##
     # Retrieve the attributes of the credential from the XML.
     # This is automatically called by the various get_* methods of
@@ -708,26 +734,50 @@ class Credential(object):
 
         self.set_refid(cred.getAttribute("xml:id"))
         self.set_expiration(utcparse(getTextNode(cred, "expires")))
-        self.gidCaller = GID(string=getTextNode(cred, "owner_gid"))
-        self.gidObject = GID(string=getTextNode(cred, "target_gid"))   
 
+#        import traceback
+#        stack = traceback.extract_stack()
+
+        og = getTextNode(cred, "owner_gid")
+        # ABAC creds will have this be None and use this method
+#        if og is None:
+#            found = False
+#            for frame in stack:
+#                if 'super(ABACCredential, self).decode()' in frame:
+#                    found = True
+#                    break
+#            if not found:
+#                raise CredentialNotVerifiable("Malformed XML: No owner_gid found")
+        self.gidCaller = GID(string=og)
+        tg = getTextNode(cred, "target_gid")
+#        if tg is None:
+#            found = False
+#            for frame in stack:
+#                if 'super(ABACCredential, self).decode()' in frame:
+#                    found = True
+#                    break
+#            if not found:
+#                raise CredentialNotVerifiable("Malformed XML: No target_gid found")
+        self.gidObject = GID(string=tg)
 
         # Process privileges
-        privs = cred.getElementsByTagName("privileges")[0]
         rlist = Rights()
-        for priv in privs.getElementsByTagName("privilege"):
-            kind = getTextNode(priv, "name")
-            deleg = str2bool(getTextNode(priv, "can_delegate"))
-            if kind == '*':
-                # Convert * into the default privileges for the credential's type
-                # Each inherits the delegatability from the * above
-                _ , type = urn_to_hrn(self.gidObject.get_urn())
-                rl = determine_rights(type, self.gidObject.get_urn())
-                for r in rl.rights:
-                    r.delegate = deleg
-                    rlist.add(r)
-            else:
-                rlist.add(Right(kind.strip(), deleg))
+        priv_nodes = cred.getElementsByTagName("privileges")
+        if len(priv_nodes) > 0:
+            privs = priv_nodes[0]
+            for priv in privs.getElementsByTagName("privilege"):
+                kind = getTextNode(priv, "name")
+                deleg = str2bool(getTextNode(priv, "can_delegate"))
+                if kind == '*':
+                    # Convert * into the default privileges for the credential's type
+                    # Each inherits the delegatability from the * above
+                    _ , type = urn_to_hrn(self.gidObject.get_urn())
+                    rl = determine_rights(type, self.gidObject.get_urn())
+                    for r in rl.rights:
+                        r.delegate = deleg
+                        rlist.add(r)
+                else:
+                    rlist.add(Right(kind.strip(), deleg))
         self.set_privileges(rlist)
 
 
@@ -735,13 +785,15 @@ class Credential(object):
         parent = cred.getElementsByTagName("parent")
         if len(parent) > 0:
             parent_doc = parent[0].getElementsByTagName("credential")[0]
-            parent_xml = parent_doc.toxml()
+            parent_xml = parent_doc.toxml("utf-8")
+            if parent_xml is None or parent_xml.strip() == "":
+                raise CredentialNotVerifiable("Malformed XML: Had parent tag but it is empty")
             self.parent = Credential(string=parent_xml)
             self.updateRefID()
 
         # Assign the signatures to the credentials
         for sig in sigs:
-            Sig = Signature(string=sig.toxml())
+            Sig = Signature(string=sig.toxml("utf-8"))
 
             for cur_cred in self.get_credential_list():
                 if cur_cred.get_refid() == Sig.get_refid():
@@ -781,6 +833,8 @@ class Credential(object):
     # @param trusted_certs: The certificates of trusted CA certificates
     def verify(self, trusted_certs=None, schema=None, trusted_certs_required=True):
         if not self.xml:
+            print "\n\n\n\n\n\n\n\n\n\n\n\n\n----------------------CRED\n\n\n\n\n\n\n\n\n\n\n\n\n"
+            print "not xml"
             self.decode()
 
         # validate against RelaxNG schema
@@ -810,7 +864,7 @@ class Credential(object):
                     trusted_cert_objects.append(GID(filename=f))
                     ok_trusted_certs.append(f)
                 except Exception, exc:
-                    logger.error("Failed to load trusted cert from %s: %r" % (f, exc))
+                    pass
             trusted_certs = ok_trusted_certs
 
         # Use legacy verification if this is a legacy credential
@@ -852,8 +906,6 @@ class Credential(object):
             if trusted_certs is None:
                 break
 
-#            print "Doing %s --verify --node-id '%s' %s %s 2>&1" % \
-#                (self.xmlsec_path, ref, cert_args, filename)
             verified = os.popen('%s --verify --node-id "%s" %s %s 2>&1' \
                             % (self.xmlsec_path, ref, cert_args, filename)).read()
             if not verified.strip().startswith("OK"):
@@ -899,6 +951,10 @@ class Credential(object):
     def verify_issuer(self, trusted_gids):
         root_cred = self.get_credential_list()[-1]
         root_target_gid = root_cred.get_gid_object()
+        if root_cred.get_signature() is None:
+            # malformed
+            raise CredentialNotVerifiable("Could not verify credential owned by %s for object %s. Cred has no signature" % (self.gidCaller.get_urn(), self.gidObject.get_urn()))
+
         root_cred_signer = root_cred.get_signature().get_issuer_gid()
 
         # Case 1:
@@ -941,8 +997,7 @@ class Credential(object):
         if trusted_gids and len(trusted_gids) > 0:
             root_cred_signer.verify_chain(trusted_gids)
         else:
-            logger.debug("No trusted gids. Cannot verify that cred signer is signed by a trusted authority. Skipping that check.")
-
+            pass
         # See if the signer is an authority over the domain of the target.
         # There are multiple types of authority - accept them all here
         # Maybe should be (hrn, type) = urn_to_hrn(root_cred_signer.get_urn())
@@ -1040,7 +1095,6 @@ class Credential(object):
     def dump (self, *args, **kwargs):
         print self.dump_string(*args, **kwargs)
 
-
     def dump_string(self, dump_parents=False, show_xml=False):
         result=""
         result += "CREDENTIAL %s\n" % self.get_subject()
@@ -1053,11 +1107,11 @@ class Credential(object):
             result += gidCaller.dump_string(8, dump_parents)
 
         if self.get_signature():
-            print "  gidIssuer:"
-            self.get_signature().get_issuer_gid().dump(8, dump_parents)
+            result += "  gidIssuer:\n"
+            result += self.get_signature().get_issuer_gid().dump_string(8, dump_parents)
 
         if self.expiration:
-            print "  expiration:", self.expiration.isoformat()
+            result += "  expiration: " + self.expiration.isoformat() + "\n"
 
         gidObject = self.get_gid_object()
         if gidObject:
@@ -1068,16 +1122,15 @@ class Credential(object):
             result += "\nPARENT"
             result += self.parent.dump_string(True)
 
-        if show_xml:
+        if show_xml and HAVELXML:
             try:
                 tree = etree.parse(StringIO(self.xml))
                 aside = etree.tostring(tree, pretty_print=True)
-                result += "\nXML\n"
+                result += "\nXML:\n\n"
                 result += aside
                 result += "\nEnd XML\n"
             except:
                 import traceback
-                print "exc. Credential.dump_string / XML"
                 traceback.print_exc()
 
         return result
