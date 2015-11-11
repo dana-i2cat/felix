@@ -3,6 +3,9 @@ from monitoring.base_monitoring import BaseMonitoring
 
 import core
 import traceback
+from lxml import etree
+from copy import deepcopy
+from core.utils.urns import URNUtils
 
 logger = core.log.getLogger("monitoring-physical")
 
@@ -70,6 +73,9 @@ class PhysicalMonitoring(BaseMonitoring):
 
         # Clean any empty node (result of not containing the minimum SW modules)
         self.remove_empty_nodes()
+        # M-RO environment: refactoring of the topology list (regroup nodes & links per island)
+        if self.mro_enabled:
+            self.__group_resources_per_island()
         # Send topology after all peers are completed
         self._send(self.get_topology(), monitoring_server)
         logger.debug("Resulting RSpec=%s" % self.get_topology_pretty())
@@ -157,3 +163,62 @@ class PhysicalMonitoring(BaseMonitoring):
         except Exception as e:
             logger.warning("Physical topology - Cannot recover information for domain='%s'. Skipping to the next domain. Details: %s" % (domain_name, e))
             logger.warning(traceback.format_exc())
+
+    def __get_island_name_from_auth_domain(self, authdom):
+        # this is not elegant, but in any case...
+        if "aist2" in authdom:
+            return "aist2"
+        elif "aist" in authdom:
+            return "aist"
+        elif "kddi" in authdom:
+            return "kddi"
+        elif "i2cat" in authdom:
+            return "i2cat"
+        elif "psnc" in authdom:
+            return "psnc"
+        elif "iminds" in authdom:
+            return "iminds"
+        elif "eict" in authdom:
+            return "eict"
+        else:
+            return "uknown"
+
+    def __get_island_name(self, urn):
+        authority = URNUtils.get_felix_authority_from_urn(urn)
+        if not authority:
+            # for some reasons, not all the urns are built correctly
+            fields = urn.split("+")
+            logger.debug("fields=%s" % fields)
+            if len(fields) >= 2:
+                authority = self.__get_island_name_from_auth_domain(fields[1])
+
+        return authority
+
+    def __get_topology_ref(self, topolist, name, uptime, typee):
+        for topo in topolist.iter("topology"):
+            if name in topo.get("name"):
+                return topo
+        # create a new topology tag
+        return etree.SubElement(
+            topolist, "topology",
+            attrib={"last_update_time": uptime,
+                    "type": typee,
+                    "name": "urn:publicid:IDN+ocf:" + name})
+
+    def __group_resources_per_island(self):
+        tmp_topology_list = etree.Element("topology_list")
+        for topology in self.topology_list.iter("topology"):
+            # nodes
+            for node in topology.iter("node"):
+                island = self.__get_island_name(node.get("id"))
+                toporef = self.__get_topology_ref(
+                    tmp_topology_list, island, topology.get("last_update_time"), topology.get("type"))
+                toporef.append(deepcopy(node))
+            # links
+            for link in topology.iter("link"):
+                island = self.__get_island_name(link.get("id"))
+                toporef = self.__get_topology_ref(
+                    tmp_topology_list, island, topology.get("last_update_time"), topology.get("type"))
+                toporef.append(deepcopy(link))
+        # save the current topology list in the base class
+        self.set_topology_tree(tmp_topology_list)
