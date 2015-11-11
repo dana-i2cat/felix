@@ -164,34 +164,8 @@ class PhysicalMonitoring(BaseMonitoring):
             logger.warning("Physical topology - Cannot recover information for domain='%s'. Skipping to the next domain. Details: %s" % (domain_name, e))
             logger.warning(traceback.format_exc())
 
-    def __get_island_name_from_auth_domain(self, authdom):
-        # this is not elegant, but in any case...
-        if "aist2" in authdom:
-            return "aist2"
-        elif "aist" in authdom:
-            return "aist"
-        elif "kddi" in authdom:
-            return "kddi"
-        elif "i2cat" in authdom:
-            return "i2cat"
-        elif "psnc" in authdom:
-            return "psnc"
-        elif "iminds" in authdom:
-            return "iminds"
-        elif "eict" in authdom:
-            return "eict"
-        else:
-            return "uknown"
-
     def __get_island_name(self, urn):
         authority = URNUtils.get_felix_authority_from_urn(urn)
-        if not authority:
-            # for some reasons, not all the urns are built correctly
-            fields = urn.split("+")
-            logger.debug("fields=%s" % fields)
-            if len(fields) >= 2:
-                authority = self.__get_island_name_from_auth_domain(fields[1])
-
         return authority
 
     def __get_topology_ref(self, topolist, name, uptime, typee):
@@ -219,7 +193,7 @@ class PhysicalMonitoring(BaseMonitoring):
     def __group_resources_per_island(self):
         tmp_topology_list = etree.Element("topology_list")
         for topology in self.topology_list.iter("topology"):
-            # nodes
+            # Nodes
             for node in topology.iter("node"):
                 island = self.__get_island_name(node.get("id"))
                 toporef = self.__get_topology_ref(
@@ -227,7 +201,7 @@ class PhysicalMonitoring(BaseMonitoring):
                 # do not copy TN nodes here
                 if node.get("type") != "tn":
                     toporef.append(deepcopy(node))
-            # links
+            # Links
             for link in topology.iter("link"):
                 island = self.__get_island_name(link.get("id"))
                 toporef = self.__get_topology_ref(
