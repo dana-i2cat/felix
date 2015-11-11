@@ -35,7 +35,7 @@ class SliceMonitoring(BaseMonitoring):
         self.__topologies = etree.Element("topology_list")
         self.__stored = {}
         self.__mapping_c_interface = {}
-        self.__sdn_links = []
+        #self.__sdn_links = []
         self.__se_links = []
         self.__tn_links = []
         self.__hybrid_links = []
@@ -285,13 +285,13 @@ class SliceMonitoring(BaseMonitoring):
                         sdn_link.get("dpids")[1].get("component_id").
                         sdn_link.get("ports")[1].get("port_num"))
                     # Local SDN-SDN links are not inserted under the nested link
-                    if self.__check_ids_same_domain(ep1, ep2):
-                        self.__add_link_info(topology, ep1, ep2, self.SDN2SDN_LINK_TYPE)
-                    else:
-                        self.__sdn_links.append(
-                            {'id': sdn_link.get("component_id"),
-                             'source': ep1,
-                             'destination': ep2})
+#                    if self.__check_ids_same_domain(ep1, ep2):
+                    self.__add_link_info(topology, ep1, ep2, self.SDN2SDN_LINK_TYPE)
+#                    else:
+#                        self.__sdn_links.append(
+#                            {'id': sdn_link.get("component_id"),
+#                             'source': ep1,
+#                             'destination': ep2})
             else:
                 logger.info("Slice monitoring: cannot find link that " +
                             "ends with %s" % l)
@@ -520,10 +520,10 @@ class SliceMonitoring(BaseMonitoring):
         for i in xrange(0, len(se_link_urns), 2):
             self.__add_link_info(virtual_, se_link_urns[i], se_link_urns[i+1])
 
-        for sdn_link in self.__sdn_links:
-            logger.info("SDN-link=%s" % (sdn_link,))
-            # Adding inter-domain SDN-to-SDN links
-            self.__add_link_info(virtual_, sdn_link.get("source"), sdn_link.get("destination"), self.MS_LINK_TYPE)
+#        for sdn_link in self.__sdn_links:
+#            logger.info("SDN-link=%s" % (sdn_link,))
+#            # Adding inter-domain SDN-to-SDN links
+#            self.__add_link_info(virtual_, sdn_link.get("source"), sdn_link.get("destination"), self.MS_LINK_TYPE)
 
         for se_link in self.__se_links:
             logger.info("SE-link=%s" % (se_link,))
@@ -639,47 +639,3 @@ class SliceMonitoring(BaseMonitoring):
         topo.set("owner", "owner_of_slice")
         # Set topology tag as root node for subsequent operations
         self.topology = topo
-
-    def __fake_tn_se_hybrid_links(self):
-        self.__tn_links = [
-            {'id': "urn:publicid:IDN+fms:aist:tnrm+link+fms:aist:tnrm+stp+" +
-                   "urn:ogf:network:aist.go.jp:2013:topology:bi-se1+fms:" +
-                   "aist:tnrm+stp+urn:ogf:network:pionier.net.pl:2013:" +
-                   "topology:felix-ge-1-1-7",
-             'source': "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:" +
-                       "aist.go.jp:2013:topology:bi-se2",
-             'destination': "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:" +
-                            "network:pionier.net.pl:2013:topology:" +
-                            "felix-ge-1-1-7"}
-        ]
-        self.__se_links = [
-            {'id': "urn:publicid:aist-sedp4-1",
-             'source': "urn:publicid:IDN+fms:aist:serm+datapath+" +
-                       "00:00:00:00:00:00:00:10_4",
-             'destination': "urn:publicid:IDN+fms:aist:serm+datapath+" +
-                            "00:00:00:00:00:00:00:10_1"},
-            {'id': "urn:publicid:i2cat-sedp22-1",
-             'source': "urn:publicid:IDN+fms:i2cat:serm+datapath+" +
-                       "10:00:78:ac:c0:15:19:c0_22",
-             'destination': "urn:publicid:IDN+fms:i2cat:serm+datapath+" +
-                            "10:00:78:ac:c0:15:19:c0_1"}
-        ]
-        self.__hybrid_links = [
-            {'source': "urn:publicid:IDN+openflow:ocf:aist:ofam+datapath+" +
-                       "00:00:00:00:00:00:00:01_6",
-             'destination': "urn:publicid:IDN+fms:aist:serm+datapath+" +
-                            "00:00:00:00:00:00:00:10_4"},
-            {'source': "urn:publicid:IDN+fms:aist:serm+datapath+" +
-                       "00:00:00:00:00:00:00:10_1",
-             'destination': "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:" +
-                            "network:aist.go.jp:2013:topology:bi-se2"},
-            {'source': "urn:publicid:IDN+fms:i2cat:serm+datapath+" +
-                       "10:00:78:ac:c0:15:19:c0_1",
-             'destination': "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:" +
-                            "network:pionier.net.pl:2013:topology:" +
-                            "felix-ge-1-1-7"},
-            {'source': "urn:publicid:IDN+fms:i2cat:serm+datapath+" +
-                       "10:00:78:ac:c0:15:19:c0_22",
-             'destination': "urn:publicid:IDN+openflow:ocf:i2cat:ofam+" +
-                            "datapath+00:10:00:00:00:00:00:01_6"}
-        ]

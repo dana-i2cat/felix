@@ -165,8 +165,7 @@ class PhysicalMonitoring(BaseMonitoring):
             logger.warning(traceback.format_exc())
 
     def __get_island_name(self, urn):
-        authority = URNUtils.get_felix_authority_from_urn(urn)
-        return authority
+        return URNUtils.get_felix_authority_from_urn(urn)
 
     def __get_topology_ref(self, topolist, name, uptime, typee):
         for topo in topolist.iter("topology"):
