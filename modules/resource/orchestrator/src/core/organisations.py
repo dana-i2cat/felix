@@ -5,6 +5,7 @@ class AllowedOrganisations:
     ORG_I2CAT = ["i2cat"]
     ORG_PSNC = ["psnc"]
     ORG_AIST = ["aist"]
+    ORG_AIST2 = ["aist2"]
     ORG_KDDI = ["kddi"]
     ORG_IMINDS = ["iminds"]
     ORG_EICT = ["eict"]
