@@ -30,4 +30,13 @@ class URNUtils:
             if hrn_element in URNUtils.FELIX_ORGS:
                 authority = hrn_element
                 break
+        # URN may not follow the standard format...
+        if len(authority) == 0:
+            try:
+                fields = urn.split("+")
+                authority = fields[1]
+                orgs = map(lambda x: x in authority, URNUtils.FELIX_ORGS)
+                authority = URNUtils.FELIX_ORGS[orgs.index(True)]
+            except:
+                pass
         return authority

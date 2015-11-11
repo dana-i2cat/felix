@@ -4,8 +4,7 @@ class AllowedOrganisations:
     """
     ORG_I2CAT = ["i2cat"]
     ORG_PSNC = ["psnc"]
-    ORG_AIST = ["aist"]
-    ORG_AIST2 = ["aist2"]
+    ORG_AIST = ["aist","aist2"]
     ORG_KDDI = ["kddi"]
     ORG_IMINDS = ["iminds"]
     ORG_EICT = ["eict"]
@@ -16,7 +15,9 @@ class AllowedOrganisations:
 
     @staticmethod
     def get_organisations_type():
-        return list(AllowedOrganisations.__dict__.get(x)[0] for x in AllowedOrganisations.get_organisations_key())
+        # Retrieve all possible organisations and flatten
+        orgs = list(AllowedOrganisations.__dict__.get(x) for x in AllowedOrganisations.get_organisations_key())
+        return [item for sublist in orgs for item in sublist] 
 
     @staticmethod
     def get_organisations():
