@@ -179,6 +179,17 @@ class PhysicalMonitoring(BaseMonitoring):
                     "type": typee,
                     "name": "urn:publicid:IDN+ocf:" + name})
 
+    def __add_tn_node_per_island(self, topo_list, node):
+        for topo in topo_list.iter("topology"):
+            topo.append(deepcopy(node))
+
+    def __cycle_nodes(self, topo, tmp_topo):
+        for node in topo.iter("node"):
+            if node.get("type") == "tn":
+                self.__add_tn_node_per_island(tmp_topo, node)
+                return True
+        return False
+
     def __group_resources_per_island(self):
         tmp_topology_list = etree.Element("topology_list")
         for topology in self.topology_list.iter("topology"):
@@ -187,12 +198,18 @@ class PhysicalMonitoring(BaseMonitoring):
                 island = self.__get_island_name(node.get("id"))
                 toporef = self.__get_topology_ref(
                     tmp_topology_list, island, topology.get("last_update_time"), topology.get("type"))
-                toporef.append(deepcopy(node))
+                # do not copy TN nodes here
+                if node.get("type") != "tn":
+                    toporef.append(deepcopy(node))
             # Links
             for link in topology.iter("link"):
                 island = self.__get_island_name(link.get("id"))
                 toporef = self.__get_topology_ref(
                     tmp_topology_list, island, topology.get("last_update_time"), topology.get("type"))
                 toporef.append(deepcopy(link))
+        # MMS waits for 1 TN node per island
+        for topology in self.topology_list.iter("topology"):
+            if self.__cycle_nodes(topology, tmp_topology_list):
+                break
         # save the current topology list in the base class
         self.set_topology_tree(tmp_topology_list)
