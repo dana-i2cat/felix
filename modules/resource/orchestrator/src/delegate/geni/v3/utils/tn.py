@@ -220,4 +220,4 @@ class TNUtils(CommonUtils):
         """Determine whether all involved STPs are gre (True) or not (False)"""
         if not isinstance(stp, list):
             stp = [ stp ]
-        return all(map(lambda x: "gre" in x, stp))
+        return map(lambda x: "gre" in x, stp)
