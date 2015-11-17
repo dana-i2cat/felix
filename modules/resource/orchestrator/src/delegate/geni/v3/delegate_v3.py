@@ -200,35 +200,36 @@ class GENIv3Delegate(GENIv3DelegateBase):
         CommonUtils().validate_rspec(req_rspec.get_rspec())
 
         ro_manifest, ro_slivers, ro_db_slivers = ROManifestFormatter(), [], []
-
-        # Before starting the allocation process, we need to find a proper
-        # mapping between TN and SDN resources in the islands.
-        # We use the tn-links as starting point (STPs)
-        stps = TNUtils().find_stps_from_links(req_rspec.tn_links())
-        logger.debug("STPs=%s" % (stps,))
-        dpid_port_ids = SDNUtils().find_dpid_port_identifiers(
-            req_rspec.of_groups(), req_rspec.of_matches())
-        logger.debug("DPIDs=%s" % (dpid_port_ids,))
-
         extend_groups = []
+
         # If MRO: run mapper path-finder to extend SDN resources
         # by adding an inherent link to the SE device
         if self._mro_enabled:
+            # Before starting the allocation process, we need to find a proper
+            # mapping between TN and SDN resources in the islands.
+            # We use the tn-links as starting point (STPs)
+            stps = TNUtils().find_stps_from_links(req_rspec.tn_links())
+            logger.debug("STPs=%s" % (stps,))
+            dpid_port_ids = SDNUtils().find_dpid_port_identifiers(
+                req_rspec.of_groups(), req_rspec.of_matches())
+            logger.debug("DPIDs=%s" % (dpid_port_ids,))
+
             for stp in stps:
-                path_finder_tn_sdn = PathFinderTNtoSDN(
-                    stp.get("src_name"), stp.get("dst_name"))
+                # If STPs involved in the request use heterogeneous types for a given
+                # connection (e.g. NSI and GRE), warn user and raise exception
+                stps_gre = TNUtils.determine_stp_gre([stp.get("src_name"), stp.get("dst_name")])
+                if any(stps_gre) and not all(stps_gre):
+                    e = "Mapper SDN-SE-TN: attempting to connect 2 STPs of different type (e.g. GRE and NSI)"
+                    raise geni_ex.GENIv3GeneralError(e)
+                path_finder_tn_sdn = PathFinderTNtoSDN(stp.get("src_name"), stp.get("dst_name"))
                 paths = path_finder_tn_sdn.find_paths()
-                logger.info("PATHs=%s" % (paths,))
+                logger.debug("PATHs=%s" % (paths,))
                 ## Mapper: raise an exception when a path *between different authorities/islands* cannot be found
                 #src_auth = URNUtils.get_felix_authority_from_urn(stp.get("src_name"))
                 #dst_auth = URNUtils.get_felix_authority_from_urn(stp.get("dst_name"))
-                # If STPs involved in the request use GRE, do not call the mapper (?)
-                stps_gre = TNUtils.determine_stp_gre([stp.get("src_name"), stp.get("dst_name")])
-                if stps_gre:
-                    break
                 #if src_auth != dst_auth and len(paths) == 0:
                 if len(paths) == 0:
-                    e = "Mapper SDN-SE-TN: received empty path. Possible causes: requested STPs are disconnected and/or located in the same island"
+                    e = "Mapper SDN-SE-TN: cannot map inter-domain links for STPs provided. Possible causes: STPs cannot be connected or are located in the same island"
                     raise geni_ex.GENIv3GeneralError(e)
                 items = SDNUtils().analyze_mapped_path(dpid_port_ids, paths)
                 extend_groups.extend(items)

@@ -88,6 +88,25 @@ class PathFinderTNtoSDNFilterUtils(object):
         return domain_name_alt_matches
 
     @staticmethod
+    def ensure_same_type_tn_interfaces(tn_interfaces):
+        """
+        Verify that, for a given list of STPs, all of them
+        are of the same type (either using NSI or GRE).
+        """
+        tn_interface_type = None
+        for i, tn_interface in enumerate(tn_interfaces):
+            if tn_interface_type is None:
+                if "gre" in tn_interface:
+                    tn_interface_type = "gre"
+                else:
+                    tn_interface_type = "nsi"
+            else:
+                if (tn_interface_type == "gre" and ":"+tn_interface_type+":" not in tn_interface) or \
+                (tn_interface_type == "nsi" and ":gre:" in tn_interface):
+                    del(tn_interfaces[i])
+        return tn_interfaces
+
+    @staticmethod
     def get_organisation_mappings(organisation_name_mappings, organisation_name):
         # Return possible alternatives, given an organisation name
         return organisation_name_mappings.get(organisation_name, [organisation_name])
@@ -112,9 +131,13 @@ class PathFinderTNtoSDNFilterUtils(object):
         ## Check all keys (SRC, DST) inside the "mapping_path_structure" list
         if not all([ all(len(val) > 0 for val in elem.values()) for elem in mapping_path_structure ]):
             return new_mapping_path_structure
-        # There must also be information for links
+        # There must also be information for links (SRC+DST), and...
         for idx, mapping_path_element in enumerate(mapping_path_structure):
             if all( [ len(mapping_path_element["src"][elem]) > 0 for elem in mapping_path_element["src"] ]) \
                 and all( [ len(mapping_path_element["dst"][elem]) > 0 for elem in mapping_path_element["dst"] ]):
-                new_mapping_path_structure.append(mapping_path_element)
+                    # TN endpoints must have the same type
+                    tn_interfaces = [ mapping_path_element["src"]["tn"], mapping_path_element["dst"]["tn"] ]
+                    tn_interfaces = PathFinderTNtoSDNFilterUtils.ensure_same_type_tn_interfaces(tn_interfaces)
+                    if len(tn_interfaces) == 2:
+                        new_mapping_path_structure.append(mapping_path_element)
         return new_mapping_path_structure
