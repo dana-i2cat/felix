@@ -116,7 +116,7 @@ class SEUtils(CommonUtils):
         i = if1.rindex("_")
         n1, num1 = if1[0:i], if1[i+1:len(if1)]
         i = if2.rindex("_")
-        n2, num2 = if2[0:i], if2[i+1:len(if1)]
+        n2, num2 = if2[0:i], if2[i+1:len(if2)]
         dpid2 = n2[n2.rindex("+")+1:]
 
         if n1 != n2:
