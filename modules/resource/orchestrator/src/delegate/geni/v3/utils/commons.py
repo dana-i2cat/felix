@@ -14,11 +14,27 @@ class CommonUtils(object):
         pass
 
     @staticmethod
+    def is_explicit_tn_allocation(rspec):
+        # Check for SDN resources
+        sliver = rspec.of_sliver()
+        if sliver is not None:
+            return False
+
+        # Check for SE resources
+        senodes = rspec.se_nodes()
+        selinks = rspec.se_links()
+        if ((len(senodes) > 0) or (len(selinks) > 0)):
+            return False
+
+        logger.info("This is an explicit TN allocation.")
+        return True
+
+    @staticmethod
     def fetch_user_name_from_geni_users(geni_users):
         """
         Given the GENI 'geni_users' structure, retrieves the proper
         client or user identifier (may be a name, hrn or urn).
-        
+
         @param geni_users geni_users structure, passed from handler
         @return user identifier
         """
@@ -34,9 +50,9 @@ class CommonUtils(object):
     def convert_sliver_dates_to_datetime(geni_slivers, geni_expires_value=None):
         """
         Given the GENI slivers structure, converts every 'geni_expires'
-        field inside (in rfc3339) format to a datetime object. This is the 
+        field inside (in rfc3339) format to a datetime object. This is the
         expected output by CLI clients (e.g. OMNI).
-        
+
         @param geni_slivers slivers structure, generated in delegate
         @param geni_expires_value valid rfc3339 date
         @return geni_slivers slivers structure, with date format modified
@@ -53,7 +69,7 @@ class CommonUtils(object):
         """
         Given an RSpec (XML structure), this method validates the
         structure of the document, according to the GENI resource schemas.
-        
+
         @param rspec RSpec defining resources
         @throws GENIv3GeneralError when RSpec format is invalid
         """
