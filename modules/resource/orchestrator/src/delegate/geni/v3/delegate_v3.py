@@ -204,7 +204,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         # If MRO: run mapper path-finder to extend SDN resources
         # by adding an inherent link to the SE device
-        if self._mro_enabled:
+        # Note: check if we had an explicit/direct TN allocation
+        # (in this case just skip the mapper)
+        if self._mro_enabled and not CommonUtils().is_explicit_tn_allocation(req_rspec):
             # Before starting the allocation process, we need to find a proper
             # mapping between TN and SDN resources in the islands.
             # We use the tn-links as starting point (STPs)
