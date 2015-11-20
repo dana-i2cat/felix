@@ -135,9 +135,11 @@ class PathFinderTNtoSDNFilterUtils(object):
         for idx, mapping_path_element in enumerate(mapping_path_structure):
             if all( [ len(mapping_path_element["src"][elem]) > 0 for elem in mapping_path_element["src"] ]) \
                 and all( [ len(mapping_path_element["dst"][elem]) > 0 for elem in mapping_path_element["dst"] ]):
-                    # TN endpoints must have the same type
-                    tn_interfaces = [ mapping_path_element["src"]["tn"], mapping_path_element["dst"]["tn"] ]
-                    tn_interfaces = PathFinderTNtoSDNFilterUtils.ensure_same_type_tn_interfaces(tn_interfaces)
+                tn_src = mapping_path_element["src"].get("tn", None)
+                tn_dst = mapping_path_element["dst"].get("tn", None)
+                # TN endpoints must be different and have the same type
+                if tn_src is not None and tn_dst is not None and tn_src != tn_dst:
+                    tn_interfaces = PathFinderTNtoSDNFilterUtils.ensure_same_type_tn_interfaces([tn_src, tn_dst])
                     if len(tn_interfaces) == 2:
                         new_mapping_path_structure.append(mapping_path_element)
         return new_mapping_path_structure
