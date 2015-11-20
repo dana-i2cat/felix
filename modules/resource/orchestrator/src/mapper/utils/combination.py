@@ -15,6 +15,11 @@ class PathFinderTNtoSDNCombinationUtils(object):
     @staticmethod
     def yield_combinations_stp_pairs(src_stps, dst_stps):
         # Find all possible combinations (order-independent)
+        pool = []
         for src in src_stps:
             for dst in dst_stps:
-                yield (src, dst)
+                # Check that elements are not repeat
+                if src != dst and (src, dst) not in pool \
+                    and (dst, src) not in pool:
+                    pool.append((src,dst))
+                    yield (src, dst)
