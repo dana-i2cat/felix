@@ -4,6 +4,8 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), ".."))
 from db.db_manager import db_sync_manager
 from mapper.utils.filter import PathFinderTNtoSDNFilterUtils as FilterUtils
 from mapper.utils.format import PathFinderTNtoSDNFormatUtils as FormatUtils
+from mapper.utils.combination import PathFinderTNtoSDNCombinationUtils as CombinationUtils
+
 from pprint import pprint
 
 #import itertools
@@ -79,7 +81,7 @@ class PathFinderTNtoSDN(object):
     def find_path_tn(self):
         # Retrieve list of CIDs for TNRM interfaces
         tn_interfaces_cids = self.get_tn_interfaces_cids(clean=True)
-        
+
         # Get proper TN interfaces for both SRC and DST TN interfaces
         self.mapping_tn_se_of_src_partial = {}
         self.mapping_tn_se_of_dst_partial = {}
@@ -110,9 +112,18 @@ class PathFinderTNtoSDN(object):
                 mapping_partial["tn"].add(tn_candidate)
 
         # Place every path into the final structure
-        combinations_src_dst_stps = zip(self.mapping_tn_se_of_src_partial["tn"], self.mapping_tn_se_of_dst_partial["tn"])
+        #combinations_src_dst_stps = zip(self.mapping_tn_se_of_src_partial["tn"], self.mapping_tn_se_of_dst_partial["tn"])
         # Find all possible combinations (order-independent)
-    #    combinations_src_dst_stps = [zip(x,self.mapping_tn_se_of_dst_partial["tn"]) for x in itertools.combinations(self.mapping_tn_se_of_src_partial["tn"], len(self.mapping_tn_se_of_dst_partial["tn"]))][0]
+        src_stps = self.mapping_tn_se_of_src_partial["tn"]
+        dst_stps = self.mapping_tn_se_of_dst_partial["tn"]
+        combinations_src_dst_stps = CombinationUtils.yield_combinations_stp_pairs(src_stps, dst_stps)
+        # Filter out combinations whose STP have different types (i.e. NSI-GRE)
+        combinations_src_dst_stps_filter = []
+        for src_dst_stp in combinations_src_dst_stps:
+            stp_link_tmp = FilterUtils.ensure_same_type_tn_interfaces([src_dst_stp[0], src_dst_stp[1]])
+            if len(stp_link_tmp) == 2:
+                combinations_src_dst_stps_filter.append(stp_link_tmp)
+        combinations_src_dst_stps = combinations_src_dst_stps_filter
         for tn_src_dst_pair in combinations_src_dst_stps:
             # Tuple: 1st element (src), 2nd element (dst)
             self.mapping_tn_se_of.append({"src": {"tn": tn_src_dst_pair[0]}, "dst": {"tn": tn_src_dst_pair[1]}})
