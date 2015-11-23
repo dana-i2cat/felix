@@ -138,7 +138,7 @@ class CredentialVerifier(object):
             try:
                 credO = CredentialFactory.createCred(credString=cred_string)
             except Exception, e:
-                print e
+                print(e)
             return credO
 
         root_certs = \

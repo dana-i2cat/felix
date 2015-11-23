@@ -512,6 +512,30 @@ class SliceMonitoring(BaseMonitoring):
         else:
             logger.error("Unknown sdn interfaces!")
 
+    def __add_virtual_link(self, link_subset):
+        # Retrieve the SDN endpoints of the slice ("abstract link" in M/MS)
+        se_link_urns = []
+        # and obtain the SDN resources from those domains that are linked to the TN link
+        for se_link in self.__hybrid_links:
+            se_link_urns.extend([se_link.get("source"), se_link.get("destination")])
+
+        vlink_orgs = []
+        sdn_link_urns = []
+        # XXX It would be necessary to iterate over the TN links, identify their domain
+        for se_link in se_link_urns:
+            se_link_auth = URNUtils.get_authority_from_urn(se_link)
+            if ":ofam" in se_link and se_link_auth not in vlink_orgs:
+                vlink_orgs.append(se_link_auth)
+                sdn_link_urns.append(se_link)
+
+        # TODO Check: what about >2 islands involved in the slice?
+        # For loop (step: 2, reason: finding SDN#1 port <--> SDN#2 port)
+        for i in xrange(0, len(sdn_link_urns), 2):
+            try:
+                self.__add_link_info(link_subset, sdn_link_urns[i], sdn_link_urns[i+1])
+            except:
+                pass
+
     def add_island_to_island_links(self, slice_urn):
         if slice_urn not in self.__stored:
             logger.error("Unable to find Topology info from %s!" % slice_urn)
@@ -524,15 +548,8 @@ class SliceMonitoring(BaseMonitoring):
 
         virtual_ = etree.SubElement(topology, "link", type="sdn")
 
-        # Retrieve the SDN endpoints of the slice ("abstract link" in M/MS)
-        se_link_urns = []
-        for se_link in self.__hybrid_links:
-            se_link_urns.extend([se_link.get("source"), se_link.get("destination")])
-        se_link_urns = filter(lambda x: ":ofam" in x, se_link_urns)
-        # TODO Check: what about >2 islands involved in the slice?
-        # For loop (step: 2, reason: finding SDN#1 port <--> SDN#2 port)
-        for i in xrange(0, len(se_link_urns), 2):
-            self.__add_link_info(virtual_, se_link_urns[i], se_link_urns[i+1])
+        # Add virtual link
+        self.__add_virtual_link(virtual_)
 
 #        for sdn_link in self.__sdn_links:
 #            logger.info("SDN-link=%s" % (sdn_link,))

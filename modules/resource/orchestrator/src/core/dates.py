@@ -25,8 +25,6 @@ def rfc3339_to_datetime(date):
             replace("Z", ""), "%Y-%m-%d %H:%M:%S")
     except:
         formatted_date = date
-    logger.debug("Converted datetime object (%s): %s" %
-                 (type(formatted_date), formatted_date))
     return formatted_date
 
 
