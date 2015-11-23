@@ -125,6 +125,31 @@ class PathFinderTNtoSDNFilterUtils(object):
         return list(set(processed_interfaces))
 
     @staticmethod
+    def check_path_with_src_and_dest(mapping_path_element):
+        if all( [ len(mapping_path_element["src"][elem]) > 0 for elem in mapping_path_element["src"] ]) \
+            and all( [ len(mapping_path_element["dst"][elem]) > 0 for elem in mapping_path_element["dst"] ]):
+            return True
+        return False
+
+    @staticmethod
+    def check_path_with_different_stps(mapping_path_element):
+        tn_src = mapping_path_element["src"].get("tn", None)
+        tn_dst = mapping_path_element["dst"].get("tn", None)
+        # TN endpoints must be different and have the same type
+        if tn_src is not None and tn_dst is not None and tn_src != tn_dst:
+            return True
+        return False
+
+    @staticmethod
+    def check_path_with_same_type_stps(mapping_path_element):
+        tn_src = mapping_path_element["src"].get("tn", None)
+        tn_dst = mapping_path_element["dst"].get("tn", None)
+        tn_interfaces = PathFinderTNtoSDNFilterUtils.ensure_same_type_tn_interfaces([tn_src, tn_dst])
+        if len(tn_interfaces) == 2:
+            return True
+        return False
+
+    @staticmethod
     def prune_invalid_paths(mapping_path_structure):
         new_mapping_path_structure = []
         # There must be information in SRC and DST links
@@ -133,13 +158,9 @@ class PathFinderTNtoSDNFilterUtils(object):
             return new_mapping_path_structure
         # There must also be information for links (SRC+DST), and...
         for idx, mapping_path_element in enumerate(mapping_path_structure):
-            if all( [ len(mapping_path_element["src"][elem]) > 0 for elem in mapping_path_element["src"] ]) \
-                and all( [ len(mapping_path_element["dst"][elem]) > 0 for elem in mapping_path_element["dst"] ]):
-                tn_src = mapping_path_element["src"].get("tn", None)
-                tn_dst = mapping_path_element["dst"].get("tn", None)
+            if PathFinderTNtoSDNFilterUtils.check_path_with_src_and_dest(mapping_path_element):
                 # TN endpoints must be different and have the same type
-                if tn_src is not None and tn_dst is not None and tn_src != tn_dst:
-                    tn_interfaces = PathFinderTNtoSDNFilterUtils.ensure_same_type_tn_interfaces([tn_src, tn_dst])
-                    if len(tn_interfaces) == 2:
-                        new_mapping_path_structure.append(mapping_path_element)
+                if PathFinderTNtoSDNFilterUtils.check_path_with_different_stps(mapping_path_element) \
+                    and PathFinderTNtoSDNFilterUtils.check_path_with_same_type_stps(mapping_path_element):
+                    new_mapping_path_structure.append(mapping_path_element)
         return new_mapping_path_structure

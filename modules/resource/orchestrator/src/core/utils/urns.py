@@ -1,4 +1,5 @@
 from core.organisations import AllowedOrganisations
+from core.utils.strings import StringUtils
 from extensions.sfa.util.xrn import get_authority, urn_to_hrn
 
 
@@ -9,13 +10,29 @@ class URNUtils:
     ## Dictionaries
     FELIX_ORGS = AllowedOrganisations.get_organisations_type()
 
+#    @staticmethod
+#    def get_authority_from_urn(urn):
+#        hrn, hrn_type = urn_to_hrn(urn)
+#        # Remove leaf (the component_manager part)
+#        hrn_list = hrn.split(".")
+#        hrn = ".".join(hrn_list[:-1])
+#        authority = get_authority(hrn)
+#        return authority
+
     @staticmethod
     def get_authority_from_urn(urn):
-        hrn, hrn_type = urn_to_hrn(urn)
-        # Remove leaf (the component_manager part)
-        hrn_list = hrn.split(".")
-        hrn = ".".join(hrn_list[:-1])
-        authority = get_authority(hrn)
+        authority = ""
+        try:
+            urn_delimiters = StringUtils.find_all(urn, "+")
+            idx1 = urn_delimiters[0]
+            idx2 = urn_delimiters[1]
+            full_auth = urn[idx1+1:idx2]
+            auth_components = full_auth.split(":")
+            authority = auth_components[1]
+            orgs = map(lambda x: x in authority, URNUtils.FELIX_ORGS)
+            authority = URNUtils.FELIX_ORGS[orgs.index(True)]
+        except:
+            pass
         return authority
 
     @staticmethod
@@ -33,10 +50,7 @@ class URNUtils:
         # URN may not follow the standard format...
         if len(authority) == 0:
             try:
-                fields = urn.split("+")
-                authority = fields[1]
-                orgs = map(lambda x: x in authority, URNUtils.FELIX_ORGS)
-                authority = URNUtils.FELIX_ORGS[orgs.index(True)]
+                URNUtils.get_authority_from_urn(urn)
             except:
                 pass
         return authority
