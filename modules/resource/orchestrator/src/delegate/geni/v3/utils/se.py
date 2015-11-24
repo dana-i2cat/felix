@@ -60,8 +60,18 @@ class SEUtils(CommonUtils):
                 logger.critical("manage_provision exception: %s", e)
                 raise e
 
+    def __extract_nodeid_from_ifs(self, interfaces):
+        # we are assuming here to extract the first node identifier
+        # (only 1 SE node for each island)
+        for i in interfaces:
+            index = i.get('component_id').rindex("_")
+            return i.get('component_id')[0:index]
+
+        return None
+
     def __update_info_route(self, route, values, key):
         for v in values:
+            logger.debug("Key=%s, Value=%s" % (key, v))
             k, ifs = db_sync_manager.get_se_link_routing_key(v.get(key))
             if k is None:
                 logger.warning("The key (%s) for (%s) is unknown for " %
@@ -71,7 +81,10 @@ class SEUtils(CommonUtils):
             logger.info("Found a match with key=%s, ifs=%s" % (k, ifs,))
             v['routing_key'] = k
             v['internal_ifs'] = ifs
-            node = db_sync_manager.get_se_node_info(k)
+            # we need to extract the node-id from the interface identifier
+            node_id = self.__extract_nodeid_from_ifs(ifs)
+            node = db_sync_manager.get_se_node_info(k, node_id)
+            logger.info("Reference Node=%s" % (node))
             v['node'] = node
             if (k is not None) and (k not in route):
                 route[k] = SERMv3RequestFormatter()
@@ -119,9 +132,6 @@ class SEUtils(CommonUtils):
         n2, num2 = if2[0:i], if2[i+1:len(if2)]
         dpid2 = n2[n2.rindex("+")+1:]
 
-        if n1 != n2:
-            raise Exception("SELink: differs node cid (%s,%s)" % (n1, n2))
-
         cid = n1 + "_" + num1 + "_" + dpid2 + "_" + num2
         logger.debug("cid=%s, node-id=%s, port-num1=%s, port-num2=%s" %
                      (cid, n1, num1, num2,))
@@ -132,12 +142,35 @@ class SEUtils(CommonUtils):
         l.add_interface_ref(if2)
         return l
 
+    def __check_for_consistency(self, sdn_routing_key, tn_routing_key,
+                                sdn_if_id, tn_if_id):
+        if sdn_routing_key != tn_routing_key:
+            logger.info("Different routing keys (%s),(%s)" %
+                        (sdn_routing_key, tn_routing_key))
+            return False
+
+        i = sdn_if_id.rindex("_")
+        nodeid1 = sdn_if_id[0:i]
+        i = tn_if_id.rindex("_")
+        nodeid2 = tn_if_id[0:i]
+
+        # In case of MRO-MRO communication the two node ids can be differs!
+        if nodeid1 != nodeid2:
+            logger.info("Different node ids (%s),(%s)" % (nodeid1, nodeid2))
+            return False
+
+        return True
+
     def __update_link(self, links, svalues, tvalues):
         for s in svalues:
             for sintf in s.get("internal_ifs"):
                 for t in tvalues:
                     for tintf in t.get("internal_ifs"):
-                        if s.get("routing_key") == t.get("routing_key"):
+                        ret = self.__check_for_consistency(
+                            s.get("routing_key"), t.get("routing_key"),
+                            sintf.get("component_id"),
+                            tintf.get("component_id"))
+                        if ret:
                             l = self.__create_link(sintf.get("component_id"),
                                                    tintf.get("component_id"),
                                                    s.get("routing_key"))
