@@ -9,7 +9,15 @@ class CredentialManager(CredentialManagerBase):
     
     def __init__(self):
         self.__auth = Auth()
-        
+        self.mapping_geni_v3_to_v2_methods = {"ListResources": "listnodes",
+            "Allocate": "createsliver",
+            "Provision": "createsliver",
+            "Describe": "sliverstatus",
+            "Status": "sliverstatus",
+            "PerformOperationalAction": "startslice",
+            "Delete": "deletesliver",
+            "Renew": "renewsliver",}
+
     def get_auth(self):
         return self.__auth
 
@@ -47,18 +55,8 @@ class CredentialManager(CredentialManagerBase):
             raise e
     
     def _translate_to_geniv2_method(self, method):
-        if method == "Allocate" or method == "Provision":
-            return "createsliver"
-        elif method == "ListResources":
-            return "listnodes"
-        elif method == "Describe" or method == "Status":
-            return "sliverstatus"
-        elif method == "PerforOperationalAction":
-            return "startslice"
-        elif method == "Delete":
-            return "deletesliver"
-        elif method == "Renew":
-            return "renewsliver"
+        if method in self.mapping_geni_v3_to_v2_methods:
+            return self.mapping_geni_v3_to_v2_methods[method]
         raise Exception("Unknown method: %s" % method)
     
     def __is_geni_cred(self, credential):
