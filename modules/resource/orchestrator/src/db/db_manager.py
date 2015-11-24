@@ -551,9 +551,9 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
-    def get_se_node_info(self, routingKey):
+    def get_se_node_info(self, routingKey, node_id):
         table = self.__get_table("resource.se.node")
-        filter_params = {'routing_key': routingKey}
+        filter_params = {'routing_key': routingKey, 'component_id': node_id}
         row = self.__get_one(table, filter_params)
         # Row has some value if passed this point
         return {'component_id': row.get('component_id'),
