@@ -330,6 +330,12 @@ class Request:
             # logger.debug("status:%s" % (s))
         return status
 
+    def clear_error_status(self):
+        status = []
+        for urn in self.urns:
+            r = self.dict_reservations[urn]
+            r.error = None
+
     def __str__(self):
         s = None
         i = 1
