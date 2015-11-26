@@ -513,8 +513,10 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
 
                 else:
                     logger.info("Unknown operation action(%s)." % (action))
+                    resv.error = "Unknown operation action(%s)." % (action)
 
         slice_status = req.get_status()
+        req.clear_error_status()
         return slice_status
 
     @enter_method_log
