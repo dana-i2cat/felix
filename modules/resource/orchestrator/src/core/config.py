@@ -51,21 +51,43 @@ class ConfParser(BaseParser):
             confparser = ConfigParser.SafeConfigParser()
             # Parse data previously to ignore tabs, spaces or others
             conf_data = StringIO('\n'.join(line.strip() for line in open(self.path)))
-            confparser.readfp(conf_data)
-            
+            parse_ok = True
+            try:
+                confparser.readfp(conf_data)
+            # Error reading: e.g. bad value substitution (badly formatted strings)
+            except ConfigParser.InterpolationMissingOptionError, e:
+                confparser.read(conf_data)
+                parse_ok = False
             for section in confparser.sections():
                 self.settings[section] = {}
-                for (key,val) in confparser.items(section):
-                    if key == "topics":
+                try:
+                    confparser_items = confparser.items(section)
+                except:
+                    confparser_items = confparser._sections.items()
+                    parse_ok = False
+                for (key,val) in confparser_items:
+                    if parse_ok:
+                        if key == "topics":
+                            try:
+                                val = [ v.strip() for v in val.split(",") ]
+                            except:
+                                exception_desc = "Could not process topics: %s" % str(val)
+                                logger.exception(exception_desc)
+                                sys.exit(exception_desc)
+                        self.settings[section][key] = val
+                    else:
                         try:
-                            val = [ v.strip() for v in val.split(",") ]
-                        except:
-                            logger.exception("Could not process topics: %s" % str(val))
-                            sys.exit("Could not process topics: %s" % str(val))
-                    self.settings[section][key] = val
+                            for v in val.items():
+                                if v[0] != "__name__":
+                                    self.settings[section][v[0]] = str(v[1]).replace('\"','')
+                        except Exception as e:
+                            exception_desc = "Could not process item: %s" % str(val)
+                            logger.exception(exception_desc)
+                            sys.exit(exception_desc)
         except Exception, e:
-            logger.exception("Could not parse configuration file '%s'. Details: %s" % (str(self.path), str(e)))
-            sys.exit("Could not parse configuration file '%s'. Details: %s" % (str(self.path), str(e)))
+            exception_desc = "Could not parse configuration file '%s'. Details: %s" % (str(self.path), str(e))
+            logger.exception(exception_desc)
+            sys.exit(exception_desc)
         self.__dict__.update(self.settings)
 
 
@@ -83,7 +105,21 @@ class JSONParser(BaseParser):
             with open(self.path) as data_file:
                 self.settings = json.load(data_file)
         except Exception, e:
-            logger.exception("Could not parse JSON configuration file '%s'. Details: %s" % (str(self.path), str(e)))
-            sys.exit("Could not parse configuration file '%s'. Details: %s" % (str(self.path), str(e)))
+            exception_desc = "Could not parse JSON configuration file '%s'. Details: %s" % (str(self.path), str(e))
+            logger.exception(exception_desc)
+            sys.exit(exception_desc)
         self.__dict__.update(self.settings)
 
+
+class FullConfParser(BaseParser):
+    
+    def __init__(self):
+        BaseParser.__init__(self, "")
+        self.__load_files()
+    
+    def __load_files(self):
+        for f in os.listdir(self.path):
+            if f.endswith(".conf"):
+                self.__dict__.update({str(f): ConfParser(f).settings})
+            elif f.endswith(".json"):
+                self.__dict__.update({str(f): JSONParser(f).settings})
