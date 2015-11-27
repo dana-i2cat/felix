@@ -6,24 +6,41 @@ import re
 import xmlrpclib
 
 
-def api_call(method_name, endpoint, params=[], user_name="alice", verbose=False):
-    key_path, cert_path = "%s-key.pem" % (user_name,), "%s-cert.pem" % (user_name,)
+def _get_ch_params():
+    # Initialise variables when required
+    from core.config import FullConfParser
+    fcp = FullConfParser()
+    username = fcp.get("auth.conf").get("certificates").get("username")
+    ch_host = fcp.get("auth.conf").get("clearinghouse").get("host")
+    ch_port = fcp.get("auth.conf").get("clearinghouse").get("port")
+    ch_end = fcp.get("auth.conf").get("clearinghouse").get("endpoint")
+    return (username, ch_host, ch_port, ch_end)
+
+def api_call(method_name, endpoint=None, params=[], username=None, verbose=False):
+    user, _, _, ch_end = _get_ch_params()
+    username = username or user
+    endpoint = endpoint or ch_end
+    key_path, cert_path = "%s-key.pem" % (username,), "%s-cert.pem" % (username,)
     res = ssl_call(method_name, params, endpoint, key_path=key_path, cert_path=cert_path)
     if verbose:
         print_call(method_name, params, res)
     return res.get("code", None), res.get("value", None), res.get("output", None)
 
-def ch_call(method_name, endpoint="", params=[], user_name="alice", verbose=False):
-    key_path, cert_path = "%s-key.pem" % (user_name,), "%s-cert.pem" % (user_name,)
-    res = ssl_call(method_name, params, endpoint, key_path=key_path, cert_path=cert_path, host="127.0.0.1", port=8000)
+def ch_call(method_name, endpoint=None, params=[], username=None, verbose=False):
+    user, ch_host, ch_port, ch_end = _get_ch_params()
+    username = username or user
+    endpoint = endpoint or ch_end
+    key_path, cert_path = "%s-key.pem" % (username,), "%s-cert.pem" % (username,)
+    res = ssl_call(method_name, params, endpoint, key_path=key_path, cert_path=cert_path, host=ch_host, port=ch_port)
     return res
 
-def handler_call(method_name, params=[], user_name="alice", arg=[]):
+def handler_call(method_name, params=[], username=None, arg=[]):
+    if username is None:
+        user, _, _, _ = _get_ch_params()
+    verbose = False
     if arg in ["-v", "--verbose"]:
         verbose = True
-    else:
-        verbose = False
-    return api_call(method_name, "/xmlrpc/geni/3/", params=params, user_name=user_name, verbose=verbose)
+    return api_call(method_name, "/xmlrpc/geni/3/", params=params, username=username, verbose=verbose)
 
 class SafeTransportWithCert(xmlrpclib.SafeTransport):
     """Helper class to force the right certificate for the transport class."""
@@ -37,8 +54,14 @@ class SafeTransportWithCert(xmlrpclib.SafeTransport):
         host_with_cert = (host, {"key_file" : self._key_path, "cert_file" : self._cert_path})
         return xmlrpclib.SafeTransport.make_connection(self, host_with_cert) # no super, because old style class
 
-def ssl_call(method_name, params, endpoint, key_path="alice-key.pem",
-                 cert_path="alice-cert.pem", host="127.0.0.1", port=8440):
+def ssl_call(method_name, params, endpoint, key_path=None, cert_path=None, host=None, port=None):
+    username, ch_host, ch_port, ch_end = _get_ch_params()
+    key_path = key_path or ("%-key.pem" % username)
+    cert_path = cert_path or ("%-cert.pem" % username)
+    host = host or ch_host
+    port = port or ch_port
+    endpoint = endpoint or ch_end
+    # Start logic
     creds_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../..", "cert"))
     if not os.path.isabs(key_path):
         key_path = os.path.join(creds_path, key_path)
@@ -57,7 +80,7 @@ def ssl_call(method_name, params, endpoint, key_path="alice-key.pem",
     method = getattr(proxy, method_name)
     return method(*params)
 
-def getusercred(user_cert_filename = "alice-cert.pem", geni_api = 3):
+def getusercred(geni_api = 3):
     """Retrieve your user credential. Useful for debugging.
 
     If you specify the -o option, the credential is saved to a file.
@@ -79,12 +102,19 @@ def getusercred(user_cert_filename = "alice-cert.pem", geni_api = 3):
       Get user credential, save to a file with filename prefix mystuff:
         omni.py -o -p mystuff getusercred
     """
+    from core.config import FullConfParser
+    fcp = FullConfParser()
+    username = fcp.get("auth.conf").get("certificates").get("username")
     creds_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../..", "cert"))
-    cert_path = os.path.join(creds_path, user_cert_filename)
-    user_cert = open(cert_path, "r").read()
-    # Contacting GCH for it by passing the certificate
-    cred = ch_call("CreateUserCredential", params = [user_cert])
-    #(cred, message) = ch_call(method_name = "CreateUserCredential", endpoint = "", params = {"params": user_cert})
+    cert_path = os.path.join(creds_path, "%s-cert.pem" % username)
+    # Retrieve new credential by contacting with GCF CH
+    try:
+        user_cert = open(cert_path, "r").read()
+        cred = ch_call("CreateUserCredential", params = [user_cert])
+    # Exception? -> Retrieve already existing credential from disk (CBAS)
+    except:
+        cred_path = os.path.join(creds_path, "%s-cred.xml" % username)
+        cred = open(cred_path).read()
     if geni_api >= 3:
         if cred:
             cred = credentials.wrap_cred(cred)
@@ -95,5 +125,5 @@ def getusercred(user_cert_filename = "alice-cert.pem", geni_api = 3):
     usermatch = re.search(r"\<owner_urn>urn:publicid:IDN\+.+\+user\+(\w+)\<\/owner_urn\>", credxml)
     if usermatch:
         user = usermatch.group(1)
-    return "Retrieved %s user credential" % user, cred
+    return ("Retrieved %s user credential" % user, cred)
 

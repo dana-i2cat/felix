@@ -1,9 +1,10 @@
 from flask import Flask, g, request, request_started, request_finished
 from flask.ext.pymongo import PyMongo
 
-from core.config import ConfParser
+from core.config import FullConfParser
 from core import log
 logger=log.getLogger("flaskserver")
+from db.db_manager import db_sync_manager
 from server.flask.views import ro_flask_views
 
 from werkzeug import serving
@@ -45,17 +46,10 @@ class FlaskServer(object):
     def __init__(self):
         """Constructor for the server wrapper."""
         #self._app = Flask(__name__) # imports the named package, in this case this file
-        # Imports the named module (package includes "." and this is not nice with PyMongo)
-        self.config = ConfParser("flask.conf")
-        self.general_section = self.config.get("general")
-        self.template_folder = self.general_section.get("template_folder")
-        self.fcgi_section = self.config.get("fcgi")
-        self.certificates_section = self.config.get("certificates")
-        # Verification and certificates
-        self._verify_users =\
-            ast.literal_eval(ConfParser("geniv3.conf").get("certificates").get("verify_users"))
+        self.__load_config()
         self._app = Flask(__name__.split(".")[-1], template_folder = self.template_folder)
-        self._mongo = PyMongo(self._app)
+        self._app.mongo = db_sync_manager #PyMongo(self._app)
+        self._app.db = "felix_mro" if self.mro_enabled else "felix_ro"
         # Added in order to be able to execute "before_request" method
         app = self._app
 
@@ -72,7 +66,25 @@ class FlaskServer(object):
         @app.before_request
         def before_request():
             # "Attach" objects within the "g" object. This is passed to each view method
-            g.mongo = self._mongo
+            g.mongo = self._app.mongo
+
+    def __load_config(self):
+        # Imports the named module (package includes "." and this is not nice with PyMongo)
+        self.config = FullConfParser()
+        self.flask_category = self.config.get("flask.conf")
+        self.general_section = self.flask_category.get("general")
+        self.template_folder = self.general_section.get("template_folder")
+        self.template_folder = os.path.normpath(os.path.join(os.path.dirname(__file__),\
+            "../../..", self.template_folder))
+        self.fcgi_section = self.flask_category.get("fcgi")
+        self.certificates_flask_section = self.flask_category.get("certificates")
+        self.auth_category = self.config.get("auth.conf")
+        self.certificates_auth_section = self.auth_category.get("certificates")
+        # Verification and certificates
+        self._verify_users =\
+            ast.literal_eval(self.certificates_auth_section.get("verify_users"))
+        self.mro_section = self.config.get("ro.conf").get("master_ro")
+        self.mro_enabled = ast.literal_eval(self.mro_section.get("mro_enabled"))
 
     @property
     def app(self):
@@ -93,7 +105,7 @@ class FlaskServer(object):
 #            index_end = index_start + len("@app.route") + 1
 #            custom_method_url = docstring[index_end:].replace(" ","").replace("\n","")
 #            # Get: (a) method URL to bind flask app, (b), method name, (c) method object to invoke
-#            self._app.add_url_rule(custom_method_url, custom_method, view_func=view_method(self._mongo))
+#            self._app.add_url_rule(custom_method_url, custom_method, view_func=view_method(self._app.mongo))
         self._app.register_blueprint(ro_flask_views)
 
     def runServer(self, services=[]):
@@ -105,7 +117,7 @@ class FlaskServer(object):
         app_port = int(self.general_section.get("port"))
         cFCGI = ast.literal_eval(self.fcgi_section.get("enabled"))
         fcgi_port = int(self.fcgi_section.get("port"))
-        must_have_client_cert = ast.literal_eval(self.certificates_section.get("force_client_certificate"))
+        must_have_client_cert = ast.literal_eval(self.certificates_flask_section.get("force_client_certificate"))
         if cFCGI:
             logger.info("registering fcgi server at %s:%i", host, fcgi_port)
             from flup.server.fcgi import WSGIServer
