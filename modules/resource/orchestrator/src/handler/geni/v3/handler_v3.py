@@ -25,7 +25,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         super(GENIv3Handler, self).__init__(logger)
         self._delegate = None
         self._verify_users =\
-            ast.literal_eval(ConfParser("geniv3.conf").get("certificates").
+            ast.literal_eval(ConfParser("auth.conf").get("certificates").
                              get("verify_users"))
         self.__credential_manager = GCFCredentialManager()
 

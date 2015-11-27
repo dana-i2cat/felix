@@ -14,7 +14,7 @@ class GCFCredentialManager(CredentialManagerBase):
     def __init__(self):
         self.__abs_path = dirname(dirname(dirname(abspath(__file__))))
         self.__trusted_certs =\
-            abspath(join(self.__abs_path, ast.literal_eval(ConfParser("geniv3.conf").\
+            abspath(join(self.__abs_path, ast.literal_eval(ConfParser("auth.conf").\
                              get("certificates").get("cert_root"))))
         self.__root_cert = join(dirname(self.__trusted_certs), "server.crt")
         self.__root_cert = open(self.__root_cert, "r").read()

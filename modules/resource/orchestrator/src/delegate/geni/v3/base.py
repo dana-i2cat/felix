@@ -1,4 +1,4 @@
-from core.config import ConfParser
+from core.config import FullConfParser
 from handler.geni.v3 import exceptions
 from lxml import etree
 from lxml.builder import ElementMaker
@@ -65,9 +65,9 @@ class GENIv3DelegateBase(object):
 
     def __init__(self):
         super(GENIv3DelegateBase, self).__init__()
-        self.config = ConfParser("geniv3.conf")
-        self.general_section = self.config.get("general")
-        self.certificates_section = self.config.get("certificates")
+        self.config = FullConfParser()
+        self.general_section = self.config.get("geniv3.conf").get("general")
+        self.certificates_section = self.config.get("auth.conf").get("certificates")
 
     def get_request_extensions_list(self):
         """Not to overwrite by AM developer. Should retrun a list of request extensions (XSD schemas) to be sent back by GetVersion."""

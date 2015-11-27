@@ -99,8 +99,7 @@ class AdaptorFactory(xmlrpclib.ServerProxy):
     def geni_v3_credentials():
         from core.utils import calls
         try:
-            (text, ucredential) = calls.getusercred(
-                user_cert_filename="alice-cert.pem", geni_api=3)
+            (text, ucredential) = calls.getusercred(geni_api=3)
             return ucredential["geni_value"]
         except Exception as e:
             logger.error("Unable to get user-cred from CH: %s" % (e,))
