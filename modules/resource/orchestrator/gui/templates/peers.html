@@ -6,12 +6,25 @@
     <p>
       <strong>{% if "felix_mro" in db %}Master{% endif %} RO's routing table</strong>:
     </p>
-    {% for route in domain_routing %}
-    <p style="padding-left: 3em;">
-      <strong>[{{route.type}}]</strong> </span>  
-      <span>{{route.protocol}}://{{route.address}}:{{route.port}}/{{route.endpoint}}</span> 
-      <span><em>({{route.urn}})</em></span>
-    </p>
+    <div style="padding-left: 3em;">
+      {% for route in domain_routing %}
+      <p>
+        <strong>[{{route.type}}]</strong>
+        {{route.protocol}}://{{route.address}}:{{route.port}}/{{route.endpoint}}
+        {% if route.urn|length > 1 %}
+        <div style="padding-left: 5em;">
+          <p><u>Peers</u></p>
+          <ul>
+            {% for subpeer in route.urn %}
+            <li><em>{{subpeer}}</em></li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% else %}
+        <em>({{route.urn}})</em>
+        {% endif %}
+      </p>
     {% endfor %}
+    </div>
   </body>
 </html>
