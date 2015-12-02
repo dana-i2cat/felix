@@ -1,6 +1,6 @@
 #!/bin/sh
 
-## Daemonizer for the FELIX Resource Orchestrator.
+## Daemonizer for the FELIX Master Resource Orchestrator.
 ## Expected to work under both Debian-based systems and RedHat.
 ## Version: 0.1
 ## Author: Carolina Fernandez
@@ -26,6 +26,9 @@ FELIX_RO_NAME=felix-mro
 
 # Title for the service, used in service commands
 FELIX_RO_TITLE="FELIX Resource Master Orchestrator"
+
+# Source branch to fetch code from
+FELIX_RO_BRANCH="resource-orchestrator"
 
 # Name of the user to be used to execute the service
 FELIX_RO_USER=root
@@ -146,6 +149,20 @@ do_check_status() {
   echo "$FELIX_RO_TITLE is $STATUS."
 }
 
+do_pull() {
+  current=$PWD
+  do_stop
+  cd $FELIX_RO_HOME/src
+  current_branch=`git symbolic-ref --short HEAD`
+  [ $current_branch != $FELIX_RO_BRANCH ] && (git checkout $FELIX_RO_BRANCH &> /dev/null)
+  #git stash &> /dev/null
+  git pull origin $FELIX_RO_BRANCH
+  [ $? = 1 ] && (echo "Error: cannot pull latest sources from $FELIX_RO_BRANCH. Check for errors in $FELIX_RO_HOME"; exit 1)
+  #[ "$(git stash list)" != "" ] && (git stash pop &> /dev/null)
+  cd $current
+  do_start
+}
+
 case "$1" in
   start)
     action="Starting $FELIX_RO_TITLE.";
@@ -169,6 +186,11 @@ case "$1" in
     do_check_status;
     exit $?
   ;;
+  pull)
+    action="Pulling latest sources and restarting $FELIX_RO_TITLE.";
+    do_pull;
+    exit $?
+  ;;
   force-reload)
     action="Cleaning internal database and restarting $FELIX_RO_TITLE.";
     echo $action;
@@ -178,7 +200,7 @@ case "$1" in
     exit $?
   ;;   
   *)
-    echo "Usage: service $FELIX_RO_NAME {start|stop|restart|force-reload|status}";
+    echo "Usage: service $FELIX_RO_NAME {start|stop|restart|force-reload|pull|status}";
     exit $RET_SUCCESS
   ;;
 esac
