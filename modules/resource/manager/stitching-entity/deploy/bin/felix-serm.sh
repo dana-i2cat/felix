@@ -26,6 +26,9 @@ FELIX_SE_NAME=felix-serm
 # Title for the service, used in service commands
 FELIX_SE_TITLE="FELIX Stitching Entity Resource Manager"
 
+# Source branch to fetch code from
+FELIX_SE_BRANCH="stitching-entity"
+
 # Name of the user to be used to execute the service
 FELIX_SE_USER=root
 #FELIX_SE_USER=i2cat
@@ -135,6 +138,20 @@ do_check_status() {
   echo "$FELIX_SE_TITLE is $STATUS."
 }
 
+do_pull() {
+  current=$PWD
+  do_stop
+  cd $FELIX_SE_HOME/src
+  current_branch=`git symbolic-ref --short HEAD`
+  [ $current_branch != $FELIX_SE_BRANCH ] && (git checkout $FELIX_SE_BRANCH &> /dev/null)
+  #git stash &> /dev/null
+  git pull origin $FELIX_SE_BRANCH
+  [ $? = 1 ] && (echo "Error: cannot pull latest sources from $FELIX_SE_BRANCH. Check for errors in $FELIX_SE_HOME"; exit 1)
+  #[ "$(git stash list)" != "" ] && (git stash pop &> /dev/null)
+  cd $current
+  do_start
+}
+
 case "$1" in
   start)
     action="Starting $FELIX_SE_TITLE.";
@@ -154,12 +171,17 @@ case "$1" in
     do_restart;
     exit $?
   ;;
+  pull)
+    action="Pulling latest sources and restarting $FELIX_SE_TITLE.";
+    do_pull;
+    exit $?
+  ;;
   status)
     do_check_status;
     exit $?
   ;;
   *)
-    echo "Usage: service $FELIX_SE_NAME {start|stop|restart|force-reload|status}";
+    echo "Usage: service $FELIX_SE_NAME {start|stop|restart|force-reload|pull|status}";
     exit $RET_SUCCESS
   ;;
 esac
