@@ -7,11 +7,13 @@ from commons import CommonUtils
 
 import core
 logger = core.log.getLogger("sdn-utils")
+import random
 
 
 class SDNUtils(CommonUtils):
     def __init__(self):
         super(SDNUtils, self).__init__()
+        self.used_groups = set()
 
     def manage_describe(self, peer, urns, creds):
         try:
@@ -151,6 +153,20 @@ class SDNUtils(CommonUtils):
             logger.info("Introduce new info in the group: %s" % (tmp,))
             self.__add_extended_info(group, tmp)
 
+    def __rename_groups(self, groups, matches):
+        self.used_groups = set()
+        for m in matches:
+            for mg in m.get("use_groups"):
+                for g in groups:
+                    group_name = g["name"]
+                    if group_name == mg.get("name"):
+                        if group_name in self.used_groups:
+                            group_name = "%s_%d" % (group_name, random.randrange(1,1000))
+                            g["name"] = group_name
+                            mg["name"] = group_name
+                        self.used_groups.add(group_name)
+        return (groups, matches)
+
     def manage_allocate(self, surn, creds, end, sliver, parser, slice_urn,
                         extended_group_info):
         route = {}
@@ -159,6 +175,11 @@ class SDNUtils(CommonUtils):
 
         groups = parser.of_groups()
         logger.debug("Groups=%s" % (groups,))
+        matches = parser.of_matches()
+
+        # Rename group/matches names if duplicated
+        (groups, matches) = self.__rename_groups(groups, matches)
+
         # Update the group info to support the mapper module
         for eg in extended_group_info:
             for g in groups:
@@ -167,7 +188,6 @@ class SDNUtils(CommonUtils):
         self.__update_route(route, groups)
         logger.debug("Groups=%s" % (groups,))
 
-        matches = parser.of_matches()
         self.__update_route(route, matches)
         logger.debug("Matches=%s" % (matches,))
 
@@ -197,7 +217,6 @@ class SDNUtils(CommonUtils):
         # insert sliver details (groups and matches) into the slice.sdn table
         id_ = db_sync_manager.store_slice_sdn(slice_urn, groups, matches)
         logger.info("Stored slice.sdn info: id=%s" % (id_,))
-
         return (manifests, slivers, db_slivers, se_sdn_info)
 
     def find_dpid_port_identifiers(self, groups, matches):
@@ -228,7 +247,6 @@ class SDNUtils(CommonUtils):
                 if ident in link.get("sdn"):
                     logger.debug("Match in the DST side: %s" % (link,))
                     return True, link
-
         return False, None
 
     def __is_ids_in_path(self, ids, paths):
@@ -236,7 +254,6 @@ class SDNUtils(CommonUtils):
             ret, link = self.__find_id_link_in_path(i, paths)
             if ret:
                 return True
-
         return False
 
     def __fill_group_info(self, group, link, i):
@@ -251,7 +268,6 @@ class SDNUtils(CommonUtils):
         if ret:
             idx = link.get("sdn").rfind("_")
             return True, self.__fill_group_info(group, link.get("sdn"), idx)
-
         return False, None
 
     def __choose_sdn_for_group(self, group, paths):
@@ -271,7 +287,6 @@ class SDNUtils(CommonUtils):
         ret, info = self.__find_group_info(ident, "+", paths, group)
         if ret:
             return info
-
         return None
 
     def analyze_mapped_path(self, ids, paths):
@@ -283,5 +298,4 @@ class SDNUtils(CommonUtils):
                 logger.warning("The group is NOT completed: %s" % (i,))
                 item = self.__choose_sdn_for_group(i, paths)
                 ret.append(item)
-
         return ret
