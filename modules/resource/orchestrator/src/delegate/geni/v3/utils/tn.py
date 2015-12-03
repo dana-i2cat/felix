@@ -3,6 +3,7 @@ from rspecs.tnrm.manifest_parser import TNRMv3ManifestParser
 from rspecs.tnrm.request_formatter import TNRMv3RequestFormatter
 from db.db_manager import db_sync_manager
 from commons import CommonUtils
+from delegate.geni.v3 import exceptions as delegate_ex
 
 from core.config import ConfParser
 import ast
@@ -200,7 +201,8 @@ class TNUtils(CommonUtils):
                     se_tn_info.extend(se_tn)
             except Exception as e:
                 logger.critical("manage_allocate exception: %s", e)
-                raise e
+                raise delegate_ex.AllocationError(
+                    str(e), surn, slivers, db_slivers)
 
         return (manifests, slivers, db_slivers, se_tn_info)
 
@@ -219,5 +221,5 @@ class TNUtils(CommonUtils):
     def determine_stp_gre(stp):
         """Determine whether all involved STPs are gre (True) or not (False)"""
         if not isinstance(stp, list):
-            stp = [ stp ]
+            stp = [stp]
         return map(lambda x: "gre" in x, stp)

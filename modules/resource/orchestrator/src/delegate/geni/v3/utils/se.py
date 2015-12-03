@@ -5,6 +5,7 @@ from rspecs.commons_tn import Node, Interface
 from rspecs.commons_se import SELink
 from db.db_manager import db_sync_manager
 from commons import CommonUtils
+from delegate.geni.v3 import exceptions as delegate_ex
 
 import core
 logger = core.log.getLogger("se-utils")
@@ -230,7 +231,8 @@ class SEUtils(CommonUtils):
                 self.extend_slivers(ss, k, slivers, db_slivers)
             except Exception as e:
                 logger.critical("manage_allocate exception: %s", e)
-                raise e
+                raise delegate_ex.AllocationError(
+                    str(e), surn, slivers, db_slivers)
 
         return (manifests, slivers, db_slivers)
 
@@ -305,6 +307,7 @@ class SEUtils(CommonUtils):
                 self.extend_slivers(ss, k, slivers, db_slivers)
             except Exception as e:
                 logger.critical("manage_direct_allocate exception: %s", e)
-                raise e
+                raise delegate_ex.AllocationError(
+                    str(e), surn, slivers, db_slivers)
 
         return (manifests, slivers, db_slivers)
