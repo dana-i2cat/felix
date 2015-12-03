@@ -1,6 +1,5 @@
 from core import dates
 from core.peers import AllowedPeers
-from core.utils.urns import URNUtils
 from delegate.geni.v3.base import GENIv3DelegateBase
 from db.db_manager import db_sync_manager
 # Following import cannot be ordered properly
@@ -11,6 +10,7 @@ from rspecs.ro.advertisement_formatter import ROAdvertisementFormatter
 from rspecs.ro.manifest_formatter import ROManifestFormatter
 from rspecs.ro.request_parser import RORequestParser
 from handler.geni.v3 import exceptions as geni_ex
+from delegate.geni.v3 import exceptions as delegate_ex
 
 from monitoring.slice_monitoring import SliceMonitoring
 from utils.commons import CommonUtils
@@ -206,7 +206,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
         # by adding an inherent link to the SE device
         # Note: check if we had an explicit/direct TN allocation
         # (in this case just skip the mapper)
-        if self._mro_enabled and not CommonUtils().is_explicit_tn_allocation(req_rspec):
+        if self._mro_enabled and not\
+                CommonUtils().is_explicit_tn_allocation(req_rspec):
             # Before starting the allocation process, we need to find a proper
             # mapping between TN and SDN resources in the islands.
             # We use the tn-links as starting point (STPs)
@@ -217,98 +218,123 @@ class GENIv3Delegate(GENIv3DelegateBase):
             logger.debug("DPIDs=%s" % (dpid_port_ids,))
 
             for stp in stps:
-                # If STPs involved in the request use heterogeneous types for a given
+                # If STPs involved in the request use
+                # heterogeneous types for a given
                 # connection (e.g. NSI and GRE), warn user and raise exception
-                stps_gre = TNUtils.determine_stp_gre([stp.get("src_name"), stp.get("dst_name")])
+                stps_gre = TNUtils.determine_stp_gre(
+                    [stp.get("src_name"), stp.get("dst_name")])
                 if any(stps_gre) and not all(stps_gre):
-                    e = "Mapper SDN-SE-TN: attempting to connect 2 STPs of different type (e.g. GRE and NSI)"
+                    e = "Mapper SDN-SE-TN: attempting to connect 2 STPs"
+                    e += " of different type (e.g. GRE and NSI)"
                     raise geni_ex.GENIv3GeneralError(e)
-                path_finder_tn_sdn = PathFinderTNtoSDN(stp.get("src_name"), stp.get("dst_name"))
+                path_finder_tn_sdn = PathFinderTNtoSDN(
+                    stp.get("src_name"), stp.get("dst_name"))
                 paths = path_finder_tn_sdn.find_paths()
                 logger.debug("PATHs=%s" % (paths,))
-                ## Mapper: raise an exception when a path *between different authorities/islands* cannot be found
-                #src_auth = URNUtils.get_felix_authority_from_urn(stp.get("src_name"))
-                #dst_auth = URNUtils.get_felix_authority_from_urn(stp.get("dst_name"))
-                #if src_auth != dst_auth and len(paths) == 0:
+                # Mapper: raise an exception when a path *between
+                # different authorities/islands* cannot be found
+                #  src_auth = URNUtils.get_felix_authority_from_urn(
+                #    stp.get("src_name"))
+                #  dst_auth = URNUtils.get_felix_authority_from_urn(
+                #    stp.get("dst_name"))
+                #  if src_auth != dst_auth and len(paths) == 0:
                 if len(paths) == 0:
-                    e = "Mapper SDN-SE-TN: cannot map inter-domain links for STPs provided. Possible causes: STPs cannot be connected or are located in the same island"
+                    e = "Mapper SDN-SE-TN: cannot map inter-domain"
+                    e += " links for STPs provided. Possible causes:"
+                    e += " STPs cannot be connected or are located"
+                    e += " in the same island"
                     raise geni_ex.GENIv3GeneralError(e)
                 items = SDNUtils().analyze_mapped_path(dpid_port_ids, paths)
                 extend_groups.extend(items)
 
-            logger.warning("Request RSpec must be extended with SDN-groups: %s" %
-                       (extend_groups,))
+            logger.warning("ReqRSpec must be extended with SDN-groups: %s" %
+                           (extend_groups,))
 
         # COM resources
         slivers = req_rspec.com_slivers()
         nodes = req_rspec.com_nodes()
         if slivers:
-            logger.debug("Found a COM-slivers segment (%d): %s" %
-                         (len(slivers), slivers,))
-            (com_m_info, com_slivers, db_slivers) =\
-                COMUtils().manage_allocate(slice_urn, credentials, end_time,
-                                           slivers, req_rspec)
+            try:
+                logger.debug("Found a COM-slivers segment (%d): %s" %
+                             (len(slivers), slivers,))
+                (com_m_info, com_slivers, db_slivers) =\
+                    COMUtils().manage_allocate(
+                        slice_urn, credentials, end_time, slivers, req_rspec)
 
-            logger.debug("com_m=%s, com_s=%s, com_s=%s" %
-                         (com_m_info, com_slivers, db_slivers))
-            for m in com_m_info:
-                for n in m.get("nodes"):
-                    ro_manifest.com_node(n)
+                logger.debug("com_m=%s, com_s=%s, com_s=%s" %
+                             (com_m_info, com_slivers, db_slivers))
+                for m in com_m_info:
+                    for n in m.get("nodes"):
+                        ro_manifest.com_node(n)
 
-            ro_slivers.extend(com_slivers)
-            # insert com-resources into slice table
-            self.__insert_slice_info(
-                "com-resources", slice_urn, db_slivers, ro_db_slivers)
+                ro_slivers.extend(com_slivers)
+                # insert com-resources into slice table
+                self.__insert_slice_info(
+                    "com-resources", slice_urn, db_slivers, ro_db_slivers)
+
+            except delegate_ex.AllocationError as e:
+                self.__insert_allocated_reraise_exc(
+                    "com-resources", e, ro_db_slivers)
 
         # SDN resources
         se_sdn_info = None
         sliver = req_rspec.of_sliver()
         if sliver is not None:
-            logger.debug("Found an SDN-slivers segment: %s", sliver)
-            # Manage the "extend-group" info here: extend the group info
-            # introducing the new dpids/ports taken from
-            # the mapper (path-finder) module.
-            (of_m_info, of_slivers, db_slivers, se_sdn_info) =\
-                SDNUtils().manage_allocate(
-                    slice_urn, credentials, end_time, sliver, req_rspec,
-                    slice_urn, extend_groups)
+            try:
+                logger.debug("Found an SDN-slivers segment: %s", sliver)
+                # Manage the "extend-group" info here: extend the group info
+                # introducing the new dpids/ports taken from
+                # the mapper (path-finder) module.
+                (of_m_info, of_slivers, db_slivers, se_sdn_info) =\
+                    SDNUtils().manage_allocate(
+                        slice_urn, credentials, end_time, sliver, req_rspec,
+                        slice_urn, extend_groups)
 
-            logger.debug("sdn_m=%s, sdn_s=%s, db_s=%s" %
-                         (of_m_info, of_slivers, db_slivers))
-            for m in of_m_info:
-                for s in m.get("slivers"):
-                    ro_manifest.of_sliver(s)
+                logger.debug("sdn_m=%s, sdn_s=%s, db_s=%s" %
+                             (of_m_info, of_slivers, db_slivers))
+                for m in of_m_info:
+                    for s in m.get("slivers"):
+                        ro_manifest.of_sliver(s)
 
-            ro_slivers.extend(of_slivers)
-            # insert sdn-resources into slice table
-            self.__insert_slice_info(
-                "sdn-resources", slice_urn, db_slivers, ro_db_slivers)
+                ro_slivers.extend(of_slivers)
+                # insert sdn-resources into slice table
+                self.__insert_slice_info(
+                    "sdn-resources", slice_urn, db_slivers, ro_db_slivers)
+
+            except delegate_ex.AllocationError as e:
+                self.__insert_allocated_reraise_exc(
+                    "sdn-resources", e, ro_db_slivers)
 
         # TN resources
         se_tn_info = None
         nodes = req_rspec.tn_nodes()
         links = req_rspec.tn_links()
         if (len(nodes) > 0) or (len(links) > 0):
-            logger.debug("Found a TN-nodes segment (%d): %s" %
-                         (len(nodes), nodes,))
-            logger.debug("Found a TN-links segment (%d): %s" %
-                         (len(links), links,))
-            (tn_m_info, tn_slivers, db_slivers, se_tn_info) =\
-                TNUtils().manage_allocate(slice_urn, credentials, end_time,
-                                          nodes, links)
+            try:
+                logger.debug("Found a TN-nodes segment (%d): %s" %
+                             (len(nodes), nodes,))
+                logger.debug("Found a TN-links segment (%d): %s" %
+                             (len(links), links,))
+                (tn_m_info, tn_slivers, db_slivers, se_tn_info) =\
+                    TNUtils().manage_allocate(slice_urn, credentials, end_time,
+                                              nodes, links)
 
-            logger.debug("tn_m=%s, tn_s=%s, db_s=%s" %
-                         (tn_m_info, tn_slivers, db_slivers))
-            for m in tn_m_info:
-                for n in m.get("nodes"):
-                    ro_manifest.tn_node(n)
-                for l in m.get("links"):
-                    ro_manifest.tn_link(l)
+                logger.debug("tn_m=%s, tn_s=%s, db_s=%s" %
+                             (tn_m_info, tn_slivers, db_slivers))
+                for m in tn_m_info:
+                    for n in m.get("nodes"):
+                        ro_manifest.tn_node(n)
+                    for l in m.get("links"):
+                        ro_manifest.tn_link(l)
 
-            ro_slivers.extend(tn_slivers)
-            # insert tn-resources into slice table
-            self.__insert_slice_info(
-                "tn-resources", slice_urn, db_slivers, ro_db_slivers)
+                ro_slivers.extend(tn_slivers)
+                # insert tn-resources into slice table
+                self.__insert_slice_info(
+                    "tn-resources", slice_urn, db_slivers, ro_db_slivers)
+
+            except delegate_ex.AllocationError as e:
+                self.__insert_allocated_reraise_exc(
+                    "tn-resources", e, ro_db_slivers)
 
         # SE resources
         se_nodes_in_request = False
@@ -319,9 +345,11 @@ class GENIv3Delegate(GENIv3DelegateBase):
             if ((len(nodes) > 0) or (len(links) > 0)):
                 se_nodes_in_request = True
             else:
-                raise Exception("No SE nodes or links available in the request")
+                raise Exception("No SE nodes/links available in the request")
         except Exception as e:
-            logger.warning("No SE resources found in request. Switching to automatic generation. Details: %s" % str(e))
+            m = "No SE resources in request. Switching to auto-generation."
+            m += " Details: %s" % str(e)
+            logger.warning(m)
             # SE resources (generated by RO from SE and TN nodes)
             if (se_sdn_info is not None) and (len(se_sdn_info) > 0) and\
                (se_tn_info is not None) and (len(se_tn_info) > 0):
@@ -330,33 +358,38 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         # Common code to process SE nodes, either found or generated
         # [Previous comment] (?) This is an extension provided to allow MRO-RO
-        # interoperability and could be very useful for testing & debugging, too...
+        # interoperability and could be very useful for test/debug, too...
         if (len(nodes) > 0) or (len(links) > 0):
-            logger.debug("Found a SE-node segment (%d): %s" %
-                         (len(nodes), nodes,))
-            logger.debug("Found a SE-link segment (%d): %s" %
-                         (len(links), links,))
-            if se_nodes_in_request:
-                (se_m_info, se_slivers, db_slivers) =\
-                    SEUtils().manage_direct_allocate(
-                        slice_urn, credentials, end_time, nodes, links)
-            else:
-                (se_m_info, se_slivers, db_slivers) =\
-                    SEUtils().manage_allocate(slice_urn, credentials, end_time,
-                                            nodes, links)
+            try:
+                logger.debug("Found a SE-node segment (%d): %s" %
+                             (len(nodes), nodes,))
+                logger.debug("Found a SE-link segment (%d): %s" %
+                             (len(links), links,))
+                if se_nodes_in_request:
+                    (se_m_info, se_slivers, db_slivers) =\
+                        SEUtils().manage_direct_allocate(
+                            slice_urn, credentials, end_time, nodes, links)
+                else:
+                    (se_m_info, se_slivers, db_slivers) =\
+                        SEUtils().manage_allocate(
+                            slice_urn, credentials, end_time, nodes, links)
 
-            logger.debug("se_m=%s, se_s=%s, db_s=%s" %
-                         (se_m_info, se_slivers, db_slivers))
-            for m in se_m_info:
-                for n in m.get("nodes"):
-                    ro_manifest.se_node(n)
-                for l in m.get("links"):
-                    ro_manifest.se_link(l)
+                logger.debug("se_m=%s, se_s=%s, db_s=%s" %
+                             (se_m_info, se_slivers, db_slivers))
+                for m in se_m_info:
+                    for n in m.get("nodes"):
+                        ro_manifest.se_node(n)
+                    for l in m.get("links"):
+                        ro_manifest.se_link(l)
 
-            ro_slivers.extend(se_slivers)
-            # insert se-resources into slice table
-            self.__insert_slice_info(
-                "se-resources", slice_urn, db_slivers, ro_db_slivers)
+                ro_slivers.extend(se_slivers)
+                # insert se-resources into slice table
+                self.__insert_slice_info(
+                    "se-resources", slice_urn, db_slivers, ro_db_slivers)
+
+            except delegate_ex.AllocationError as e:
+                self.__insert_allocated_reraise_exc(
+                    "se-resources", e, ro_db_slivers)
 
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
         CommonUtils().validate_rspec(ro_manifest.get_rspec())
@@ -655,8 +688,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
             expiration date, etc)
         """
         ro_slivers = []
-        client_urn = None
-
         logger.info("best_effort=%s" % (best_effort,))
 
         route = db_sync_manager.get_slice_routing_keys(urns)
@@ -711,6 +742,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
         ro_db_slivers.extend(db_slivers)
         logger.debug("RO-DB-Slivers(%d): %s" %
                      (len(ro_db_slivers), ro_db_slivers))
+
+    def __insert_allocated_reraise_exc(self, rtype, e, ro_db_slivers):
+        logger.error("AllocationError: %s" % (e.details()))
+        # Save here the already allocated resources!
+        self.__insert_slice_info(rtype, e.slice_urn, e.db_ids, ro_db_slivers)
+        # Raise an exception to break the code!
+        raise geni_ex.GENIv3GeneralError(str(e))
 
     def __translate_action(self, geni_action):
         actions_to_permissions = {
