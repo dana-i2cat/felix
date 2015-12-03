@@ -153,18 +153,24 @@ class SDNUtils(CommonUtils):
             logger.info("Introduce new info in the group: %s" % (tmp,))
             self.__add_extended_info(group, tmp)
 
-    def __rename_groups(self, groups, matches):
+    def __rename_groups_matches(self, groups_matches):
         self.used_groups = set()
-        for m in matches:
-            for mg in m.get("use_groups"):
-                for g in groups:
-                    group_name = g["name"]
-                    if group_name == mg.get("name"):
-                        if group_name in self.used_groups:
-                            group_name = "%s_%d" % (group_name, random.randrange(1,1000))
-                            g["name"] = group_name
-                            mg["name"] = group_name
-                        self.used_groups.add(group_name)
+        groups = []
+        matches = []
+        for gm in groups_matches:
+            group = gm.get("group")
+            match = gm.get("match")
+            group_name = group.get("name")
+            if group_name in self.used_groups:
+                group_name = "%s_%d" % (group_name, random.randrange(1,1000))
+                logger.debug("Renaming OF group/matches to '%s'" % group_name)
+                for m in match:
+                    for mg in m.get("use_groups"):
+                        mg["name"] = group_name
+                group["name"] = group_name
+            self.used_groups.add(group_name)
+            groups.append(group)
+            matches.extend(match)
         return (groups, matches)
 
     def manage_allocate(self, surn, creds, end, sliver, parser, slice_urn,
@@ -174,11 +180,12 @@ class SDNUtils(CommonUtils):
         logger.debug("Controllers=%s" % (controllers,))
 
         groups = parser.of_groups()
-        logger.debug("Groups=%s" % (groups,))
         matches = parser.of_matches()
 
+        groups_matches = parser.of_groups_matches()
+
         # Rename group/matches names if duplicated
-        (groups, matches) = self.__rename_groups(groups, matches)
+        (groups, matches) = self.__rename_groups_matches(groups_matches)
 
         # Update the group info to support the mapper module
         for eg in extended_group_info:

@@ -51,6 +51,9 @@ class RORequestParser(ParserBase):
     def of_matches(self):
         return self.__of_parser.get_matches(self.rspec)
 
+    def of_groups_matches(self):
+        return self.__of_parser.get_groups_matches(self.rspec)
+
     # TN resources
     def tn_nodes(self):
         try:
