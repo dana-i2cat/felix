@@ -4,6 +4,7 @@ from rspecs.openflow.request_formatter import OFv3RequestFormatter
 from rspecs.commons_of import Match
 from db.db_manager import db_sync_manager
 from commons import CommonUtils
+from delegate.geni.v3 import exceptions as delegate_ex
 
 import core
 logger = core.log.getLogger("sdn-utils")
@@ -135,10 +136,13 @@ class SDNUtils(CommonUtils):
         # otherwise, just append a new dpid to the group info
         group.get("dpids").append(info)
 
+    def __checkname(self, ext, group, def_ext, def_group):
+        return ext.get("name", def_ext) == group.get("name", def_group)
+
     def __update_group_with_extended_info(self, extended, group):
         # If name is not present, condition will not be fulfilled
         if isinstance(extended, dict) and isinstance(group, dict) and \
-            extended.get("name", "no-name-ext") == group.get("name", "no-name-or"):
+                self.__checkname(extended, group, "no-name-ext", "no-name-or"):
             info = db_sync_manager.get_sdn_datapath_by_componentid(
                 extended.get("component_id"))
             logger.debug("Found info in DB: %s" % (info,))
@@ -219,7 +223,8 @@ class SDNUtils(CommonUtils):
                 self.extend_slivers(ss, k, slivers, db_slivers)
             except Exception as e:
                 logger.critical("manage_sdn_allocate exception: %s", e)
-                raise e
+                raise delegate_ex.AllocationError(
+                    str(e), slice_urn, slivers, db_slivers)
 
         # insert sliver details (groups and matches) into the slice.sdn table
         id_ = db_sync_manager.store_slice_sdn(slice_urn, groups, matches)

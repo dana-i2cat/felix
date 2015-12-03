@@ -3,6 +3,7 @@ from rspecs.crm.manifest_parser import CRMv3ManifestParser
 from rspecs.crm.request_formatter import CRMv3RequestFormatter
 from db.db_manager import db_sync_manager
 from commons import CommonUtils
+from delegate.geni.v3 import exceptions as delegate_ex
 
 import core
 logger = core.log.getLogger("com-utils")
@@ -45,7 +46,8 @@ class COMUtils(CommonUtils):
             logger.info("Nodes(%d)=%s" % (len(nodes), nodes,))
 
             # XXX Begin: temporal correction (defaul: geni_best_effort)
-            # TODO Remove after CRM-KVM returns proper structure with geni_slivers
+            # TODO Remove after CRM-KVM returns proper structure
+            #  with geni_slivers
             # XXX End: temporal hack
             urn = urn or []
             # XXX End: temporal correction
@@ -97,6 +99,7 @@ class COMUtils(CommonUtils):
                 self.extend_slivers(ss, k, slivers, db_slivers)
             except Exception as e:
                 logger.critical("manage_allocate exception: %s", e)
-                raise e
+                raise delegate_ex.AllocationError(
+                    str(e), slice_urn, slivers, db_slivers)
 
         return (manifests, slivers, db_slivers)
