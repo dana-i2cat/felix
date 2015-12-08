@@ -307,11 +307,14 @@ public class NSI2Interface {
 			    NSITextDump.toString(reply.getConnectionStates()));
 
 	    ServiceExceptionType t = reply.getServiceException();
+	    String s = NSITextDump.toString(t);
+	    /*
 	    List<ServiceExceptionType> l = t.getChildException();
 	    String s = "ServiceException: \n";
 	    for (ServiceExceptionType i: l) {
 		s += "    :" + i.getText() + "\n";
 	    }
+	    */
 	    throw new Exception (s);
 	}
         return reply.getConnectionId();
@@ -387,6 +390,10 @@ public class NSI2Interface {
             if (debug) showMessage
 			   (reply.getConnectionStates(),
 			    NSITextDump.toString(reply.getConnectionStates()));
+
+	    ServiceExceptionType t = reply.getServiceException();
+	    String s = NSITextDump.toString(t);
+	    throw new Exception (s);
         }
 
 	return reservationId;
