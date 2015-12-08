@@ -180,5 +180,48 @@
 		   ovsdb="tcp:127.0.0.1:44444"
 		   ryu="http://163.220.30.181:8080"
 		   />
+        <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+                   felix_stp_id="urn:ogf:network:aist.go.jp:2015:gre:bi-new00"
+                   nsi_stp_id="urn:ogf:network:aist.go.jp:2015:gre:bi-new00"
+                   vlan="1700-1799"
+                   capacity="10000"
+
+		   type="ovsgre"
+		   sedev="eth0"
+		   address="163.220.30.145"
+		   dpid="0x10"
+		   ovsdb="tcp:127.0.0.1:44444"
+		   ryu="http://163.220.30.145:18080"
+		   />
+
+	<!-- i2CAT GRE STPs -->
+	<interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+		   felix_stp_id="urn:ogf:network:i2cat.net:2015:gre:felix"
+		   nsi_stp_id="urn:ogf:network:i2cat.net:2015:gre:felix"
+		   vlan="1700-1799"
+		   capacity="10000"
+
+		   type="ovsgre"
+		   sedev="eth1"
+		   address="84.88.40.12"
+		   dpid="0x100078acc01519c0"
+		   ovsdb="tcp:127.0.0.1:44444"
+		   ryu="http://84.88.40.12:8081"
+		   />
+
+	<!-- PSNC GRE STPs -->
+	<interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
+		   felix_stp_id="urn:ogf:network:pionier.net.pl:2015:gre:bi-ps"
+		   nsi_stp_id="urn:ogf:network:pionier.net.pl:2015:gre:bi-ps"
+		   vlan="1-4094 "
+		   capacity="1000"
+
+		   type="ovsgre"
+		   sedev="eth2"
+		   address="150.254.160.129"
+		   dpid="0x56"
+		   ovsdb="tcp:127.0.0.1:44444"
+		   ryu="http://150.254.160.129:8080"
+		   />
       </node>
 </resources>
