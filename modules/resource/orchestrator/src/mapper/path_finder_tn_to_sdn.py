@@ -16,6 +16,8 @@ class PathFinderTNtoSDN(object):
         # CIDs of source and destination TN endpoints
         self.src_dom = source_tn
         self.dst_dom = destination_tn
+        # Link type can be "nsi" or "gre". Empty means "all"
+        self.link_type = kwargs.get("link_type", "")
         # Filters to match against required switches
         self.src_of_cids = []
         self.dst_of_cids = []
@@ -65,6 +67,9 @@ class PathFinderTNtoSDN(object):
         domain_names_alt = self.get_organisation_mappings(domain_name)
         return FilterUtils.find_tn_interfaces_for_domain(tn_interfaces_cids, domain_names_alt, domain_name)
 
+    def filter_tn_interfaces_by_type(self, tn_interfaces_cids, link_type=""):
+        return FilterUtils.filter_tn_interfaces_by_type(tn_interfaces_cids, link_type)
+
     def find_se_interfaces_for_tn_interface(self, tn_interface):
         return FilterUtils.find_se_interfaces_for_tn_interface(self.se_links, tn_interface)
 
@@ -102,8 +107,11 @@ class PathFinderTNtoSDN(object):
                 setattr(self, "tn_candidates_%s" % src_dst_value, [ src_dst_cid ])
             else:
                 # Set is converted to list for easyness
-                # NOTE Only the first TN interface is retrieved...
-                setattr(self, "tn_candidates_%s" % src_dst_value, list(self.find_tn_interfaces_for_domain(src_dst_cid))[0])
+                list_interfaces = map(list, self.find_tn_interfaces_for_domain(src_dst_cid))[0]
+                # NOTE: only the first TN interface is retrieved...
+                # Filter by link type, if requested by user
+                setattr(self, "tn_candidates_%s" % src_dst_value, list(\
+                    self.filter_tn_interfaces_by_type(list_interfaces, self.link_type)))
 
             # Initialize structure with dictionary and append SRC and DST interfaces to the set
             setattr(self, "mapping_tn_se_of_%s_partial" % src_dst_value, { "tn": set() })
@@ -207,37 +215,30 @@ class PathFinderTNtoSDN(object):
         return self.mapping_tn_se_of
 
 if __name__ == "__main__":
-    if len(sys.argv) == 3:
+    error_help = "Error using mapper. Usage: %s <src> <dst> [nsi|gre]" % (__file__)
+    # SRC and DST are required
+    if len(sys.argv) >= 3:
         src_name = sys.argv[1]
         dst_name = sys.argv[2]
     else:
-        # Link PSNC-i2CAT
-        src_name = "psnc"
-        dst_name = "i2cat"
-    
-         # Link PSNC-KDDI
+        sys.exit(error_help)
+    # Link type is optional
+    if len(sys.argv) >= 4:
+        link_type = sys.argv[3]
+    else:
+        link_type = ""
+
 #        src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:pionier.net.pl:2013:topology:felix-ge-1-0-3"
 #        dst_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp1"
-        # Link AIST-KDDI
-#        src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:aist.go.jp:2013:topology:bi-se1"
-#        dst_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp1"
-        # Link KDDI-KDDI
-#        src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp1"
-#        dst_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp3"
-        # Link AIST1-AIST2
-        src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:aist.go.jp:2013:topology:bi-se1"
-        dst_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:aist.go.jp:2013:topology:bi-se2"
-        # Link AIST-PSNC
-#        src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:aist.go.jp:2013:topology:bi-se1"
-#        dst_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:pionier.net.pl:2013:topology:felix-ge-1-1-7"
-        # --------
 
-    src_of_switch_cids = [ "urn:publicid:IDN+openflow:ocf:psnc:ofam+datapath+00:00:54:e0:32:cc:a4:c0_11", "urn:publicid:IDN+openflow:ocf:psnc:ofam+datapath+00:00:08:81:f4:88:f5:b0_9" ]
-    dst_of_switch_cids = [ "urn:publicid:IDN+openflow:ocf:kddi:ofam+datapath+00:00:00:25:5c:e6:4f:07_2", "urn:publicid:IDN+openflow:ocf:kddi:ofam+datapath+00:00:00:25:5c:e6:4f:07_3" ]    
+#    src_of_switch_cids = [ "urn:publicid:IDN+openflow:ocf:psnc:ofam+datapath+00:00:54:e0:32:cc:a4:c0_11", "urn:publicid:IDN+openflow:ocf:psnc:ofam+datapath+00:00:08:81:f4:88:f5:b0_9" ]
+#    dst_of_switch_cids = [ "urn:publicid:IDN+openflow:ocf:kddi:ofam+datapath+00:00:00:25:5c:e6:4f:07_2", "urn:publicid:IDN+openflow:ocf:kddi:ofam+datapath+00:00:00:25:5c:e6:4f:07_3" ]    
+#    optional = {
+#        "src_of_switch_cids": src_of_switch_cids,
+#        "dst_of_switch_cids": dst_of_switch_cids,
+#    }
     optional = {
-        "src_of_switch_cids": src_of_switch_cids,
-        "dst_of_switch_cids": dst_of_switch_cids,
+        "link_type": link_type,
     }
-    #path_finder_tn_sdn = PathFinderTNtoSDN(src_name, dst_name, **optional)
-    path_finder_tn_sdn = PathFinderTNtoSDN(src_name, dst_name)
+    path_finder_tn_sdn = PathFinderTNtoSDN(src_name, dst_name, **optional)
     pprint(path_finder_tn_sdn.find_paths())

@@ -88,6 +88,16 @@ class PathFinderTNtoSDNFilterUtils(object):
         return domain_name_alt_matches
 
     @staticmethod
+    def filter_tn_interfaces_by_type(tn_interfaces_cids, link_type=""):
+        # Given a link type (e.g. "nsi" or "gre"), filter possible TN interfaces
+        if link_type.lower() == "gre":
+            tn_interfaces_cids = filter(lambda x: "gre" in x, tn_interfaces_cids)
+        # "Se non e vaca, e boi"
+        elif link_type.lower() == "nsi":
+            tn_interfaces_cids = filter(lambda x: "gre" not in x, tn_interfaces_cids)
+        return tn_interfaces_cids
+
+    @staticmethod
     def ensure_same_type_tn_interfaces(tn_interfaces):
         """
         Verify that, for a given list of STPs, all of them
