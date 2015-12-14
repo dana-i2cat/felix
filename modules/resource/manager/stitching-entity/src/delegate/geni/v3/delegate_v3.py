@@ -462,7 +462,10 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 logger.info("Client urn=%s, uuid=%s, email=%s" % (
                     client_urn, client_uuid, client_email,))
 
-            links_db, nodes, links = self.SESlices.get_link_db(urn)
+            try:
+                links_db, nodes, links = self.SESlices.get_link_db(urn)
+            except Exception as e:
+                raise geni_ex.GENIv3GeneralError("Slice does not exist.")
 
             reservation_ports = self.SESlices._allocate_ports_in_slice(nodes)["ports"]
 
