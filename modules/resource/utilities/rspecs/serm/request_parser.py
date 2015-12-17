@@ -17,13 +17,11 @@ class SERMv3RequestParser(ParserBase):
         # "serm" as resource-name (client_id) and authority
         # (component_manager_id) fields
         # At least we verify the autority field here!
-        if not node.attrib.get("component_manager_id") \
-            and not node.attrib.get("client_id"):
-            return False
-        if "serm" in node.attrib.get("component_manager_id"):
-            return True
-        if "serm" in node.attrib.get("client_id"):
-            return True
+        if node.attrib.get("component_manager_id", None) is not None and \
+            node.attrib.get("client_id", None) is not None:
+            if "serm" in node.attrib.get("component_manager_id", "") or \
+                "serm" in node.attrib.get("client_id", ""):
+                return True
         return False
 
     def check_se_link_resource(self, link, c_manager):

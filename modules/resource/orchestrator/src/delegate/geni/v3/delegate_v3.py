@@ -19,9 +19,8 @@ from utils.com import COMUtils
 from utils.sdn import SDNUtils
 from utils.se import SEUtils
 from utils.tn import TNUtils
+from utils.vl import VLUtils
 from utils.ro import ROUtils
-
-from mapper.path_finder_tn_to_sdn import PathFinderTNtoSDN
 
 from core.config import ConfParser
 import ast
@@ -109,7 +108,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             raise geni_ex.GENIv3GeneralError(str(e))
 
         logger.debug("ROAdvertisementFormatter=%s" % (rspec,))
-        CommonUtils().validate_rspec(rspec.get_rspec())
+        CommonUtils.validate_rspec(rspec.get_rspec())
         return "%s" % rspec
 
     @trace_method_inputs
@@ -197,7 +196,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             slice_urn, end_time, rspec,))
 
         req_rspec = RORequestParser(from_string=rspec)
-        CommonUtils().validate_rspec(req_rspec.get_rspec())
+        CommonUtils.validate_rspec(req_rspec.get_rspec())
 
         ro_manifest, ro_slivers, ro_db_slivers = ROManifestFormatter(), [], []
         extend_groups = []
@@ -206,75 +205,29 @@ class GENIv3Delegate(GENIv3DelegateBase):
         # by adding an inherent link to the SE device
         # Note: check if we had an explicit/direct TN allocation
         # (in this case just skip the mapper)
-        if self._mro_enabled and not\
-                CommonUtils().is_explicit_tn_allocation(req_rspec):
-            # Before starting the allocation process, we need to find a proper
-            # mapping between TN and SDN resources in the islands.
-            # We use the tn-links as starting point (STPs)
-            stps = TNUtils().find_stps_from_links(req_rspec.tn_links())
-            logger.debug("STPs=%s" % (stps,))
-            dpid_port_ids = SDNUtils().find_dpid_port_identifiers(
-                req_rspec.of_groups(), req_rspec.of_matches())
-            logger.debug("DPIDs=%s" % (dpid_port_ids,))
-
-            for stp in stps:
-                # If STPs involved in the request use
-                # heterogeneous types for a given
-                # connection (e.g. NSI and GRE), warn user and raise exception
-                stps_gre = TNUtils.determine_stp_gre(
-                    [stp.get("src_name"), stp.get("dst_name")])
-                if any(stps_gre) and not all(stps_gre):
-                    e = "Mapper SDN-SE-TN: attempting to connect 2 STPs"
-                    e += " of different type (e.g. GRE and NSI)"
-                    raise geni_ex.GENIv3GeneralError(e)
-                path_finder_tn_sdn = PathFinderTNtoSDN(
-                    stp.get("src_name"), stp.get("dst_name"))
-                paths = path_finder_tn_sdn.find_paths()
-                logger.debug("PATHs=%s" % (paths,))
-                # Mapper: raise an exception when a path *between
-                # different authorities/islands* cannot be found
-                #  src_auth = URNUtils.get_felix_authority_from_urn(
-                #    stp.get("src_name"))
-                #  dst_auth = URNUtils.get_felix_authority_from_urn(
-                #    stp.get("dst_name"))
-                #  if src_auth != dst_auth and len(paths) == 0:
-                if len(paths) == 0:
-                    e = "Mapper SDN-SE-TN: cannot map inter-domain"
-                    e += " links for STPs provided. Possible causes:"
-                    e += " STPs cannot be connected or are located"
-                    e += " in the same island"
-                    raise geni_ex.GENIv3GeneralError(e)
-                items = SDNUtils().analyze_mapped_path(dpid_port_ids, paths)
+        if self._mro_enabled:
+            # No TN or SE nodes
+            if CommonUtils.is_implicit_allocation(req_rspec):
+                logger.info("Implicit resource allocation: without SE, without TN")
+                rspec = TNUtils.add_tn_to_ro_request_rspec(req_rspec, SDNUtils(), VLUtils())
+                req_rspec = RORequestParser(from_string=rspec)
+            if not CommonUtils.is_explicit_tn_allocation_orig(req_rspec):
+                # Before starting the allocation process, we need to find a proper
+                # mapping between TN and SDN resources in the islands.
+                # We use the tn-links as starting point (STPs)
+                logger.info("Explicit resource allocation: without SE, with TN")
+                dpid_port_ids = SDNUtils().find_dpid_port_identifiers(
+                    req_rspec.of_groups(), req_rspec.of_matches())
+                logger.debug("DPIDs=%s" % (dpid_port_ids,))
+                paths = TNUtils.find_interdomain_paths_from_tn_links(req_rspec.tn_links())
+                items, se_constraints = SDNUtils().analyze_mapped_path(dpid_port_ids, paths)
                 extend_groups.extend(items)
-
             logger.warning("ReqRSpec must be extended with SDN-groups: %s" %
                            (extend_groups,))
 
-        # COM resources
-        slivers = req_rspec.com_slivers()
-        nodes = req_rspec.com_nodes()
-        if slivers:
-            try:
-                logger.debug("Found a COM-slivers segment (%d): %s" %
-                             (len(slivers), slivers,))
-                (com_m_info, com_slivers, db_slivers) =\
-                    COMUtils().manage_allocate(
-                        slice_urn, credentials, end_time, slivers, req_rspec)
-
-                logger.debug("com_m=%s, com_s=%s, com_s=%s" %
-                             (com_m_info, com_slivers, db_slivers))
-                for m in com_m_info:
-                    for n in m.get("nodes"):
-                        ro_manifest.com_node(n)
-
-                ro_slivers.extend(com_slivers)
-                # insert com-resources into slice table
-                self.__insert_slice_info(
-                    "com-resources", slice_urn, db_slivers, ro_db_slivers)
-
-            except delegate_ex.AllocationError as e:
-                self.__insert_allocated_reraise_exc(
-                    "com-resources", e, ro_db_slivers)
+        # Sequence: TN, SE, SDN, COM
+        ## First, the most blocking resources (inter-domain connections: TN, SE) will be requested 
+        ## If that succeeds, proceed to intra-domain resources (SDN, COM)
 
         # SDN resources
         se_sdn_info = None
@@ -391,8 +344,34 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 self.__insert_allocated_reraise_exc(
                     "se-resources", e, ro_db_slivers)
 
+        # COM resources
+        slivers = req_rspec.com_slivers()
+        nodes = req_rspec.com_nodes()
+        if slivers:
+            try:
+                logger.debug("Found a COM-slivers segment (%d): %s" %
+                             (len(slivers), slivers,))
+                (com_m_info, com_slivers, db_slivers) =\
+                    COMUtils().manage_allocate(
+                        slice_urn, credentials, end_time, slivers, req_rspec)
+
+                logger.debug("com_m=%s, com_s=%s, com_s=%s" %
+                             (com_m_info, com_slivers, db_slivers))
+                for m in com_m_info:
+                    for n in m.get("nodes"):
+                        ro_manifest.com_node(n)
+
+                ro_slivers.extend(com_slivers)
+                # insert com-resources into slice table
+                self.__insert_slice_info(
+                    "com-resources", slice_urn, db_slivers, ro_db_slivers)
+
+            except delegate_ex.AllocationError as e:
+                self.__insert_allocated_reraise_exc(
+                    "com-resources", e, ro_db_slivers)
+
         logger.debug("RO-ManifestFormatter=%s" % (ro_manifest,))
-        CommonUtils().validate_rspec(ro_manifest.get_rspec())
+        CommonUtils.validate_rspec(ro_manifest.get_rspec())
 
         ro_slivers = CommonUtils.convert_sliver_dates_to_datetime(ro_slivers)
 
@@ -439,7 +418,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") in self._allowed_peers.values():
-                slivers = CommonUtils().manage_renew(
+                slivers = CommonUtils.manage_renew(
                     peer, v, credentials, etime_str, best_effort)
 
                 logger.debug("slivers=%s" % (slivers,))
@@ -610,7 +589,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") in self._allowed_peers.values():
-                last_slice, slivers = CommonUtils().manage_status(
+                last_slice, slivers = CommonUtils.manage_status(
                     peer, v, credentials)
 
                 logger.debug("slivers=%s, urn=%s" % (slivers, last_slice))
@@ -658,7 +637,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") in self._allowed_peers.values():
-                slivers = CommonUtils().manage_operational_action(
+                slivers = CommonUtils.manage_operational_action(
                     peer, v, credentials, action, best_effort)
 
                 logger.debug("slivers=%s" % (slivers,))
@@ -697,7 +676,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             peer = db_sync_manager.get_configured_peer_by_routing_key(r)
             logger.debug("peer=%s" % (peer,))
             if peer.get("type") in self._allowed_peers.values():
-                slivers = CommonUtils().manage_delete(
+                slivers = CommonUtils.manage_delete(
                     peer, v, credentials, best_effort)
 
                 logger.debug("slivers=%s" % (slivers,))
@@ -773,3 +752,4 @@ class GENIv3Delegate(GENIv3DelegateBase):
             urns = [s.get("geni_sliver_urn") for s in slivers]
             ROSchedulerService.get_scheduler().add_job(
                 slice_expiration, "date", run_date=end_time, args=[urns])
+

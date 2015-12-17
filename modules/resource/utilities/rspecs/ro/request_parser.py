@@ -3,6 +3,7 @@ from rspecs.crm.request_parser import CRMv3RequestParser
 from rspecs.openflow.request_parser import OFv3RequestParser
 from rspecs.tnrm.request_parser import TNRMv3RequestParser
 from rspecs.serm.request_parser import SERMv3RequestParser
+from rspecs.vlink.request_parser import VLinkv3RequestParser
 
 import core
 logger = core.log.getLogger("utility-rspec")
@@ -15,6 +16,7 @@ class RORequestParser(ParserBase):
         self.__of_parser = OFv3RequestParser(from_file, from_string)
         self.__tn_parser = TNRMv3RequestParser(from_file, from_string)
         self.__se_parser = SERMv3RequestParser(from_file, from_string)
+        self.__vl_parser = VLinkv3RequestParser(from_file, from_string)
 
     # COM resources
     def com_nodes(self):
@@ -87,3 +89,28 @@ class RORequestParser(ParserBase):
             # By default, the requests do not contain SE-links
             logger.warning("se_links exception: %s", e)
             return []
+
+    # VL (virtual links)
+    def vl_links(self):
+        try:
+            return self.__vl_parser.get_links(self.rspec)
+        except Exception as e:
+            # By default, the requests do not contain Virtual-links
+            logger.warning("virt_links exception: %s", e)
+            return []
+
+    # Parsers
+    def get_com_parser(self):
+        return self.__com_parser
+
+    def get_of_parser(self):
+        return self.__of_parser
+
+    def get_tn_parser(self):
+        return self.__tn_parser
+
+    def get_se_parser(self):
+        return self.__se_parser
+
+    def get_vl_parser(self):
+        return self.__vl_parser
