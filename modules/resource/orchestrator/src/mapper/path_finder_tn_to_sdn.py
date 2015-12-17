@@ -19,8 +19,8 @@ class PathFinderTNtoSDN(object):
         # Link type can be "nsi" or "gre". Empty means "all"
         self.link_type = kwargs.get("link_type", "")
         # Filters to match against required switches
-        self.src_of_cids = []
-        self.dst_of_cids = []
+        self.src_of_cids = kwargs.get("src_of_switch_cids", [])
+        self.dst_of_cids = kwargs.get("dst_of_switch_cids", [])
         # Dummy list to reduce lines of code
         self.src_dst_values = [ "src", "dst" ]
         # Nodes and links from database
@@ -228,16 +228,15 @@ if __name__ == "__main__":
     else:
         link_type = ""
 
-#        src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:pionier.net.pl:2013:topology:felix-ge-1-0-3"
-#        dst_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp1"
-
+#    link_type = "nsi"
+#    src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:pionier.net.pl:2013:topology:felix-ge-1-0-3"
+#    dst_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp1"
 #    src_of_switch_cids = [ "urn:publicid:IDN+openflow:ocf:psnc:ofam+datapath+00:00:54:e0:32:cc:a4:c0_11", "urn:publicid:IDN+openflow:ocf:psnc:ofam+datapath+00:00:08:81:f4:88:f5:b0_9" ]
 #    dst_of_switch_cids = [ "urn:publicid:IDN+openflow:ocf:kddi:ofam+datapath+00:00:00:25:5c:e6:4f:07_2", "urn:publicid:IDN+openflow:ocf:kddi:ofam+datapath+00:00:00:25:5c:e6:4f:07_3" ]    
-#    optional = {
+
+    optional = {
 #        "src_of_switch_cids": src_of_switch_cids,
 #        "dst_of_switch_cids": dst_of_switch_cids,
-#    }
-    optional = {
         "link_type": link_type,
     }
     path_finder_tn_sdn = PathFinderTNtoSDN(src_name, dst_name, **optional)

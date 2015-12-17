@@ -715,6 +715,17 @@ class DBManager(object):
         return [r.get("routing_key")
                 for r in self.__get_all(table, filter_params)]
 
+    def get_tn_node_interface(self, filter_params={}):
+        found_interfaces = []
+        tn_node = [ n for n in self.get_tn_nodes() ][0]
+        interfaces = tn_node["interfaces"]
+        for interface in interfaces:
+            # Find interfaces that meet all the filter parameters
+            if all(map(lambda x: x[1] in interface.get(x[0], None), 
+                [ (k,v) for k,v in filter_params.iteritems() ])):
+                found_interfaces.append(interface)
+        return found_interfaces
+
     # (felix_ro) resource.tn.link
     def store_tn_links(self, routingKey, values):
         table = self.__get_table("resource.tn.link")

@@ -7,14 +7,13 @@ from rspecs.commons import validate
 
 import core
 logger = core.log.getLogger("common-utils")
+import random
 
 
 class CommonUtils(object):
-    def __init__(self):
-        pass
 
     @staticmethod
-    def is_explicit_tn_allocation(rspec):
+    def is_explicit_tn_allocation_orig(rspec):
         # Check for SDN resources
         sliver = rspec.of_sliver()
         if sliver is not None:
@@ -23,11 +22,66 @@ class CommonUtils(object):
         # Check for SE resources
         senodes = rspec.se_nodes()
         selinks = rspec.se_links()
-        if ((len(senodes) > 0) or (len(selinks) > 0)):
+        if CommonUtils.is_explicit_se_allocation(rspec):
             return False
-
-        logger.info("This is an explicit TN allocation.")
+        logger.info("This is an explicit TN allocation")
         return True
+
+    @staticmethod
+    def is_explicit_tn_allocation(rspec):
+        nodes_exist = False
+        # Check for TN resources
+        try:
+            nodes = rspec.tn_nodes()
+            links = rspec.tn_links()
+            if ((len(nodes) > 0) or (len(links) > 0)):
+                nodes_exist = True
+            logger.info("This is an explicit TN allocation")
+        except:
+            pass
+        return nodes_exist
+
+    @staticmethod
+    def is_explicit_se_allocation(rspec):
+        nodes_exist = False
+        # Check for SE resources
+        try:
+            nodes = rspec.se_nodes()
+            links = rspec.se_links()
+            if ((len(nodes) > 0) or (len(links) > 0)):
+                nodes_exist = True
+            logger.info("This is an explicit SE allocation")
+        except:
+            pass
+        return nodes_exist
+
+    @staticmethod
+    def is_implicit_allocation(rspec):
+        # Ensure TN and SE resources are not present
+        return not(CommonUtils.is_explicit_tn_allocation(rspec) \
+            and CommonUtils.is_explicit_se_allocation(rspec))
+
+    @staticmethod
+    def is_virtual_links(rspec):
+        try:
+            # Check for virtual links
+            vlinks = rspec.vl_links()
+        except:
+            vlinks = []
+        if len(vlinks) > 0:
+            logger.info("This is an allocation with virtual links")
+            return True
+        return False
+
+    @staticmethod
+    def get_random_list_position(list_length):
+        return random.randint(0, int(list_length))
+
+    @staticmethod
+    def get_random_range_value(start, end):
+        rnd_range = xrange(int(start), int(end)+1)
+        rnd_idx = CommonUtils.get_random_list_position(len(rnd_range))
+        return rnd_range[rnd_idx]
 
     @staticmethod
     def fetch_user_name_from_geni_users(geni_users):
@@ -65,7 +119,8 @@ class CommonUtils(object):
         logger.debug("RO-Slivers(%d)=%s" % (len(geni_slivers), geni_slivers))
         return geni_slivers
 
-    def validate_rspec(self, rspec):
+    @staticmethod
+    def validate_rspec(rspec):
         """
         Given an RSpec (XML structure), this method validates the
         structure of the document, according to the GENI resource schemas.
@@ -79,7 +134,8 @@ class CommonUtils(object):
             raise geni_ex.GENIv3GeneralError(m)
         logger.info("Validation success!")
 
-    def send_request_allocate_rspec(self, routing_key, req_rspec, slice_urn,
+    @staticmethod
+    def send_request_allocate_rspec(routing_key, req_rspec, slice_urn,
                                     credentials, end_time):
         peer = db_sync_manager.get_configured_peer_by_routing_key(routing_key)
         logger.debug("Peer=%s" % (peer,))
@@ -88,14 +144,15 @@ class CommonUtils(object):
         return adaptor.allocate(
             slice_urn, credentials[0]["geni_value"], str(req_rspec), end_time)
 
-    def extend_slivers(self, values, routing_key, slivers, db_slivers):
+    @staticmethod
+    def extend_slivers(values, routing_key, slivers, db_slivers):
         logger.info("Slivers=%s" % (values,))
         slivers.extend(values)
         for dbs in values:
             db_slivers.append({"geni_sliver_urn": dbs.get("geni_sliver_urn"),
                                "routing_key": routing_key})
-
-    def manage_renew(self, peer, urns, creds, etime, beffort):
+    @staticmethod
+    def manage_renew(peer, urns, creds, etime, beffort):
         try:
             adaptor, uri = AdaptorFactory.create_from_db(peer)
             logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
@@ -108,7 +165,8 @@ class CommonUtils(object):
                 logger.critical("manage_renew exception: %s", e)
                 raise e
 
-    def manage_status(self, peer, urns, creds):
+    @staticmethod
+    def manage_status(peer, urns, creds):
         try:
             adaptor, uri = AdaptorFactory.create_from_db(peer)
             logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
@@ -117,7 +175,8 @@ class CommonUtils(object):
             logger.error("manage_status exception: %s", e)
             return []
 
-    def manage_operational_action(self, peer, urns, creds, action, beffort):
+    @staticmethod
+    def manage_operational_action(peer, urns, creds, action, beffort):
         try:
             adaptor, uri = AdaptorFactory.create_from_db(peer)
             logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))
@@ -140,7 +199,8 @@ class CommonUtils(object):
                                 "action=%s, details: %s" % (action, e))
                 raise e
 
-    def manage_delete(self, peer, urns, creds, beffort):
+    @staticmethod
+    def manage_delete(peer, urns, creds, beffort):
         try:
             adaptor, uri = AdaptorFactory.create_from_db(peer)
             logger.debug("Adaptor=%s, uri=%s" % (adaptor, uri))

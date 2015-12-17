@@ -249,14 +249,14 @@ class SDNUtils(CommonUtils):
         return ret
 
     def __find_id_link_in_path(self, ident, paths):
-        logger.debug("Searching this identify: %s" % (ident,))
+        logger.debug("Searching this identifier: %s" % (ident,))
         for p in paths:
             for link in p.get("src").get("links"):
-                if ident in link.get("sdn"):
+                if ident == link.get("sdn"):
                     logger.debug("Match in the SRC side: %s" % (link,))
                     return True, link
             for link in p.get("dst").get("links"):
-                if ident in link.get("sdn"):
+                if ident == link.get("sdn"):
                     logger.debug("Match in the DST side: %s" % (link,))
                     return True, link
         return False, None
@@ -265,8 +265,8 @@ class SDNUtils(CommonUtils):
         for i in ids:
             ret, link = self.__find_id_link_in_path(i, paths)
             if ret:
-                return True
-        return False
+                return True, link
+        return False, link
 
     def __fill_group_info(self, group, link, i):
         return {"name": group.get("name"),
@@ -301,13 +301,36 @@ class SDNUtils(CommonUtils):
             return info
         return None
 
+    def find_path_containing_all(self, ids, paths):
+        """
+        Arguments:
+            ids (list): list of dictionaries with SDN dpids
+            paths (list): list of dictionaries, each showing a possible path
+                traversing SDN->SE->TN domains
+        """
+        for p in paths:
+            all_sdn_dpid_domains_contained = True
+            for i in ids:
+                any_sdn_dpid_contained = False
+                for d in i.get("ids"):
+                    is_id, link_id = self.__find_id_link_in_path(d, [p])
+                    any_sdn_dpid_contained |= is_id
+                all_sdn_dpid_domains_contained &= any_sdn_dpid_contained
+                if all_sdn_dpid_domains_contained:
+                    return [p]
+        return []
+
     def analyze_mapped_path(self, ids, paths):
         ret = []
+        links_ids_constraints = []
         for i in ids:
-            if self.__is_ids_in_path(i.get("ids"), paths):
+            is_id, link_id = self.__is_ids_in_path(i.get("ids"), paths)
+            if is_id:
                 logger.info("The group is completed: %s" % (i,))
+                links_ids_constraints.append(link_id)
             else:
                 logger.warning("The group is NOT completed: %s" % (i,))
                 item = self.__choose_sdn_for_group(i, paths)
+                links_ids_constraints.append(item)
                 ret.append(item)
-        return ret
+        return ret, links_ids_constraints
