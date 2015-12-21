@@ -2,6 +2,8 @@ from db.db_manager import db_sync_manager
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
 from rspecs.ro.manifest_parser import ROManifestParser
 from commons import CommonUtils
+from tn import TNUtils
+from vl import VLUtils
 
 import core
 logger = core.log.getLogger("ro-utils")
@@ -74,43 +76,50 @@ class ROUtils(CommonUtils):
         return ret
 
     @staticmethod
-    def generate_list_resources(rspec):
+    def generate_list_resources(rspec, inner_call=False):
         for n in db_sync_manager.get_com_nodes():
             logger.debug("COM resources node=%s" % (n,))
-            rspec.com_node(n)
+            rspec.com_node(n, inner_call)
 
         for d in db_sync_manager.get_sdn_datapaths():
             logger.debug("OF resources dpid=%s" % (d,))
-            rspec.datapath(d)
-
-        for n in db_sync_manager.get_tn_nodes():
-            logger.debug("TN resources node=%s" % (n,))
-            rspec.tn_node(n)
-
-        for n in db_sync_manager.get_se_nodes():
-            logger.debug("SE resources node=%s" % (n,))
-            rspec.se_node(n)
+            rspec.datapath(d, inner_call)
 
         for l in db_sync_manager.get_com_links():
             logger.debug("COM resources link=%s" % (l,))
-            rspec.com_link(l)
+            rspec.com_link(l, inner_call)
 
         (of_links, fed_links) = db_sync_manager.get_sdn_links()
         for l in of_links:
             logger.debug("OF resources of-link=%s" % (l,))
-            rspec.of_link(l)
+            rspec.of_link(l, inner_call)
 
         for l in fed_links:
             logger.debug("OF resources fed-link=%s" % (l,))
-            rspec.fed_link(l)
+            rspec.fed_link(l, inner_call)
 
-        for l in db_sync_manager.get_tn_links():
-            logger.debug("TN resources tn-link=%s" % (l,))
-            rspec.tn_link(l)
+        # Internal use (M/RO)
+        if inner_call:
+            for n in db_sync_manager.get_tn_nodes():
+                logger.debug("TN resources node=%s" % (n,))
+                rspec.tn_node(n)
 
-        for l in db_sync_manager.get_se_links():
-            logger.debug("SE resources se-link=%s" % (l,))
-            rspec.se_link(l)
+            for n in db_sync_manager.get_se_nodes():
+                logger.debug("SE resources node=%s" % (n,))
+                rspec.se_node(n)
+
+            for l in db_sync_manager.get_tn_links():
+                logger.debug("TN resources tn-link=%s" % (l,))
+                rspec.tn_link(l)
+
+            for l in db_sync_manager.get_se_links():
+                logger.debug("SE resources se-link=%s" % (l,))
+                rspec.se_link(l)
+        # External use (experimenter)
+        else:
+            for l in VLUtils.find_vlinks_from_tn_stps(TNUtils()):
+                logger.debug("VL resources vl-link=%s" % (l,))
+                rspec.vl_link(l)
         return rspec
 
     @staticmethod

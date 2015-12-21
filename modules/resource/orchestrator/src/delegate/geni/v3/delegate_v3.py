@@ -44,6 +44,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
         self._mro_enabled =\
             ast.literal_eval(ConfParser("ro.conf").get("master_ro").
                              get("mro_enabled"))
+        self._show_all_to_user =\
+            ast.literal_eval(ConfParser("ro.conf").get("resources").
+                             get("show_all_to_user"))
 
     def trace_method_inputs(f):
         as_ = f.func_code.co_varnames[:f.func_code.co_argcount]
@@ -82,7 +85,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
         return "geni_many"
 
     @trace_method_inputs
-    def list_resources(self, client_cert, credentials, geni_available):
+    def list_resources(self, client_cert, credentials, geni_available, inner_call=False):
         """
         Shows a list with the slivers managed or seen by the resource manager.
 
@@ -102,8 +105,12 @@ class GENIv3Delegate(GENIv3DelegateBase):
         sl = "http://www.geni.net/resources/rspec/3/ad.xsd"
         rspec = ROAdvertisementFormatter(schema_location=sl)
 
+        # Call to ListResources will be considered internal if the
+        # configuration flag ('hide_resources_to_user') is active AND
+        # if the call is explicitly marked as internal
+        inner_call |= self._show_all_to_user
         try:
-            rspec = ROUtils.generate_list_resources(rspec)
+            rspec = ROUtils.generate_list_resources(rspec, inner_call)
         except Exception as e:
             raise geni_ex.GENIv3GeneralError(str(e))
 
@@ -289,6 +296,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 self.__insert_allocated_reraise_exc(
                     "tn-resources", e, ro_db_slivers)
 
+        nodes = []
+        links = []
         # SE resources
         se_nodes_in_request = False
         try:

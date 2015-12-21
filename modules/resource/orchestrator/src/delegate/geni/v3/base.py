@@ -104,7 +104,7 @@ class GENIv3DelegateBase(object):
         For description of the options see http://groups.geni.net/geni/wiki/GAPI_AM_API_V3/CommonConcepts#OperationsonIndividualSlivers"""
         return 'geni_single'
 
-    def list_resources(self, client_cert, credentials, geni_available):
+    def list_resources(self, client_cert, credentials, geni_available, inner_call=False):
         """Overwrite by AM developer. Shall return an RSpec version 3 (advertisement) or raise an GENIv3...Error.
         If {geni_available} is set, only return availabe resources.
         For full description see http://groups.geni.net/geni/wiki/GAPI_AM_API_V3#ListResources"""
