@@ -1,5 +1,4 @@
 from rspecs.parser_base import ParserBase
-#from rspecs.commons import FEDLink
 from rspecs.commons_se import SELink
 
 import core
@@ -11,7 +10,7 @@ class VLinkv3RequestParser(ParserBase):
         super(VLinkv3RequestParser, self).__init__(from_file, from_string)
 
     def check_vlink_resource(self, link, c_manager):
-        # according to the proposed URNs structure, a virtual
+        # According to the proposed URNs structure, a virtual
         # link MUST have "mapper" as resource-name (client_id) 
         # and link type
         if "mapper" in c_manager.attrib.get("name") or "mapper" in link.attrib.get("client_id"):

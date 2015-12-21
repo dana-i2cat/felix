@@ -183,8 +183,10 @@ class GENIv3Client(SFAClient):
                         "geni_type": "geni_sfa", }]
         return credentials
 
-    def list_resources(self, credentials, available):
+    def list_resources(self, credentials, available, inner_call=False):
         options = self.format_options(available=available, compress=False)
+        options["inner_call"] = inner_call and True
+
         # Credentials must be sent in the proper format
         credentials = self.format_credentials(credentials)
         logger.debug("%s Options: %s" % (self.typee, options,))

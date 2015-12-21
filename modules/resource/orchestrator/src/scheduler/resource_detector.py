@@ -120,8 +120,11 @@ class ResourceDetector(object):
 
             geni_v3_credentials = AdaptorFactory.geni_v3_credentials()
             self.info("Credentials successfully retrieved!")
+            available = False
+            # Resource detector makes "inner calls" to M/RO to fetch "all" data
+            inner_call = True
             resources_returned = adaptor.list_resources(geni_v3_credentials,
-                                                        False)
+                                                        available, inner_call)
             return (resources_returned, adaptor_uri)
 
         except Exception as e:

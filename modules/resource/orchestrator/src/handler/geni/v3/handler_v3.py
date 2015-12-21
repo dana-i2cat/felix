@@ -84,15 +84,18 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         Also takes care of the compression option."""
         self.__validate_credentials(credentials)
 
+        print "ListResources -- options: ", options
         logger.debug("ListResources options=%s" % (options,))
         # Interpret options
         geni_available = self._option(options, "geni_available")
+        inner_call = self._option(options, "inner_call") and True
 
         # check version and delegate
         try:
             self._checkRSpecVersion(options["geni_rspec_version"])
             result = self._delegate.list_resources(self.requestCertificate(),
-                                                   credentials, geni_available)
+                                                   credentials, geni_available,
+                                                   inner_call)
         except Exception as e:
             return self._errorReturn(e)
 
