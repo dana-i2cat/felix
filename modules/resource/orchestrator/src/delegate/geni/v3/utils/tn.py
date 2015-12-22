@@ -371,14 +371,19 @@ class TNUtils(CommonUtils):
 
     @staticmethod
     def generate_tn_link(src_dom, src_vlan, dst_dom, dst_vlan):
+        """
+        Generate link (tree/lxml structure) so it can be appended to the
+        request RSpec.
+        """
         tn_ref_node = db_sync_manager.get_tn_nodes()[0]
         link_cid = tn_ref_node.get("component_id", "")
+        stp_reg = "+stp"
+        link_prefix = link_cid.split(stp_reg)[0]
         link_clid = generate_unique_link_id(link_cid, src_dom, dst_dom)
 
-        stp_reg = "stp+"
-        src_dom_ogf = src_dom[src_dom.find(stp_reg)+len(stp_reg):]
-        dst_dom_ogf = dst_dom[dst_dom.find(stp_reg)+len(stp_reg):]
-        link_clid = "%s+%s?vlan=%s-%s?vlan=%s" % (link_cid, src_dom_ogf, src_vlan, dst_dom_ogf, dst_vlan)
+        src_dom_ogf = src_dom[src_dom.find(stp_reg)+1+len(stp_reg):]
+        dst_dom_ogf = dst_dom[dst_dom.find(stp_reg)+1+len(stp_reg):]
+        link_clid = "%s+link+%s+%s?vlan=%s-%s?vlan=%s" % (link_prefix, link_cid, src_dom_ogf, src_vlan, dst_dom_ogf, dst_vlan)
         logger.debug("Chosen TN inter-domain link: %s" % link_clid)
 
         link = {"component_id": link_clid,
