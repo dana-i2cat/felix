@@ -14,11 +14,11 @@ class SERMv3AdvertisementFormatter(TNRMv3AdvertisementFormatter):
             xmlns, xs, sharedvlan, protogeni, schema_location)
         self.__proto = protogeni
 
-    def add_link(self, rspec, link):
+    def add_link(self, rspec, link, inner_call=True):
         l = etree.SubElement(rspec, "{%s}link" % (self.xmlns))
         l.attrib["component_id"] = link.get("component_id")
 
-        if link.get("component_manager_uuid") is not None:
+        if inner_call and link.get("component_manager_uuid") is not None:
             l.attrib["{%s}component_manager_uuid" % (self.__proto)] =\
                 link.get("component_manager_uuid")
 
@@ -39,5 +39,5 @@ class SERMv3AdvertisementFormatter(TNRMv3AdvertisementFormatter):
             prop.attrib["dest_id"] = p.get("dest_id")
             prop.attrib["capacity"] = p.get("capacity")
 
-    def link(self, link):
-        self.add_link(self.rspec, link)
+    def link(self, link, inner_call=True):
+        self.add_link(self.rspec, link, inner_call)
