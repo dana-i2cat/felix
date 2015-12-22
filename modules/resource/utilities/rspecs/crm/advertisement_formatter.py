@@ -12,14 +12,14 @@ class CRMv3AdvertisementFormatter(FormatterBase):
             {"protogeni": "%s" % (protogeni)}, xmlns, xs)
         self.__proto = protogeni
 
-    def add_node(self, rspec, node):
+    def add_node(self, rspec, node, inner_call=True):
         n = etree.SubElement(rspec, "{%s}node" % (self.xmlns))
         n.attrib["component_manager_id"] = node.get("component_manager_id")
         n.attrib["component_name"] = node.get("component_name")
         n.attrib["component_id"] = node.get("component_id")
         n.attrib["exclusive"] = node.get("exclusive")
 
-        if node.get("component_manager_uuid") is not None:
+        if inner_call and node.get("component_manager_uuid") is not None:
             n.attrib["{%s}component_manager_uuid" % (self.__proto)] =\
                 node.get("component_manager_uuid")
 
@@ -27,15 +27,15 @@ class CRMv3AdvertisementFormatter(FormatterBase):
             available = etree.SubElement(n, "{%s}available" % (self.xmlns))
             available.attrib["now"] = node.get("available")
 
-    def node(self, node):
-        self.add_node(self.rspec, node)
+    def node(self, node, inner_call=True):
+        self.add_node(self.rspec, node, inner_call)
 
-    def add_link(self, rspec, link):
+    def add_link(self, rspec, link, inner_call=True):
         l = etree.SubElement(rspec, "{%s}link" % (self.xmlns))
         l.attrib["component_id"] = link.get("component_id")
         l.attrib["component_name"] = link.get("component_name")
 
-        if link.get("component_manager_uuid") is not None:
+        if inner_call and link.get("component_manager_uuid") is not None:
             l.attrib["{%s}component_manager_uuid" % (self.__proto)] =\
                 link.get("component_manager_uuid")
 
@@ -48,5 +48,5 @@ class CRMv3AdvertisementFormatter(FormatterBase):
         link_type = etree.SubElement(l, "{%s}link_type" % (self.xmlns))
         link_type.attrib["name"] = link.get("link_type")
 
-    def link(self, link):
-        self.add_link(self.rspec, link)
+    def link(self, link, inner_call=True):
+        self.add_link(self.rspec, link, inner_call)

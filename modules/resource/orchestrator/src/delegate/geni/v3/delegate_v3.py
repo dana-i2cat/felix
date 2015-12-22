@@ -44,9 +44,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
         self._mro_enabled =\
             ast.literal_eval(ConfParser("ro.conf").get("master_ro").
                              get("mro_enabled"))
-        self._show_all_to_user =\
+        self._interdomain_available_to_user =\
             ast.literal_eval(ConfParser("ro.conf").get("resources").
-                             get("show_all_to_user"))
+                             get("interdomain_available_to_user"))
 
     def trace_method_inputs(f):
         as_ = f.func_code.co_varnames[:f.func_code.co_argcount]
@@ -101,16 +101,14 @@ class GENIv3Delegate(GENIv3DelegateBase):
             formatted in accordance to GENI schemas
         """
         logger.info("geni_available=%s", geni_available)
+        logger.info("inner_call=%s", inner_call)
 
         sl = "http://www.geni.net/resources/rspec/3/ad.xsd"
         rspec = ROAdvertisementFormatter(schema_location=sl)
 
-        # Call to ListResources will be considered internal if the
-        # configuration flag ('hide_resources_to_user') is active AND
-        # if the call is explicitly marked as internal
-        inner_call |= self._show_all_to_user
         try:
-            rspec = ROUtils.generate_list_resources(rspec, inner_call)
+            rspec = ROUtils.generate_list_resources(rspec, \
+                geni_available, self._interdomain_available_to_user, inner_call)
         except Exception as e:
             raise geni_ex.GENIv3GeneralError(str(e))
 

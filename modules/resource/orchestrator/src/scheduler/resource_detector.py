@@ -121,7 +121,9 @@ class ResourceDetector(object):
             geni_v3_credentials = AdaptorFactory.geni_v3_credentials()
             self.info("Credentials successfully retrieved!")
             available = False
-            # Resource detector makes "inner calls" to M/RO to fetch "all" data
+            # Resource detector is the only one generating "inner calls"
+            # against M/RO to fetch all resources
+            # (but virtual links -- linked to the "available" flag)
             inner_call = True
             resources_returned = adaptor.list_resources(geni_v3_credentials,
                                                         available, inner_call)

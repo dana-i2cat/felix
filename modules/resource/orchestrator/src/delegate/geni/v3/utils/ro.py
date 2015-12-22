@@ -76,7 +76,7 @@ class ROUtils(CommonUtils):
         return ret
 
     @staticmethod
-    def generate_list_resources(rspec, inner_call=False):
+    def generate_list_resources(rspec, geni_available=False, show_interdomain=False, inner_call=True):
         for n in db_sync_manager.get_com_nodes():
             logger.debug("COM resources node=%s" % (n,))
             rspec.com_node(n, inner_call)
@@ -98,28 +98,29 @@ class ROUtils(CommonUtils):
             logger.debug("OF resources fed-link=%s" % (l,))
             rspec.fed_link(l, inner_call)
 
-        # Internal use (M/RO)
-        if inner_call:
+        # Internal use (M/RO) -- OR show inter-domain resources, through config flag
+        if inner_call or show_interdomain:
             for n in db_sync_manager.get_tn_nodes():
                 logger.debug("TN resources node=%s" % (n,))
-                rspec.tn_node(n)
+                rspec.tn_node(n, inner_call)
 
             for n in db_sync_manager.get_se_nodes():
                 logger.debug("SE resources node=%s" % (n,))
-                rspec.se_node(n)
+                rspec.se_node(n, inner_call)
 
             for l in db_sync_manager.get_tn_links():
                 logger.debug("TN resources tn-link=%s" % (l,))
-                rspec.tn_link(l)
+                rspec.tn_link(l, inner_call)
 
             for l in db_sync_manager.get_se_links():
                 logger.debug("SE resources se-link=%s" % (l,))
-                rspec.se_link(l)
-        # External use (experimenter)
-        else:
+                rspec.se_link(l, inner_call)
+
+        # External use (experimenter) -- OR show inter-domain resources, through config flag
+        if geni_available or show_interdomain:
             for l in VLUtils.find_vlinks_from_tn_stps(TNUtils()):
                 logger.debug("VL resources vl-link=%s" % (l,))
-                rspec.vl_link(l)
+                rspec.vl_link(l, inner_call)
         return rspec
 
     @staticmethod

@@ -9,7 +9,7 @@ from rspecs.tnrm.advertisement_formatter import TNRMv3AdvertisementFormatter
 from rspecs.serm.advertisement_formatter import SERMv3AdvertisementFormatter
 from rspecs.vlink.advertisement_formatter import VLinkv3AdvertisementFormatter
 
-from functools import wraps
+import inspect
 
 DEFAULT_AD_SCHEMA_LOCATION = DEFAULT_SCHEMA_LOCATION
 DEFAULT_AD_SCHEMA_LOCATION += DSL_PREFIX + "3/ad.xsd "
@@ -37,93 +37,60 @@ class ROAdvertisementFormatter(FormatterBase):
         self.__serm_formatter = SERMv3AdvertisementFormatter()
         self.__vlink_formatter = VLinkv3AdvertisementFormatter()
 
-    def check_inner_call_crm(func):
-        @wraps(func)   
-        def wrapper(*args, **kwargs):
-            node = args[0]
-            inner_call = True
-            try:
-                inner_call = args[1] or True
-            except:
-                pass
+    def add_cm_uuid(self, element, inner_call=True):
+        try:
+            caller_name = inspect.stack()[1][3]
             if inner_call:
-                node["component_manager_uuid"] = "felix:CRM"
-            return func(*args, **kwargs)
-        return wrapper
-
-    def check_inner_call_serm(func):
-        @wraps(func)   
-        def wrapper(*args, **kwargs):
-            node = args[0]
-            inner_call = True
-            try:
-                inner_call = args[1] or True
-            except:
-                pass
-            if inner_call:
-                node["component_manager_uuid"] = "felix:SERM"
-            return func(*args, **kwargs)
-        return wrapper
-
-    def check_inner_call_tnrm(func):
-        @wraps(func)   
-        def wrapper(*args, **kwargs):
-            node = args[0]
-            inner_call = True
-            try:
-                inner_call = args[1] or True
-            except:
-                pass
-            if inner_call:
-                node["component_manager_uuid"] = "felix:TNRM"
-            return func(*args, **kwargs)
-        return wrapper
-
-    def check_inner_call_vlink(func):
-        @wraps(func)   
-        def wrapper(*args, **kwargs):
-            node = args[0]
-            inner_call = True
-            try:
-                inner_call = args[1] or True
-            except:
-                pass
-            if inner_call:
-                node["component_manager_uuid"] = "felix:VLink"
-            return func(*args, **kwargs)
-        return wrapper
+                if caller_name.startswith("com_"):
+                    element["component_manager_uuid"] = "felix:CRM"
+                elif caller_name.startswith("se_"):
+                    element["component_manager_uuid"] = "felix:SERM"
+                elif caller_name.startswith("tn_"):
+                    element["component_manager_uuid"] = "felix:TNRM"
+                elif caller_name.startswith("vl_"):
+                    element["component_manager_uuid"] = "felix:VLink"
+        except:
+            pass
+        return element
 
     # COM resources
-    def com_node(self, node, inner_call=False):
-        self.__crm_formatter.add_node(self.rspec, node)
+    def com_node(self, node, inner_call=True):
+        node = self.add_cm_uuid(node, inner_call)
+        self.__crm_formatter.add_node(self.rspec, node, inner_call)
 
-    def com_link(self, link, inner_call=False):
-        self.__crm_formatter.add_link(self.rspec, link)
+    def com_link(self, link, inner_call=True):
+        link = self.add_cm_uuid(link, inner_call)
+        self.__crm_formatter.add_link(self.rspec, link, inner_call)
 
     # OF resources
-    def datapath(self, dpath, inner_call=False):
+    def datapath(self, dpath, inner_call=True):
         self.__of_formatter.add_datapath(self.rspec, dpath)
 
-    def of_link(self, link, inner_call=False):
+    def of_link(self, link, inner_call=True):
         self.__of_formatter.add_of_link(self.rspec, link)
 
-    def fed_link(self, link, inner_call=False):
+    def fed_link(self, link, inner_call=True):
         self.__of_formatter.add_fed_link(self.rspec, link)
 
     # TN resources
-    def tn_node(self, node, inner_call=False):
-        self.__tnrm_formatter.add_node(self.rspec, node)
+    def tn_node(self, node, inner_call=True):
+        node = self.add_cm_uuid(node, inner_call)
+        self.__tnrm_formatter.add_node(self.rspec, node, inner_call)
 
-    def tn_link(self, link, inner_call=False):
-        self.__tnrm_formatter.add_link(self.rspec, link)
+    def tn_link(self, link, inner_call=True):
+        link = self.add_cm_uuid(link, inner_call)
+        self.__tnrm_formatter.add_link(self.rspec, link, inner_call)
 
     # SE resources
-    def se_node(self, node, inner_call=False):
-        self.__serm_formatter.add_node(self.rspec, node)
+    def se_node(self, node, inner_call=True):
+        node = self.add_cm_uuid(node, inner_call)
+        self.__serm_formatter.add_node(self.rspec, node, inner_call)
 
-    def se_link(self, link, inner_call=False):
-        self.__serm_formatter.add_link(self.rspec, link)
+    def se_link(self, link, inner_call=True):
+        link = self.add_cm_uuid(link, inner_call)
+        self.__serm_formatter.add_link(self.rspec, link, inner_call)
 
     # VL links
-    def vl_link(self, link, inner_call=False):
-        self.__vlink_formatter.add_link(self.rspec, link)
+    def vl_link(self, link, inner_call=True):
+        link = self.add_cm_uuid(link, inner_call)
+        self.__vlink_formatter.add_link(self.rspec, link, inner_call)

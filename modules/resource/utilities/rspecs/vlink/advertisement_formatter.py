@@ -18,7 +18,7 @@ class VLinkv3AdvertisementFormatter(FormatterBase):
             ns_, xmlns, xs)
         self.__proto = protogeni
 
-    def add_link(self, rspec, link):
+    def add_link(self, rspec, link, inner_call=True):
         """
         Translates incoming dictionary:
 
@@ -39,16 +39,16 @@ class VLinkv3AdvertisementFormatter(FormatterBase):
         """
         l = etree.SubElement(rspec, "{%s}link" % (self.xmlns))
 
-        if link.get("component_manager_uuid") is not None:
-            l.attrib["{%s}component_manager_uuid" % (self.__proto)] =\
-                link.get("component_manager_uuid")
-
         # Retrieve list of connected domains per link
         end_links = [link.get("src_name"), link.get("dst_name")]
         link_doms = map(lambda x: x.split("+")[-1], end_links)
         src_auth = URNUtils.get_felix_authority_from_urn(link.get("src_name"))
         component_id = "urn:publicid:IDN+fms:%s:mapper+link+%s_%s" % (src_auth, link_doms[0], link_doms[1])
         l.attrib["component_id"] = component_id
+
+        if inner_call and link.get("component_manager_uuid") is not None:
+            l.attrib["{%s}component_manager_uuid" % (self.__proto)] =\
+                link.get("component_manager_uuid")
 
         m = etree.SubElement(l, "{%s}component_manager" % (self.xmlns))
         m.attrib["name"] = "urn:publicid:IDN+fms:%s:mapper+authority+cm" % src_auth
@@ -60,5 +60,5 @@ class VLinkv3AdvertisementFormatter(FormatterBase):
             interface = etree.SubElement(l, "{%s}interface_ref" % (self.xmlns))
             interface.attrib["component_id"] = i
 
-    def link(self, link):
-        self.add_link(self.rspec, link)
+    def link(self, link, inner_call=True):
+        self.add_link(self.rspec, link, inner_call)

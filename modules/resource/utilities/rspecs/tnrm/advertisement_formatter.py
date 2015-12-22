@@ -24,13 +24,13 @@ class TNRMv3AdvertisementFormatter(FormatterBase):
         self.__sv = sharedvlan
         self.__proto = protogeni
 
-    def add_node(self, rspec, node):
+    def add_node(self, rspec, node, inner_call=True):
         n = etree.SubElement(rspec, "{%s}node" % (self.xmlns))
         n.attrib["component_id"] = node.get("component_id")
         n.attrib["component_manager_id"] = node.get("component_manager_id")
         n.attrib["exclusive"] = node.get("exclusive")
 
-        if node.get("component_manager_uuid") is not None:
+        if inner_call and node.get("component_manager_uuid") is not None:
             n.attrib["{%s}component_manager_uuid" % (self.__proto)] =\
                 node.get("component_manager_uuid")
 
@@ -52,14 +52,14 @@ class TNRMv3AdvertisementFormatter(FormatterBase):
                 if v.get("description") is not None:
                     available.attrib["description"] = v.get("description")
 
-    def node(self, node):
-        self.add_node(self.rspec, node)
+    def node(self, node, inner_call=True):
+        self.add_node(self.rspec, node, inner_call)
 
-    def add_link(self, rspec, link):
+    def add_link(self, rspec, link, inner_call=True):
         l = etree.SubElement(rspec, "{%s}link" % (self.xmlns))
         l.attrib["component_id"] = link.get("component_id")
 
-        if link.get("component_manager_uuid") is not None:
+        if inner_call and link.get("component_manager_uuid") is not None:
             l.attrib["{%s}component_manager_uuid" % (self.__proto)] =\
                 link.get("component_manager_uuid")
 
@@ -76,5 +76,5 @@ class TNRMv3AdvertisementFormatter(FormatterBase):
             prop.attrib["dest_id"] = p.get("dest_id")
             prop.attrib["capacity"] = p.get("capacity")
 
-    def link(self, link):
-        self.add_link(self.rspec, link)
+    def link(self, link, inner_call=True):
+        self.add_link(self.rspec, link, inner_call)
