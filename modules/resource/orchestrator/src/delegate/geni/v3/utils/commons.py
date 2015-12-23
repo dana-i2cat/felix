@@ -75,7 +75,8 @@ class CommonUtils(object):
 
     @staticmethod
     def get_random_list_position(list_length):
-        return random.randint(0, int(list_length))
+        list_length = int(list_length)-1 if int(list_length) > 0 else 0
+        return random.randint(0, list_length)
 
     @staticmethod
     def get_random_range_value(start, end):
