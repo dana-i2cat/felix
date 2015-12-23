@@ -69,6 +69,22 @@ class seConfigurator:
     def set_concrete_port_status(self, port, vlan, status):
         self.configured_interfaces[port][vlan] = status
 
+    def get_port_mapping(self):
+        """Getting map of Felix urns and ports identifiers on SE"""
+        component_id_prefix = self.component_id_prefix
+        configured_interfaces = self.configured_interfaces
+        portMapping = {}
+
+        for iface in configured_interfaces:
+            vlans_on_iface = configured_interfaces[iface]
+            for vlan in vlans_on_iface:
+                current_vlan_status = vlans_on_iface[vlan]
+                available_iface = component_id_prefix + '+datapath+' + self.dpid + "_" + iface
+                portMapping[available_iface] = iface
+
+        return portMapping
+
+
     def check_available_resources(self, resources):
 
         # get data from db - TODO: refactor into function

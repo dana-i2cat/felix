@@ -1,10 +1,14 @@
 from delegate.geni.v3.rspecs.tnrm.request_parser import TNRMv3RequestParser
 from delegate.geni.v3.rspecs.commons_se import SELink
+from delegate.geni.v3.rspecs.commons_tn import Node, Interface
+import delegate.geni.v3.se_static_links_manager as SEStaticLinkManager
 
 
 class SERMv3RequestParser(TNRMv3RequestParser):
     def __init__(self, from_file=None, from_string=None):
         super(SERMv3RequestParser, self).__init__(from_file, from_string)
+        self.__sv = self.rspec.nsmap.get('sharedvlan')
+        self.SEStaticLinkManager = SEStaticLinkManager.StaticLinkVlanManager()
 
     def links(self):
         links_ = []
@@ -31,6 +35,35 @@ class SERMv3RequestParser(TNRMv3RequestParser):
             links_.append(l_.serialize())
 
         return links_
+
+    def nodes(self):
+        nodes_ = []
+        for n in self.rspec.findall(".//{%s}node" % (self.none)):
+            s_ = None
+            sliver_ = n.find("{%s}sliver_type" % (self.none))
+            if sliver_ is not None:
+                s_ = sliver_.attrib.get("name")
+
+            n_ = Node(n.attrib.get("client_id"),
+                      n.attrib.get("component_manager_id"),
+                      n.attrib.get("exclusive"), s_)
+
+            for i in n.iterfind("{%s}interface" % (self.none)):
+                i_ = Interface(i.attrib.get("client_id"))
+                for sv in i.iterfind("{%s}link_shared_vlan" % (self.__sv)):
+                    if sv.attrib.get("vlantag") == "0":
+                        staticPort = i.attrib.get("client_id").split("_")[-1]
+                        staticPortVlan = self.SEStaticLinkManager.chooseVlan(staticPort)
+                        i_.add_vlan(staticPortVlan,
+                                    sv.attrib.get("name"))
+                    else:
+                        i_.add_vlan(sv.attrib.get("vlantag"),
+                                    sv.attrib.get("name"))
+                n_.add_interface(i_.serialize())
+
+            nodes_.append(n_.serialize())
+
+        return nodes_
 
     def getVlanPairs(self):
         try:
