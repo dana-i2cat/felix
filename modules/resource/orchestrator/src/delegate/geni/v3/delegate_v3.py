@@ -224,7 +224,8 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 dpid_port_ids = SDNUtils().find_dpid_port_identifiers(
                     req_rspec.of_groups(), req_rspec.of_matches())
                 logger.debug("DPIDs=%s" % (dpid_port_ids,))
-                paths = TNUtils.find_interdomain_paths_from_tn_links(req_rspec.tn_links())
+                #paths = TNUtils.find_interdomain_paths_from_tn_links(req_rspec.tn_links())
+                paths = TNUtils.find_interdomain_paths_from_tn_links_and_dpids(req_rspec.tn_links(), dpid_port_ids)
                 items, se_constraints = SDNUtils().analyze_mapped_path(dpid_port_ids, paths)
                 extend_groups.extend(items)
             logger.warning("ReqRSpec must be extended with SDN-groups: %s" %

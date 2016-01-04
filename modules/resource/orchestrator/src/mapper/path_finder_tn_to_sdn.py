@@ -21,6 +21,7 @@ class PathFinderTNtoSDN(object):
         # Filters to match against required switches
         self.src_of_cids = kwargs.get("src_of_switch_cids", [])
         self.dst_of_cids = kwargs.get("dst_of_switch_cids", [])
+        self.of_cids_check_by_auth = kwargs.get("of_switch_cids_check_by_auth", False)
         # Dummy list to reduce lines of code
         self.src_dst_values = [ "src", "dst" ]
         # Nodes and links from database
@@ -203,6 +204,8 @@ class PathFinderTNtoSDN(object):
                    mapping[src_dst_value]["tn"] = self.format_verify_tn_interface(mapping[src_dst_value]["tn"])
         # Remove paths where either source or destination are invalid
         self.mapping_tn_se_of = FilterUtils.prune_invalid_paths(self.mapping_tn_se_of)
+        self.mapping_tn_se_of = FilterUtils.prune_unlinked_dpids(self.mapping_tn_se_of, self.src_of_cids, \
+            self.dst_of_cids, self.of_cids_check_by_auth)
         return self.mapping_tn_se_of
 
     def find_paths(self):
@@ -221,22 +224,29 @@ if __name__ == "__main__":
         src_name = sys.argv[1]
         dst_name = sys.argv[2]
     else:
-        sys.exit(error_help)
+#        src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:pionier.net.pl:2013:topology:felix-ge-1-0-3"
+#        dst_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp1"
+        src_name = "psnc"
+        dst_name = "aist"
+#        sys.exit(error_help)
     # Link type is optional
     if len(sys.argv) >= 4:
         link_type = sys.argv[3]
     else:
+#        link_type = "nsi"
         link_type = ""
 
-#    link_type = "nsi"
-#    src_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:pionier.net.pl:2013:topology:felix-ge-1-0-3"
-#    dst_name = "urn:publicid:IDN+fms:aist:tnrm+stp+urn:ogf:network:jgn-x.jp:2013:topology:bi-felix-kddi-stp1"
-#    src_of_switch_cids = [ "urn:publicid:IDN+openflow:ocf:psnc:ofam+datapath+00:00:54:e0:32:cc:a4:c0_11", "urn:publicid:IDN+openflow:ocf:psnc:ofam+datapath+00:00:08:81:f4:88:f5:b0_9" ]
-#    dst_of_switch_cids = [ "urn:publicid:IDN+openflow:ocf:kddi:ofam+datapath+00:00:00:25:5c:e6:4f:07_2", "urn:publicid:IDN+openflow:ocf:kddi:ofam+datapath+00:00:00:25:5c:e6:4f:07_3" ]    
+#    src_of_switch_cids = [ "i2cat" ]
+#    dst_of_switch_cids = [ "aist" ]
+    src_of_switch_cids = ['urn:publicid:IDN+openflow:ocf:psnc:ofam+datapath+00:00:08:81:f4:88:f5:b0_13', 'urn:publicid:IDN+openflow:ocf:psnc:ofam+datapath+00:00:08:81:f4:88:f5:b0_17']
+    dst_of_switch_cids = ['urn:publicid:IDN+openflow:ocf:aist:ofam+datapath+00:00:00:00:00:00:00:01_3', 'urn:publicid:IDN+openflow:ocf:aist:ofam+datapath+00:00:00:00:00:00:00:01_5']
 
+    # Note: restrictions (src_of_switch_cids, dst_of_switch_cids)
+    # only to be explicitly passed (otherwise it will probably fail)
     optional = {
 #        "src_of_switch_cids": src_of_switch_cids,
 #        "dst_of_switch_cids": dst_of_switch_cids,
+        "of_switch_cids_check_by_auth": True,
         "link_type": link_type,
     }
     path_finder_tn_sdn = PathFinderTNtoSDN(src_name, dst_name, **optional)
