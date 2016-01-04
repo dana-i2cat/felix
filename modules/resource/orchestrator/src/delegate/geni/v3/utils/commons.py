@@ -85,6 +85,22 @@ class CommonUtils(object):
         return rnd_range[rnd_idx]
 
     @staticmethod
+    def process_range_and_set_values(values):
+        new_values = []
+        try:
+            values_ranges = values.split(",")
+            logger.debug("Parsing list of ranges of VLANs: %s" % values_ranges)
+            values_ranges = [ r.split("-") for r in values_ranges ]
+            for value_range in values_ranges:
+                if len(value_range) == 2:
+                    value_range = xrange(int(value_range[0]), int(value_range[1])+1)
+                new_values.extend(value_range)
+            new_values = map(lambda x: int(x), new_values)
+        except Exception as e:
+            logger.warning("Could not generate range of available values. Details: %s" % e)
+        return new_values
+
+    @staticmethod
     def fetch_user_name_from_geni_users(geni_users):
         """
         Given the GENI 'geni_users' structure, retrieves the proper

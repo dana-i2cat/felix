@@ -9,6 +9,7 @@ class URNUtils:
     """
     ## Dictionaries
     FELIX_ORGS = AllowedOrganisations.get_organisations_type()
+    FELIX_ORGS_ALIAS = AllowedOrganisations.get_organisations_type_with_alias()
 
 #    @staticmethod
 #    def get_authority_from_urn(urn):
@@ -37,6 +38,7 @@ class URNUtils:
 
     @staticmethod
     # Expects URN of "authority" type, not any URN
+    #  e.g. urn:publicid:IDN+openflow:ocf:i2cat:vtam+authority+cm
     def get_felix_authority_from_urn(urn):
         authority = ""
         hrn, hrn_type = urn_to_hrn(urn)
@@ -46,6 +48,31 @@ class URNUtils:
         for hrn_element in hrn_list:
             if hrn_element in URNUtils.FELIX_ORGS:
                 authority = hrn_element
+                break
+        # URN may not follow the standard format...
+        if len(authority) == 0:
+            try:
+                URNUtils.get_authority_from_urn(urn)
+            except:
+                pass
+        return authority
+
+
+    @staticmethod
+    # Expects URN of OGF "authority" type
+    #   e.g. urn:ogf:network:i2cat.net:2015:gre:felix
+    def get_felix_authority_from_ogf_urn(urn):
+        authority = ""
+        ogf_prefix = "urn:ogf:network:"
+        ogf_idx = urn.find(ogf_prefix)
+        if ogf_idx >= 0:
+            urn = urn[ogf_idx:]
+        auth = urn.replace(ogf_prefix, "")
+        hrn_list = auth.split(":")
+        for org in URNUtils.FELIX_ORGS_ALIAS:
+            for hrn_element in hrn_list:
+                if org in hrn_element:
+                    authority = AllowedOrganisations.find_organisation_by_alias(org)
                 break
         # URN may not follow the standard format...
         if len(authority) == 0:

@@ -1,3 +1,4 @@
+from core.utils.urns import URNUtils
 from mapper.utils.format import PathFinderTNtoSDNFormatUtils
 
 class PathFinderTNtoSDNFilterUtils(object):
@@ -158,6 +159,39 @@ class PathFinderTNtoSDNFilterUtils(object):
         if len(tn_interfaces) == 2:
             return True
         return False
+
+    @staticmethod
+    def prune_unlinked_dpids(mapping_path_structure, dpids_src_list, dpids_dst_list, check_by_auth=False):
+        """
+        Prunes those paths that do not conform to the passed SRC and DST DPID list.
+        That is, the resulting paths must contain at least all the required SRC and DST DPIDs.
+
+        @param check_by_auth when True, checks if the path contains a DPID with the required authority
+                             when False, looks for exact DPIDs on the path
+        """
+        new_mapping_path_structure = []
+        for idx, mapping_path_element in enumerate(mapping_path_structure):
+            # Source sets
+            src_dpids_avail = set([ x["sdn"] for x in mapping_path_element["src"]["links"] ])
+            # Destination sets
+            dst_dpids_avail = set([ x["sdn"] for x in mapping_path_element["dst"]["links"] ])
+            if check_by_auth:
+                src_dpids_auth_avail = set(URNUtils.get_felix_authority_from_urn(x) for x in src_dpids_avail)
+                src_dpids_auth_req = set(URNUtils.get_felix_authority_from_urn(x) for x in dpids_src_list)
+                dst_dpids_auth_avail = set(URNUtils.get_felix_authority_from_urn(x) for x in dst_dpids_avail)
+                dst_dpids_auth_req = set(URNUtils.get_felix_authority_from_urn(x) for x in dpids_dst_list)
+                src_dpids_auth_match = src_dpids_auth_avail.intersection(src_dpids_auth_req)
+                dst_dpids_auth_match = dst_dpids_auth_avail.intersection(dst_dpids_auth_req)
+                # Loose check -> the authorities of the requested DPIDs must match
+                full_match = len(src_dpids_auth_match) == len(src_dpids_auth_req) and len(dst_dpids_auth_match) == len(dst_dpids_auth_req)
+            else:
+                src_dpids_match = src_dpids_avail.intersection(dpids_src_list)
+                dst_dpids_match = dst_dpids_avail.intersection(dpids_dst_list)
+                # Tight check -> all requested DPIDs must be present (i.e. intersected with the available DPIDs)
+                full_match = len(src_dpids_match) == len(dpids_src_list) and len(dst_dpids_match) == len(dpids_dst_list)
+            if full_match:
+                new_mapping_path_structure.append(mapping_path_element)
+        return new_mapping_path_structure
 
     @staticmethod
     def prune_invalid_paths(mapping_path_structure):

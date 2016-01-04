@@ -12,10 +12,12 @@ from rspecs.commons_tn import generate_unique_link_id
 from rspecs.tnrm.request_formatter import TNRMv3RequestFormatter
 
 from core.config import ConfParser
+from core.utils.urns import URNUtils
 import ast
 import core
 logger = core.log.getLogger("tn-utils")
 import re
+
 
 class TNUtils(CommonUtils):
     def __init__(self):
@@ -213,7 +215,7 @@ class TNUtils(CommonUtils):
         return (manifests, slivers, db_slivers, se_tn_info)
 
     @staticmethod
-    def find_stps_from_links(links_in):
+    def find_stps_from_tn_links(links_in):
         ret = []
         # NOTE: "nsi" by default, but later on examined from CIDs URNs
         link_type = "nsi"
@@ -230,7 +232,7 @@ class TNUtils(CommonUtils):
         return ret
 
     @staticmethod
-    def find_path_stps(src_stp, dst_stp, link_type):
+    def find_path_stps(src_stp, dst_stp, link_type, options):
         # If STPs involved in the request use consist of heterogeneous
         # types (e.g. NSI and GRE), warn user and raise exception
         stps_gre = TNUtils.determine_stp_gre([src_stp, dst_stp])
@@ -238,45 +240,57 @@ class TNUtils(CommonUtils):
             e = "Mapper SDN-SE-TN: attempting to connect 2 STPs"
             e += " of different type (e.g. GRE and NSI)"
             raise geni_ex.GENIv3GeneralError(e)
-        path_finder_opt = {"link_type": link_type,}
-        path_finder_tn_sdn = PathFinderTNtoSDN(src_stp, dst_stp, **path_finder_opt)
+        if "link_type" not in options:
+            options["link_type"] = link_type
+        path_finder_tn_sdn = PathFinderTNtoSDN(src_stp, dst_stp, **options)
         paths = path_finder_tn_sdn.find_paths()
-        logger.debug("Find PATH STPs=%s" % (paths,))
+        if len(paths) == 0:
+            e = "Mapper SDN-SE-TN: cannot map inter-domain"
+            e += " links for STPs provided. Possible causes:"
+            e += " STPs cannot be connected or are located"
+            e += " in the same island"
+            raise geni_ex.GENIv3GeneralError(e)
+        logger.debug("Found proper inter-domain paths=%s" % (paths,))
         return paths
 
     @staticmethod
-    def find_interdomain_paths_from_tn_links(tn_links):
-        paths = []
-        stps = TNUtils.find_stps_from_links(tn_links)
-        logger.debug("STPs=%s" % (stps,))
+    def find_interdomain_paths_from_stps_and_dpids(stp, dpid_constraints):
+        # If STPs involved in the request use heterogeneous types for a given
+        # connection (e.g. NSI and GRE), warn user and raise exception
+        stps_gre = TNUtils.determine_stp_gre([stp.get("src_name"), stp.get("dst_name")])
+        if any(stps_gre) and not all(stps_gre):
+            e = "Mapper SDN-SE-TN: attempting to connect 2 STPs"
+            e += " of different type (e.g. GRE and NSI)"
+            raise geni_ex.GENIv3GeneralError(e)
 
+        pathfinder_options = {}
+        src_auth = URNUtils.get_felix_authority_from_ogf_urn(stp.get("src_name"))
+        dst_auth = URNUtils.get_felix_authority_from_ogf_urn(stp.get("dst_name"))
+
+        # Perform a loose match, based on authorities of DPIDs
+        # (not on exact DPIDs; as those should be automatically added)
+        pathfinder_options["of_switch_cids_check_by_auth"] = True
+        pathfinder_options["link_type"] = stp.get("link_type")
+        for dpid_constraint in dpid_constraints:
+            dpid_constraint_auth = set(URNUtils.get_felix_authority_from_urn(x) for x in dpid_constraint["ids"])
+            # If authority of contraints (list of DPIDs) matches with those of STPs, continue
+            if dpid_constraint_auth == set([src_auth]):
+                pathfinder_options["src_of_switch_cids"] = dpid_constraint["ids"]
+            elif dpid_constraint_auth == set([dst_auth]):
+                pathfinder_options["dst_of_switch_cids"] = dpid_constraint["ids"]
+
+        paths = TNUtils.find_path_stps(stp.get("src_name"), stp.get("dst_name"), \
+            stp.get("link_type"), pathfinder_options)
+        return paths
+
+    @staticmethod
+    def find_interdomain_paths_from_tn_links_and_dpids(tn_links, dpid_constraints=[]):
+        paths = []
+        stps = TNUtils.find_stps_from_tn_links(tn_links)
+        logger.debug("STPs=%s" % (stps,))
         for stp in stps:
-            # If STPs involved in the request use
-            # heterogeneous types for a given
-            # connection (e.g. NSI and GRE), warn user and raise exception
-            stps_gre = TNUtils.determine_stp_gre(
-                [stp.get("src_name"), stp.get("dst_name")])
-            if any(stps_gre) and not all(stps_gre):
-                e = "Mapper SDN-SE-TN: attempting to connect 2 STPs"
-                e += " of different type (e.g. GRE and NSI)"
-                raise geni_ex.GENIv3GeneralError(e)
-            path_finder_tn_sdn = PathFinderTNtoSDN(
-                stp.get("src_name"), stp.get("dst_name"))
-            paths = path_finder_tn_sdn.find_paths()
-            # Mapper: raise an exception when a path *between
-            # different authorities/islands* cannot be found
-            #  src_auth = URNUtils.get_felix_authority_from_urn(
-            #    stp.get("src_name"))
-            #  dst_auth = URNUtils.get_felix_authority_from_urn(
-            #    stp.get("dst_name"))
-            #  if src_auth != dst_auth and len(paths) == 0:
-            if len(paths) == 0:
-                e = "Mapper SDN-SE-TN: cannot map inter-domain"
-                e += " links for STPs provided. Possible causes:"
-                e += " STPs cannot be connected or are located"
-                e += " in the same island"
-                raise geni_ex.GENIv3GeneralError(e)
-        logger.debug("Found proper inter-domain paths=%s" % (paths,))
+            path = TNUtils.find_interdomain_paths_from_stps_and_dpids(stp, dpid_constraints)
+            paths.extend(path)
         return paths
 
     @staticmethod
@@ -332,21 +346,27 @@ class TNUtils(CommonUtils):
 
     @staticmethod
     def fill_name_tag_in_tn_iface(node, dom):
+        """
+        Obtain a random VLAN from the given list of ranges of available VLANs obtained from TNRM.
+            In case TNRM provides the full list only, the local domain will be iteratively 
+            examined in order to minimise possible collisions of VLANs
+        """
         new_node = {}
         num_iter = 0
         vlan = ""
         for k in node.keys():
             if k == "vlan":
-                vlans = node[k][0]["description"].split("-")
+                vlans = CommonUtils.process_range_and_set_values(node[k][0]["description"])
                 is_contained = True
-                max_iter = int(vlans[1])-int(vlans[0])+1
+                max_iter = int(len(vlans)-1)
                 # Search for suitable (available VLANs) until found or "all" the 
                 # range (having in mind the randomness) has been examined
-                while is_contained or num_iter >= max_iter:
-                    vlan = str(CommonUtils.get_random_range_value(vlans[0], vlans[1]))
+                while is_contained and num_iter <= max_iter:
+                    idx_vlan = CommonUtils.get_random_list_position(max_iter)
+                    vlan = vlans[idx_vlan]
                     is_contained, intersect = TNUtils.check_vlan_is_in_use(vlan)
-                    num_iter+=1
-                new_node[k] = [{"tag": vlan, "name": "%s+vlan" % dom}]
+                    num_iter += 1
+                new_node[k] = [{"tag": str(vlan), "name": "%s+vlan" % dom}]
             else:
                 new_node[k] = node[k]
         return new_node
@@ -376,17 +396,17 @@ class TNUtils(CommonUtils):
         request RSpec.
         """
         tn_ref_node = db_sync_manager.get_tn_nodes()[0]
-        link_cid = tn_ref_node.get("component_id", "")
         stp_reg = "+stp"
+        link_cid = tn_ref_node.get("component_id", "")
         link_prefix = link_cid.split(stp_reg)[0]
-        link_clid = generate_unique_link_id(link_cid, src_dom, dst_dom)
 
         src_dom_ogf = src_dom[src_dom.find(stp_reg)+1+len(stp_reg):]
         dst_dom_ogf = dst_dom[dst_dom.find(stp_reg)+1+len(stp_reg):]
-        link_clid = "%s+link+%s+%s?vlan=%s-%s?vlan=%s" % (link_prefix, link_cid, src_dom_ogf, src_vlan, dst_dom_ogf, dst_vlan)
-        logger.debug("Chosen TN inter-domain link: %s" % link_clid)
+        link_clid = generate_unique_link_id(link_cid, src_dom, dst_dom)
+        link_clid_full = "%s+link+%s?vlan=%s-%s?vlan=%s" % (link_prefix, src_dom_ogf, src_vlan, dst_dom_ogf, dst_vlan)
+        logger.debug("Chosen TN inter-domain link: %s" % link_clid_full)
 
-        link = {"component_id": link_clid,
+        link = {"component_id": link_clid_full,
             "component_manager_name": tn_ref_node.get("component_manager_id", ""),
             "interface_ref": [{"component_id": src_dom}, {"component_id": dst_dom,}],
             "property": [{"capacity": "100", "source_id": src_dom, "dest_id": dst_dom},
@@ -404,32 +424,27 @@ class TNUtils(CommonUtils):
         links = []
         logger.debug("Identifying TN STPs from Virtual Links and SDN resources")
         logger.debug("Request STPs=%s" % str(request_stps))
-        for stp in request_stps:
-            paths = TNUtils.find_path_stps(stp.get("src_name"), stp.get("dst_name"), \
-                stp.get("link_type"))
-            # Mapper: raise an exception when a path *between
-            # different authorities/islands* cannot be found
-            if len(paths) == 0:
-                e = "Mapper SDN-SE-TN: cannot map inter-domain links for STPs provided. Possible"
-                e += " causes: STPs have invalid type or are located in the same island"
-                raise geni_ex.GENIv3GeneralError(e)
 
+        for stp in request_stps:
+            paths = TNUtils.find_interdomain_paths_from_stps_and_dpids(stp, dpid_port_ids)
             # A path is chosen from the mapping taking into account the
             # restrictions defined implicitly by the DPIDs within the flowspace
             # Note: an empty list will be returned if none fits
-            path = sdn_utils.find_path_containing_all(dpid_port_ids, paths)
+            #path = sdn_utils.find_path_containing_all(dpid_port_ids, paths)
             # Thus, path is either the previously returned (or all, if empty)
-            path = path or paths
-            # Whatever the search space (i.e. the path) is, this is fed to the
-            # methods that identify how to extend the SDN flowspace to be able
-            # to bind the SDN domain with the stitching (virtual) domain
-            items, links_constraints = sdn_utils.analyze_mapped_path(dpid_port_ids, path)
+            #path = path or paths
 
             # Getting the only element of list (path) or random element (paths)
             rnd_path_idx = CommonUtils.get_random_list_position(len(paths))
-            path = path[0] if len(path) == 1 else paths[rnd_path_idx]
-            src_dom, dst_dom = path["src"]["tn"], path["dst"]["tn"]
+            path = paths[0] if len(paths) == 1 else paths[rnd_path_idx]
 
+            # Whatever the search space (i.e. the path) is, this is fed to the
+            # methods that identify how to extend the SDN flowspace to be able
+            # to bind the SDN domain with the stitching (virtual) domain
+            items, links_constraints = sdn_utils.analyze_mapped_path(dpid_port_ids, [path])
+
+
+            src_dom, dst_dom = path["src"]["tn"], path["dst"]["tn"]
             node = TNUtils.generate_tn_node(src_dom, dst_dom)
             src_vlan = node["interfaces"][0]["vlan"][0]["tag"]
             dst_vlan = node["interfaces"][1]["vlan"][0]["tag"]
@@ -438,6 +453,7 @@ class TNUtils(CommonUtils):
             nodes.append(node)
             link = TNUtils.generate_tn_link(src_dom, src_vlan, dst_dom, dst_vlan)
             links.append(link)
+        logger.debug("Implicit retrieval of TN STPs has concluded: %s" % str(links))
         return (nodes, links)
 
     @staticmethod
@@ -450,6 +466,7 @@ class TNUtils(CommonUtils):
         # Note: check if we had an explicit/direct TN allocation
         # (in this case just skip the mapper)
         request_stps = []
+
         # Retrieve virtual links
         if CommonUtils.is_virtual_links(req_rspec):
             vlinks = req_rspec.vl_links()
