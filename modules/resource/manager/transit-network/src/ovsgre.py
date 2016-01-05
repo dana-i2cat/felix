@@ -16,10 +16,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import amsoil.core.log
-logger = amsoil.core.log.getLogger('TN-RM:ovsgre')
+# import amsoil.core.log
+# logger = amsoil.core.log.getLogger('TN-RM:ovsgre')
 # import log
 # logger = log.getLogger('tnrm:ovsgre')
+from tn_rm_delegate import logger
 logger.info("start proxy from TNRM to OVSGRE.")
 
 from tn_rm_exceptions import ManagerException, ParamException
@@ -34,7 +35,7 @@ dict_ovsManager = {}
 dict_resvParameter = {}
 dict_vlanManager = {}
 dict_swManager = {}
-tvlan_min = 2000
+tvlan_min = 1500
 tvlan_max = 3000
 
 dev_min = 1
@@ -130,8 +131,8 @@ class vlanManager:
         self.vlan_pos = -1
 
         if self.isTunnel:
-            self.vlan_min = 1000
-            self.vlan_max = 2000
+            self.vlan_min = tvlan_min
+            self.vlan_max = tvlan_max
             self.vlan_pos = self.vlan_min
 
     def search (self):
@@ -195,9 +196,11 @@ class resvParameter:
         self.d_stp = self.resv.path.dep.stp
         self.t_stp = getKey(self.s_stp, self.d_stp)
 
-        self.s_vlan = self.resv.path.sep.vlantag
-        self.d_vlan = self.resv.path.dep.vlantag
-        self.t_vlan = None
+        #self.s_vlan = self.resv.path.sep.vlantag
+        #self.d_vlan = self.resv.path.dep.vlantag
+        self.s_vlan = self.resv.src_vlan
+        self.d_vlan = self.resv.dst_vlan
+        self.t_vlan = self.resv.trans_vlan
         self.s_if = self.resv.src_if
         self.d_if = self.resv.dst_if
 
@@ -228,7 +231,7 @@ class resvParameter:
             raise ex
 
         try:
-            self.t_vlan = self.t_vman.allocate()
+            self.t_vlan = self.t_vman.allocate(self.t_vlan)
         except Exception as ex:
             self.s_vman.free(self.s_vlan)
             self.d_vman.free(self.d_vlan)
@@ -401,6 +404,7 @@ class OvsManager:
         self.check_stp(resv)
 
         resv_id = uuid.uuid4()
+        logger.info("ovsManager:reserve: new resv_id=%s." % resv_id)
         
         if dict_resvParameter.has_key(resv_id):
             logger.error("Never here. Reservation id is duplicated(%s)." % (resv_id))
@@ -409,8 +413,11 @@ class OvsManager:
         resvp = resvParameter(self.ovs_id, resv)
 
         (s_vlan, d_vlan, t_vlan) = resvp.allocate()
+        resv.trans_vlan = t_vlan
+
         dict_resvParameter[resv_id] = resvp
         self.dict_isSetRule[resv_id] = False
+        logger.info("ovsManager:reserve: done. resv_id=%s" % (resv_id))
         return resv_id
 
     def modify (self, resv, end_time_sec):
@@ -566,11 +573,35 @@ class OvsManager:
 
         return True
 
+    def re_provision (self, resv):
+        # provison:nsiv2, poa geni_start
+        logger.info("ovsManager:re_provision has_key(%s)=%s" %
+                    (resv.resv_id, dict_resvParameter.has_key(resv.resv_id)))
+        if resv is None or not dict_resvParameter.has_key(resv.resv_id):
+            logger.info("ovsManager:re_provision: resv_id=%s" % (resv.resv_id))
+            for key in dict_resvParameter:
+                logger.info("ovsManager:re_provision: resvp=%s" % (key))
+            raise ManagerException("OvsManager:re_provision", "The reservation is null.")
+
+        resvp = dict_resvParameter[resv.resv_id]
+        if resvp is None:
+            raise ManagerException("OvsManager:re_privision", "The ResvParameter is null.")
+
+        self.isSetup = True
+        self.dict_used[resv.resv_id] = resv.resv_id
+        self.dict_isSetRule[resv.resv_id] = True
+
+        logger.info("ovsManager:re_provision: done. resv_id=%s" % (resv.resv_id))
+        return resv.resv_id
+
     def provision (self, resv):
         # provison:nsiv2, poa geni_start
         if resv is None or not dict_resvParameter.has_key(resv.resv_id):
+            logger.info("ovsManager:provision: resv_id=%s" % (resv.resv_id))
+            for key in dict_resvParameter:
+                logger.info("ovsManager:provision: resvp=%s" % (key))
             raise ManagerException("OvsManager:provision", "The reservation is null.")
-
+        
         resvp = dict_resvParameter[resv.resv_id]
         if resvp is None:
             raise ManagerException("OvsManager:privision", "The ResvParameter is null.")
@@ -720,11 +751,14 @@ class OvsManager:
 
     def status (self, resv):
         if resv is None or not dict_resvParameter.has_key(resv.resv_id):
-            raise ManagerException("OvsManager:terminate", "The reservation is null.")
+            logger.info("ovsManager:status: resv_id=%s" % (resv.resv_id))
+            for key in dict_resvParameter:
+                logger.info("ovsManager:status: resvp=%s" % (key))
+            raise ManagerException("OvsManager:status", "The reservation is null.")
 
         resvp = dict_resvParameter[resv.resv_id]
         if resvp is None:
-            raise ManagerException("OvsManager:terminate", "The ResvParameter is null.")
+            raise ManagerException("OvsManager:status", "The ResvParameter is null.")
 
         rc = self.check_rule(self.src_if, resvp.s_vlan, resvp.t_vlan)
         if not rc:
@@ -740,6 +774,16 @@ class OvsManager:
             # self.dict_isSetRule[resv.resv_id] = False
             return False
         return True
+
+    def swap_id (self, resv, new_id, old_id):
+        if resv is None:
+            raise ManagerException("OvsManager:swap_id", "The reservation is null.")
+        if not dict_resvParameter.has_key(resv.resv_id):
+            resvp = dict_resvParameter[new_id]
+            del dict_resvParameter[new_id]
+            dict_resvParameter[old_id] = resvp
+
+        return resv.resv_id
 
 class ovs_proxy (Proxy):
     def reserve (self, resv):
@@ -758,6 +802,11 @@ class ovs_proxy (Proxy):
         resv_id = ovsManager.provision(resv)
         return resv_id
 
+    def re_provision (self, resv):
+        ovsManager = get_ovsManager(resv.src_if, resv.dst_if)
+        resv_id = ovsManager.re_provision(resv)
+        return resv_id
+
     def release (self, resv):
         ovsManager = get_ovsManager(resv.src_if, resv.dst_if)
         resv_id = ovsManager.release(resv)
@@ -772,3 +821,9 @@ class ovs_proxy (Proxy):
         ovsManager = get_ovsManager(resv.src_if, resv.dst_if)
         resv_id = ovsManager.status(resv)
         return resv_id
+
+    def swap_id(self, resv, new_id, old_id):
+        ovsManager = get_ovsManager(resv.src_if, resv.dst_if)
+        resv_id = ovsManager.swap_id(resv, new_id, old_id)
+        return resv_id
+

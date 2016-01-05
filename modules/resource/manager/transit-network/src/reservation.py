@@ -15,10 +15,14 @@
 import tn_rm_exceptions as tnex
 import sys
 import log
-import re
 # import amsoil.core.log
 # logger = amsoil.core.log.getLogger('TN-RM:reservation')
+
+import re
+
+#from tn_rm_delegate import logger
 logger = log.getLogger('tnrm:reservation')
+logger.info("reservation: start")
 
 from datetime import datetime, timedelta, time
 from xml.etree.ElementTree import *
@@ -26,9 +30,12 @@ from config import Config, Node, Interface
 
 rspec_base = "{http://www.geni.net/resources/rspec/3}"
 sharedvlan_base = "{http://www.geni.net/resources/rspec/ext/shared-vlan/1}"
+stitch_base = "{http://hpn.east.isi.edu/rspec/ext/stitch/0.1/}"
 
-# manifest_rspec = """<?xml version="1.1" encoding="UTF-8"?>
-manifest_rspec = """
+stitch_max = 16
+
+#manifest_rspec = """
+manifest_rspec = """<?xml version="1.1" encoding="UTF-8"?>
 <rspec type="manifest"
        xmlns="http://www.geni.net/resources/rspec/3"
        xmlns:sharedvlan="http://www.geni.net/resources/rspec/ext/shared-vlan/1"
@@ -41,20 +48,30 @@ manifest_rspec = """
 
 """
 close_rspec = '</rspec>\n'
+ospace6 = '      '
 ospace4 = '    '
-ospace4 = '  '
+ospace2 = '  '
 
 bond_str = "--x--"
 config = None
-pmatch = re.compile("\+([^+?]+)\?vlan=([\d]+)-([^+?]+)\?vlan=([\d]+)")
+#pmatch = re.compile("\+([^+?]+)\?vlan=([\d]+)-([^+?]+)\?vlan=([\d]+)")
+pmatch = re.compile("\+([^+?]+)\?vlan=([\d\-\,]+)-([^+?]+)\?vlan=([\d\-\,]+)")
+
 stp_head = "urn:publicid:IDN+fms:aist:tnrm+stp+"
 
 mlink = re.compile("([\s]*<[^>]+>)")
 islink = re.compile("([\s]*<[\s]*link[^>]+)>")
 isvlan = re.compile("vlan=([\d]+)")
+#cid = re.compile(r'([A-Za-z0-9\+:]*\+)(stp$)')
+cid = re.compile(r'([A-Za-z0-9\+:]*\+link)')
+
+
 
 from datetime import datetime, timedelta
 epoch = datetime.utcfromtimestamp(0)
+
+def create_manifest(body):
+    return manifest_rspec + body + "</rspec>\n"
 
 def unix_time_sec(dt):
     delta = dt - epoch
@@ -69,6 +86,7 @@ class Advertisement:
         self.advertisement = config.get_advertisement()
 
     def get_advertisement(self):
+        self.advertisement = config.get_advertisement()
         return self.advertisement
 
 class Request:
@@ -79,27 +97,44 @@ class Request:
         self.metrics = {}
         self.start_time = start_time
         self.end_time = end_time
-        self.manifest = re.sub('<rspec [^>]+>', manifest_rspec, request)
-        mlist = mlink.findall(self.manifest)
 
-        s = ""
-        for x in mlist:
-            y = islink.findall(x)
-            if len(y) == 1:
-                z = isvlan.findall(x)
-                if len(z) >= 1:
-                    s += "%s vlantag=\"%s\">" % (y[0], z[0])
+        if False:
+            self.manifest = re.sub('<rspec [^>]+>', manifest_rspec, request)
+            mlist = mlink.findall(self.manifest)
+
+            s = ""
+            for x in mlist:
+                y = islink.findall(x)
+                if len(y) == 1:
+                    z = isvlan.findall(x)
+                    if len(z) >= 1:
+                        s += "%s vlantag=\"%s\">" % (y[0], z[0])
+                    else:
+                        s += "%s" % (y[0])
                 else:
-                    s += "%s" % (y[0])
-            else:
-                s += "%s" % (x)
-        self.manifest = s
+                    s += "%s" % (x)
+
+        self.manifest = None
+        self.manifest_body = None
         
         self.urns = [] 
-        self.dict_paths = {}
+        # self.dict_paths = {}
         self.dict_vpaths = {}
         self.dict_reservations = {}
         # logger.debug("manifest=%s" % self.manifest)
+
+    def merge(self, req, urn):
+        self.urns.append(urn)
+        for oldpath in req.dict_vpaths.keys():
+            self.dict_vpaths[oldpath] = req.dict_vpaths[oldpath]
+            break;
+
+        for oldurn in req.urns:
+            self.dict_reservations[urn] = req.dict_reservations[oldurn]
+            break;
+
+        resv = self.dict_reservations[urn]
+        resv.urn = urn
 
     def parse_reservations(self):
         index = 0
@@ -256,18 +291,57 @@ class Request:
                 capacity = ipro.get("capacity")
                 # logger.debug("link property src=%s, dst=%s, bw=%s" % (ssep_name, ddep_name, capacity))
 
+                dict_hop = {}
+                dict_od = {}
+                eros = []
+                for stitch in ipro.findall(stitch_base + "path"):
+                    sid = stitch.get("id")
+                    # logger.debug("stitch id=%s" % sid)
+                    for hop in stitch.findall(stitch_base + "hop"):
+                        shop = hop.get("id")
+                        nhop = hop.find(stitch_base + "nextHop")
+                        # logger.debug("stitch nhop=%s" % nhop)
+                        if nhop is not None:
+                            nexthop = nhop.text
+                        else:
+                            nexthop = "0"
+                        # logger.debug("stitch hop=%s, next=%s" % (shop, nexthop))
+                        ero = hop.find(stitch_base + "link")
+                        eroid = ero.get("id")
+                        # logger.debug("stitch ero link=%s" % eroid)
+
+                        dict_hop[shop] = eroid
+                        dict_od[shop] = nexthop
+
+                    hops = 0
+                    nexthop = "1"
+                    eros = []
+                    while True:
+                        if dict_hop.has_key(nexthop):
+                            eros.append(dict_hop[nexthop])
+                            nexthop = dict_od[nexthop]
+                        else:
+                            break
+                        if hops > stitch_max:
+                            eros = []
+                            break
+
+                    logger.debug("eros=%s" % eros);
+
                 path = None
                 # pathkey = ssep_name + bond_str + ddep_name;
                 pathkey = "%s?vlan=%s%s%s?vlan=%s" % (ssep_name, ssep_vlan, bond_str, ddep_name, ddep_vlan)
                 if pathkey in self.dict_vpaths:
                     path = self.dict_vpaths[pathkey]
                     path.sd_bw = capacity
+                    path.sd_eros = eros
                 if path is None:
                     # pathkey = ddep_name + bond_str + ssep_name;
                     pathkey = "%s?vlan=%s%s%s?vlan=%s" % (ddep_name, ddep_vlan, bond_str, ssep_name, ssep_vlan)
                     if key in self.dict_vpaths:
                         path = self.dict_vpaths[pathkey]
                         path.ds_bw = capacity
+                        path.ds_eros = eros
                 
                 if path is None:
                     return (self, "This link property is not found in <node>. dest=%s?vlan=%s, src=%s?vlan=%s" %
@@ -283,18 +357,26 @@ class Request:
             reservation = Reservation(link_id, self.slice_urn, urn, pathkey, path, self.start_time, self.end_time)
             self.dict_reservations[urn] = reservation
 
-            if (reservation.check_vlan == False):
-                return (self, "This vlan can not be allocated, dest=vlan=%s, src=%s" %
+            if reservation.check_vlan == False:
+                return (self, "This vlan can not be allocated, dest=%s, src=%s" %
                         (ddep_vlan, ssep_vlan))
 
-            if (reservation.service is None):
+            if reservation.service is None:
                 return (self, "This service type can not be allocated, service type=%s, path=%s." 
                         % (reservation.service, path))
-                        
+
         return (self, None)
+
+    def set_manifest(self, body):
+        self.manifest_body = body
+        self.manifest = manifest_rspec + body + "</rspec>\n"
+        return self.manifest
 
     def get_manifest(self):
         return self.manifest
+
+    def get_manifest_body(self):
+        return self.manifest_body
 
     def __datetime2str(self, dt):
         return dt.strftime('%Y-%m-%d %H:%M:%S.%fZ')
@@ -314,7 +396,8 @@ class Request:
                     'geni_operational_status': r.ostatus,
                     'geni_expires': r.end_time,
                     'geni_allocation_status': r.astatus,
-                    'geni_sliver_urn': r.path.link_manager.node_id,
+                    # 'geni_sliver_urn': r.path.link_manager.node_id,
+                    'geni_sliver_urn': r.gid,
                     'geni_urn': r.slice_urn,
                     }
             else:
@@ -322,7 +405,8 @@ class Request:
                     'geni_operational_status': r.ostatus,
                     'geni_expires': r.end_time,
                     'geni_allocation_status': r.astatus,
-                    'geni_sliver_urn': r.path.link_manager.node_id,
+                    # 'geni_sliver_urn': r.path.link_manager.node_id,
+                    'geni_sliver_urn': r.gid,
                     'geni_urn': r.slice_urn,
                     'geni_error': r.error
                     }
@@ -352,20 +436,22 @@ class Request:
 
 class Reservation:
     def __init__(self, link_id, slice_urn, urn, pathkey, path, start_time, end_time):
-        self.gid = link_id
+        self.link_id = link_id
         self.slice_urn = slice_urn
         self.urn = urn
         self.pathkey = pathkey
         self.path = path
         self.start_time = start_time
         self.end_time = end_time
-        self.src_if = config.get_interface(path.sep.name)
-        self.src_check = self.src_if.check_vlan(path.sep.vlantag)
-        self.dst_if = config.get_interface(path.dep.name)
-        self.dst_check = self.dst_if.check_vlan(path.dep.vlantag)
+        self.src_if = config.get_interface(self.path.sep.name)
+        self.src_check = self.src_if.check_vlan(self.path.sep.vlantag)
+        logger.info("src check=%s" % self.src_check)
+        self.dst_if = config.get_interface(self.path.dep.name)
+        self.dst_check = self.dst_if.check_vlan(self.path.dep.vlantag)
+        logger.info("dst check=%s" % self.src_check)
 
         self.check_vlan = False
-        if (self.src_check == True and self.dst_check == True):
+        if self.src_check == True and self.dst_check == True:
             self.check_vlan = True
         self.service = self.path.service
 
@@ -373,8 +459,32 @@ class Reservation:
         self.astatus = None
         self.action = None
         self.error = None
+        self.keep_error = None
         self.resv_id = None
         self.eroEP = None
+
+        self.src_vlan = None
+        self.dst_vlan = None
+        self.trans_vlan = None
+
+        try:
+            self.setVlan()
+        except Exception as e:
+            logger.error("reservation:setVlan:ex=%s" % e)
+            self.error = "%s" % e
+
+        # logger.info("reservation:init:link_id(gid)=%s" % self.link_id)
+        y = cid.findall(self.link_id)
+        # logger.info("reservation:init:match y=%s" % y)
+
+        if len(y) != 1:
+            self.error = "error in request espec. <link client_id=...> format is bad" 
+        else:
+            self.link_cid = y[0]
+            self.gid = ("%s+%s?vlan=%s-%s?vlan=%s" % 
+                        (self.link_cid, self.src_if.felix_stp_id, self.src_vlan,
+                         self.dst_if.felix_stp_id, self.dst_vlan))
+        # logger.info("reservation:init:link_id(gid)=%s" % self.gid)
 
     def settime(self, start_time, end_time):
         if start_time != 0:
@@ -382,8 +492,91 @@ class Reservation:
         if end_time != 0:
             self.end_time = end_time
 
+    def setVlan(self):
+        if self.src_vlan is None:
+            try:
+                vman = self.src_if.vman
+                self.src_vlan = vman.getVlan(self.path.sep.vlantag)
+                logger.info("setVlan: src vlan=%s" % self.src_vlan)
+            except Exception as e:
+                ee = e
+
+        if self.dst_vlan is None:
+            try:
+                vman = self.dst_if.vman
+                self.dst_vlan = vman.getVlan(self.path.dep.vlantag)
+                logger.info("setVlan: dst vlan=%s" % self.dst_vlan)
+            except Exception as e:
+                vman = self.src_if.vman
+                vman.putVlan(self.src_vlan)
+                raise e
+        return
+
+    def freeVlan(self):
+        ee = None
+
+        if self.src_vlan is not None:
+            try:
+                vman = self.src_if.vman
+                vman.putVlan(self.src_vlan)
+                logger.info("freeVlan: src vlan=%s" % self.src_vlan)
+                self.src_if.vman = None
+            except Exception as e:
+                ee = e
+
+        if self.dst_vlan is None:
+            try:
+                vman = self.dst_if.vman
+                vman.putVlan(self.dst_vlan)
+                logger.info("freeVlan: dst vlan=%s" % self.dst_vlan)
+                self.dst_vlan = None
+            except Exception as e:
+                ee = e
+
+        if ee is not None:
+            raise ee
+        return
+
+    def get_manifest(self):
+        node  = ospace2 + ("<node client_id=\"%s\" component_manager_id=\"%s\">\n" %
+                          (self.path.node_manager.node_id,
+                           self.path.node_manager.manager_id))
+        node += ospace4 + ("<interface client_id=\"%s\">\n" % self.path.sep.name)
+        node += ospace6 + ("<sharedvlan:link_shared_vlan name=\"%s+vlan\" vlantag=\"%s\"/>\n" %
+                          (self.path.sep.name, self.src_vlan))
+        node += ospace4 + "</interface>\n"
+        node += ospace4 + ("<interface client_id=\"%s\">\n" % self.path.dep.name)
+        node += ospace6 + ("<sharedvlan:link_shared_vlan name=\"%s+vlan\" vlantag=\"%s\"/>\n" %
+                          (self.path.dep.name, self.dst_vlan))
+        node += ospace4 + "</interface>\n"
+        node += ospace2 + "</node>\n"
+
+        # link  = ospace2 + ("<link client_id=\"%s+%s?vlan=%s-%s?vlan=%s\" vlantag=\"%s\">\n" % 
+        #                  (self.link_id, self.path.sep.name, self.src_vlan,
+        #                   self.path.dep.name, self.dst_vlan, self.src_vlan))
+        link  = ospace2 + ("<link client_id=\"%s\" vlantag=\"%s\">\n" % 
+                          (self.gid, self.src_vlan))
+        link += ospace4 + ("<component_manager name=\"%s\"/>\n" %
+                          self.path.link_manager.manager_id)
+
+        link += ospace4 + ("<interface_ref client_id=\"%s\"/>\n" %
+                          self.path.sep.name)
+        link += ospace4 + ("<interface_ref client_id=\"%s\"/>\n" %
+                          self.path.dep.name)
+        link += ospace4 + ("<property capacity=\"%s\" dest_id=\"%s\" source_id=\"%s\">\n" %
+                          (self.path.ds_bw, self.path.dep.name, self.path.sep.name))
+        link += ospace4 + "</property>\n"
+        link += ospace4 + ("<property capacity=\"%s\" dest_id=\"%s\" source_id=\"%s\">\n" %
+                          (self.path.sd_bw, self.path.sep.name, self.path.dep.name))
+        link += ospace4 + "</property>\n"
+        link += ospace2 + "</link>\n"
+
+        self.manifest_node = node
+        self.manifest_link = link
+        return "%s%s" % (node, link)
+
     def __str__(self):
-        s = "Reservation: %s/%s,%s/vlan=%s/bw=%s, %s/vlan=%s/bw=%s" % (self.slice_urn, self.urn, self.path.sep.stp, self.path.sep.vlantag, self.path.sd_bw, self.path.dep.stp, self.path.dep.vlantag, self.path.ds_bw)
+        s = "Reservation: %s/%s,%s/vlan=%s/%s/bw=%s, %s/vlan=%s/%s/bw=%s" % (self.slice_urn, self.urn, self.path.sep.stp, self.path.sep.vlantag, self.src_vlan, self.path.sd_bw, self.path.dep.stp, self.path.dep.vlantag, self.dst_vlan, self.path.ds_bw)
 
         # start = datetime(1970, 1, 1) + timedelta(self.start_time/(3600*24), self.start_time%(3600*24))
         # end = datetime(1970, 1, 1) + timedelta(self.end_time/(3600*24), self.end_time%(3600*24))
@@ -428,7 +621,10 @@ class Path:
         self.link_manager = None
         self.sd_bw = None
         self.ds_bw = None
+        self.sd_ero = None
+        self.ds_ero = None
         self.service = None
+
 
         if (sep.service == "GRE" and dep.service == "GRE"):
             self.service = "GRE"
@@ -463,4 +659,3 @@ else:
     config = Config("/home/okazaki/AMsoil/tnrm/src/vendor/tnrm/config.xml")
     # config = Config("src/vendor/tnrm/config.xml")
     # r = Request("src/vendor/tnrm/request.xml")
-

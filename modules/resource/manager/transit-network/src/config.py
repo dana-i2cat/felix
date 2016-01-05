@@ -19,6 +19,12 @@
 
 from xml.etree.ElementTree import *
 from tn_rm_exceptions import ManagerException, ParamException, RspecException
+from vlanManager import *
+
+# from tn_rm_delegate import logger
+import log
+logger = log.getLogger('tnrm:config')
+logger.info("config: ready")
 
 isRead = False
 
@@ -64,11 +70,11 @@ class Config:
                 nsi_stp_id = ifs.get("nsi_stp_id")
                 # nsi_stp_id_in = ifs.get("nsi_stp_id_in")
                 # nsi_stp_id_out = ifs.get("nsi_stp_id_out")
-                vlan = ifs.get("vlan")
+                vlans = ifs.get("vlan")
                 capacity = ifs.get("capacity")
                 #
-                # cinterface = Interface(cnode, felix_domain_id, felix_stp_id, nsi_stp_id, nsi_stp_id_in, nsi_stp_id_out, vlan, capacity)
-                cinterface = Interface(cnode, felix_domain_id, felix_stp_id, nsi_stp_id, vlan, capacity)
+                # cinterface = Interface(cnode, felix_domain_id, felix_stp_id, nsi_stp_id, nsi_stp_id_in, nsi_stp_id_out, vlans, capacity)
+                cinterface = Interface(cnode, felix_domain_id, felix_stp_id, nsi_stp_id, vlans, capacity)
                 cinterface.component_id = "%s+%s" % (felix_domain_id, felix_stp_id)
                 #
                 gre_type = ifs.get("type")
@@ -101,9 +107,6 @@ class Config:
                 dict_felix_stps[cinterface.component_id] = cinterface
 
     def get_advertisement(self):
-        if (self.advertisement != ""):
-            return self.advertisement
-        
         s = advertisement_rspec
         for cnode in dict_nodes.values():
             s += cnode.get_open_advertisement();
@@ -197,7 +200,7 @@ class Node:
         return s;
 
 class Interface:
-    def __init__(self, node, felix_domain_id, felix_stp_id, nsi_stp_id, vlan, capacity):
+    def __init__(self, node, felix_domain_id, felix_stp_id, nsi_stp_id, vlans, capacity):
         # def __init__(self, node, felix_domain_id, felix_stp_id, nsi_stp_id, nsi_stp_id_in, nsi_stp_id_out, vlan, capacity):
         # print self, node, felix_domain_id, felix_stp_id, nsi_stp_id, nsi_stp_id_in, nsi_stp_id_out, vlan, capacity
         self.node = node
@@ -206,7 +209,7 @@ class Interface:
         self.nsi_stp_id = nsi_stp_id
         # self.nsi_stp_id_in = ""
         # self.nsi_stp_id_out = ""
-        self.vlan = vlan
+        self.vlans = vlans
         self.capacity = capacity
         self.component_id = felix_domain_id + "+" + felix_stp_id
         self.advertisement = ""
@@ -221,6 +224,8 @@ class Interface:
         self.dict_ofport = {}
         self.sedev = None
         self.seport = None
+
+        self.vman = vlanManager(self.nsi_stp_id, self.vlans)
 
         # self.brname = None
         #
@@ -239,20 +244,6 @@ class Interface:
         # if (self.nsi_stp_id_out != ""):
         #     dict_nsi_stps[self.nsi_stp_id_out] = self
         #
-        self.dict_vlans = {}
-        try:
-            vv = vlan.split(",")
-            for v in vv:
-                vvv = v.split("-")
-                if (len(vvv) == 2):
-                    for i in range(int(vvv[0]), int(vvv[1])):
-                        self.dict_vlans[str(i)] = i
-                else:
-                    s = v.strip()
-                    self.dict_vlans[s] = int(s)
-        except Exception as e:
-            raise ParamException("config:", "Vlan parameter %s is bad in config.xml." % (vlan))
-        # print "***** vlans: %s" % (self.dict_vlans)
 
     # def set(self, gtype, address, ofdev, ofport, brname, dpid, ovsdb, ryu):
     def set(self, gtype, address, dpid, ovsdb, ryu, sedev):
@@ -279,24 +270,33 @@ class Interface:
         return (ofdev, ofport)
 
     def get_advertisement(self):
-        if (self.advertisement != ""):
-            return self.advertisement
-
         s = space4 + space4 + "<interface component_id=\"" + self.component_id +"\">\n"
 
-        if (isinstance(self.vlan, type(None)) != True):
-            s += space4 + space4 + space4 + "<sharedvlan:available name=\"" + self.component_id + "+vlan\" description=\"" + self.vlan + "\"/>\n"
+        vlan = self.vman.getFreeList()
+        if (isinstance(vlan, type(None)) != True):
+            s += space4 + space4 + space4 + "<sharedvlan:available name=\"" + self.component_id + "+vlan\" description=\"" + vlan + "\"/>\n"
 
         s += space4 + space4 + "</interface>\n\n"
 
         self.advertisement = s
         return self.advertisement
 
-    def check_vlan(self, id):
-        return self.dict_vlans.has_key(id)
+    def check_vlan(self, vlans):
+        try:
+            logger.info("interface:check_vlan: vman: %s" % self.vman)
+            logger.info("interface:check_vlan: vlans: %s" % vlans)
+            dict_p = {}
+            dict_p = self.vman.productAllowedVlans(vlans)
+            logger.info("interface:check_vlan: productSet is %s" % dict_p)
+            if len(dict_p) == 0:
+                return False
+            return True
+        except Exception as e:
+            logger.info("interface:check_vlan: Exception: %s" % e)
+            return False
 
     def __str__(self):
-        s = "node=%s, domain=%s, f_stp=%s, nsi_stp=%s, vlan=%s, capacity=%s, type=%s" % (self.node, self.felix_domain_id, self.felix_stp_id, self.nsi_stp_id, self.vlan, self.capacity, self.gtype)
+        s = "node=%s, domain=%s, f_stp=%s, nsi_stp=%s, vlan=%s, capacity=%s, type=%s" % (self.node, self.felix_domain_id, self.felix_stp_id, self.nsi_stp_id, self.vlans, self.capacity, self.gtype)
         if (self.gtype != default_type):
             s += ", address=%s, ofdev=%s, ofport=%s, sedev=%s, seport=%s, dpid=%s, ovsdb=%s, ryu=%s" % (self.address, self.dict_ofdev, self.dict_ofport, self.sedev, self.seport, self.dpid, self.ovsdb, self.ryu_url)
         return s
