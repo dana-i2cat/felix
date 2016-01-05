@@ -1,7 +1,7 @@
 from core.organisations import AllowedOrganisations
 from core.utils.strings import StringUtils
-from extensions.sfa.util.xrn import get_authority, urn_to_hrn
-
+#from extensions.sfa.util.xrn import get_authority
+from extensions.sfa.util.xrn import urn_to_hrn
 
 class URNUtils:
     """

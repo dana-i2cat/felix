@@ -27,6 +27,8 @@ class ResourceDetector(object):
         self.adaptor_uri = ""
         self.domain_urn = ""
         self.allowed_peers = AllowedPeers.get_peers()
+        self.nodes_all = []
+        self.links_all = []
 
     def debug(self, msg):
         logger.debug("(%s) %s" % (self.typee, msg))
@@ -316,11 +318,11 @@ class ResourceDetector(object):
 
     def __manage_ro_resources(self, result, peerID):
         rspec = result.get("value", None)
-        nodes_all = []
-        links_all = []
+        self.nodes_all = []
+        self.links_all = []
         if rspec is None:
             self.error("Unable to get RSpec value from %s" % (result,))
-            return (nodes_all, links_all)
+            return (self.nodes_all, self.links_all)
         try:
             ro_rspec = ROv3AdvertisementParser(from_string=rspec)
             self.debug("RORSpec=%s" % (ro_rspec,))
@@ -329,49 +331,57 @@ class ResourceDetector(object):
             if not result:
                 self.error("Validation failure: %s" % error)
                 return
-
             self.info("Validation success!")
 
-            nodes = ro_rspec.com_nodes()
-            self.info("COM Nodes(%d)=%s" % (len(nodes), nodes,))
-            if nodes:
-                nodes_all.extend(nodes)
-            links = ro_rspec.com_links()
-            self.info("COM Links(%d)=%s" % (len(links), links,))
-            self.__store_com_resources(peerID, nodes, links)
-            if links:
-                links_all.extend(links)
-
-            nodes = ro_rspec.sdn_nodes()
-            self.info("SDN Nodes(%d)=%s" % (len(nodes), nodes,))
-            if nodes:
-                nodes_all.extend(nodes)
-            links = ro_rspec.sdn_links()
-            self.info("SDN Links(%d)=%s" % (len(links), links,))
-            self.__store_sdn_resources(peerID, nodes, links)
-            if links:
-                links_all.extend(links)
-
-            nodes = ro_rspec.se_nodes()
-            self.info("SE Nodes(%d)=%s" % (len(nodes), nodes,))
-            if nodes:
-                nodes_all.extend(nodes)
-            links = ro_rspec.se_links()
-            self.info("SE Links(%d)=%s" % (len(links), links,))
-            self.__store_se_resources(peerID, nodes, links)
-            if links:
-                links_all.extend(links)
-
-            nodes = ro_rspec.tn_nodes()
-            self.info("TN Nodes(%d)=%s" % (len(nodes), nodes,))
-            if nodes:
-                nodes_all.extend(nodes)
-            links = ro_rspec.tn_links()
-            self.info("TN Links(%d)=%s" % (len(links), links,))
-            self.__store_tn_resources(peerID, nodes, links)
-            if links:
-                links_all.extend(links)
+            self.__manage_ro_resources_com(ro_rspec, peerID)
+            self.__manage_ro_resources_sdn(ro_rspec, peerID)
+            self.__manage_ro_resources_se(ro_rspec, peerID)
+            self.__manage_ro_resources_tn(ro_rspec, peerID)
         except Exception as e:
             self.error("Exception: %s" % str(e))
-        return (nodes_all, links_all)
+        return (self.nodes_all, self.links_all)
+
+    def __manage_ro_resources_com(self, ro_rspec, peerID):
+        nodes = ro_rspec.com_nodes()
+        self.info("COM Nodes(%d)=%s" % (len(nodes), nodes,))
+        if nodes:
+            self.nodes_all.extend(nodes)
+        links = ro_rspec.com_links()
+        self.info("COM Links(%d)=%s" % (len(links), links,))
+        self.__store_com_resources(peerID, nodes, links)
+        if links:
+            self.links_all.extend(links)
+
+    def __manage_ro_resources_sdn(self, ro_rspec, peerID):
+        nodes = ro_rspec.sdn_nodes()
+        self.info("SDN Nodes(%d)=%s" % (len(nodes), nodes,))
+        if nodes:
+            self.nodes_all.extend(nodes)
+        links = ro_rspec.sdn_links()
+        self.info("SDN Links(%d)=%s" % (len(links), links,))
+        self.__store_sdn_resources(peerID, nodes, links)
+        if links:
+            self.links_all.extend(links)
+
+    def __manage_ro_resources_se(self, ro_rspec, peerID):
+        nodes = ro_rspec.se_nodes()
+        self.info("SE Nodes(%d)=%s" % (len(nodes), nodes,))
+        if nodes:
+            self.nodes_all.extend(nodes)
+        links = ro_rspec.se_links()
+        self.info("SE Links(%d)=%s" % (len(links), links,))
+        self.__store_se_resources(peerID, nodes, links)
+        if links:
+            self.links_all.extend(links)
+
+    def __manage_ro_resources_tn(self, ro_rspec, peerID):
+        nodes = ro_rspec.tn_nodes()
+        self.info("TN Nodes(%d)=%s" % (len(nodes), nodes,))
+        if nodes:
+            self.nodes_all.extend(nodes)
+        links = ro_rspec.tn_links()
+        self.info("TN Links(%d)=%s" % (len(links), links,))
+        self.__store_tn_resources(peerID, nodes, links)
+        if links:
+            self.links_all.extend(links)
 

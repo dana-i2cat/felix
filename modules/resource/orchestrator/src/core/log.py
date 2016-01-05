@@ -61,9 +61,12 @@ lhandle = logging.handlers.RotatingFileHandler(log_file, maxBytes=1000000)
 lhandle.setLevel(log_level)
 colormap = {'DEBUG': 'green', 'INFO': 'blue', 'WARNING': 'yellow',
             'ERROR': 'red', 'CRITICAL': 'purple'}
+format_str = "%(log_color)s%(asctime)s [%(levelname)s] "
+format_str += "[%(filename)s:%(lineno)s] - %(message)s"
 formatter = ColoredFormatter(
-    "%(log_color)s%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)s] - %(message)s",
-    datefmt=None, reset=True, log_colors=colormap, secondary_log_colors={}, style='%')
+    format_str,
+    datefmt=None, reset=True, log_colors=colormap,
+    secondary_log_colors={}, style='%')
 lhandle.setFormatter(formatter)
 logger = getLogger()
 logger.addHandler(lhandle)
