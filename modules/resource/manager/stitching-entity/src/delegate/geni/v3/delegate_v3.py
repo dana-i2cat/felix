@@ -400,13 +400,17 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
             portsVlansPairs = getPortsVlansPairs(links_db)
 
+            error_communication_msg = "Error in communication with SE. Details:"
+
             if action == "geni_start":
                 for portVlanItem in portsVlansPairs:
                     (in_port, out_port, in_vlan, out_vlan) = portVlanItem
                     try:
                         se_provision.addSwitchingRule(in_port, out_port, in_vlan, out_vlan)
                     except Exception as e:
-                        raise geni_ex.GENIv3GeneralError("Error in communication with SE. Details: %s" % e)
+                        # Note: this exception may block the workflow, even in 
+                        # the case of an apparent lack of error
+                        raise geni_ex.GENIv3GeneralError("%s: %s" % (error_communication_msg, e))
                     logger.debug("Cross-connection added: %s[%s]<->%s[%s]" % (in_port, in_vlan, out_port, out_vlan))
 
                 # Retrieve allocation status and modify after the method's operation
@@ -418,8 +422,10 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     (in_port, out_port, in_vlan, out_vlan) = portVlanItem
                     try:
                         se_provision.deleteSwitchingRule(in_port, out_port, in_vlan, out_vlan)
-                    except:
-                        raise geni_ex.GENIv3GeneralError("Error in communication with SE.")
+                    except Exception as e:
+                        # Note: this exception may block the workflow, even in 
+                        # the case of an apparent lack of error
+                        raise geni_ex.GENIv3GeneralError("%s: %s" % (error_communication_msg, e))
                     logger.debug("Cross-connection deleted: %s[%s]<->%s[%s]" % (in_port, in_vlan, out_port, out_vlan))
 
                 # Retrieve allocation status and modify after the method's operation
@@ -432,8 +438,10 @@ class GENIv3Delegate(GENIv3DelegateBase):
                     try:
                         se_provision.deleteSwitchingRule(in_port, out_port, in_vlan, out_vlan)
                         se_provision.addSwitchingRule(in_port, out_port, in_vlan, out_vlan)
-                    except:
-                        raise geni_ex.GENIv3GeneralError("Error in communication with SE.")
+                    except Exception as e:
+                        # Note: this exception may block the workflow, even in 
+                        # the case of an apparent lack of error
+                        raise geni_ex.GENIv3GeneralError("%s: %s" % (error_communication_msg, e))
                 
                 # Retrieve allocation status and modify after the method's operation
                 links_db, _, _ = self.__update_fetch_allocation_status_slivers(urn, "geni_provisioned")
@@ -441,8 +449,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
 
             for sliver in links_db["geni_sliver_urn"]:
-                result.append( 
-                                {   
+                result.append({   
                                     "geni_sliver_urn": sliver,
                                     "geni_expires": expires_date,
                                     "geni_allocation_status": links_db["geni_allocation_status"],
