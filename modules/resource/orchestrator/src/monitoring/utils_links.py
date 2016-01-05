@@ -16,7 +16,6 @@ class MonitoringUtilsLinks(object):
     def get_id_for_link_crm_sdnrm(link_struct):
         link_id = ""
         # - Prepare link ID with the interfaces info
-        link_id_post = ""
         if link_struct.get("dest_id").find("datapath") > -1:
             link_id = link_struct.get("dest_id")
             link_id_pre = link_struct.get("source_id")
@@ -33,7 +32,6 @@ class MonitoringUtilsLinks(object):
     def get_id_for_link_sdnrm_sdnrm(link_zip_list):
         link_id = ""
         # - Prepare link ID with the interfaces info
-        link_id_post = ""
         dpid = link_zip_list[0][0]["component_id"]
         port = link_zip_list[0][1]["port_num"]
         link_id_pre = "%s_%s" % (dpid, port)
@@ -52,7 +50,6 @@ class MonitoringUtilsLinks(object):
         link = ""
         link_id = ""
         # - Prepare link ID with the interfaces info
-        link_id_post = ""
         for link_struct in links:
             link = link_struct.get("component_id")
             if not link_id:

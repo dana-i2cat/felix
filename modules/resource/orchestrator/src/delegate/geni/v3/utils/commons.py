@@ -19,9 +19,6 @@ class CommonUtils(object):
         if sliver is not None:
             return False
 
-        # Check for SE resources
-        senodes = rspec.se_nodes()
-        selinks = rspec.se_links()
         if CommonUtils.is_explicit_se_allocation(rspec):
             return False
         logger.info("This is an explicit TN allocation")

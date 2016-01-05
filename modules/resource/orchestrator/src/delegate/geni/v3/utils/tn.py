@@ -9,7 +9,6 @@ from lxml import etree
 from mapper.path_finder_tn_to_sdn import PathFinderTNtoSDN
 from rspecs.commons import DEFAULT_XMLNS
 from rspecs.commons_tn import generate_unique_link_id
-from rspecs.tnrm.request_formatter import TNRMv3RequestFormatter
 
 from core.config import ConfParser
 from core.utils.urns import URNUtils
@@ -402,7 +401,7 @@ class TNUtils(CommonUtils):
 
         src_dom_ogf = src_dom[src_dom.find(stp_reg)+1+len(stp_reg):]
         dst_dom_ogf = dst_dom[dst_dom.find(stp_reg)+1+len(stp_reg):]
-        link_clid = generate_unique_link_id(link_cid, src_dom, dst_dom)
+        #link_clid = generate_unique_link_id(link_cid, src_dom, dst_dom)
         link_clid_full = "%s+link+%s?vlan=%s-%s?vlan=%s" % (link_prefix, src_dom_ogf, src_vlan, dst_dom_ogf, dst_vlan)
         logger.debug("Chosen TN inter-domain link: %s" % link_clid_full)
 
@@ -419,7 +418,6 @@ class TNUtils(CommonUtils):
     @staticmethod
     def identify_tn_from_sdn_and_vl(dpid_port_ids, request_stps, sdn_utils):
         # TN resources
-        se_tn_info = None
         nodes = []
         links = []
         logger.debug("Identifying TN STPs from Virtual Links and SDN resources")

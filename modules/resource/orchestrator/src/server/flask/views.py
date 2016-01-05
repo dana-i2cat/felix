@@ -1,8 +1,6 @@
 from flask import Blueprint
 from flask import current_app
-from flask import g
 from flask import render_template
-from flask import request
 
 import methods
 

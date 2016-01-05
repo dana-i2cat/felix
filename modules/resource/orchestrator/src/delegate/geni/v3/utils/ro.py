@@ -100,28 +100,46 @@ class ROUtils(CommonUtils):
 
         # Internal use (M/RO) -- OR show inter-domain resources, through config flag
         if inner_call or show_interdomain:
-            for n in db_sync_manager.get_tn_nodes():
-                logger.debug("TN resources node=%s" % (n,))
-                rspec.tn_node(n, inner_call)
-
-            for n in db_sync_manager.get_se_nodes():
-                logger.debug("SE resources node=%s" % (n,))
-                rspec.se_node(n, inner_call)
-
-            for l in db_sync_manager.get_tn_links():
-                logger.debug("TN resources tn-link=%s" % (l,))
-                rspec.tn_link(l, inner_call)
-
-            for l in db_sync_manager.get_se_links():
-                logger.debug("SE resources se-link=%s" % (l,))
-                rspec.se_link(l, inner_call)
+            ROUtils.generate_list_resources_internal(rspec, inner_call)
 
         # External use (experimenter) -- OR show inter-domain resources, through config flag
         if geni_available or show_interdomain:
-            for l in VLUtils.find_vlinks_from_tn_stps(TNUtils()):
-                logger.debug("VL resources vl-link=%s" % (l,))
-                rspec.vl_link(l, inner_call)
+            ROUtils.generate_list_resources_external(rspec, inner_call)
         return rspec
+
+    @staticmethod
+    def generate_list_resources_internal(rspec, inner_call=True):
+        """
+        Appends TN and SE (internal) information when any of the following:
+          * It is an internal call (MRO->RO, MRO->MRO)
+          * Configuration flag "interdomain_available_to_user" is set to True
+        """
+        for n in db_sync_manager.get_tn_nodes():
+            logger.debug("TN resources node=%s" % (n,))
+            rspec.tn_node(n, inner_call)
+
+        for n in db_sync_manager.get_se_nodes():
+            logger.debug("SE resources node=%s" % (n,))
+            rspec.se_node(n, inner_call)
+
+        for l in db_sync_manager.get_tn_links():
+            logger.debug("TN resources tn-link=%s" % (l,))
+            rspec.tn_link(l, inner_call)
+
+        for l in db_sync_manager.get_se_links():
+            logger.debug("SE resources se-link=%s" % (l,))
+            rspec.se_link(l, inner_call)
+
+    @staticmethod
+    def generate_list_resources_external(rspec, inner_call=True):
+        """
+        Appends VL (external) information when any of the following:
+          * GENI flag "geni_available" is set to True
+          * Configuration flag "interdomain_available_to_user" is set to True
+        """
+        for l in VLUtils.find_vlinks_from_tn_stps(TNUtils()):
+            logger.debug("VL resources vl-link=%s" % (l,))
+            rspec.vl_link(l, inner_call)
 
     @staticmethod
     def generate_describe_manifest(ro_manifest, ro_m_info):

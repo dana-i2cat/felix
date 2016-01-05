@@ -1,5 +1,5 @@
 from flask import Flask, g, request, request_started, request_finished
-from flask.ext.pymongo import PyMongo
+#from flask.ext.pymongo import PyMongo
 
 from core.config import FullConfParser
 from core import log

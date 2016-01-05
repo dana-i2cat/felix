@@ -1,4 +1,3 @@
-from lxml import etree
 import core
 
 logger = core.log.getLogger("monitoring-utils")

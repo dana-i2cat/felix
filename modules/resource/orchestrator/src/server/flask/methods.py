@@ -3,7 +3,6 @@ from delegate.geni.v3.utils.tn import TNUtils
 from flask import current_app
 from flask import Response
 from functools import wraps
-from lxml import etree
 
 
 CLI_UNAVAILABLE_MSG = "Method only available via REST API"
