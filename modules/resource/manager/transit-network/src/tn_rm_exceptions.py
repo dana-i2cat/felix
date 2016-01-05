@@ -18,7 +18,7 @@ class TnrmException(Exception):
     def __init__(self, desc):
         self._desc = desc
     def __str__(self):
-        return "Schedule: %s" % (self._desc,)
+        return "TN-RM: %s" % (self._desc,)
 
 class RspecException(TnrmException):
     def __init__(self, prog, reason):
