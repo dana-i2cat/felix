@@ -81,13 +81,20 @@ class OFv3RequestParser(ParserBase):
         return m_
 
     def get_groups_matches(self, rspec):
-        groups = rspec.findall(".//{%s}group" % (self.__of))
+        # groups & matches belong to the same sliver
         groups_matches = []
-        for group in groups:
-            group_f = self.format_group(group).group
-            matches = group.getparent().findall(".//{%s}match" % (self.__of))
-            matches_f = [ self.format_match(m).match for m in matches ]
-            groups_matches.append({ "group": group_f, "match": matches_f })
+        for sliver in rspec.findall(".//{%s}sliver" % (self.__of)):
+            groups = []
+            for group in sliver.findall(".//{%s}group" % (self.__of)):
+                group_f  = self.format_group(group).group
+                groups.append(group_f)
+
+            matches = []
+            for match in sliver.findall(".//{%s}match" % (self.__of)):
+                matches_f = self.format_match(match).match
+                matches.append(matches_f)
+
+            groups_matches.append({"groups": groups, "matches": matches})
         return groups_matches
 
     def groups_matches(self):

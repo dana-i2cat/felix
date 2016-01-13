@@ -14,7 +14,6 @@ import random
 class SDNUtils(CommonUtils):
     def __init__(self):
         super(SDNUtils, self).__init__()
-        self.used_groups = set()
 
     def manage_describe(self, peer, urns, creds):
         try:
@@ -158,23 +157,25 @@ class SDNUtils(CommonUtils):
             self.__add_extended_info(group, tmp)
 
     def __rename_groups_matches(self, groups_matches):
-        self.used_groups = set()
-        groups = []
-        matches = []
+        used_groups, groups, matches = set(), [], []
         for gm in groups_matches:
-            group = gm.get("group")
-            match = gm.get("match")
-            group_name = group.get("name")
-            if group_name in self.used_groups:
-                group_name = "%s_%d" % (group_name, random.randrange(1,1000))
-                logger.debug("Renaming OF group/matches to '%s'" % group_name)
-                for m in match:
-                    for mg in m.get("use_groups"):
-                        mg["name"] = group_name
-                group["name"] = group_name
-            self.used_groups.add(group_name)
-            groups.append(group)
-            matches.extend(match)
+            for group in gm.get("groups"):
+                group_name = group.get("name")
+                if group_name in used_groups:
+                    ren_gname = "%s_%d" % (group_name, random.randrange(1, 1000))
+                    logger.warning("Renaming OF group/matches to '%s'" % ren_gname)
+                    for match in gm.get("matches"):
+                        for mg in match.get("use_groups"):
+                            if mg["name"] == group_name:
+                                mg["name"] = ren_gname
+                    group["name"] = ren_gname
+                    used_groups.add(ren_gname)
+                else:
+                    used_groups.add(group_name)
+
+            groups.extend(gm.get("groups"))
+            matches.extend(gm.get("matches"))
+
         return (groups, matches)
 
     def manage_allocate(self, surn, creds, end, sliver, parser, slice_urn,
@@ -185,11 +186,18 @@ class SDNUtils(CommonUtils):
 
         groups = parser.of_groups()
         matches = parser.of_matches()
+        logger.debug("Groups(%d): %s, Matches(%d): %s" %
+                     (len(groups), groups, len(matches), matches))
 
+        # Create a structure to group the corresponding matches & groups
         groups_matches = parser.of_groups_matches()
+        logger.debug("GroupsMatches(%d): %s" % (len(groups_matches), groups_matches))
 
+        # Here we need to be sure that the group-name is unique in the rspec.
         # Rename group/matches names if duplicated
         (groups, matches) = self.__rename_groups_matches(groups_matches)
+        logger.info("Renamed-Groups(%d): %s, Renamed-Matches(%d): %s" %
+                     (len(groups), groups, len(matches), matches))
 
         # Update the group info to support the mapper module
         for eg in extended_group_info:
