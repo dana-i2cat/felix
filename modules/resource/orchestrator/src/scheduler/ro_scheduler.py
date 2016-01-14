@@ -2,12 +2,13 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.mongodb import MongoDBJobStore
 from apscheduler.triggers.date import DateTrigger
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.interval import IntervalTrigger
 from core.config import ConfParser
 from core.service import Service
 from datetime import datetime, timedelta
 from jobs import com_resource_detector, sdn_resource_detector,\
     se_resource_detector, tn_resource_detector, physical_monitoring,\
-    slice_monitoring, ro_resource_detector
+    slice_monitoring, ro_resource_detector, tn_resource_refresh
 
 import ast
 import core
@@ -27,6 +28,7 @@ class ROSchedulerService(Service):
         interval = int(self.scheduler.get("frequency"))
         master_ro = self.config.get("master_ro")
         mro_enabled = ast.literal_eval(master_ro.get("mro_enabled"))
+        self.tnrm_refresh = self.config.get("tnrm").get("refresh_timeout")
         db_name = "felix_ro"
         if mro_enabled:
             db_name = "felix_mro"
@@ -53,10 +55,29 @@ class ROSchedulerService(Service):
             self.__cron_jobs()
             self.first_time = False
 
+            if self.tnrm_refresh:
+                self.__add_interval_tn_refresh(self.tnrm_refresh)
+
     def stop(self):
+        # remove the stored jobs!
+        self.__remove(ro_scheduler.get_jobs())
         ro_scheduler.shutdown()
         logger.info("ro_scheduler shutdown")
         super(ROSchedulerService, self).stop()
+
+    def __remove(self, jobs):
+        for job in jobs:
+            job.remove()
+
+    def __add_interval_tn_refresh(self, minutes):
+        try:
+            ro_scheduler.add_job(
+                tn_resource_refresh,
+                trigger=IntervalTrigger(minutes=int(minutes)),
+                id="interval_tn_refresh",
+                replace_existing=True)
+        except Exception as e:
+            logger.warning("interval_jobs failure: %s" % (e,))
 
     def __add_oneshot(self, secs_, func_, id_):
         try:
