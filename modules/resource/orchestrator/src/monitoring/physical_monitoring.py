@@ -169,14 +169,16 @@ class PhysicalMonitoring(BaseMonitoring):
 
     def __get_topology_ref(self, topolist, name, uptime, typee):
         for topo in topolist.iter("topology"):
-            if name in topo.get("name"):
+            # Match must be exact (use delimiters to force)
+            if topo.get("name").endswith(":" + name):
                 return topo
-        # create a new topology tag
-        return etree.SubElement(
-            topolist, "topology",
-            attrib={"last_update_time": uptime,
-                    "type": typee,
-                    "name": "urn:publicid:IDN+ocf:" + name})
+        # Create a new topology tag
+        if len(name) > 0:
+            return etree.SubElement(
+                topolist, "topology",
+                attrib = {"last_update_time": uptime,
+                        "type": typee,
+                        "name": "urn:publicid:IDN+ocf:" + name})
 
     def __add_tn_node_per_island(self, topo_list, node):
         for topo in topo_list.iter("topology"):
@@ -210,5 +212,5 @@ class PhysicalMonitoring(BaseMonitoring):
         for topology in self.topology_list.iter("topology"):
             if self.__cycle_nodes(topology, tmp_topology_list):
                 break
-        # save the current topology list in the base class
+        # Save the current topology list in the base class
         self.set_topology_tree(tmp_topology_list)
