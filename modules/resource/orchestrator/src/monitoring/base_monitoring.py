@@ -27,40 +27,39 @@ class BaseMonitoring(object):
         self.domain_last_update = ""
         self.topology_list = etree.Element("topology_list")
         self.topology = etree.SubElement(self.topology_list, "topology")
-        ## Operation mode
+        # Operation mode
         self.config = ConfParser("ro.conf")
         master_ro = self.config.get("master_ro")
         self.mro_enabled = ast.literal_eval(master_ro.get("mro_enabled"))
         self.software_stacks = {
-                                "ofelia": "ocf",
-                                "felix": "fms",
-                                }
+            "ofelia": "ocf",
+            "felix": "fms",
+        }
         self.urn_type_resources = {
-                                "crm": "vtam",
-                                "sdnrm": "openflow",
-                                "serm": "se",
-                                "tnrm": "tn",
-                                }
+            "crm": "vtam",
+            "sdnrm": "openflow",
+            "serm": "se",
+            "tnrm": "tn",
+        }
         self.urn_type_resources_variations = {
-                                "crm": ["vtam"],
-                                "sdnrm": ["openflow", "ofam"],
-                                "serm": ["se"],
-                                "tnrm": ["tn", "NSI"],
-                                }
+            "crm": ["vtam"],
+            "sdnrm": ["openflow", "ofam"],
+            "serm": ["se"],
+            "tnrm": ["tn", "NSI"],
+        }
         self.management_type_resources = {
-                                "crm": "server",
-                                "sdnrm": "switch",
-                                "serm": "se",
-                                }
+            "crm": "server",
+            "sdnrm": "switch",
+            "serm": "se",
+        }
         self.monitoring_expected_nodes = {
-                                "crm": "",
-                                "sdnrm": "switch",
-                                "serm": "se",
-                                "tnrm": "tn",
-                                }
+            "crm": "",
+            "sdnrm": "switch",
+            "serm": "se",
+            "tnrm": "tn",
+        }
         self.peers_by_domain = {}
         self.__group_peers_by_domain()
-        ## Configurations
         # CRM config
         self.config_crm = core.config.JSONParser("crm.json")
         self.crm_mgmt_info = self.config_crm.get("device_management_info")
@@ -77,7 +76,7 @@ class BaseMonitoring(object):
 
     def __group_peers_by_domain(self):
         for peer in self.peers_info:
-            filter_params = {"_id": peer.get("_id"),}
+            filter_params = {"_id": peer.get("_id")}
             domain_peer = db_sync_manager.get_domain_info(filter_params)
             peer_domain_urn = domain_peer.get("domain_urn")
             authority = URNUtils.get_felix_authority_from_urn(peer_domain_urn)
@@ -94,22 +93,25 @@ class BaseMonitoring(object):
                 db_sync_manager.store_physical_info(peer_domain_urn,
                                                     last_update_time)
             except Exception as e:
-                logger.error("Error storing last_update_time for phy-topology.")
+                logger.error("Error storing last_update_time in phy-topology.")
                 logger.error("Exception: %s" % e)
 
         # XXX: (M)MS assumes one TNRM per island
         # With this, (M)MS receives at least one TNRM per island
         type_resource_peer_tnrm = self.urn_type_resources_variations.get("tnrm")
         for peer in self.peers:
-            filter_params = {"_ref_peer": peer.get("_id"),}
+            filter_params = {"_ref_peer": peer.get("_id")}
             domain_peer = db_sync_manager.get_domain_info(filter_params)
             peer_domain_urn = domain_peer.get("domain_urn")
-            peer_is_tnrm = any([rt in peer_domain_urn for rt in type_resource_peer_tnrm])
-            # MRO: TNRM added at this level. Use information from peer to add it as a TNRM per domain
+            peer_is_tnrm = any([rt in peer_domain_urn for rt
+                in type_resource_peer_tnrm])
+            # MRO: TNRM added at this level. Use information from peer to add
+            # it as a TNRM per domain
             if peer_is_tnrm:
                 # Add the TNRM peer to each authority that does not have it yet
                 for authority in self.peers_by_domain:
-                    if peer_domain_urn not in self.peers_by_domain.get(authority):
+                    if peer_domain_urn not in self.\
+                            peers_by_domain.get(authority):
                         self.peers_by_domain[authority].append(peer_domain_urn)
 
     def _send(self, xml_data, peer=None):
@@ -135,7 +137,6 @@ class BaseMonitoring(object):
         except Exception as e:
             logger.error("Could not connect to %s. Exception: %s" % (url, e,))
 
-
     ##########################
     # Set and return topology
     ##########################
@@ -143,7 +144,7 @@ class BaseMonitoring(object):
     def set_topology_tree(self, topology_list_tree):
         # Return whole list of topologies
         try:
-            ## If the following line works, 'topology_list_tree' is a proper xml tree
+            # If the following line works, 'topology_list_tree' is a proper xml tree
             etree.tostring(topology_list_tree)
             self.topology_list = topology_list_tree
         except:
@@ -170,7 +171,6 @@ class BaseMonitoring(object):
         for node in self.topology_list.findall(".//topology"):
             if len(node.getchildren()) == 0:
                 node.getparent().remove(node)
-
 
     ##########
     # Helpers
@@ -220,19 +220,23 @@ class BaseMonitoring(object):
         auth_pass = etree.SubElement(management, "auth_pass")
         auth_pass.text = ""
         try:
-            configuration_data = self._get_management_data_devices(parent_node)
-            if configuration_data is not None:
-                # Possible mismatch between URN of *RM that is configured in the *rm.json config file
-                # and the URN directly received from the RM. Issue a comprehensive warning here
-                if not parent_node.get("id") in configuration_data.keys():
-                    raise Exception("Mismatch between configuration device URN and received URN for URN='%s'. Please check the settings of your RMs under RO's configuration folder"
-                                        % parent_node.get("id"))
-                address.text = configuration_data.get(parent_node.get("id")).get("ip")
-                port.text = configuration_data.get(parent_node.get("id")).get("port")
-                auth_id.text = configuration_data.get(parent_node.get("id")).get("snmp").get("id")
-                auth_pass.text = configuration_data.get(parent_node.get("id")).get("snmp").get("password")
+            conf_data = self._get_management_data_devices(parent_node)
+            if conf_data is not None:
+                # Possible mismatch between URN of *RM that is configured
+                # in the *rm.json config file and the URN directly received
+                # from the RM. Issue a comprehensive warning here
+                if not parent_node.get("id") in conf_data.keys():
+                    raise Exception("Mismatch between configuration device \
+                    URN and received URN for URN='%s'. Please check the \
+                    settings of your RMs under RO's configuration folder"
+                                    % parent_node.get("id"))
+                address.text = conf_data.get(parent_node.get("id")).get("ip")
+                port.text = conf_data.get(parent_node.get("id")).get("port")
+                auth_id.text = conf_data.get(parent_node.get("id")).get("snmp").get("id")
+                auth_pass.text = conf_data.get(parent_node.get("id")).get("snmp").get("password")
         except Exception as e:
-            logger.warning("Physical monitoring. Cannot add management data on '%s'. Details: %s" % (etree.tostring(parent_node), e))
+            logger.warning("Physical monitoring. Cannot add management data \
+            on '%s'. Details: %s" % (etree.tostring(parent_node), e))
         return management
 
     def _add_generic_node(self, parent_tag, node, node_type):
@@ -250,9 +254,9 @@ class BaseMonitoring(object):
                     management = self._add_management_section(n)
                     n.append(management)
                 except Exception as e:
-                    logger.warning("Physical topology - Cannot add management section. Details: %s" % e)
+                    logger.warning("Physical topology - Cannot add management \
+                    section. Details: %s" % e)
         return n
-
 
     #################
     # C-RM resources
@@ -263,24 +267,24 @@ class BaseMonitoring(object):
         if parent_node is None:
             parent_node = self.topology
         # 1. Nodes
-        nodes = [ n for n in db_sync_manager.get_com_nodes_by_domain(self.domain_urn) ]
+        nodes = [n for n in db_sync_manager.get_com_nodes_by_domain(self.domain_urn)]
         for node in nodes:
             if MonitoringUtils.check_existing_tag_in_topology(parent_node, "node", "server", node.get("component_id")):
                 break
-            logger.debug("com-node=%s" % (node,))
+            logger.debug("com-node=%s" % (node))
             # If no parent node passed, COM info is attached to root topology node
             if parent_node is None:
                 parent_node = self.topology
             n = self._add_generic_node(parent_node, node, "server")
             # Output interfaces (avoid "*") per server
-            node_ifaces = filter(lambda x: x!="*", node.get("interfaces"))
+            node_ifaces = filter(lambda x: x != "*", node.get("interfaces"))
             logger.debug("com-node-interfaces=%s" % node_ifaces)
             for iface in node_ifaces:
                 interface = etree.SubElement(n, "interface")
                 # NOTE this is extending the "interface" URN
                 interface.set("id", "%s+interface+%s" % (n.get("id"), iface))
         # 2. Links
-        links = [ l for l in db_sync_manager.get_com_links_by_domain(self.domain_urn) ]
+        links = [l for l in db_sync_manager.get_com_links_by_domain(self.domain_urn)]
         logger.debug("com-links=%s" % (links,))
         for link in links:
             self._add_com_link(link, parent_node)
@@ -289,7 +293,7 @@ class BaseMonitoring(object):
         if parent_node is None:
             parent_node = self.topology
         logger.debug("com-links=%s" % (link,))
-        #l = etree.SubElement(parent_node, "link")
+        # l = etree.SubElement(parent_node, "link")
         l = etree.Element("link")
         # NOTE that this cannot be empty
         l.set("type", MonitoringUtilsLinks._translate_link_type(link))
@@ -315,7 +319,6 @@ class BaseMonitoring(object):
             l.set("id", link_id)
             parent_node.append(l)
 
-
     ###################
     # SDN-RM resources
     ###################
@@ -325,7 +328,7 @@ class BaseMonitoring(object):
         if parent_node is None:
             parent_node = self.topology
         # 1. Nodes
-        datapaths = [ d for d in db_sync_manager.get_sdn_datapaths_by_domain(self.domain_urn) ]
+        datapaths = [d for d in db_sync_manager.get_sdn_datapaths_by_domain(self.domain_urn)]
         for dp in datapaths:
             if MonitoringUtils.check_existing_tag_in_topology(parent_node, "node", "switch", dp.get("component_id")):
                 break
@@ -337,7 +340,8 @@ class BaseMonitoring(object):
                 port = etree.SubElement(iface, "port")
                 port.set("num", p.get("num"))
         # 2. Links
-        (sdn_links, fed_links) = [ l for l in db_sync_manager.get_sdn_links_by_domain(self.domain_urn) ]
+        (sdn_links, fed_links) = [l for l in db_sync_manager.
+            get_sdn_links_by_domain(self.domain_urn)]
         for sdn_link in sdn_links:
             logger.debug("sdn-link=%s" % (sdn_link,))
             self._add_sdn_link(sdn_link, parent_node)
@@ -348,10 +352,11 @@ class BaseMonitoring(object):
         if parent_node is None:
             parent_node = self.topology
         auth1 = link.get("dpids")[0].get("component_manager_id").replace("authority+cm", "datapath")
-        dpid1 = auth1 + "+" + link.get("dpids")[0].get("dpid") + "_" + link.get("ports")[0].get("port_num") 
+        dpid1 = auth1 + "+" + link.get("dpids")[0].get("dpid") + "_" + link.get("ports")[0].get("port_num")
         auth2 = link.get("dpids")[1].get("component_manager_id").replace("authority+cm", "datapath")
-        dpid2 = auth2 + "+" + link.get("dpids")[1].get("dpid") + "_" + link.get("ports")[1].get("port_num") 
-        if MonitoringUtils.check_existing_tag_in_topology(parent_node, "link", "lan", [dpid1, dpid2]):
+        dpid2 = auth2 + "+" + link.get("dpids")[1].get("dpid") + "_" + link.get("ports")[1].get("port_num")
+        if MonitoringUtils.check_existing_tag_in_topology(
+                parent_node, "link", "lan", [dpid1, dpid2]):
             return
         l = etree.SubElement(parent_node, "link")
         # NOTE that this cannot be empty
@@ -366,15 +371,15 @@ class BaseMonitoring(object):
                 port = dpid_port[1]["port_num"]
                 iface.set("client_id", "%s_%s" % (dpid, port))
         except Exception as e:
-            logger.warning("Physical topology - Cannot add SDN interface %s. Details: %s" % (link.get("component_id", "(unknown)"), e))
+            logger.warning("Physical topology - Cannot add SDN interface %s. \
+             Details: %s" % (link.get("component_id", "(unknown)"), e))
         try:
             # - Prepare link ID for SDNRM-SDNRM link
             link_id = MonitoringUtilsLinks.get_id_for_link_sdnrm_sdnrm(zip(dpids, ports))
             l.set("id", link_id)
         except Exception as e:
-            logger.warning("Physical topology - Cannot add SDN link ID %s. Details: %s" % (link.get("component_id", "(unknown)"), e))
-
-
+            logger.warning("Physical topology - Cannot add SDN link ID %s. \
+            Details: %s" % (link.get("component_id", "(unknown)"), e))
 
     ##################
     # TN-RM resources
@@ -389,9 +394,9 @@ class BaseMonitoring(object):
         # This retrieves TN information from AIST instance
         # (providing MRO has TNRM as peer, or its information in its DB)
         felix_tn_urn = "urn:publicid:IDN+fms:aist:tnrm"
-        nodes = [ d for d in db_sync_manager.get_tn_nodes_by_domain(felix_tn_urn) ]
-#        nodes = [ d for d in db_sync_manager.get_tn_nodes_by_domain(self.domain_urn) ]
-#        nodes = [ d for d in db_sync_manager.get_tn_nodes() ]
+        nodes = [d for d in db_sync_manager.get_tn_nodes_by_domain(felix_tn_urn)]
+#        nodes = [d for d in db_sync_manager.get_tn_nodes_by_domain(self.domain_urn)]
+#        nodes = [d for d in db_sync_manager.get_tn_nodes()]
         for node in nodes:
             if MonitoringUtils.check_existing_tag_in_topology(parent_node, "node", "tn", node.get("component_id"), self.domain_urn):
                 break
@@ -403,8 +408,7 @@ class BaseMonitoring(object):
                 interface = etree.SubElement(n, "interface")
                 interface.set("id", iface.get("component_id"))
 #        # 2. Links
-#        links = [ l for l in db_sync_manager.get_tn_links_by_domain(self.domain_urn) ]
-
+#        links = [l for l in db_sync_manager.get_tn_links_by_domain(self.domain_urn)]
 
     ##################
     # SE-RM resources
@@ -415,7 +419,7 @@ class BaseMonitoring(object):
         if parent_node is None:
             parent_node = self.topology
         # 1. Nodes
-        nodes = [ d for d in db_sync_manager.get_se_nodes_by_domain(self.domain_urn) ]
+        nodes = [d for d in db_sync_manager.get_se_nodes_by_domain(self.domain_urn)]
         for node in nodes:
             if MonitoringUtils.check_existing_tag_in_topology(parent_node, "node", "se", node.get("component_id")):
                 break
@@ -433,25 +437,27 @@ class BaseMonitoring(object):
                     port = etree.SubElement(interface, "port")
                     port.set("num", component_id.split("_")[1])
                 except Exception as e:
-                    logger.warning("Physical topology - Cannot add SE interface %s. Details: %s" % (component_id,e))
+                    logger.warning("Physical topology - Cannot add SE\
+                     interface %s. Details: %s" % (component_id, e))
         # 2. Links
-        links = [ l for l in db_sync_manager.get_se_links_by_domain(self.domain_urn) ]
-        logger.debug("se-links=%s" % (links,))
+        links = [l for l in db_sync_manager.get_se_links_by_domain(self.domain_urn)]
+        logger.debug("se-links=%s" % (links))
         for link in links:
             dpid1 = link.get("interface_ref")[0].get("component_id")
             dpid2 = link.get("interface_ref")[1].get("component_id")
             if MonitoringUtils.check_existing_tag_in_topology(parent_node, "link", "lan", [dpid1, dpid2]):
                 break
-            logger.debug("se-links=%s" % (link,))
+            logger.debug("se-links=%s" % (link))
             self._add_se_link(link)
 
     def _add_se_link(self, link):
         # Special case: links to be filtered in POST {(M)RO -> (M)MS}
         SE_FILTERED_LINKS = ["*"]
-        interfaces_cid = [ i.get("component_id") for i in link.get("interface_ref") ]
-        interface_cid_in_filter = [ f for f in SE_FILTERED_LINKS if f in interfaces_cid ]
+        interfaces_cid = [i.get("component_id") for i in link.get("interface_ref")]
+        interface_cid_in_filter = [f for f in SE_FILTERED_LINKS if f in interfaces_cid]
         # Avoid reinserting existing link tags in the topology
-        if MonitoringUtils.check_existing_tag_in_topology(self.topology, "link", "lan", link.get("component_id")):
+        if MonitoringUtils.check_existing_tag_in_topology(
+                self.topology, "link", "lan", link.get("component_id")):
             return
         if not interface_cid_in_filter:
             l = etree.SubElement(self.topology, "link")
@@ -466,4 +472,3 @@ class BaseMonitoring(object):
             # - Prepare link ID for SERM-SDNRM link
             link_id = MonitoringUtilsLinks.get_id_for_link_serm_sdnrm_tnrm(links)
             l.set("id", link_id)
-
