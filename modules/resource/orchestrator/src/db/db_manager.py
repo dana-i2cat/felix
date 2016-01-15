@@ -698,6 +698,20 @@ class DBManager(object):
         finally:
             self.__mutex.release()
 
+    def update_tn_nodes(self, routingKey, values):
+        table = self.__get_table("resource.tn.node")
+        try:
+            ids = []
+            self.__mutex.acquire()
+            ret = table.remove({"routing_key": routingKey})
+            logger.debug("Remove tn-nodes: %s" % (ret))
+            for v in values:
+                v["routing_key"] = routingKey
+                ids.append(table.insert(v))
+            return ids
+        finally:
+            self.__mutex.release()
+
     def get_tn_nodes(self, filter_params={}):
         table = self.__get_table("resource.tn.node")
         return self.__get_all(table, filter_params)
@@ -721,7 +735,7 @@ class DBManager(object):
         interfaces = tn_node["interfaces"]
         for interface in interfaces:
             # Find interfaces that meet all the filter parameters
-            if all(map(lambda x: x[1] in interface.get(x[0], None), 
+            if all(map(lambda x: x[1] in interface.get(x[0], None),
                 [ (k,v) for k,v in filter_params.iteritems() ])):
                 found_interfaces.append(interface)
         return found_interfaces

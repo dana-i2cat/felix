@@ -3,6 +3,7 @@ from db.db_manager import db_sync_manager
 from delegate.geni.v3.rm_adaptor import AdaptorFactory
 from monitoring_manager import MonitoringManager
 from resource_detector import ResourceDetector
+from resource_updater import ResourceUpdater
 
 import core
 
@@ -41,6 +42,14 @@ def tn_resource_detector():
         rd.do_action()
     except Exception as e:
         logger.error("tn_resource_detector failure: %s" % (e,))
+
+
+def tn_resource_refresh():
+    try:
+        rf = ResourceUpdater(allowed_peers.get("PEER_TNRM"))
+        rf.do_tn_action()
+    except Exception as e:
+        logger.error("tn_resource_refresh failure: %s" % (e,))
 
 
 def ro_resource_detector():

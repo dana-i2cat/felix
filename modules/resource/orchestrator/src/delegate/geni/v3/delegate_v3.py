@@ -4,13 +4,14 @@ from delegate.geni.v3.base import GENIv3DelegateBase
 from db.db_manager import db_sync_manager
 # Following import cannot be ordered properly
 from delegate.geni.v3 import rm_adaptor
-from scheduler.jobs import slice_expiration
+from scheduler.jobs import slice_expiration, tn_resource_refresh
 from scheduler.ro_scheduler import ROSchedulerService
 from rspecs.ro.advertisement_formatter import ROAdvertisementFormatter
 from rspecs.ro.manifest_formatter import ROManifestFormatter
 from rspecs.ro.request_parser import RORequestParser
 from handler.geni.v3 import exceptions as geni_ex
 from delegate.geni.v3 import exceptions as delegate_ex
+from datetime import datetime, timedelta
 
 from monitoring.slice_monitoring import SliceMonitoring
 from utils.commons import CommonUtils
@@ -386,6 +387,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
 
         logger.info("Allocate successfully completed: %s" % (ro_db_slivers,))
         self.__schedule_slice_release(end_time, ro_db_slivers)
+        self.__schedule_tnres_update(tn_resource_refresh, 1, "oneshot_tn_resource_refresh")
         return ("%s" % ro_manifest, ro_slivers)
 
     @trace_method_inputs
@@ -713,6 +715,7 @@ class GENIv3Delegate(GENIv3DelegateBase):
             db_sync_manager.delete_slice_sdn(slice_urn)
 
         db_sync_manager.delete_slice_urns(db_urns)
+        self.__schedule_tnres_update(tn_resource_refresh, 1, "oneshot_tn_resource_refresh")
         return ro_slivers
 
     @trace_method_inputs
@@ -762,3 +765,9 @@ class GENIv3Delegate(GENIv3DelegateBase):
             ROSchedulerService.get_scheduler().add_job(
                 slice_expiration, "date", run_date=end_time, args=[urns])
 
+    def __schedule_tnres_update(self, func, secs, name):
+        scheduler = ROSchedulerService.get_scheduler()
+        if scheduler is not None:
+            run =datetime.now() + timedelta(seconds=secs)
+            ROSchedulerService.get_scheduler().add_job(
+                func, "date", run_date=run, id=name)

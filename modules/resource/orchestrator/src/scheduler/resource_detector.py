@@ -110,7 +110,7 @@ class ResourceDetector(object):
                 self.error("Error storing last_update_time for phy-topology.")
                 self.error("Exception: %s" % e)
 
-    def __get_resources(self, peer):
+    def __get_resources(self, peer, available=False):
         try:
             # Retrieve the URI for domain:RMs identification purposes
             adaptor, adaptor_uri = AdaptorFactory.create_from_db(peer)
@@ -122,7 +122,6 @@ class ResourceDetector(object):
 
             geni_v3_credentials = AdaptorFactory.geni_v3_credentials()
             self.info("Credentials successfully retrieved!")
-            available = False
             # Resource detector is the only one generating "inner calls"
             # against M/RO to fetch all resources
             # (but virtual links -- linked to the "available" flag)
@@ -385,3 +384,8 @@ class ResourceDetector(object):
         if links:
             self.links_all.extend(links)
 
+    def get_resources(self, peer, available):
+        return self.__get_resources(peer, available)
+
+    def decode_tn_rspec(self, result):
+        return self.__decode_tn_rspec(result)
