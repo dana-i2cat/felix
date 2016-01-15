@@ -199,6 +199,9 @@ class SDNUtils(CommonUtils):
         logger.info("Renamed-Groups(%d): %s, Renamed-Matches(%d): %s" %
                      (len(groups), groups, len(matches), matches))
 
+        # TODO REMOVE
+        #return ("", [], [], "")
+
         # Update the group info to support the mapper module
         for eg in extended_group_info:
             for g in groups:

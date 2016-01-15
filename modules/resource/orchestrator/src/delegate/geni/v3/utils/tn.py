@@ -138,6 +138,7 @@ class TNUtils(CommonUtils):
             route[i][1].link(ls[i])
 
         logger.info("(SPLIT_WORKAROUND)Route: %s" % (route,))
+
         for r in route:
             try:
                 (m, ss) = self.send_request_allocate_rspec(
@@ -425,6 +426,7 @@ class TNUtils(CommonUtils):
 
         for stp in request_stps:
             paths = TNUtils.find_interdomain_paths_from_stps_and_dpids(stp, dpid_port_ids)
+
             # A path is chosen from the mapping taking into account the
             # restrictions defined implicitly by the DPIDs within the flowspace
             # Note: an empty list will be returned if none fits
