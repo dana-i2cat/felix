@@ -18,11 +18,11 @@ python manage.py delete_route_entry -a $host_ip --endpoint "$endpoint"
 
 echo "Filling database with dummy RMs..."
 
-python manage.py add_route_entry -t "virtualisation" -a $host_ip -p 18445 --protocol "https" --endpoint "$endpoint" --user "" --password ""
+python manage.py add_route_entry -t "virtualisation" -a $host_ip -p 8445 --protocol "https" --endpoint "$endpoint" --user "" --password ""
 
-python manage.py add_route_entry -t "sdn_networking" -a $host_ip -p 18443 --protocol "https" --endpoint "$endpoint" --user "" --password ""
+python manage.py add_route_entry -t "sdn_networking" -a $host_ip -p 8443 --protocol "https" --endpoint "$endpoint" --user "" --password ""
 
-python manage.py add_route_entry -t "transport_network" -a $host_ip -p 18446 --protocol "https" --endpoint "$endpoint" --user "" --password ""
+#python manage.py add_route_entry -t "transport_network" -a $host_ip -p 18446 --protocol "https" --endpoint "$endpoint" --user "" --password ""
 
-python manage.py add_route_entry -t "stitching_entity" -a $host_ip -p 18447 --protocol "https" --endpoint "$endpoint" --user "" --password ""
+#python manage.py add_route_entry -t "stitching_entity" -a $host_ip -p 18447 --protocol "https" --endpoint "$endpoint" --user "" --password ""
 

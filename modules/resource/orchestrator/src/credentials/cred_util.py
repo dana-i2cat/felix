@@ -254,7 +254,7 @@ class CredentialVerifier(object):
             if cred.get_cred_type() != cred.SFA_CREDENTIAL_TYPE:
                 failure = "Not an SFA credential: " + cS
                 continue
-         
+
             #if not self.verify_source(gid, cred):
             #    failure = "Cred %s fails: Credential doesn't grant rights to you (%s), but to %s (over object %s)" % (cred.get_gid_caller().get_urn(), gid.get_urn(), cred.get_gid_caller().get_urn(), cred.get_gid_object().get_urn())
             #    continue
