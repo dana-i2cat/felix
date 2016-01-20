@@ -270,8 +270,11 @@ class GENIv3Handler(xmlrpc.Dispatcher):
             try:
                 # Obtain the name of the method calling this one
                 method_name = inspect.stack()[1][3]
+                # Get caller cert
+                caller_cert = super(GENIv3Handler, self).requestCertificate()
+
                 # Permissiosn for the calling method will be properly verified against creds
-                self.__credential_manager.validate_for(method_name, credentials)
+                self.__credential_manager.validate_for(method_name, credentials, caller_cert)
             except Exception as e:
                 raise geni_ex.GENIv3GeneralError(str(e))
 

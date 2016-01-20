@@ -2,7 +2,6 @@ from credentials.credentialmanagerbase import CredentialManagerBase
 from core.config import ConfParser
 from credentials.cred_util import CredentialVerifier
 from os.path import abspath, dirname, join
-
 import ast
 
 class ConfigStructure:
@@ -42,9 +41,9 @@ class GCFCredentialManager(CredentialManagerBase):
     def set_root_cert(self,value):
         self.__root_cert = value
 
-    def validate_for(self, method, credentials):
+    def validate_for(self, method, credentials, caller_cert=None):
         credentials = self.__clean_credentials(credentials)
-        return self._get_geniv2_validation(method, credentials)
+        return self._get_geniv2_validation(method, credentials, caller_cert)
         
     def get_valid_creds(self):
         return ""
@@ -58,10 +57,11 @@ class GCFCredentialManager(CredentialManagerBase):
     def get_slice_expiration(self, credentials):
         return credentials[0].expiration
 
-    def _get_geniv2_validation(self, method, credentials):
+    def _get_geniv2_validation(self, method, credentials, caller_cert=None):
         method = (self._translate_to_geniv2_method(method),)
         try:
-            valid_cred = self.__auth.verify_from_strings(self.__root_cert,credentials,None, method, {})
+            # valid_cred = self.__auth.verify_from_strings(self.__root_cert,credentials,None, method, {})
+            valid_cred = self.__auth.verify_from_strings(caller_cert if caller_cert else self.__root_cert,credentials,None, method, {})
             return valid_cred
         except Exception as e:
             raise e
