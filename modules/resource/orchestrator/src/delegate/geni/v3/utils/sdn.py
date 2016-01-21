@@ -93,7 +93,6 @@ class SDNUtils(CommonUtils):
 
             if len(dpids) > 0:
                 ret.append({"vlan": vlan_id, "dpids": dpids})
-
         return ret
 
     def __update_route_rspec(self, route, sliver, controllers, groups,
@@ -198,9 +197,6 @@ class SDNUtils(CommonUtils):
         (groups, matches) = self.__rename_groups_matches(groups_matches)
         logger.info("Renamed-Groups(%d): %s, Renamed-Matches(%d): %s" %
                      (len(groups), groups, len(matches), matches))
-
-        # TODO REMOVE
-        #return ("", [], [], "")
 
         # Update the group info to support the mapper module
         for eg in extended_group_info:

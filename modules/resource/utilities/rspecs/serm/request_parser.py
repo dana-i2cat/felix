@@ -10,6 +10,7 @@ class SERMv3RequestParser(ParserBase):
     def __init__(self, from_file=None, from_string=None):
         super(SERMv3RequestParser, self).__init__(from_file, from_string)
         self.__sv = self.rspec.nsmap.get('sharedvlan')
+        self.__felix = self.rspec.nsmap.get('felix')
         self.__proto = self.rspec.nsmap.get('protogeni')
 
     def check_se_node_resource(self, node):
@@ -86,7 +87,9 @@ class SERMv3RequestParser(ParserBase):
 
             self.update_protogeni_cm_uuid(l, l_)
 
-            [l_.add_interface_ref(i.attrib.get("client_id"))
+            # FIXME: VLAN seems not properly added to interface
+            [l_.add_interface_ref(i.attrib.get("client_id"),
+            i.attrib.get("{%s}vlan" % (self.__felix)))
              for i in l.iterfind("{%s}interface_ref" % (self.none))]
 
             [l_.add_property(p.attrib.get("source_id"),
