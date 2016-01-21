@@ -27,7 +27,6 @@ class SERMv3RequestFormatter(TNRMv3RequestFormatter):
         for i in link.get("interface_ref"):
             interface = etree.SubElement(l, "{%s}interface_ref" % (self.xmlns))
             interface.attrib["client_id"] = i.get("component_id")
-
             if i.get('vlantag') is not None:
                 interface.attrib["{%s}vlan" % (DEFAULT_FELIX)] =\
                     i.get('vlantag')

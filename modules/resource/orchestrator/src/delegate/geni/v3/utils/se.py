@@ -122,7 +122,7 @@ class SEUtils(CommonUtils):
                             intf.add_vlan(v.get("vlan"), "")
                             n.add_interface(intf.serialize())
 
-    def __create_link(self, if1, if2, sliver_id):
+    def __create_link(self, if1, if2, vlan1, vlan2, sliver_id):
         """
         Generates the SE link in a proper format:
             <urn_dpid_1>_<port1>_<dpid2>_<port2>_<vlan1>_<vlan2>
@@ -139,8 +139,8 @@ class SEUtils(CommonUtils):
         typee, cm_name = db_sync_manager.get_se_link_info(n1 + "_" + num1)
 
         l = SELink(cid, typee, cm_name, sliver=sliver_id)
-        l.add_interface_ref(if1)
-        l.add_interface_ref(if2)
+        l.add_interface_ref(if1, vlan1)
+        l.add_interface_ref(if2, vlan2)
         return l
 
     def __check_for_consistency(self, sdn_routing_key, tn_routing_key,
@@ -163,6 +163,7 @@ class SEUtils(CommonUtils):
         return True
 
     def __update_link(self, links, svalues, tvalues):
+#        added_links = []
         for s in svalues:
             for sintf in s.get("internal_ifs"):
                 for t in tvalues:
@@ -174,7 +175,14 @@ class SEUtils(CommonUtils):
                         if ret:
                             l = self.__create_link(sintf.get("component_id"),
                                                    tintf.get("component_id"),
+                                                   s.get("vlan"),
+                                                   t.get("vlan"),
                                                    s.get("routing_key"))
+#                            l_add = {"sdn_cid": sintf.get("component_id"),
+#                                    "tn_cid": tintf.get("component_id")}
+#                            if l_add not in added_links:
+#                                links.append(l)
+#                                added_links.append(l_add)
                             links.append(l)
 
     def __extract_info(self, sdn, tn):

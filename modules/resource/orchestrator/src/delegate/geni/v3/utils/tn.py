@@ -166,7 +166,6 @@ class TNUtils(CommonUtils):
             except Exception as e:
                 logger.critical("(SPLIT_WORKAROUND)exception: %s", e)
                 raise e
-
         return (manifests, slivers, db_slivers, se_tn_info)
 
     def manage_allocate(self, surn, creds, end, nodes_in, links_in):
