@@ -7,8 +7,20 @@ import delegate.geni.v3.se_static_links_manager as SEStaticLinkManager
 class SERMv3RequestParser(TNRMv3RequestParser):
     def __init__(self, from_file=None, from_string=None):
         super(SERMv3RequestParser, self).__init__(from_file, from_string)
-        self.__sv = self.rspec.nsmap.get('sharedvlan')
+        self.checkStaticLinksInRspec()
         self.SEStaticLinkManager = SEStaticLinkManager.StaticLinkVlanManager()
+        print "GGGGGGGGGG:\n" + from_string + "\nGGGGGGGGG"
+        self.__sv = self.rspec.nsmap.get('sharedvlan')
+
+    def checkStaticLinksInRspec(self):
+        print ">>> Checking static links"
+        # for l in self.rspec.findall(".//{%s}link" % (self.none)):
+        #     client_id = l.attrib["client_id"]
+        #     vlanPairs=[]
+        #     vlanPairs.append(client_id)
+        #     for i in l.iterfind("{%s}interface_ref" % (self.none)):
+        #         singleVlanPair={}
+        #         singleVlanPair["vlan"] = i.attrib["{http://ict-felix.eu/serm_request}vlan"] # felix:vlan param
 
     def links(self):
         links_ = []
