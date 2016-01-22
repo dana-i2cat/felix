@@ -485,13 +485,13 @@ class GENIv3Delegate(GENIv3DelegateBase):
                 for portVlanItem in portsVlansPairs:
                     (in_port, out_port, in_vlan, out_vlan) = portVlanItem
                     se_provision.deleteSwitchingRule(in_port, out_port, in_vlan, out_vlan)
+                    logger.debug("unprovision SE-Slice-Urn=%s, in_port=%s , out_port=%s,  in_vlan=%s,  out_port=%s" % (urn,in_port, out_port, in_vlan, out_vlan))
             except:
                 logger.warning("Problem in communication with SE")
 
             # expires_date = datetime.strptime(links_db['geni_expires'], RFC3339_FORMAT_STRING)
             expires_date = links_db['geni_expires']
 
-            logger.debug("unprovision SE-Slice-Urn=%s, in_port=%s , out_port=%s,  in_vlan=%s,  out_port=%s" % (urn,in_port, out_port, in_vlan, out_vlan))
 
             for sliver in links_db["geni_sliver_urn"]:
                 result.append( 

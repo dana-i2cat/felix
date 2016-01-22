@@ -4,7 +4,7 @@ import core
 logger = core.log.getLogger("se-static-link-manager")
 
 class StaticLinkVlanManager(object):
-    """This object is for managong static link VLANs"""
+    """This object is for static links VLAN management"""
 
     def __init__(self):
         # TODO: change this to minimise the query result size
