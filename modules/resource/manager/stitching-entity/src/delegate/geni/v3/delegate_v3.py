@@ -539,16 +539,6 @@ class GENIv3Delegate(GENIv3DelegateBase):
                                              error,))
         logger.info("Validation success!")
 
-    def __datetime2str(self, dt):
-        return dt.strftime("%Y-%m-%d %H:%M:%S.%fZ")
-
-    def __str2datetime(self, strval):
-        result = dateparser.parse(strval)
-        if result:
-            result = result - result.utcoffset()
-            result = result.replace(tzinfo=None)
-        return result
-
     def __update_slivers(self, urn, dict_slivers):
         slices = db_sync_manager.get_slices(urn)
         if "slivers" in dict_slivers:

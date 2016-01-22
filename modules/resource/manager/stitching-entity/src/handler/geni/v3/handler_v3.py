@@ -16,6 +16,7 @@ from handler.geni.v3 import exceptions as geni_ex
 # import handler.geni.v3.extensions.sfa.trust.gid as gid
 from delegate.geni.v3.db_manager_se import db_sync_manager
 
+from core import dates
 from core import log
 logger = log.getLogger("handlergeniv3")
 from core.utils import credentials as geni_creds
@@ -134,7 +135,7 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         to geni compliant date format."""
         geni_end_time = None
         if "geni_end_time" in options:
-            geni_end_time = self._str2datetime(options["geni_end_time"])
+            geni_end_time = dates.rfc3339_to_datetime(options["geni_end_time"])
 
         # TODO check the end_time against the duration of the credential
         try:
@@ -156,14 +157,14 @@ class GENIv3Handler(xmlrpc.Dispatcher):
 
     def Renew(self, urns, credentials, expiration_time_str, options):
         geni_best_effort = self._option(options, "geni_best_effort", ret=True)
-        expiration_time = self._str2datetime(expiration_time_str)
+        expiration_time = dates.rfc3339_to_datetime(expiration_time_str)
         try:
             # delegate
             result = self._delegate.renew(urns, self.requestCertificate(),
                                           credentials, expiration_time,
                                           geni_best_effort)
-            # change datetime"s to strings
-            result = self._convertExpiresDate(result)
+            # Change datetimes to strings (send result[1], aka slivers)
+            result = self._convertExpiresDate(result[1])
 
         except Exception as e:
             return self._errorReturn(e)
@@ -182,12 +183,12 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         try:
             # Expiration in slice (from Allocate reservation)
             expiration = slice_resources["slivers"]["geni_expires"]
-            expiration = self._datetime2str(expiration)
-            expiration = self._str2datetime(expiration)
+            expiration = dates.rfc3339_to_datetime(expiration)
+            expiration = dates.datetime_to_rfc3339(expiration)
         except:
             pass
         if "geni_end_time" in options:
-            expiration = max(expiration, self._str2datetime(options["geni_end_time"]))
+            expiration = max(expiration, dates.rfc3339_to_datetime(options["geni_end_time"]))
 
         # TODO check the end_time against the duration of the credential
         try:
@@ -256,31 +257,19 @@ class GENIv3Handler(xmlrpc.Dispatcher):
         return self._successReturn(result)
 
     # ---- helper methods
-    def _datetime2str(self, dt):
-        return dt.strftime(self.RFC3339_FORMAT_STRING)
-
-    def _str2datetime(self, strval):
-        """Parses the given date string and converts the timestamp
-        to utc and the date unaware of timezones."""
-        result = dateparser.parse(strval)
-        if result:
-            result = result - result.utcoffset()
-            result = result.replace(tzinfo=None)
-
-        return result
-
     def _convertExpiresDate(self, sliver_list):
         for slhash in sliver_list:
             if slhash["geni_expires"] is None:
                 continue
 
-            if not isinstance(slhash["geni_expires"], datetime):
+            if not dates.is_date_or_rfc3339(slhash["geni_expires"]):
                 raise ValueError("Given geni_expires in sliver_list hash " +
                                  "retrieved from delegate's method is not " +
                                  "a python datetime object.")
-
-            slhash["geni_expires"] = self._datetime2str(slhash["geni_expires"])
-
+            # If date received is "datetime.datetime", convert to rfc3339
+            if dates.is_date(slhash["geni_expires"]):
+                slhash["geni_expires"] =\
+                    dates.datetime_to_rfc3339(slhash["geni_expires"])
         return sliver_list
 
     def _checkRSpecVersion(self, rspec_version_option):
