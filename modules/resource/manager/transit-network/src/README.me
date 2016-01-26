@@ -14,6 +14,7 @@
 
 1. Installation
 
+1.1. TN-RM
 TN-RM has been provided as a resource management application of eiSoil.
 EiSoil code is available from the git repository:
 
@@ -42,6 +43,43 @@ NSIv2 code is installed with reference to documents in the tar boll.
 
 If you use GRE tunnel for Transit-Network, you need install RYU SDN Framework. 
 See http://osrg.github.io/ryu.
+
+1.2 NSIv2 Client API
+      1. extract code form tar.gz
+         tar zxvf aist-nsi2-20150910.tar.gz
+      2. get CXF and setting
+         cd /opt
+         wget http://archive.apache.org/dist/cxf/2.7.10/apache-cxf-2.7.10.tar.gz
+         tar zxvf apache-cxf-2.7.10.tar.gz
+         ln -s apache-cxf-2.7.10 cxf
+         export CXF_HOME=/opt/cxf
+         export PATH=$CXF_HOME/bin:$PATH
+      3. compile nsi2/java/topology
+         cd aist-nsi2-20150910/java/topology
+         ant
+      4. compile nsi2/java/clientapiNSI
+         cd ../clientapi/
+         ant
+      5. jar files
+         cd ../
+         ls -l clientapi/build/jar/
+         total 356
+         -rw-r--r-- 1 okazaki okazaki 361303 Jan 22 11:39 nsi2_client.jar
+         ls -l common/build/jar/
+         total 496
+         -rw-r--r-- 1 okazaki okazaki 504234 Jan 22 11:38 nsi2_common.jar
+         ls common/lib/ -l
+         total 600
+         -rw-r--r-- 1 okazaki okazaki 185140 Sep 10 18:41 commons-io-2.4.jar
+         -rw-r--r-- 1 okazaki okazaki  60841 Sep 10 18:41 commons-logging-1.1.1.jar
+         -rw-r--r-- 1 okazaki okazaki    231 Sep 10 18:41 jax-ws-catalog.xml
+         -rw-r--r-- 1 okazaki okazaki 358180 Sep 10 18:41 log4j-1.2.13.jar
+         # Please change "nrm/lib" to "common/lib" in compile.sh
+ 
+      - Please use the java that is included in the JDK
+      - If you use SSL for NSI communication between your requester and aist AG, 
+        you must prepare a SSL key for the provider server to get replies from AG. 
+        And you must truest the cert of aist AG. Please read java/clientapi/README for details.
 
 2. Setup
 
