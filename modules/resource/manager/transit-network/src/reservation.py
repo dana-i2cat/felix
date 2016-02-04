@@ -15,8 +15,8 @@
 import tn_rm_exceptions as tnex
 import sys
 import log
-# import amsoil.core.log
-# logger = amsoil.core.log.getLogger('TN-RM:reservation')
+# import eisoil.core.log
+# logger = eisoil.core.log.getLogger('TN-RM:reservation')
 
 import re
 
@@ -466,6 +466,7 @@ class Reservation:
         self.src_vlan = None
         self.dst_vlan = None
         self.trans_vlan = None
+        self.gid = None
 
         try:
             self.setVlan()
@@ -656,6 +657,7 @@ if __name__ == "__main__":
         logger.error('The request rspec can not be parsed.')
 
 else:
-    config = Config("/home/okazaki/AMsoil/tnrm/src/vendor/tnrm/config.xml")
+    config = Config("/home/okazaki/eiSoil/src/vendor/tnrm/config.xml")
+    # config = Config("src/vendor/tnrm/config.xml")
     # config = Config("src/vendor/tnrm/config.xml")
     # r = Request("src/vendor/tnrm/request.xml")

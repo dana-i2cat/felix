@@ -16,8 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# import amsoil.core.log
-# logger = amsoil.core.log.getLogger('TN-RM:ovsgre')
+# import eisoil.core.log
+# logger = eisoil.core.log.getLogger('TN-RM:ovsgre')
 # import log
 # logger = log.getLogger('tnrm:ovsgre')
 from tn_rm_delegate import logger
@@ -479,7 +479,7 @@ class OvsManager:
                 logger.error("teardown_tunnel:ofdev=%s: mismatch ofport=%s, ofport2=%s" % (ofdev, ofport, ofport2))
                 ofport = ofport2
         except Exception as e:
-            logger.info("teardown_tunnel:gre port is None")
+            logger.error("teardown_tunnel:gre port is None. ex=%s" % e)
             
         if ofport is not None:
             urlbase = src_if.ryu_url
@@ -613,17 +613,21 @@ class OvsManager:
             try:
                 ### setup src->dst
                 self.setup_tunnel(self.src_if, self.dst_if)
-            except:
-                raise
+            except Exception as ex:
+                raise ex
 
             try:
                 ### setup dst->src
                 self.setup_tunnel(self.dst_if, self.src_if)
-            except:
+            except Exeption as ex:
                 ### teardown tunnel by setup_tunnel(self.src_if, self.dst_if)
-                self.teardown_tunnel(self.src_if, self.dst_if)
-                raise
-                
+                try:
+                    self.teardown_tunnel(self.src_if, self.dst_if)
+                except Exeption as eex:
+                    logger.error("provision: teardown_tunnel ex1=%s ex2=%s" % 
+                                 ex, eex)
+                raise ex
+
             self.isSetup = True
 
         self.dict_used[resv.resv_id] = resv.resv_id
@@ -709,14 +713,14 @@ class OvsManager:
                     self.teardown_tunnel(self.src_if, self.dst_if)
                 except Exception as ex:
                     e = ex
-                    logger.error("release: error in teardown: src_if=%s, dst_if=%s ex=%s" % (self.src_if, self.dst_if, ex))
+                    logger.error("release: error in teardown #1: src_if=%s, dst_if=%s ex=%s" % (self.src_if, self.dst_if, ex))
 
                 ### teardown dst->src
                 try:
                     self.teardown_tunnel(self.dst_if, self.src_if)
                 except Exception as ex:
                     e = ex
-                    logger.error("release: error in teardown: src_if=%s, dst_if=%s ex=%s" % (self.dst_if, self.src_if, ex))
+                    logger.error("release: error in teardown #2: src_if=%s, dst_if=%s ex=%s" % (self.dst_if, self.src_if, ex))
 
                 self.isSetup = False
                 self.isSetup = False

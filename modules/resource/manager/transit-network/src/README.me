@@ -32,6 +32,23 @@ TN-RM code is available from the git repository:
       $ cp -Rp felix_tnrm/modules/resource/manager/transit-network/src $EISOIL/src/vendor/tnrm
       $ export TNRM=$EISOIL/src/vendor/tnrm
 
+      $ cd src/plugins
+      $ rm *
+      $ ln -s ../vendor/configdb .
+      $ in -s ../vendor/configrpc .
+      $ ln -s ../vendor/flaskrpcs .
+      $ ln -s ../vendor/geniv3rpc .
+      $ in -s ../vendor/tnrm 
+      $ cd ../..
+
+If you want to change service port for the TN-RM, you can use "admin/config_client.py".
+TN-RM TN must be able to access to the mySQL DB with the parameters indicated below.
+
+	mySQLhost = "localhost"
+	mySQLuser = "root"
+	mySQLpass = "felix"
+	mySQLchar = "utf8"
+
 TN-RM need Jython, Apache CXF 2.7.10 and NSIv2 impllementation by AIST.
 Jython, CXF are installed from the respective website:
 

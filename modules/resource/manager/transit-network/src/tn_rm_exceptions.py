@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# from amsoil.core.exception import CoreException
+# from eisoil.core.exception import CoreException
         
 class TnrmException(Exception):
     def __init__(self, desc):

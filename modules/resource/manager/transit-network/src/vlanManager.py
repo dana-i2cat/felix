@@ -191,7 +191,7 @@ class vlanManager:
     def putVlan(self, vlan):
         try:
             self.checkVlan(vlan)
-        except Exveption as e:
+        except Exception as e:
             logger.warning("vlanManager:putVlan", "This vlan (%s) is not allowed." % (vlan))
             return None
             

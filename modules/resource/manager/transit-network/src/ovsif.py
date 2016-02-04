@@ -17,8 +17,8 @@
 # limitations under the License.
 
 
-import amsoil.core.log
-logger = amsoil.core.log.getLogger('TN-RM:ovsif')
+import eisoil.core.log
+logger = eisoil.core.log.getLogger('TN-RM:ovsif')
 # import log
 # logger = log.getLogger('tnrm:ovsgre')
 
