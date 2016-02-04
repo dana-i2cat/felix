@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import amsoil.core.pluginmanager as pm
+import eisoil.core.pluginmanager as pm
 from tn_rm_delegate import TNRMGENI3Delegate
 
 def setup():

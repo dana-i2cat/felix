@@ -23,27 +23,27 @@
         <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
                    felix_stp_id="urn:ogf:network:aist.go.jp:2013:topology:bi-ps"
                    nsi_stp_id="urn:ogf:network:aist.go.jp:2013:topology:bi-ps"
-                   vlan="1779-1798"
+                   vlan="1779-1788,1790-1797"
                    capacity="10000" />
         <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
                    felix_stp_id="urn:ogf:network:aist.go.jp:2013:topology:bi-video"
                    nsi_stp_id="urn:ogf:network:aist.go.jp:2013:topology:bi-video"
-                   vlan="1779-1798"
+                   vlan="1779-1788,1790-1797"
                    capacity="10000" />
         <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
                    felix_stp_id="urn:ogf:network:aist.go.jp:2013:topology:bi-se1"
                    nsi_stp_id="urn:ogf:network:aist.go.jp:2013:topology:bi-se1"
-                   vlan="1779-1798"
+                   vlan="1779-1788,1790-1797"
                    capacity="10000" />
         <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
                    felix_stp_id="urn:ogf:network:aist.go.jp:2013:topology:bi-se2"
                    nsi_stp_id="urn:ogf:network:aist.go.jp:2013:topology:bi-se2"
-                   vlan="1779-1798"
+                   vlan="1779-1788,1790-1797"
                    capacity="10000" />
         <interface felix_domain_id="urn:publicid:IDN+fms:aist:tnrm+stp"
                    felix_stp_id="urn:ogf:network:aist.go.jp:2013:topology:bi-aist-jgn-x"
                    nsi_stp_id="urn:ogf:network:aist.go.jp:2013:topology:bi-aist-jgn-x"
-                   vlan="1779-1798"
+                   vlan="1779-1788,1790-1797"
                    capacity="10000" />
 
 	<!-- KDDI STPs -->
@@ -202,7 +202,7 @@
 		   capacity="10000"
 
 		   type="ovsgre"
-		   sedev="eth1"
+		   sedev="eth5"
 		   address="84.88.40.12"
 		   dpid="0x100078acc01519c0"
 		   ovsdb="tcp:127.0.0.1:44444"

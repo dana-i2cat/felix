@@ -16,9 +16,9 @@ import json
 import sys
 
 import xmlrpclib
-import amsoil.core.pluginmanager as pm
-import amsoil.core.log
-logger = amsoil.core.log.getLogger('TN-RM')
+import eisoil.core.pluginmanager as pm
+import eisoil.core.log
+logger = eisoil.core.log.getLogger('TN-RM')
 
 # import pytz
 from datetime import datetime, timedelta
@@ -247,6 +247,11 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
                 logger.debug("re-set end_time=%s" % (end_time))
                 
         if slice_urn in dict_slice_urn:
+            req = dict_slice_urn[slice_urn]
+            for urn in req.urns:
+                resv = req.get_reservation(urn)
+                logger.info("delete service=%s: urn=%s, reservation=%s, status=%s" % 
+                            (resv.service, urn, resv, resv.astatus))
             raise geni_ex.GENIv3GeneralError("slice_urn(%s) is already exit." % (slice_urn))
 
         logger.info("allocate: add dict_slice_urn[%s]." % slice_urn)
@@ -310,7 +315,7 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
                     rid = gre_proxy.reserve(resv)
 
                 else:
-                    emes = "Unknown service=%s: urn=%s, type=$s, reservation=%s" % (resv.service, slice_urn, resv)
+                    emes = "Unknown service=%s: urn=%s, reservation=%s" % (resv.service, slice_urn, resv)
                     logger.error(emes)
                     raise ManagerException("tn_rm_delegate:allocate", emes);
                     
@@ -425,7 +430,7 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
                 elif resv.service == "GRE":
                     mid = gre_proxy.modify(resv, end_time_sec)
                 else:
-                    logger.error("Unknown service=%s: urn=%s, type=$s, reservation=%s" % 
+                    logger.error("Unknown service=%s: urn=%s, reservation=%s" % 
                                  (resv.service, u, resv))
                     
                     logger.info("old is %s, new is %s" %(rid, mid))
@@ -573,7 +578,7 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
                 gre_proxy.provision(resv)
                 logger.info("GRE SETUP.")
             else:
-                logger.error("Unknown service=%s: urn=%s, type=$s, reservation=%s" % 
+                logger.error("Unknown service=%s: urn=%s, reservation=%s" % 
                              (resv.service, urn, resv))
 
         except Exception as e:
@@ -590,7 +595,7 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
                 gre_proxy.release(resv)
                 logger.info("GRE TEARDOWN.")
             else:
-                logger.error("Unknown service=%s: urn=%s, type=$s, reservation=%s" % 
+                logger.error("Unknown service=%s: urn=%s, reservation=%s" % 
                              (resv.service, urn, resv))
         except Exception as e:
             logger.error("%s" % (e))
@@ -610,7 +615,7 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
                 if not rc:
                     return False
             else:
-                logger.error("Unknown service=%s: urn=%s, type=$s, reservation=%s" % 
+                logger.error("Unknown service=%s: urn=%s, reservation=%s" % 
                              (resv.service, urn, resv))
 
         except Exception as e:
@@ -692,7 +697,7 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
 
         for u in req.urns:
             resv = req.get_reservation(u)
-            logger.info("delete service=%s: urn=%s, type=$s, reservation=%s, status=%s" % 
+            logger.info("delete service=%s: urn=%s, reservation=%s, status=%s" % 
                         (resv.service, u, resv, resv.astatus))
 
             if resv.astatus == self.ALLOCATION_STATE_UNALLOCATED:
@@ -705,7 +710,7 @@ class TNRMGENI3Delegate(GENIv3DelegateBase):
                 elif resv.service == "GRE":
                     gre_proxy.terminate(resv)
                 else:
-                    logger.error("Unknown service=%s: urn=%s, type=$s, reservation=%s" % 
+                    logger.error("Unknown service=%s: urn=%s, reservation=%s" % 
                                  (resv.service, u, resv))
 
                 resv.astatus = self.ALLOCATION_STATE_UNALLOCATED

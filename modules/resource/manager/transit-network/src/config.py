@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#import amsoil.core
-#import amsoil.core.log
-#logger = amsoil.core.log.getLogger('tnrmgeniv3delegate')
-#logger = amsoil.core.log.getLogger('tnrm-config')
+#import eisoil.core
+#import eisoil.core.log
+#logger = eisoil.core.log.getLogger('tnrmgeniv3delegate')
+#logger = eisoil.core.log.getLogger('tnrm-config')
 
 from xml.etree.ElementTree import *
 from tn_rm_exceptions import ManagerException, ParamException, RspecException

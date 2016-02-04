@@ -194,6 +194,11 @@ class tnrm_db:
         if resv.trans_vlan is not None:
             trans_vlan = resv.trans_vlan
 
+        error = resv.error
+        if error is not None:
+            error = error.replace("\"", "")
+            error = error.replace("\'", "")
+
         sql = (fmt % (
                 mySQLtbl,
                 #1: slice_urn
@@ -223,7 +228,7 @@ class tnrm_db:
                 #13: geni_urn
                 resv.slice_urn,
                 #14: geni_error
-                resv.error,
+                error,
                 #15: geni_action
                 resv.action,
                 #16: start_time
@@ -246,11 +251,17 @@ class tnrm_db:
 
     def update(self, resv):
         fmt = "UPDATE %s SET %s=\"%s\",  %s=\"%s\",  %s=\"%s\",  %s=\"%s\",  %s=\"%s\" WHERE resv_urn=\"%s\""
+
+        error = resv.error
+        if error is not None:
+            error = error.replace("\"", "")
+            error = error.replace("\'", "")
+
         sql = fmt % (mySQLtbl, 
                      "geni_expires", resv.end_time,
                      "geni_operational_status", resv.ostatus,
                      "geni_allocation_status", resv.astatus,
-                     "geni_error", resv.error,
+                     "geni_error", error,
                      "geni_action", resv.action,
                      resv.urn)
 
